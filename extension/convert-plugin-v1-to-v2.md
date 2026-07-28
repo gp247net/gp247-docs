@@ -32,6 +32,7 @@ v1 and v2 templates:
 | Dynamic interaction | jQuery + jQuery plugins (select2, daterangepicker…) | Livewire 4 + Alpine |
 | New-style admin screen | *(none)* | Livewire component `Livewire/AdminLivewire.php` |
 | SEO sitemap integration | *(none)* | `Seo.php` file + registration in `Provider.php` |
+| LayoutBlock page-type registration | *(none)* | Register `token => lang-key` in `Provider.php` (if the plugin has its own public page) |
 | `gp247.json` → `requireCore` | `["1.2"]` | `["2.0"]` |
 | `gp247.json` → `requireUpdateFrom` | *(none)* | `"1.0"` (1-click update condition) |
 
@@ -56,6 +57,7 @@ the new standard.
 | `Route.php` | Add the Livewire route (guarded by `class_exists`) | 🟡 Recommended |
 | `Seo.php` | **Create new** — if the plugin has public pages for the sitemap | ⚪ Optional |
 | `Provider.php` | Add the sitemap registration block (if you use `Seo.php`) | ⚪ Optional |
+| `Provider.php` | Add the LayoutBlock page-type registration block (if the plugin has its own public page) | ⚪ Optional |
 
 > Quick glossary: **Livewire** is a Laravel technology that lets you build dynamic UIs (button
 > clicks, partial page reloads) **without writing JavaScript/jQuery**. GP247 2.0 uses Livewire
@@ -321,6 +323,56 @@ Only do this step if your plugin has a **public page** that you want to appear i
    This block is guarded by `class_exists`, so if the website does **not** have `gp247/front`
    installed, the plugin still installs normally (no error).
 
+### Step 8b — (Optional) Register a page-type for LayoutBlock
+
+Only do this step if your plugin has its **own public (storefront) page(s)** (for example the
+plugin's list/detail page) and you want an admin to be able to **attach LayoutBlock blocks**
+(banner, HTML, view…) that display on those pages.
+
+Background: each storefront page emits a "page-type" through the `$layout_page` variable at render
+(your controller passes `'layout_page' => 'myplugin_index'` to `view()`). The admin "Layout block"
+screen can only list page-types that are **registered** into the
+`config('gp247-config.front.layout_page')` registry. So a plugin with its own page must register
+its page-type — the same way a plugin registers its sitemap in Step 8.
+
+1. Make sure your plugin's controller passes `layout_page` when rendering the public page, e.g.:
+
+   ```php
+   return view($view, [
+       // ... other data ...
+       'layout_page' => 'myplugin_index',   // this page's page-type token
+   ]);
+   ```
+
+2. Open `Provider.php` and **add** the following block inside the
+   `if (gp247_extension_check_active(...))` section:
+
+   ```php
+   if (class_exists('GP247\Front\Controllers\RootFrontController')) {
+       $layoutPage = config('gp247-config.front.layout_page', []);
+       // Store the i18n KEY (NOT a pre-rendered string) — the admin renders it in its current locale.
+       $layoutPage['myplugin_index'] = $extensionPath.'::lang.layout_block_page.myplugin_index';
+       config(['gp247-config.front.layout_page' => $layoutPage]);
+   }
+   ```
+
+   - The `token` (`myplugin_index`) **must match** the `$layout_page` value your controller emits,
+     otherwise a block selected for it will never display.
+   - The value is a **language key** (pointing to the plugin's `Lang` files), not a pre-translated
+     string — so the admin dropdown renders it in the viewer's current locale.
+   - The block is guarded by `class_exists`, so a website without `gp247/front` simply skips it and
+     the plugin still installs normally.
+
+3. Add the matching language lines to the plugin's `Lang/en/lang.php` and `Lang/vi/lang.php`
+   (the `layout_block_page` array), e.g. `'myplugin_index' => 'Plugin listing page'`.
+
+> The `News` plugin (`app/GP247/Plugins/News/Provider.php`) is a reference example: it registers
+> `news_index`/`news_category`/`news_detail` exactly this way.
+
+> Note the difference from a **template**: if you are building a *template* (theme) rather than a
+> plugin, you do **not** register page-types — a template only renders based on the `$layout_page`
+> the controller already emits; it does not define new page-types.
+
 ### Step 9 — Verify
 
 1. Clear Laravel's cache so the new routes/views/config are reloaded:
@@ -347,6 +399,7 @@ Only do this step if your plugin has a **public page** that you want to appear i
 - [ ] `AppConfig.php`: `disable()` uses `gp247_language_render(...)` instead of `'Error disable'`.
 - [ ] (If using Livewire) `Livewire/AdminLivewire.php` + `Views/livewire.blade.php` exist, route added.
 - [ ] (If it has public pages) `Seo.php` + registration block in `Provider.php` exist.
+- [ ] (If it has its own public page needing LayoutBlock) Registered the page-type (`token => lang-key`) into `config('gp247-config.front.layout_page')` in `Provider.php`, with the token matching the `$layout_page` the controller emits.
 - [ ] Ran `php artisan optimize:clear` and opened the admin screen successfully.
 - [ ] The UI displays correctly in both light mode and dark mode.
 
@@ -404,4 +457,4 @@ new layout) so you do not have to create each file by hand.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-28 03:52 UTC · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-07-29 · ✍️ **Author:** GP247</sub>

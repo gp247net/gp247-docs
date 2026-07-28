@@ -31,6 +31,7 @@ khuôn v1 và v2:
 | Tương tác động | jQuery + plugin jQuery (select2, daterangepicker…) | Livewire 4 + Alpine |
 | Màn admin kiểu mới | *(không có)* | Livewire component `Livewire/AdminLivewire.php` |
 | Tích hợp sitemap SEO | *(không có)* | File `Seo.php` + đăng ký trong `Provider.php` |
+| Đăng ký page-type LayoutBlock | *(không có)* | Đăng ký `token => lang-key` trong `Provider.php` (nếu plugin có trang public riêng) |
 | `gp247.json` → `requireCore` | `["1.2"]` | `["2.0"]` |
 | `gp247.json` → `requireUpdateFrom` | *(không có)* | `"1.0"` (điều kiện cập nhật 1-click) |
 
@@ -54,6 +55,7 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 | `Route.php` | Thêm route Livewire (có bảo vệ `class_exists`) | 🟡 Khuyến nghị |
 | `Seo.php` | **Tạo mới** — nếu plugin có trang public cần vào sitemap | ⚪ Tùy chọn |
 | `Provider.php` | Thêm khối đăng ký sitemap (nếu dùng `Seo.php`) | ⚪ Tùy chọn |
+| `Provider.php` | Thêm khối đăng ký page-type LayoutBlock (nếu plugin có trang public riêng) | ⚪ Tùy chọn |
 
 > Thuật ngữ nhanh: **Livewire** là công nghệ của Laravel cho phép làm giao diện động (bấm nút,
 > tải lại một phần trang) mà **không cần viết JavaScript/jQuery**. GP247 2.0 dùng Livewire
@@ -317,6 +319,54 @@ Chỉ làm bước này nếu plugin của bạn có **trang công khai (public)
    Khối này có `class_exists` bảo vệ, nên nếu website **không** cài `gp247/front` thì plugin
    vẫn cài đặt bình thường (không lỗi).
 
+### Bước 8b — (Tùy chọn) Đăng ký page-type cho LayoutBlock
+
+Chỉ làm bước này nếu plugin của bạn có **trang storefront (public) riêng** (ví dụ trang danh
+sách/chi tiết của plugin) và bạn muốn admin **cắm được khối LayoutBlock** (banner, HTML, view…)
+hiển thị đúng trên các trang đó.
+
+Bối cảnh: mỗi trang storefront phát một "page-type" qua biến `$layout_page` khi render (controller
+của bạn truyền `'layout_page' => 'myplugin_index'` vào `view()`). Màn admin "Layout block" chỉ liệt
+kê được các page-type **đã đăng ký** vào registry `config('gp247-config.front.layout_page')`. Vì vậy
+plugin có trang riêng phải tự đăng ký page-type của mình — cùng cách plugin đăng ký sitemap ở Bước 8.
+
+1. Đảm bảo controller của plugin truyền `layout_page` khi render trang public, ví dụ:
+
+   ```php
+   return view($view, [
+       // ... dữ liệu khác ...
+       'layout_page' => 'myplugin_index',   // token page-type của trang này
+   ]);
+   ```
+
+2. Mở `Provider.php`, **thêm** khối sau vào bên trong đoạn `if (gp247_extension_check_active(...))`:
+
+   ```php
+   if (class_exists('GP247\Front\Controllers\RootFrontController')) {
+       $layoutPage = config('gp247-config.front.layout_page', []);
+       // Lưu KEY đa ngôn ngữ (KHÔNG render sẵn) — admin sẽ tự render theo ngôn ngữ đang xem.
+       $layoutPage['myplugin_index'] = $extensionPath.'::lang.layout_block_page.myplugin_index';
+       config(['gp247-config.front.layout_page' => $layoutPage]);
+   }
+   ```
+
+   - `token` (`myplugin_index`) **phải trùng** giá trị `$layout_page` controller của bạn phát ra, nếu
+     không admin chọn xong khối vẫn không hiển thị.
+   - Giá trị là **key đa ngôn ngữ** (trỏ tới file `Lang` của plugin), không phải chuỗi đã dịch sẵn —
+     để dropdown admin hiển thị đúng theo locale đang xem.
+   - Khối có `class_exists` bảo vệ, nên website không cài `gp247/front` thì bỏ qua, plugin vẫn cài
+     bình thường.
+
+3. Thêm dòng ngôn ngữ tương ứng vào file `Lang/vi/lang.php` và `Lang/en/lang.php` của plugin
+   (mảng `layout_block_page`), ví dụ `'myplugin_index' => 'Trang danh sách plugin'`.
+
+> Plugin `News` (`app/GP247/Plugins/News/Provider.php`) là ví dụ tham chiếu: nó đăng ký
+> `news_index`/`news_category`/`news_detail` theo đúng cách này.
+
+> Lưu ý phân biệt với **template**: nếu bạn làm *template* (giao diện) chứ không phải plugin, bạn
+> **không** đăng ký page-type — template chỉ hiển thị theo `$layout_page` mà controller đã phát,
+> không định nghĩa page-type mới.
+
 ### Bước 9 — Kiểm tra lại
 
 1. Xóa cache của Laravel để nạp lại route/view/config mới:
@@ -343,6 +393,7 @@ Chỉ làm bước này nếu plugin của bạn có **trang công khai (public)
 - [ ] `AppConfig.php`: `disable()` dùng `gp247_language_render(...)` thay cho `'Error disable'`.
 - [ ] (Nếu dùng Livewire) Có `Livewire/AdminLivewire.php` + `Views/livewire.blade.php`, route đã thêm.
 - [ ] (Nếu có trang public) Có `Seo.php` + khối đăng ký trong `Provider.php`.
+- [ ] (Nếu có trang public riêng cần cắm LayoutBlock) Đã đăng ký page-type (`token => lang-key`) vào `config('gp247-config.front.layout_page')` trong `Provider.php`, token trùng `$layout_page` controller phát.
 - [ ] Đã chạy `php artisan optimize:clear` và mở thử màn admin thành công.
 - [ ] Giao diện hiển thị đúng ở cả nền sáng và nền tối (dark-mode).
 
@@ -397,4 +448,4 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 ---
 
-<sub>📅 **Cập nhật lần cuối (last-updated):** 2026-07-28 03:52 UTC · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối (last-updated):** 2026-07-29 · ✍️ **Tác giả (Author):** GP247</sub>
