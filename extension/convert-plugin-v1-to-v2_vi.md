@@ -448,4 +448,4 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 ---
 
-<sub>📅 **Cập nhật lần cuối (last-updated):** 2026-07-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-07-29 · ✍️ **Tác giả (Author):** GP247</sub>
