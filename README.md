@@ -17,6 +17,9 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
 | --- | --- | --- |
+| [Creating a Plugin (v2 standard)](./extension/create-plugin.md) | Build a new v2-standard plugin that updates safely | 2026-07-30 |
+| [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-07-30 |
+| [Installing Plugins & Templates](./extension/install-extension.md) | 3 methods: online (library), import (.zip), manual | 2026-07-30 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-07-30 |
 
 ### System
