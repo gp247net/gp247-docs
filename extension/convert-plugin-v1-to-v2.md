@@ -408,8 +408,11 @@ without template↔plugin coupling. Instead of the old jQuery render/script, do:
 
 The checkout **discovers** the plugin automatically (`code='total'` + implements the interface) and
 renders your fragment in the total-method zone. A total plugin that does **not** implement the
-interface is hidden from the 2.0 checkout (with a logged warning) until you upgrade it. Your old
-`discount.process`/`discount.remove` HTTP endpoints may stay for headless/API use.
+interface is hidden from the 2.0 checkout (with a logged warning) until you upgrade it. The contract
+fully replaces the old jQuery AJAX path (`render.blade.php` + `script.blade.php` + the
+`discount.process`/`discount.remove` endpoints + the `#gp247_showTotal` DOM swap) — the reference
+`ShopDiscount` plugin **removed** all of it, since nothing in the 2.0 UI calls it. Only keep such an
+HTTP endpoint if you genuinely expose a headless/API entry of your own; it is not part of the checkout UI.
 
 > Template authors: to support total-method plugins, a custom checkout view only needs two includes
 > at the confirm step: `@include('gp247-shop-front::partials.checkout_total_methods')` and

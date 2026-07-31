@@ -404,8 +404,11 @@ render/script jQuery cũ, hãy làm:
 
 Checkout **tự động phát hiện** plugin (`code='total'` + implements interface) và render fragment vào
 vùng total-method. Plugin total **không** implements interface sẽ bị ẩn khỏi checkout 2.0 (có ghi
-`Log::warning`) tới khi bạn nâng cấp. Endpoint HTTP cũ `discount.process`/`discount.remove` có thể
-giữ cho headless/API.
+`Log::warning`) tới khi bạn nâng cấp. Contract mới **thay thế hoàn toàn** đường AJAX jQuery cũ
+(`render.blade.php` + `script.blade.php` + endpoint `discount.process`/`discount.remove` + swap DOM
+`#gp247_showTotal`) — plugin tham chiếu `ShopDiscount` đã **xoá sạch** vì không nơi nào trong UI 2.0
+gọi tới. Chỉ giữ endpoint HTTP như vậy nếu bạn thực sự cần một entry headless/API của riêng mình; nó
+không thuộc UI checkout.
 
 > Người viết template: để hỗ trợ plugin total-method, view checkout tùy biến chỉ cần 2 include ở bước
 > xác nhận: `@include('gp247-shop-front::partials.checkout_total_methods')` và
