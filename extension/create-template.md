@@ -217,6 +217,14 @@ Besides `screen/`, the shop package has other view folders you can override the 
 `auth/`, `blocks/`, `common/`, `livewire/`) — place them in the template at the same sub-path as in the
 shop package.
 
+> ⭐ **If you override the checkout wizard view** (`livewire/shop_checkout-wizard.blade.php`), keep the
+> two total-method includes at the confirm step:
+> `@include('gp247-shop-front::partials.checkout_total_methods')` and
+> `@include('gp247-shop-front::partials.order_totals')`. They render every coupon/point plugin
+> (the `CheckoutTotalMethod` contract) generically. Removing them silently hides the coupon input for
+> **all** total-method plugins. Any fragment they render must use only UI classes your template's
+> precompiled CSS actually ships (a brand-new Tailwind class won't exist in the built CSS).
+
 ### 6.3. How to reference a full template (with shop): publish the `gp247/shop` views
 
 So you don't have to write shop pages from scratch, **publish the default `gp247/shop` views out** as a

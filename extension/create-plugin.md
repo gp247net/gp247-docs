@@ -27,6 +27,13 @@ Before you start you need:
 3. To know what your plugin will do: admin-only, or also have a **public (storefront) page** for visitors.
    This determines whether you need the `Seo.php` / `FrontController.php` files.
 
+> ⭐ **Checkout total-method plugins** (coupon / loyalty point, `configCode: "Total"`) are a special
+> case: besides the usual `getInfo()`, the plugin's `AppConfig` must implement
+> `GP247\Shop\Front\Contracts\CheckoutTotalMethod` (`checkoutApply` / `checkoutRemove` / `checkoutView`)
+> so the Livewire checkout can show its input on **any** template. See
+> [convert-plugin-v1-to-v2.md](convert-plugin-v1-to-v2.md) step 8c and the `ShopDiscount` plugin for the
+> reference implementation.
+
 > Quick glossary:
 > - **Plugin (extension)**: a feature package plugged into GP247 that can be enabled/disabled/removed in admin.
 > - **`configKey`**: the plugin's unique identifier, which **must match the plugin folder name**. For a plugin `MyBanner`, `configKey` is `MyBanner`.

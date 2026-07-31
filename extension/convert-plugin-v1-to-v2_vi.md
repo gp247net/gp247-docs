@@ -367,6 +367,52 @@ plugin có trang riêng phải tự đăng ký page-type của mình — cùng c
 > **không** đăng ký page-type — template chỉ hiển thị theo `$layout_page` mà controller đã phát,
 > không định nghĩa page-type mới.
 
+---
+
+### Bước 8c — (Tùy chọn) Plugin total-method (coupon/point) hiển thị ở checkout
+
+Chỉ làm khi plugin là **total-method** (`configCode: "Total"` — vd coupon hoặc plugin tích điểm)
+cần hiện ô nhập ở trang thanh toán. Ở v1, template checkout include thẳng `Views/render.blade.php`
++ `Views/script.blade.php` (jQuery) của plugin. GP247 2.0 thay bằng một **contract** để mọi template
+(mặc định hay tùy biến) làm việc được với mọi plugin total-method, không phụ thuộc lẫn nhau. Thay cho
+render/script jQuery cũ, hãy làm:
+
+1. **Implement contract trên `AppConfig.php`.** Thêm `implements CheckoutTotalMethod`
+   (`use GP247\Shop\Front\Contracts\CheckoutTotalMethod;`) và 3 method — tái dùng logic
+   validate/session sẵn có:
+
+   ```php
+   public function checkoutApply(array $payload): array   // validate + set session('totalMethod')[key]; trả ['error'=>0|1,'msg'=>...]
+   public function checkoutRemove(): void                 // unset session('totalMethod')[key]
+   public function checkoutView(): ?string                // vd return $this->appPath.'::checkout'
+   ```
+
+2. **Tạo fragment view** theo tên `checkoutView()` (vd `Views/checkout.blade.php`). Nó render **bên
+   trong** component Livewire của checkout, nên dùng `wire:` — không jQuery, không fetch:
+
+   ```blade
+   <input type="text" class="input" wire:model="totalPayload.{{ $pluginKey }}.code">
+   <button type="button" wire:click="applyTotal('{{ $pluginKey }}')">{{ gp247_language_render('cart.apply') }}</button>
+   ```
+
+   Chỉ dùng **UI token template đã có sẵn** (`input`, `btn-primary`, `btn-ghost`, `card`,
+   `text-ink-*`…). Một class Tailwind hoàn toàn mới sẽ không có trong CSS đã build của template và
+   **lặng lẽ không có style**.
+
+3. Layer dữ liệu giữ nguyên: `session('totalMethod')` → `getInfo()` → `ShopOrderTotal` →
+   `addOrder()`. Giữ nguyên `getInfo()`.
+
+Checkout **tự động phát hiện** plugin (`code='total'` + implements interface) và render fragment vào
+vùng total-method. Plugin total **không** implements interface sẽ bị ẩn khỏi checkout 2.0 (có ghi
+`Log::warning`) tới khi bạn nâng cấp. Endpoint HTTP cũ `discount.process`/`discount.remove` có thể
+giữ cho headless/API.
+
+> Người viết template: để hỗ trợ plugin total-method, view checkout tùy biến chỉ cần 2 include ở bước
+> xác nhận: `@include('gp247-shop-front::partials.checkout_total_methods')` và
+> `@include('gp247-shop-front::partials.order_totals')`.
+
+---
+
 ### Bước 9 — Kiểm tra lại
 
 1. Xóa cache của Laravel để nạp lại route/view/config mới:
@@ -394,6 +440,7 @@ plugin có trang riêng phải tự đăng ký page-type của mình — cùng c
 - [ ] (Nếu dùng Livewire) Có `Livewire/AdminLivewire.php` + `Views/livewire.blade.php`, route đã thêm.
 - [ ] (Nếu có trang public) Có `Seo.php` + khối đăng ký trong `Provider.php`.
 - [ ] (Nếu có trang public riêng cần cắm LayoutBlock) Đã đăng ký page-type (`token => lang-key`) vào `config('gp247-config.front.layout_page')` trong `Provider.php`, token trùng `$layout_page` controller phát.
+- [ ] (Nếu là plugin total-method — coupon/point) `AppConfig` implements `CheckoutTotalMethod` và có fragment `checkoutView()`, chỉ dùng UI token template đã có sẵn.
 - [ ] Đã chạy `php artisan optimize:clear` và mở thử màn admin thành công.
 - [ ] Giao diện hiển thị đúng ở cả nền sáng và nền tối (dark-mode).
 

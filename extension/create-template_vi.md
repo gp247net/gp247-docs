@@ -228,6 +228,14 @@ làm bản tham khảo, rồi chép sang template của bạn để chỉnh:
 2. Mở thư mục vừa publish (`app/GP247/Templates/GP247Front`) để xem cấu trúc đầy đủ của một template có
    cả shop: `screen/shop_*.blade.php`, `account/`, `auth/`, `blocks/`, `common/`, `livewire/`...
 
+> ⭐ **Nếu bạn override view wizard checkout** (`livewire/shop_checkout-wizard.blade.php`), phải giữ 2
+> include vùng total-method ở bước xác nhận:
+> `@include('gp247-shop-front::partials.checkout_total_methods')` và
+> `@include('gp247-shop-front::partials.order_totals')`. Chúng render mọi plugin coupon/point (contract
+> `CheckoutTotalMethod`) một cách tổng quát. Bỏ đi sẽ **lặng lẽ** làm mất ô nhập mã của **mọi** plugin
+> total-method. Fragment chúng render chỉ được dùng class UI mà CSS đã build của template có sẵn (class
+> Tailwind hoàn toàn mới sẽ không tồn tại trong CSS đã build).
+
 3. **Chép các file trang shop bạn muốn tùy chỉnh sang template của bạn**, giữ nguyên đường dẫn con.
    Ví dụ muốn tùy chỉnh trang danh sách sản phẩm cho `MyShopSkin`:
 

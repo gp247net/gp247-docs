@@ -373,6 +373,50 @@ its page-type — the same way a plugin registers its sitemap in Step 8.
 > plugin, you do **not** register page-types — a template only renders based on the `$layout_page`
 > the controller already emits; it does not define new page-types.
 
+### Step 8c — (Optional) Total-method plugin (coupon/point) shown at checkout
+
+Do this only when the plugin is a **total-method** (`configCode: "Total"` — e.g. a coupon or a
+loyalty-point plugin) that must show an input at checkout. In v1 the checkout template included the
+plugin's `Views/render.blade.php` + `Views/script.blade.php` (jQuery) directly. GP247 2.0 replaced
+that with a **contract** so any template (default or custom) works with any total-method plugin
+without template↔plugin coupling. Instead of the old jQuery render/script, do:
+
+1. **Implement the contract on `AppConfig.php`.** Add `implements CheckoutTotalMethod`
+   (`use GP247\Shop\Front\Contracts\CheckoutTotalMethod;`) and three methods — reuse your existing
+   validation/session logic:
+
+   ```php
+   public function checkoutApply(array $payload): array   // validate + set session('totalMethod')[key]; return ['error'=>0|1,'msg'=>...]
+   public function checkoutRemove(): void                 // unset session('totalMethod')[key]
+   public function checkoutView(): ?string                // e.g. return $this->appPath.'::checkout'
+   ```
+
+2. **Add the fragment view** named by `checkoutView()` (e.g. `Views/checkout.blade.php`). It renders
+   inside the checkout Livewire component, so bind with `wire:` — no jQuery, no fetch:
+
+   ```blade
+   <input type="text" class="input" wire:model="totalPayload.{{ $pluginKey }}.code">
+   <button type="button" wire:click="applyTotal('{{ $pluginKey }}')">{{ gp247_language_render('cart.apply') }}</button>
+   ```
+
+   Use only **storefront UI tokens the template already ships** (`input`, `btn-primary`, `btn-ghost`,
+   `card`, `text-ink-*`…). A brand-new Tailwind class won't exist in the template's pre-built CSS and
+   will silently have no style.
+
+3. The data layer is unchanged: `session('totalMethod')` → `getInfo()` → `ShopOrderTotal` →
+   `addOrder()`. Keep your `getInfo()` as-is.
+
+The checkout **discovers** the plugin automatically (`code='total'` + implements the interface) and
+renders your fragment in the total-method zone. A total plugin that does **not** implement the
+interface is hidden from the 2.0 checkout (with a logged warning) until you upgrade it. Your old
+`discount.process`/`discount.remove` HTTP endpoints may stay for headless/API use.
+
+> Template authors: to support total-method plugins, a custom checkout view only needs two includes
+> at the confirm step: `@include('gp247-shop-front::partials.checkout_total_methods')` and
+> `@include('gp247-shop-front::partials.order_totals')`.
+
+---
+
 ### Step 9 — Verify
 
 1. Clear Laravel's cache so the new routes/views/config are reloaded:
@@ -400,6 +444,7 @@ its page-type — the same way a plugin registers its sitemap in Step 8.
 - [ ] (If using Livewire) `Livewire/AdminLivewire.php` + `Views/livewire.blade.php` exist, route added.
 - [ ] (If it has public pages) `Seo.php` + registration block in `Provider.php` exist.
 - [ ] (If it has its own public page needing LayoutBlock) Registered the page-type (`token => lang-key`) into `config('gp247-config.front.layout_page')` in `Provider.php`, with the token matching the `$layout_page` the controller emits.
+- [ ] (If it is a total-method plugin — coupon/point) `AppConfig` implements `CheckoutTotalMethod` and a `checkoutView()` fragment exists, using only the template's existing UI tokens.
 - [ ] Ran `php artisan optimize:clear` and opened the admin screen successfully.
 - [ ] The UI displays correctly in both light mode and dark mode.
 
