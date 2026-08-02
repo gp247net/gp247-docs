@@ -228,7 +228,9 @@ làm bản tham khảo, rồi chép sang template của bạn để chỉnh:
 2. Mở thư mục vừa publish (`app/GP247/Templates/GP247Front`) để xem cấu trúc đầy đủ của một template có
    cả shop: `screen/shop_*.blade.php`, `account/`, `auth/`, `blocks/`, `common/`, `livewire/`...
 
-> ⭐ **Nếu bạn override view wizard checkout** (`livewire/shop_checkout-wizard.blade.php`), phải giữ 2
+> ⭐ Plugin total-method (coupon/point) **tự động** hoạt động khi bạn **không** override view checkout —
+> bản default của `gp247/shop` đã render sẵn vùng total-method (cách khuyến nghị). **Chỉ khi bạn override
+> view wizard checkout** (`livewire/shop_checkout-wizard.blade.php`) để đổi giao diện, phải giữ 2
 > include vùng total-method ở bước xác nhận:
 > `@include('gp247-shop-front::partials.checkout_total_methods')` và
 > `@include('gp247-shop-front::partials.order_totals')`. Chúng render mọi plugin coupon/point (contract

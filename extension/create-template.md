@@ -217,8 +217,10 @@ Besides `screen/`, the shop package has other view folders you can override the 
 `auth/`, `blocks/`, `common/`, `livewire/`) — place them in the template at the same sub-path as in the
 shop package.
 
-> ⭐ **If you override the checkout wizard view** (`livewire/shop_checkout-wizard.blade.php`), keep the
-> two total-method includes at the confirm step:
+> ⭐ Total-method plugins (coupon/point) work **automatically** when you do **not** override the checkout
+> view — the `gp247/shop` default already renders the total-method zone (recommended path). **Only if you
+> override the checkout wizard view** (`livewire/shop_checkout-wizard.blade.php`) for custom styling, keep
+> the two total-method includes at the confirm step:
 > `@include('gp247-shop-front::partials.checkout_total_methods')` and
 > `@include('gp247-shop-front::partials.order_totals')`. They render every coupon/point plugin
 > (the `CheckoutTotalMethod` contract) generically. Removing them silently hides the coupon input for
