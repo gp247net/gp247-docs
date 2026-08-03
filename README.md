@@ -4,7 +4,7 @@
 
 ## Introduction
 This is the shared GP247 documentation repo. This page is the **index** listing all documents in the
-repo with links to each one. Documents are grouped by topic (API, extensions/plugins, system).
+repo with links to each one. Documents are grouped by topic (API, extensions/plugins, system, S-Cart).
 
 ## Document list
 
@@ -28,6 +28,11 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for GP247 command-line commands | 2026-07-30 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-07-30 |
 
+### S-Cart (store)
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [Tax in GP247](./s-cart/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
+
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-04 · ✍️ **Author:** GP247</sub>

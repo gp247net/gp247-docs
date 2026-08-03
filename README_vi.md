@@ -4,7 +4,7 @@
 
 ## Giới thiệu
 Đây là repo tài liệu chung của GP247. Trang này là **mục lục** liệt kê toàn bộ tài liệu trong repo và
-link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API, mở rộng/plugin, hệ thống).
+link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API, mở rộng/plugin, hệ thống, S-Cart).
 
 ## Danh sách tài liệu
 
@@ -28,6 +28,11 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu các lệnh dòng lệnh của GP247 | 2026-07-30 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-07-30 |
 
+### S-Cart (bán hàng)
+| Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
+| --- | --- | --- |
+| [Thuế trong GP247](./s-cart/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-04 · ✍️ **Tác giả (Author):** GP247</sub>
