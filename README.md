@@ -32,6 +32,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | Document | Summary | Last updated |
 | --- | --- | --- |
 | [Tax in GP247](./s-cart/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
+| [Product Bundle (Combo)](./s-cart/product-bundle.md) | Create a combo product of several child products; price & stock | 2026-08-04 |
 
 ---
 
