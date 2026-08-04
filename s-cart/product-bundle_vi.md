@@ -144,37 +144,47 @@ Lưu ở cột `shop_product.kind`.
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi không thấy chỗ chọn loại "Gói (Build)" khi tạo sản phẩm?**
-Bạn cần bật tuỳ chọn `product_kind` trong Cấu hình cửa hàng trước (xem Mục 2). Nếu tắt, mọi sản phẩm mặc
+
+→ Bạn cần bật tuỳ chọn `product_kind` trong Cấu hình cửa hàng trước (xem Mục 2). Nếu tắt, mọi sản phẩm mặc
 định là Đơn lẻ và phần chọn loại bị ẩn.
 
 **Câu 2: Giá gói có tự cộng từ giá các sản phẩm con không?**
-Không. Bạn **tự đặt giá** cho gói. GP247 không tự tính tổng — bạn toàn quyền định giá combo.
+
+→ Không. Bạn **tự đặt giá** cho gói. GP247 không tự tính tổng — bạn toàn quyền định giá combo.
 
 **Câu 3: Khách mua 1 gói thì kho trừ thế nào?**
-Trừ 1 ở kho gói, và trừ ở kho **từng sản phẩm con** theo số lượng khai báo (ví dụ gói có 2 chai → trừ 2 chai).
+
+→ Trừ 1 ở kho gói, và trừ ở kho **từng sản phẩm con** theo số lượng khai báo (ví dụ gói có 2 chai → trừ 2 chai).
 
 **Câu 4: Bundle (Build) khác Nhóm (Group) ở chỗ nào?**
-Build là **combo bán được**, có giá và trừ kho con. Group chỉ **gom nhóm trưng bày**, không bán, không giá,
+
+→ Build là **combo bán được**, có giá và trừ kho con. Group chỉ **gom nhóm trưng bày**, không bán, không giá,
 không thêm vào giỏ.
 
 **Câu 5: Tôi gán được thuộc tính (size, màu) cho sản phẩm gói không?**
-Không. Thuộc tính/biến thể chỉ dành cho sản phẩm Đơn lẻ. Gói không dùng biến thể.
+
+→ Không. Thuộc tính/biến thể chỉ dành cho sản phẩm Đơn lẻ. Gói không dùng biến thể.
 
 **Câu 6: Sản phẩm con phải tạo trước không?**
-Nên có trước, vì bạn tìm sản phẩm con theo tên/SKU khi lắp vào gói. Hãy tạo các sản phẩm con (Đơn lẻ) trước.
+
+→ Nên có trước, vì bạn tìm sản phẩm con theo tên/SKU khi lắp vào gói. Hãy tạo các sản phẩm con (Đơn lẻ) trước.
 
 **Câu 7: Tôi đặt khuyến mãi cho gói được không?**
-Được. Sản phẩm gói dùng khuyến mãi giống sản phẩm Đơn lẻ.
+
+→ Được. Sản phẩm gói dùng khuyến mãi giống sản phẩm Đơn lẻ.
 
 **Câu 8: Sửa gói (thêm/bớt con, đổi số lượng) có được không?**
-Được. Mở sản phẩm gói, vào tab Cấu thành, chỉnh rồi Lưu. Danh sách con cũ sẽ được thay bằng danh sách mới.
+
+→ Được. Mở sản phẩm gói, vào tab Cấu thành, chỉnh rồi Lưu. Danh sách con cũ sẽ được thay bằng danh sách mới.
 
 **Câu 9: Một sản phẩm con hết kho thì gói còn bán được không?**
-Hệ thống vẫn trừ kho con khi bán; bạn nên kiểm tra tồn kho các con và tồn kho gói cho khớp thực tế để tránh
+
+→ Hệ thống vẫn trừ kho con khi bán; bạn nên kiểm tra tồn kho các con và tồn kho gói cho khớp thực tế để tránh
 bán quá số hàng có.
 
 **Câu 10: Tôi tắt `product_kind` sau khi đã tạo gói thì sao?**
-Các sản phẩm sẽ bị coi là Đơn lẻ và phần chọn loại bị ẩn. Dữ liệu gói cũ vẫn nằm trong cơ sở dữ liệu, chỉ
+
+→ Các sản phẩm sẽ bị coi là Đơn lẻ và phần chọn loại bị ẩn. Dữ liệu gói cũ vẫn nằm trong cơ sở dữ liệu, chỉ
 là không còn hiển thị lựa chọn loại trên form.
 
 ---

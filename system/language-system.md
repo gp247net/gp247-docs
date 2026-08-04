@@ -204,46 +204,56 @@ php artisan gp247:language-update
 ## Q&A
 
 **Q1: I edited a lang file in `vendor/gp247/core/src/Lang/vi/...` but the site text didn't change?**
-That's by design. The DB version (`languages`) **always takes priority** over files. Edit the string
+
+→ That's by design. The DB version (`languages`) **always takes priority** over files. Edit the string
 in Admin → *Language string manager* instead of editing the file.
 
 **Q2: Where is the fastest place to change a string?**
-Admin → **Language string manager** (`/language_manager`), filter by keyword, edit inline and save.
+
+→ Admin → **Language string manager** (`/language_manager`), filter by keyword, edit inline and save.
 No deploy or command needed.
 
 **Q3: What's the difference between `gp247:core-update` and `gp247:language-update`?**
-`core-update` is **safe** — it only adds missing keys and keeps your edits. `language-update`
+
+→ `core-update` is **safe** — it only adds missing keys and keeps your edits. `language-update`
 **overwrites** every string back to the package defaults. To keep customizations → use `core-update`;
 to reset to the latest defaults → use `language-update` (back up first).
 
 **Q4: I added a new language but the site is still blank in that language?**
-Adding a language only creates a row in `admin_language`; there are **no** translations yet. You must
+
+→ Adding a language only creates a row in `admin_language`; there are **no** translations yet. You must
 enter the strings for that locale in the *Language string manager* (section 3.3), or provide your own
 seeder.
 
 **Q5: Why can't I delete Vietnamese / English?**
-The two base languages (`vi`, `en`) are protected by the `GP247_GUARD_LANGUAGE` constant so the
+
+→ The two base languages (`vi`, `en`) are protected by the `GP247_GUARD_LANGUAGE` constant so the
 system always has a standard language to fall back to. You can hide them elsewhere, but not remove
 them from the list.
 
 **Q6: Where do I change the site's default language?**
-The display locale prioritizes `session('locale')` → the store's default language →
+
+→ The display locale prioritizes `session('locale')` → the store's default language →
 `config('app.locale')`. To change the site-wide default, adjust the store's default language and/or
 `APP_LOCALE` in `.env`.
 
 **Q7: Does GP247 detect language from the URL like `/vi/...`?**
-No. The language is driven by **session + the store's default language**, not by a URL prefix.
+
+→ No. The language is driven by **session + the store's default language**, not by a URL prefix.
 
 **Q8: What is `position` in the `languages` table for?**
-It is a **grouping label** that helps filter/search strings in admin (e.g. `action`, `store.admin`).
+
+→ It is a **grouping label** that helps filter/search strings in admin (e.g. `action`, `store.admin`).
 It does not affect which string is displayed — that is decided by the `code` + `location` pair.
 
 **Q9: Are translation strings cached long-term?**
-No. There is only a **per-request cache** (each locale queries the DB once per page load). Edits in
+
+→ No. There is only a **per-request cache** (each locale queries the DB once per page load). Edits in
 admin take effect on the very next page load.
 
 **Q10: The `shop` package has no on-disk lang directory — where does its text come from?**
-All shop strings live in the DB (`languages`), loaded by `DataShopLanguageSeeder` at install/update
+
+→ All shop strings live in the DB (`languages`), loaded by `DataShopLanguageSeeder` at install/update
 time. That is why `shop` needs no on-disk lang files.
 
 ---

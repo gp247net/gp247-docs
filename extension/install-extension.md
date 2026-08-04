@@ -192,45 +192,55 @@ Steps:
 ## 8. Q&A
 
 **Q1: Is installing a plugin different from installing a template?**
-The installation is identical (the same 3 methods). Only the place differs: plugins under the **Plugin**
+
+→ The installation is identical (the same 3 methods). Only the place differs: plugins under the **Plugin**
 menu, templates under the **Template** menu. A template additionally must be **Activated** after
 installing for it to take effect.
 
 **Q2: I don't see the "Online" menu in admin?**
-Your website hasn't enabled the GP247 library connection (`api_plugins`/`api_templates`). Use Method 2
+
+→ Your website hasn't enabled the GP247 library connection (`api_plugins`/`api_templates`). Use Method 2
 (Import) or Method 3 (manual).
 
 **Q3: What's the first thing to do to use the online library?**
-Register the **API License** (free) once in admin — see Step 0 in Method 1. This key is auto-saved into
+
+→ Register the **API License** (free) once in admin — see Step 0 in Method 1. This key is auto-saved into
 the `GP247_API_LICENSE` variable in `.env`, letting your website connect and browse the extension store.
 
 **Q4: How do I install a paid extension?**
-Install it online as usual, but besides the free API License, a paid extension also needs a **separate
+
+→ Install it online as usual, but besides the free API License, a paid extension also needs a **separate
 license** for your domain (after purchase). Free extensions don't need one.
 
 **Q5: What structure must the `.zip` have to be importable?**
-The `.zip` must contain a `gp247.json` file (along with `AppConfig.php` and the extension's files).
+
+→ The `.zip` must contain a `gp247.json` file (along with `AppConfig.php` and the extension's files).
 Don't add an extra parent folder layer that pushes `gp247.json` too deep. The file must also be ≤ 50MB;
 larger than that, install manually.
 
 **Q6: I installed manually but admin doesn't show the extension?**
-Check: did you copy to the right folder `app/GP247/Plugins/<Key>` or `app/GP247/Templates/<Key>`, does
+
+→ Check: did you copy to the right folder `app/GP247/Plugins/<Key>` or `app/GP247/Templates/<Key>`, does
 the folder have `AppConfig.php`, and does `<Key>` match the `configKey` in `gp247.json`? Then run
 `php artisan optimize:clear` and reload the admin page.
 
 **Q7: Why does importing a template jump back to the Plugin list?**
-This is a current characteristic of the system — the template files are still installed in the right
+
+→ This is a current characteristic of the system — the template files are still installed in the right
 place. Just go to the **Template** menu to see and activate it.
 
 **Q8: Do I have to clear the cache manually after installing?**
-Usually not — GP247 clears the cache after installing. If it isn't updated, run `php artisan optimize:clear`.
+
+→ Usually not — GP247 clears the cache after installing. If it isn't updated, run `php artisan optimize:clear`.
 
 **Q9: Can I install a new version over the old one by importing?**
-You shouldn't. Import refuses if the `configKey` already exists. To go to a newer version, use the
+
+→ You shouldn't. Import refuses if the `configKey` already exists. To go to a newer version, use the
 **update** feature — it preserves the settings stored in the database.
 
 **Q10: How do I uninstall/delete an extension, and how do I avoid accidentally deleting the source?**
-The extension list has 2 deletion levels: **"Delete data"** (removes only the data/config in the
+
+→ The extension list has 2 deletion levels: **"Delete data"** (removes only the data/config in the
 database, **keeps the source files**) and **"Remove files"** (removes both the data and all source files
 on the server). Note: you can't delete a template that's currently active (switch to another template first).
 

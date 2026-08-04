@@ -194,44 +194,54 @@ php artisan gp247:language-update
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi sửa file lang trong `vendor/gp247/core/src/Lang/vi/...` mà site không đổi chữ?**
-Đúng như thiết kế. Bản trong DB (`languages`) **luôn được ưu tiên** hơn file. Hãy sửa câu chữ trong
+
+→ Đúng như thiết kế. Bản trong DB (`languages`) **luôn được ưu tiên** hơn file. Hãy sửa câu chữ trong
 Admin → *Quản lý chuỗi ngôn ngữ* thay vì sửa file.
 
 **Câu 2: Đổi một câu chữ thì làm ở đâu nhanh nhất?**
-Admin → **Quản lý chuỗi ngôn ngữ** (`/language_manager`), lọc theo từ khóa, sửa trực tiếp rồi lưu.
+
+→ Admin → **Quản lý chuỗi ngôn ngữ** (`/language_manager`), lọc theo từ khóa, sửa trực tiếp rồi lưu.
 Không cần deploy hay chạy lệnh.
 
 **Câu 3: Khác nhau giữa `gp247:core-update` và `gp247:language-update`?**
-`core-update` **an toàn** — chỉ thêm mã còn thiếu, giữ nguyên chỉnh sửa của bạn. `language-update`
+
+→ `core-update` **an toàn** — chỉ thêm mã còn thiếu, giữ nguyên chỉnh sửa của bạn. `language-update`
 **ghi đè** mọi chuỗi về bản mặc định của gói. Muốn giữ tùy biến → dùng `core-update`; muốn lấy lại
 bản chuẩn mới nhất → dùng `language-update` (nhớ sao lưu trước).
 
 **Câu 4: Thêm ngôn ngữ mới nhưng site vẫn trống chữ ở ngôn ngữ đó?**
-Thêm ngôn ngữ chỉ tạo dòng trong `admin_language`, **chưa có** bản dịch. Bạn phải nhập câu chữ cho
+
+→ Thêm ngôn ngữ chỉ tạo dòng trong `admin_language`, **chưa có** bản dịch. Bạn phải nhập câu chữ cho
 locale đó trong *Quản lý chuỗi ngôn ngữ* (mục 3.3), hoặc cung cấp seeder riêng.
 
 **Câu 5: Vì sao không xóa được tiếng Việt / tiếng Anh?**
-Hai ngôn ngữ gốc (`vi`, `en`) được bảo vệ bởi hằng `GP247_GUARD_LANGUAGE` để hệ thống luôn có ngôn
+
+→ Hai ngôn ngữ gốc (`vi`, `en`) được bảo vệ bởi hằng `GP247_GUARD_LANGUAGE` để hệ thống luôn có ngôn
 ngữ chuẩn để dự phòng. Bạn có thể tắt hiển thị chúng ở chỗ khác, nhưng không xóa khỏi danh sách.
 
 **Câu 6: Đổi ngôn ngữ mặc định của site ở đâu?**
-Locale hiển thị ưu tiên `session('locale')` → ngôn ngữ mặc định của store → `config('app.locale')`.
+
+→ Locale hiển thị ưu tiên `session('locale')` → ngôn ngữ mặc định của store → `config('app.locale')`.
 Để đổi mặc định toàn site, chỉnh ngôn ngữ mặc định của store (cấu hình store) và/hoặc `APP_LOCALE`
 trong `.env`.
 
 **Câu 7: GP247 có nhận ngôn ngữ theo URL kiểu `/vi/...` không?**
-Không. Ngôn ngữ được điều khiển qua **session + ngôn ngữ mặc định của store**, không qua tiền tố URL.
+
+→ Không. Ngôn ngữ được điều khiển qua **session + ngôn ngữ mặc định của store**, không qua tiền tố URL.
 
 **Câu 8: `position` trong bảng `languages` để làm gì?**
-Nó là **nhãn nhóm** giúp lọc/tìm câu chữ trong admin (ví dụ `action`, `store.admin`). Nó không ảnh
+
+→ Nó là **nhãn nhóm** giúp lọc/tìm câu chữ trong admin (ví dụ `action`, `store.admin`). Nó không ảnh
 hưởng tới việc câu chữ nào được hiển thị — việc đó do cặp `code` + `location` quyết định.
 
 **Câu 9: Chuỗi dịch có được cache lâu dài không?**
-Không. Chỉ có **cache trong phạm vi một request** (mỗi locale truy vấn DB một lần cho mỗi lần tải
+
+→ Không. Chỉ có **cache trong phạm vi một request** (mỗi locale truy vấn DB một lần cho mỗi lần tải
 trang). Sửa trong admin có hiệu lực ngay ở lần tải trang kế tiếp.
 
 **Câu 10: Gói `shop` không có thư mục lang trên ổ đĩa, vậy chữ ở đâu ra?**
-Toàn bộ chuỗi của shop nằm trong DB (`languages`), do `DataShopLanguageSeeder` nạp vào khi cài/cập
+
+→ Toàn bộ chuỗi của shop nằm trong DB (`languages`), do `DataShopLanguageSeeder` nạp vào khi cài/cập
 nhật. Đây là lý do `shop` không cần file lang trên ổ đĩa.
 
 ---

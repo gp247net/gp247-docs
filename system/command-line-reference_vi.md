@@ -440,44 +440,54 @@ Và đặt cron dọn giỏ hàng hết hạn: `php artisan gp247:shop-clear-car
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Làm sao xem nhanh toàn bộ lệnh GP247 đang có trên máy tôi?**
-Gõ `php artisan list gp247`. Terminal sẽ liệt kê mọi lệnh có tiền tố `gp247:` kèm mô tả ngắn.
+
+→ Gõ `php artisan list gp247`. Terminal sẽ liệt kê mọi lệnh có tiền tố `gp247:` kèm mô tả ngắn.
 
 **Câu 2: Chạy `gp247:core-install` báo "GP247 has been installed" thì sao?**
-Nghĩa là đã cài rồi (có file `storage/app/gp247-installed.txt`). Nếu muốn cài lại, xóa file đó rồi
+
+→ Nghĩa là đã cài rồi (có file `storage/app/gp247-installed.txt`). Nếu muốn cài lại, xóa file đó rồi
 chạy lại, hoặc dùng `php artisan gp247:core-install --force=1`.
 
 **Câu 3: Khác nhau giữa `gp247:core-update` và `gp247:language-update`?**
-`core-update` seed **an toàn** (chỉ thêm bản ghi còn thiếu, giữ nguyên chỉnh sửa của bạn).
+
+→ `core-update` seed **an toàn** (chỉ thêm bản ghi còn thiếu, giữ nguyên chỉnh sửa của bạn).
 `language-update` **ghi đè** chuỗi ngôn ngữ về đúng bản mặc định của gói. Muốn giữ text đã tùy biến
 thì dùng `core-update`; muốn lấy lại bản chuẩn mới nhất thì dùng `language-update`.
 
 **Câu 4: `gp247:shop-sample` có an toàn để chạy trên site thật không?**
-**Không.** Lệnh này **xóa sạch** dữ liệu shop hiện có trước khi tạo mẫu. Chỉ chạy trên môi trường
+
+→ **Không.** Lệnh này **xóa sạch** dữ liệu shop hiện có trước khi tạo mẫu. Chỉ chạy trên môi trường
 demo/dev.
 
 **Câu 5: Cài `gp247:shop-install` báo lỗi thiếu bảng / thiếu lớp thì sao?**
-`gp247/shop` cần `gp247/core` và `gp247/front` đã cài trước. Hãy chạy đúng thứ tự:
+
+→ `gp247/shop` cần `gp247/core` và `gp247/front` đã cài trước. Hãy chạy đúng thứ tự:
 `core-install` → `front-install` → `shop-install`.
 
 **Câu 6: Tôi không dùng bán hàng, chỉ cần website giới thiệu thì cài gì?**
-Chỉ cần `gp247:core-install` rồi `gp247:front-install`. Bỏ qua nhóm lệnh shop.
+
+→ Chỉ cần `gp247:core-install` rồi `gp247:front-install`. Bỏ qua nhóm lệnh shop.
 
 **Câu 7: `--download=1` trong `make-plugin`/`make-template` khác gì `--download=0`?**
-`--download=0` chép thẳng plugin/template vào thư mục `app/GP247/...` để dùng ngay.
+
+→ `--download=0` chép thẳng plugin/template vào thư mục `app/GP247/...` để dùng ngay.
 `--download=1` **không** chép vào app mà đóng gói thành file `.zip` trong `storage/tmp` để bạn tải
 về / mang đi nơi khác.
 
 **Câu 8: Sau khi `composer update`, giao diện admin không thay đổi?**
-Chạy `php artisan gp247:core-update`. Nếu vẫn chưa đổi, publish lại asset:
+
+→ Chạy `php artisan gp247:core-update`. Nếu vẫn chưa đổi, publish lại asset:
 `php artisan vendor:publish --tag=gp247:core-public --force`.
 
 **Câu 9: Lệnh `gp247:customize static` mà `core-update` gọi là gì, tôi có cần cài không?**
-Đó là lệnh nội bộ làm mới file tĩnh tùy biến, được cung cấp bởi lớp tùy biến của bản cài. Bạn không
+
+→ Đó là lệnh nội bộ làm mới file tĩnh tùy biến, được cung cấp bởi lớp tùy biến của bản cài. Bạn không
 gọi trực tiếp. Nếu môi trường không có nó, bước đó chỉ báo lỗi riêng và ghi log, không làm hỏng
 phần cập nhật dữ liệu.
 
 **Câu 10: Làm sao biết chính xác phiên bản core/front/shop đang chạy?**
-Chạy `php artisan gp247:core-info` (xem phiên bản core), hoặc mở file `composer.lock` và tìm
+
+→ Chạy `php artisan gp247:core-info` (xem phiên bản core), hoặc mở file `composer.lock` và tìm
 `gp247/core`, `gp247/front`, `gp247/shop`.
 
 ---

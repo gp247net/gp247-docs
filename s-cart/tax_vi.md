@@ -159,38 +159,48 @@ shop_order.tax  ==  Σ shop_order_detail.tax  ==  (subTotalWithTax − subTotal)
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi muốn tắt thuế cho cả shop thì làm sao?**
-Vào Cấu hình cửa hàng, đặt `product_tax` = **Không dùng (None)**. Cả shop sẽ ngừng tính thuế ngay, không
+
+→ Vào Cấu hình cửa hàng, đặt `product_tax` = **Không dùng (None)**. Cả shop sẽ ngừng tính thuế ngay, không
 cần sửa từng sản phẩm.
 
 **Câu 2: "Tự động (Auto)" ở ô thuế của sản phẩm nghĩa là gì?**
-Nghĩa là sản phẩm đó dùng **mức thuế mặc định** của shop (mức bạn chọn ở Bước 2). Đổi mặc định thì mọi sản
+
+→ Nghĩa là sản phẩm đó dùng **mức thuế mặc định** của shop (mức bạn chọn ở Bước 2). Đổi mặc định thì mọi sản
 phẩm để Auto tự đổi theo.
 
 **Câu 3: Giá tôi nhập cho sản phẩm đã bao gồm thuế chưa?**
-Chưa. GP247 tính thuế kiểu **cộng thêm** (exclusive): giá bạn nhập là giá **chưa thuế**, thuế được cộng
+
+→ Chưa. GP247 tính thuế kiểu **cộng thêm** (exclusive): giá bạn nhập là giá **chưa thuế**, thuế được cộng
 vào khi tính tiền.
 
 **Câu 4: Thuế của tôi là 8,5% (có số lẻ) thì nhập được không?**
-Được. Ô **Giá trị** nhận cả số lẻ, ví dụ nhập `8.5` cho 8,5%.
+
+→ Được. Ô **Giá trị** nhận cả số lẻ, ví dụ nhập `8.5` cho 8,5%.
 
 **Câu 5: Một sản phẩm có gán được nhiều loại thuế cùng lúc không?**
-Không. Mỗi sản phẩm chỉ dùng **một** mức thuế.
+
+→ Không. Mỗi sản phẩm chỉ dùng **một** mức thuế.
 
 **Câu 6: GP247 có tính thuế khác nhau theo quốc gia/vùng của khách không?**
-Không. Ở v2, thuế tính **theo sản phẩm**, không theo địa chỉ giao hàng hay quốc gia.
+
+→ Không. Ở v2, thuế tính **theo sản phẩm**, không theo địa chỉ giao hàng hay quốc gia.
 
 **Câu 7: Tôi đổi mức thuế thì các đơn hàng cũ có bị tính lại không?**
-Không. Đơn cũ giữ nguyên số thuế lúc đặt; thay đổi chỉ áp cho đơn mới.
+
+→ Không. Đơn cũ giữ nguyên số thuế lúc đặt; thay đổi chỉ áp cho đơn mới.
 
 **Câu 8: Sản phẩm tôi để "Không dùng (None)" nhưng shop vẫn có thuế mặc định thì sao?**
-Sản phẩm để **None** sẽ **không** bị tính thuế, kể cả khi shop có mức mặc định.
+
+→ Sản phẩm để **None** sẽ **không** bị tính thuế, kể cả khi shop có mức mặc định.
 
 **Câu 9: Tôi tạo mức thuế nhưng chưa thấy áp vào sản phẩm nào?**
-Tạo mức thuế mới **chưa** tự áp cho sản phẩm. Bạn cần đặt nó làm mặc định (Bước 2) hoặc gán trực tiếp cho
+
+→ Tạo mức thuế mới **chưa** tự áp cho sản phẩm. Bạn cần đặt nó làm mặc định (Bước 2) hoặc gán trực tiếp cho
 sản phẩm (Bước 3).
 
 **Câu 10: Tổng thuế trên đơn có khớp với từng dòng sản phẩm không?**
-Có. Thuế được tính và làm tròn theo **từng dòng**, nên tổng thuế của đơn luôn bằng tổng thuế các dòng.
+
+→ Có. Thuế được tính và làm tròn theo **từng dòng**, nên tổng thuế của đơn luôn bằng tổng thuế các dòng.
 
 ---
 

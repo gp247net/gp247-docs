@@ -148,40 +148,50 @@ quantity badge uses `gp247_qty_format($build->quantity)`.
 ## Q&A
 
 **Q1: I don't see the "Bundle (Build)" kind option when creating a product?**
-You must enable `product_kind` in Shop Configuration first (see Section 2). If it is off, every product
+
+→ You must enable `product_kind` in Shop Configuration first (see Section 2). If it is off, every product
 defaults to Single and the kind selector is hidden.
 
 **Q2: Is the bundle price auto-summed from the child prices?**
-No. You **set the price** for the bundle yourself. GP247 does not auto-sum — you fully control the combo price.
+
+→ No. You **set the price** for the bundle yourself. GP247 does not auto-sum — you fully control the combo price.
 
 **Q3: When a customer buys 1 bundle, how is stock deducted?**
-The bundle's stock drops by 1, and each **child product's** stock drops by its declared quantity (e.g. a
+
+→ The bundle's stock drops by 1, and each **child product's** stock drops by its declared quantity (e.g. a
 bundle with 2 bottles → 2 bottles deducted).
 
 **Q4: How does a Bundle (Build) differ from a Group?**
-Build is a **sellable combo** with a price and child-stock deduction. Group only **groups products for
+
+→ Build is a **sellable combo** with a price and child-stock deduction. Group only **groups products for
 display** — not sold, no price, cannot be added to cart.
 
 **Q5: Can I assign attributes (size, color) to a bundle product?**
-No. Attributes/variants are for Single products only. Bundles do not use variants.
+
+→ No. Attributes/variants are for Single products only. Bundles do not use variants.
 
 **Q6: Do child products need to exist first?**
-They should, because you search for children by name/SKU when adding them to the bundle. Create the child
+
+→ They should, because you search for children by name/SKU when adding them to the bundle. Create the child
 (Single) products first.
 
 **Q7: Can I set a promotion for a bundle?**
-Yes. Bundle products use promotions the same way as Single products.
+
+→ Yes. Bundle products use promotions the same way as Single products.
 
 **Q8: Can I edit a bundle (add/remove children, change quantities)?**
-Yes. Open the bundle product, go to the Composition tab, adjust, then Save. The old child list is replaced
+
+→ Yes. Open the bundle product, go to the Composition tab, adjust, then Save. The old child list is replaced
 by the new one.
 
 **Q9: If a child product is out of stock, can the bundle still be sold?**
-The system still deducts child stock on sale; you should keep child stocks and the bundle stock in sync
+
+→ The system still deducts child stock on sale; you should keep child stocks and the bundle stock in sync
 with reality to avoid overselling.
 
 **Q10: What if I turn off `product_kind` after creating bundles?**
-Products are treated as Single and the kind selector is hidden. Old bundle data stays in the database —
+
+→ Products are treated as Single and the kind selector is hidden. Old bundle data stays in the database —
 only the kind option is no longer shown on the form.
 
 ---

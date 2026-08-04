@@ -310,43 +310,53 @@ Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
 ## 10. Hỏi & Đáp (Q&A)
 
 **Câu 1: Template của tôi cài mà không thấy tác dụng gì?**
-Nhiều khả năng website **chưa cài `gp247/front`**. Template là giao diện storefront, chỉ hoạt động khi
+
+→ Nhiều khả năng website **chưa cài `gp247/front`**. Template là giao diện storefront, chỉ hoạt động khi
 có `gp247/front`. Hãy cài `gp247/front` trước.
 
 **Câu 2: Template mới của tôi không có trang sản phẩm/giỏ hàng thì website bán hàng có hỏng không?**
-Không. `gp247/shop` tự động dùng view mặc định trong gói của nó (fallback) cho những trang mà template
+
+→ Không. `gp247/shop` tự động dùng view mặc định trong gói của nó (fallback) cho những trang mà template
 không có. Website vẫn bán hàng bình thường. Xem Phần 6.1.
 
 **Câu 3: Làm sao để trang giỏ hàng hiển thị theo giao diện riêng của tôi?**
-Tạo file `screen/shop_cart.blade.php` **trong template của bạn**. `gp247/shop` sẽ ưu tiên dùng file này
+
+→ Tạo file `screen/shop_cart.blade.php` **trong template của bạn**. `gp247/shop` sẽ ưu tiên dùng file này
 thay cho bản mặc định. Xem bảng đường dẫn ở Phần 6.2.
 
 **Câu 4: Tôi muốn xem một template đầy đủ có sẵn cả trang shop để tham khảo, làm sao?**
-Chạy `php artisan vendor:publish --tag=gp247:shop-view-front`. Lệnh này xuất toàn bộ view storefront mặc
+
+→ Chạy `php artisan vendor:publish --tag=gp247:shop-view-front`. Lệnh này xuất toàn bộ view storefront mặc
 định của shop vào `app/GP247/Templates/GP247Front` để bạn xem/chép. Xem Phần 6.3.
 
 **Câu 5: Publish xong rồi, tôi có phải chép hết sang template của tôi không?**
-Không nên. Chỉ chép những trang bạn thực sự muốn đổi giao diện. Trang không chép sẽ tự dùng bản mặc định
+
+→ Không nên. Chỉ chép những trang bạn thực sự muốn đổi giao diện. Trang không chép sẽ tự dùng bản mặc định
 — vừa gọn vừa dễ hưởng cập nhật từ gói shop.
 
 **Câu 6: Đặt file shop sai chỗ thì sao — nó có bị bỏ qua không?**
-Có. Cơ chế fallback tìm theo đúng đường dẫn con (ví dụ `screen/shop_product_list.blade.php`). Đặt sai tên
+
+→ Có. Cơ chế fallback tìm theo đúng đường dẫn con (ví dụ `screen/shop_product_list.blade.php`). Đặt sai tên
 hoặc sai thư mục thì hệ thống coi như template không có, và dùng bản mặc định.
 
 **Câu 7: `gp247:shop-view-front` và `gp247:shop-view-admin` khác nhau thế nào?**
-`gp247:shop-view-front` là view **storefront** (dành cho template — cái bạn cần). `gp247:shop-view-admin`
+
+→ `gp247:shop-view-front` là view **storefront** (dành cho template — cái bạn cần). `gp247:shop-view-admin`
 là view **màn admin** của shop, không liên quan tới template giao diện khách hàng.
 
 **Câu 8: Cập nhật template có làm mất cấu hình của chủ site không?**
-Không, nếu bạn làm đúng: cập nhật ghi đè file nhưng giữ database. Mọi lựa chọn chủ site phải lưu trong
+
+→ Không, nếu bạn làm đúng: cập nhật ghi đè file nhưng giữ database. Mọi lựa chọn chủ site phải lưu trong
 `admin_config`, không lưu trong `config.php` (file sẽ bị ghi đè). Xem Phần 7.
 
 **Câu 9: Tôi thêm class Tailwind mới mà giao diện không đổi?**
-GP247 dùng Tailwind biên dịch sẵn, không JIT. Class mới chưa được build sẽ không có hiệu lực. Bạn phải
+
+→ GP247 dùng Tailwind biên dịch sẵn, không JIT. Class mới chưa được build sẽ không có hiệu lực. Bạn phải
 biên dịch lại file CSS (`npx tailwindcss ...`) rồi mới thấy tác dụng.
 
 **Câu 10: Sửa view xong mà trang vẫn hiện bản cũ?**
-Chạy `php artisan optimize:clear` để xoá cache view/route/config rồi tải lại trang. Đây là lỗi hay gặp
+
+→ Chạy `php artisan optimize:clear` để xoá cache view/route/config rồi tải lại trang. Đây là lỗi hay gặp
 nhất do Laravel còn giữ cache cũ.
 
 ---

@@ -318,43 +318,53 @@ For full details on the safe-update mechanism, see the
 ## Q&A
 
 **Q1: I installed my template but nothing seems to change?**
-Most likely the website **does not have `gp247/front` installed**. A template is the storefront look and
+
+→ Most likely the website **does not have `gp247/front` installed**. A template is the storefront look and
 only works when `gp247/front` is present. Install `gp247/front` first.
 
 **Q2: My new template has no product/cart page — will the shopping site break?**
-No. `gp247/shop` automatically uses its own default views (fallback) for pages the template doesn't have.
+
+→ No. `gp247/shop` automatically uses its own default views (fallback) for pages the template doesn't have.
 The site still sells normally. See Section 6.1.
 
 **Q3: How do I make the cart page use my own custom look?**
-Create the file `screen/shop_cart.blade.php` **inside your template**. `gp247/shop` will prefer this file
+
+→ Create the file `screen/shop_cart.blade.php` **inside your template**. `gp247/shop` will prefer this file
 over the default. See the path table in Section 6.2.
 
 **Q4: I want to look at a full template that already has all the shop pages for reference — how?**
-Run `php artisan vendor:publish --tag=gp247:shop-view-front`. This command exports all of the shop's
+
+→ Run `php artisan vendor:publish --tag=gp247:shop-view-front`. This command exports all of the shop's
 default storefront views into `app/GP247/Templates/GP247Front` for you to view/copy. See Section 6.3.
 
 **Q5: After publishing, do I have to copy everything into my template?**
-You shouldn't. Only copy the pages you actually want to restyle. Pages you don't copy will use the
+
+→ You shouldn't. Only copy the pages you actually want to restyle. Pages you don't copy will use the
 default — which is both leaner and keeps you receiving updates from the shop package.
 
 **Q6: What if I put a shop file in the wrong place — will it be ignored?**
-Yes. The fallback mechanism looks by exact sub-path (e.g. `screen/shop_product_list.blade.php`). A wrong
+
+→ Yes. The fallback mechanism looks by exact sub-path (e.g. `screen/shop_product_list.blade.php`). A wrong
 name or wrong folder means the system treats the template as not having it and uses the default.
 
 **Q7: What's the difference between `gp247:shop-view-front` and `gp247:shop-view-admin`?**
-`gp247:shop-view-front` is the **storefront** views (for templates — what you need).
+
+→ `gp247:shop-view-front` is the **storefront** views (for templates — what you need).
 `gp247:shop-view-admin` is the shop's **admin screens**, unrelated to the customer-facing template.
 
 **Q8: Does updating a template lose the site owner's settings?**
-No, if you do it right: an update overwrites files but keeps the database. Every site-owner choice must
+
+→ No, if you do it right: an update overwrites files but keeps the database. Every site-owner choice must
 be stored in `admin_config`, not in `config.php` (which gets overwritten). See Section 7.
 
 **Q9: I added a new Tailwind class but the interface didn't change?**
-GP247 uses precompiled Tailwind, not JIT. A new class that hasn't been built has no effect. You must
+
+→ GP247 uses precompiled Tailwind, not JIT. A new class that hasn't been built has no effect. You must
 recompile the CSS file (`npx tailwindcss ...`) before it takes effect.
 
 **Q10: I edited a view but the page still shows the old version?**
-Run `php artisan optimize:clear` to clear the view/route/config cache, then reload the page. This is the
+
+→ Run `php artisan optimize:clear` to clear the view/route/config cache, then reload the page. This is the
 most common issue, caused by Laravel still holding the old cache.
 
 ---

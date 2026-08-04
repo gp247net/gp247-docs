@@ -456,45 +456,55 @@ And set up a cron to clear expired carts: `php artisan gp247:shop-clear-cart` (r
 ## Q&A
 
 **Q1: How do I quickly see every GP247 command available on my machine?**
-Run `php artisan list gp247`. The terminal lists every command prefixed with `gp247:` and a short
+
+→ Run `php artisan list gp247`. The terminal lists every command prefixed with `gp247:` and a short
 description.
 
 **Q2: `gp247:core-install` prints "GP247 has been installed" — what now?**
-It means it's already installed (the `storage/app/gp247-installed.txt` file exists). To reinstall,
+
+→ It means it's already installed (the `storage/app/gp247-installed.txt` file exists). To reinstall,
 delete that file then run again, or use `php artisan gp247:core-install --force=1`.
 
 **Q3: What's the difference between `gp247:core-update` and `gp247:language-update`?**
-`core-update` seeds **safely** (only adds missing rows, keeps your edits). `language-update`
+
+→ `core-update` seeds **safely** (only adds missing rows, keeps your edits). `language-update`
 **overwrites** language strings back to the package defaults. Use `core-update` to keep customized
 text; use `language-update` to restore the latest standard version.
 
 **Q4: Is `gp247:shop-sample` safe to run on a live site?**
-**No.** This command **wipes** the existing shop data before creating samples. Only run it on a
+
+→ **No.** This command **wipes** the existing shop data before creating samples. Only run it on a
 demo/dev environment.
 
 **Q5: `gp247:shop-install` fails with missing tables / missing classes — what's wrong?**
-`gp247/shop` requires `gp247/core` and `gp247/front` to be installed first. Run in the correct
+
+→ `gp247/shop` requires `gp247/core` and `gp247/front` to be installed first. Run in the correct
 order: `core-install` → `front-install` → `shop-install`.
 
 **Q6: I don't need shopping, only an informational website — what do I install?**
-Just `gp247:core-install` then `gp247:front-install`. Skip the shop command group.
+
+→ Just `gp247:core-install` then `gp247:front-install`. Skip the shop command group.
 
 **Q7: What does `--download=1` do differently from `--download=0` in `make-plugin`/`make-template`?**
-`--download=0` copies the plugin/template straight into `app/GP247/...` for immediate use.
+
+→ `--download=0` copies the plugin/template straight into `app/GP247/...` for immediate use.
 `--download=1` does **not** copy into the app, instead it packages a `.zip` in `storage/tmp` for you
 to download / carry elsewhere.
 
 **Q8: After `composer update`, the admin UI doesn't change?**
-Run `php artisan gp247:core-update`. If it still doesn't change, re-publish the assets:
+
+→ Run `php artisan gp247:core-update`. If it still doesn't change, re-publish the assets:
 `php artisan vendor:publish --tag=gp247:core-public --force`.
 
 **Q9: What is `gp247:customize static` that `core-update` calls — do I need to install it?**
-It's an internal command that refreshes customized static files, provided by the installation's
+
+→ It's an internal command that refreshes customized static files, provided by the installation's
 customization layer. You don't call it directly. If your environment lacks it, that step only
 reports its own error and is logged, without breaking the data update.
 
 **Q10: How do I know the exact core/front/shop versions running?**
-Run `php artisan gp247:core-info` (shows the core version), or open `composer.lock` and look for
+
+→ Run `php artisan gp247:core-info` (shows the core version), or open `composer.lock` and look for
 `gp247/core`, `gp247/front`, `gp247/shop`.
 
 ---

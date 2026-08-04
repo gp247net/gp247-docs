@@ -456,45 +456,55 @@ HTTP endpoint if you genuinely expose a headless/API entry of your own; it is no
 ## 5. Q&A
 
 **Q1: Will my 1.x plugin run on 2.0 with no changes?**
-No, unless it is extremely simple. Because the `gp247-core::layout` layout was removed and
+
+→ No, unless it is extremely simple. Because the `gp247-core::layout` layout was removed and
 jQuery is no longer loaded, a plugin using the old admin UI will break. At minimum you must do
 Steps 2, 3, and 7.
 
 **Q2: Do I have to switch to Livewire?**
-No, it is not mandatory. If the plugin's admin screen only displays static content, you only need
+
+→ No, it is not mandatory. If the plugin's admin screen only displays static content, you only need
 to change the layout (Step 3) and it will run. Livewire (Steps 5–6) is only needed when the
 plugin has dynamic interaction (previously done with jQuery).
 
 **Q3: Do I have to rewrite my logic and Models?**
-No. GP247 2.0's database schema and logic layer stay the same as 1.x. The conversion only touches
+
+→ No. GP247 2.0's database schema and logic layer stay the same as 1.x. The conversion only touches
 the UI layer and a few configuration declaration files.
 
 **Q4: I open the admin screen and get "View [gp247-core::layout] not found" — why?**
-Because you have not done Step 3. That layout was removed in 2.0. Change
+
+→ Because you have not done Step 3. That layout was removed in 2.0. Change
 `@extends('gp247-core::layout')` to `@extends('gp247-admin::layouts.admin')`.
 
 **Q5: I finished editing the route/view but the admin still shows the old version — what do I do?**
-Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This
+
+→ Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This
 is the most common issue, caused by Laravel still holding the old cache.
 
 **Q6: What value should `requireUpdateFrom` be?**
-Leaving it at `"1.0"` is safest (it barely blocks any updates). Only raise it (for example
+
+→ Leaving it at `"1.0"` is safest (it barely blocks any updates). Only raise it (for example
 `"2.0"`) when you ship a major release whose `update()` hook cannot migrate from older lines.
 
 **Q7: Should I create a `Seo.php` file for every plugin?**
-No. Create it only when the plugin has a public page that should contribute URLs to
+
+→ No. Create it only when the plugin has a public page that should contribute URLs to
 `sitemap.xml`. If the plugin is admin-only, skip Step 8.
 
 **Q8: Will the sitemap registration block in `Provider.php` cause an error if the website does not have gp247/front?**
-No. That block is wrapped in `class_exists('GP247\Front\Controllers\RootFrontController')`, so if
+
+→ No. That block is wrapped in `class_exists('GP247\Front\Controllers\RootFrontController')`, so if
 `gp247/front` is not installed it is simply skipped, and the plugin installs normally.
 
 **Q9: Why is the old controller route kept alongside the Livewire route?**
-For backward compatibility. Keeping both means a plugin still running the old screen does not
+
+→ For backward compatibility. Keeping both means a plugin still running the old screen does not
 break abruptly, while you can gradually migrate to the new Livewire screen.
 
 **Q10: What is the fastest way to create a brand-new v2 plugin (instead of editing from v1)?**
-Run the artisan command to scaffold a plugin using the v2 template, then copy your old logic in:
+
+→ Run the artisan command to scaffold a plugin using the v2 template, then copy your old logic in:
 
 ```bash
 php artisan gp247:make-plugin --name=YourPluginName --download=0

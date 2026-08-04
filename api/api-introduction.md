@@ -214,49 +214,59 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 ## Q&A
 
 **Q1: Which API group should I use?**
-If you're building an app/customer client for the store (browse products, place orders, view orders)
+
+→ If you're building an app/customer client for the store (browse products, place orders, view orders)
 → use the **Front API** (`api/front`). If you're building a remote admin tool → use the
 **Core API** (`api/core`).
 
 **Q2: Where do I get a token and how long does it last?**
-The token is issued by the `login` endpoint. By default it expires after 7 days; sending
+
+→ The token is issued by the `login` endpoint. By default it expires after 7 days; sending
 `remember_me = true` extends it (default 30 days). You can change these via the
 `GP247_API_TOKEN_EXPIRE_DEFAULT` and `GP247_API_RECOMMEMBER` environment variables.
 
 **Q3: How is `apiconnection`/`apikey` different from `access_token`?**
-The `access_token` authenticates the **user** (who you are). The `apiconnection`/`apikey`
+
+→ The `access_token` authenticates the **user** (who you are). The `apiconnection`/`apikey`
 authenticates the **application** (which app is allowed to call the API) and is an **optional layer**
 — only required when the admin enables `api_connection_required`.
 
 **Q4: Do public endpoints need a token?**
-No. The product/category/brand/banner/content-page list and detail endpoints are public. But if the
+
+→ No. The product/category/brand/banner/content-page list and detail endpoints are public. But if the
 API Connection layer is enabled, you must still send the `apiconnection`/`apikey` headers.
 
 **Q5: I get an `Unauthorized` (401) error even with the right password?**
-For the Core API, the admin account must have `status = 1` (active). For the Front API, check that the
+
+→ For the Core API, the admin account must have `status = 1` (active). For the Front API, check that the
 email is correctly registered. Also make sure you send the right field: Core uses `username`, Front
 uses `email`.
 
 **Q6: Why do I get a `Connection not correct` error?**
-The API Connection layer is enabled and your `apiconnection`/`apikey` pair is wrong, expired
+
+→ The API Connection layer is enabled and your `apiconnection`/`apikey` pair is wrong, expired
 (`expire`), or disabled (`status`). Go to the GP247 admin area, API Connection management, to check or
 re-create it.
 
 **Q7: Is there a request limit?**
-Yes. The middleware limits to **1000 requests** per cycle by default. Exceeding it returns HTTP `429`
+
+→ Yes. The middleware limits to **1000 requests** per cycle by default. Exceeding it returns HTTP `429`
 — pace your requests or cache the results on the app side.
 
 **Q8: How do I write a full endpoint address?**
-`https://<site-domain>/<prefix>/<path>`. For example:
+
+→ `https://<site-domain>/<prefix>/<path>`. For example:
 `https://shop.example.com/api/front/product/list`. The prefix is `api/core` or `api/front` depending
 on the group.
 
 **Q9: How do I log out safely?**
-Call `logout` (`api/core/logout` or `api/front/logout`) with the current token. The system **deletes**
+
+→ Call `logout` (`api/core/logout` or `api/front/logout`) with the current token. The system **deletes**
 that token from the database, so the old token can no longer be reused.
 
 **Q10: I need an endpoint that isn't in the list?**
-The lists above are the built-in endpoints of `core`/`front`/`shop`. If you need more, a developer can
+
+→ The lists above are the built-in endpoints of `core`/`front`/`shop`. If you need more, a developer can
 extend them by declaring routes in a separate plugin — without modifying the core (following GP247's
 "plugins plug into the core" principle).
 

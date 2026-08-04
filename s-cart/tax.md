@@ -160,38 +160,48 @@ shop_order.tax  ==  Σ shop_order_detail.tax  ==  (subTotalWithTax − subTotal)
 ## Q&A
 
 **Q1: How do I turn off tax for the whole shop?**
-In Shop Configuration, set `product_tax` = **None**. The whole shop stops charging tax immediately, without
+
+→ In Shop Configuration, set `product_tax` = **None**. The whole shop stops charging tax immediately, without
 editing each product.
 
 **Q2: What does "Automatic (Auto)" mean on a product's tax field?**
-It means that product uses the shop's **default tax rate** (the one you pick in Step 2). Change the default
+
+→ It means that product uses the shop's **default tax rate** (the one you pick in Step 2). Change the default
 and every Auto product follows automatically.
 
 **Q3: Does the price I enter for a product already include tax?**
-No. GP247 uses **add-on** (exclusive) tax: the price you enter is the **pre-tax** price, and tax is added
+
+→ No. GP247 uses **add-on** (exclusive) tax: the price you enter is the **pre-tax** price, and tax is added
 at checkout.
 
 **Q4: My tax is 8.5% (a fractional rate) — can I enter that?**
-Yes. The **Value** field accepts fractional numbers, e.g. enter `8.5` for 8.5%.
+
+→ Yes. The **Value** field accepts fractional numbers, e.g. enter `8.5` for 8.5%.
 
 **Q5: Can a single product carry multiple taxes at once?**
-No. Each product uses **one** tax rate only.
+
+→ No. Each product uses **one** tax rate only.
 
 **Q6: Does GP247 charge different tax by the customer's country/region?**
-No. In v2, tax is calculated **per product**, not by shipping address or country.
+
+→ No. In v2, tax is calculated **per product**, not by shipping address or country.
 
 **Q7: If I change a tax rate, are old orders recalculated?**
-No. Old orders keep the tax from when they were placed; changes apply to new orders only.
+
+→ No. Old orders keep the tax from when they were placed; changes apply to new orders only.
 
 **Q8: My product is set to "None" but the shop has a default tax — what happens?**
-A product set to **None** is **not** taxed, even when the shop has a default rate.
+
+→ A product set to **None** is **not** taxed, even when the shop has a default rate.
 
 **Q9: I created a tax rate but don't see it applied to any product?**
-Creating a new tax rate does **not** auto-apply it. You must make it the default (Step 2) or assign it
+
+→ Creating a new tax rate does **not** auto-apply it. You must make it the default (Step 2) or assign it
 directly to a product (Step 3).
 
 **Q10: Does the order's total tax match the individual product lines?**
-Yes. Tax is calculated and rounded **per line**, so the order's total tax always equals the sum of the
+
+→ Yes. Tax is calculated and rounded **per line**, so the order's total tax always equals the sum of the
 line taxes.
 
 ---

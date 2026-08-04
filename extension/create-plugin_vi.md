@@ -375,43 +375,53 @@ Vì vậy:
 ## 9. Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi phải viết tay từng file plugin à?**
-Không. Chạy `php artisan gp247:make-plugin --name=TenPlugin --download=0` để sinh sẵn toàn bộ khung
+
+→ Không. Chạy `php artisan gp247:make-plugin --name=TenPlugin --download=0` để sinh sẵn toàn bộ khung
 chuẩn v2, rồi chỉ bổ sung logic riêng của bạn.
 
 **Câu 2: `configKey` là gì và có bắt buộc trùng tên thư mục không?**
-`configKey` là mã định danh duy nhất của plugin và **bắt buộc trùng đúng tên thư mục** plugin. Nó
+
+→ `configKey` là mã định danh duy nhất của plugin và **bắt buộc trùng đúng tên thư mục** plugin. Nó
 cũng là mã dùng để đối chiếu khi cập nhật, nên đừng đổi sau khi đã phát hành.
 
 **Câu 3: Vì sao chủ site sửa `config.php` xong, cập nhật một cái là mất hết?**
-Vì cập nhật 1-click **ghi đè toàn bộ file** plugin, gồm cả `config.php`. Mọi giá trị chủ site chỉnh
+
+→ Vì cập nhật 1-click **ghi đè toàn bộ file** plugin, gồm cả `config.php`. Mọi giá trị chủ site chỉnh
 phải lưu ở database (`admin_config`), không lưu trong file. Xem Phần 6.3.
 
 **Câu 4: Làm sao lưu cấu hình của chủ site cho an toàn khi cập nhật?**
-Lưu vào bảng `admin_config` với `code` = `<configKey>_config`, và lúc chạy thì phủ nó lên mặc định
+
+→ Lưu vào bảng `admin_config` với `code` = `<configKey>_config`, và lúc chạy thì phủ nó lên mặc định
 trong `config.php`. Dùng cặp hàm `*_effective_config()` / `*_save_config()` mẫu trong `function.php`.
 
 **Câu 5: Bản mới của tôi có thêm cột database. Tôi xử lý ở đâu?**
-Trong hook `AppConfig::update($fromVersion)`. Kiểm tra `$fromVersion` để chỉ chạy đúng bước di trú
+
+→ Trong hook `AppConfig::update($fromVersion)`. Kiểm tra `$fromVersion` để chỉ chạy đúng bước di trú
 cần thiết, và viết sao cho chạy lại nhiều lần không lỗi. Xem Phần 6.4.
 
 **Câu 6: Nếu bước cập nhật bị lỗi giữa chừng thì sao?**
-Hệ thống tự **khôi phục (rollback)** plugin về bản cũ từ backup đã tạo trước khi động vào file thật,
+
+→ Hệ thống tự **khôi phục (rollback)** plugin về bản cũ từ backup đã tạo trước khi động vào file thật,
 nên site không bị kẹt ở trạng thái dở dang.
 
 **Câu 7: Plugin của tôi chỉ dùng trong admin, có cần `Seo.php` và `FrontController.php` không?**
-Không. `Seo.php` chỉ cần khi plugin có **trang công khai** muốn góp URL vào `sitemap.xml`;
+
+→ Không. `Seo.php` chỉ cần khi plugin có **trang công khai** muốn góp URL vào `sitemap.xml`;
 `FrontController.php` chỉ cần khi plugin có trang storefront. Plugin admin-only có thể bỏ qua.
 
 **Câu 8: Tôi có được dùng jQuery hay select2 trên màn admin của plugin không?**
-Không. GP247 2.0 dùng TailAdmin (Tailwind + Alpine + Livewire) và **không nạp jQuery**. Hãy dùng
+
+→ Không. GP247 2.0 dùng TailAdmin (Tailwind + Alpine + Livewire) và **không nạp jQuery**. Hãy dùng
 Livewire/Alpine và các component `<x-gp247::*>` sẵn có.
 
 **Câu 9: `version` để dạng nào? `1.0.0` hay `1.0`?**
-Dùng semver dạng số, ví dụ `1.0`, `1.1`, `2.0`. Miễn là mỗi bản phát hành mới có số **lớn hơn** bản
+
+→ Dùng semver dạng số, ví dụ `1.0`, `1.1`, `2.0`. Miễn là mỗi bản phát hành mới có số **lớn hơn** bản
 trước (so sánh theo `version_compare`), cập nhật 1-click sẽ nhận.
 
 **Câu 10: Cập nhật xong mà admin vẫn hiện bản cũ, phải làm sao?**
-Chạy `php artisan optimize:clear` để xoá cache route/view/config rồi tải lại trang. Đây là lỗi hay
+
+→ Chạy `php artisan optimize:clear` để xoá cache route/view/config rồi tải lại trang. Đây là lỗi hay
 gặp nhất do Laravel còn giữ cache cũ.
 
 ---

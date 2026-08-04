@@ -354,49 +354,59 @@ Authorization: Bearer <access_token>
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi nên thêm API vào đâu — vendor hay plugin?**
-Gần như luôn là **plugin** (`app/GP247/Plugins/`) hoặc override qua `app/GP247/`. Chỉ sửa trực tiếp
+
+→ Gần như luôn là **plugin** (`app/GP247/Plugins/`) hoặc override qua `app/GP247/`. Chỉ sửa trực tiếp
 `vendor/gp247/*` khi bạn là người bảo trì chính của gói đó, vì mọi thay đổi trong `vendor` sẽ mất khi
 `composer update`.
 
 **Câu 2: Tại sao route mới của tôi không xuất hiện?**
-Ba nguyên nhân phổ biến: (1) chưa bật `GP247_API_MODE=true` trong `.env`; (2) chưa xóa cache —
+
+→ Ba nguyên nhân phổ biến: (1) chưa bật `GP247_API_MODE=true` trong `.env`; (2) chưa xóa cache —
 chạy `php artisan route:clear`; (3) với plugin, file phải tên đúng `Route.php` và plugin đang được
 kích hoạt.
 
 **Câu 3: API từ plugin của tôi không trả JSON / không bị giới hạn tần suất?**
-Vì route plugin nạp ngoài nhóm middleware API. Bạn phải **tự bọc** `'middleware' => GP247_API_MIDDLEWARE`
+
+→ Vì route plugin nạp ngoài nhóm middleware API. Bạn phải **tự bọc** `'middleware' => GP247_API_MIDDLEWARE`
 như ở mục 4. Đây là lỗi hay gặp nhất khi thêm API từ plugin.
 
 **Câu 4: `jsonPaginate()` khác gì `paginate()` của Laravel?**
-`jsonPaginate()` (từ gói `spatie/laravel-json-api-paginate`) trả về cấu trúc phân trang thân thiện
+
+→ `jsonPaginate()` (từ gói `spatie/laravel-json-api-paginate`) trả về cấu trúc phân trang thân thiện
 với chuẩn JSON:API và cho client điều khiển kích thước trang qua tham số. Hãy dùng nó cho các endpoint
 danh sách để đồng bộ với các API sẵn có của GP247.
 
 **Câu 5: Làm sao trả về lỗi cho đúng chuẩn?**
-Dùng object `{'error': 1, 'msg': '...', 'detail': '...'}` với `response()->json(...)`. Với lỗi xác
+
+→ Dùng object `{'error': 1, 'msg': '...', 'detail': '...'}` với `response()->json(...)`. Với lỗi xác
 thực, để Sanctum tự trả `401`. Không trả HTML hay chuỗi trần.
 
 **Câu 6: Tôi cần scope/quyền riêng cho API của mình?**
-Có thể tái dùng các scope sẵn có (`admin`, `admin-supper`, `user`, `user-guest`). Nếu cần scope mới,
+
+→ Có thể tái dùng các scope sẵn có (`admin`, `admin-supper`, `user`, `user-guest`). Nếu cần scope mới,
 cấp thêm khi tạo token và kiểm tra bằng middleware `ability:<scope-của-bạn>`. Tránh tự phát minh cơ
 chế quyền song song với Sanctum.
 
 **Câu 7: Lớp `apiconnection`/`apikey` có bắt buộc cho API mới của tôi không?**
-Không do bạn quyết định trong code — nó bật/tắt toàn cục qua cấu hình `api_connection_required` trong
+
+→ Không do bạn quyết định trong code — nó bật/tắt toàn cục qua cấu hình `api_connection_required` trong
 quản trị. Miễn là route của bạn nằm trong nhóm `GP247_API_MIDDLEWARE`, lớp này áp dụng tự động khi
 admin bật.
 
 **Câu 8: Tôi có phải tự viết endpoint đăng nhập/cấp token không?**
-Không. Hãy tái dùng `api/core/login` (admin) hoặc `api/front/login` (khách) để lấy token, rồi bảo vệ
+
+→ Không. Hãy tái dùng `api/core/login` (admin) hoặc `api/front/login` (khách) để lấy token, rồi bảo vệ
 endpoint mới bằng `auth:admin-api`/`auth:customer-api`. Chỉ tự viết login khi có luồng xác thực đặc thù.
 
 **Câu 9: Controller API nên kế thừa class nào?**
-Dữ liệu **admin** → kế thừa `GP247\Core\Controllers\RootAdminController`; dữ liệu **front/cửa hàng** →
+
+→ Dữ liệu **admin** → kế thừa `GP247\Core\Controllers\RootAdminController`; dữ liệu **front/cửa hàng** →
 kế thừa `GP247\Front\Controllers\RootFrontController`. Chúng đã thiết lập sẵn ngữ cảnh phù hợp cho
 từng phía.
 
 **Câu 10: Có cần viết test cho API mới không?**
-Có — theo `testing.md`, viết feature test cho endpoint (đặt ở repo `tests/`). Ít nhất kiểm tra:
+
+→ Có — theo `testing.md`, viết feature test cho endpoint (đặt ở repo `tests/`). Ít nhất kiểm tra:
 mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token với endpoint riêng tư.
 
 ---

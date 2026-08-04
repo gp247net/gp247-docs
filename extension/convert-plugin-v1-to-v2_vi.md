@@ -452,43 +452,53 @@ không thuộc UI checkout.
 ## 5. Hỏi & Đáp (Q&A)
 
 **Câu 1: Plugin 1.x của tôi có tự chạy trên 2.0 mà không cần sửa gì không?**
-Không, trừ khi nó cực kỳ đơn giản. Vì layout `gp247-core::layout` đã bị xóa và jQuery không
+
+→ Không, trừ khi nó cực kỳ đơn giản. Vì layout `gp247-core::layout` đã bị xóa và jQuery không
 còn được nạp, plugin dùng giao diện admin cũ sẽ hỏng. Tối thiểu bạn phải làm Bước 2, 3, 7.
 
 **Câu 2: Tôi bắt buộc phải chuyển sang Livewire không?**
-Không bắt buộc. Nếu màn admin của plugin chỉ hiển thị nội dung tĩnh, bạn chỉ cần đổi layout
+
+→ Không bắt buộc. Nếu màn admin của plugin chỉ hiển thị nội dung tĩnh, bạn chỉ cần đổi layout
 (Bước 3) là chạy. Livewire (Bước 5–6) chỉ cần khi plugin có tương tác động (trước đây làm bằng jQuery).
 
 **Câu 3: Logic và Model của tôi có phải viết lại không?**
-Không. Schema database và tầng logic của GP247 2.0 giữ nguyên như 1.x. Việc chuyển đổi chỉ
+
+→ Không. Schema database và tầng logic của GP247 2.0 giữ nguyên như 1.x. Việc chuyển đổi chỉ
 đụng tới tầng giao diện và vài file khai báo cấu hình.
 
 **Câu 4: Tôi mở màn admin thì báo "View [gp247-core::layout] not found" — vì sao?**
-Vì bạn chưa làm Bước 3. Layout đó đã bị xóa ở 2.0. Hãy đổi `@extends('gp247-core::layout')`
+
+→ Vì bạn chưa làm Bước 3. Layout đó đã bị xóa ở 2.0. Hãy đổi `@extends('gp247-core::layout')`
 thành `@extends('gp247-admin::layouts.admin')`.
 
 **Câu 5: Sửa xong route/view mà admin vẫn hiện bản cũ, phải làm sao?**
-Chạy `php artisan optimize:clear` để xóa cache route/view/config, rồi tải lại trang. Đây là
+
+→ Chạy `php artisan optimize:clear` để xóa cache route/view/config, rồi tải lại trang. Đây là
 lỗi hay gặp nhất do Laravel còn giữ cache cũ.
 
 **Câu 6: `requireUpdateFrom` nên để giá trị nào?**
-Để `"1.0"` là an toàn nhất (gần như không chặn cập nhật). Chỉ nâng lên (ví dụ `"2.0"`) khi
+
+→ Để `"1.0"` là an toàn nhất (gần như không chặn cập nhật). Chỉ nâng lên (ví dụ `"2.0"`) khi
 bạn phát hành một bản lớn mà hàm `update()` không thể migrate từ dòng cũ.
 
 **Câu 7: Tôi có nên tạo file `Seo.php` cho mọi plugin không?**
-Không. Chỉ tạo khi plugin có trang công khai (public) muốn góp URL vào `sitemap.xml`. Plugin
+
+→ Không. Chỉ tạo khi plugin có trang công khai (public) muốn góp URL vào `sitemap.xml`. Plugin
 chỉ dùng trong admin thì bỏ qua Bước 8.
 
 **Câu 8: Khối đăng ký sitemap trong `Provider.php` có gây lỗi nếu website không có gp247/front không?**
-Không. Khối đó được bọc trong `class_exists('GP247\Front\Controllers\RootFrontController')`,
+
+→ Không. Khối đó được bọc trong `class_exists('GP247\Front\Controllers\RootFrontController')`,
 nên nếu không cài `gp247/front` thì nó tự bỏ qua, plugin vẫn cài bình thường.
 
 **Câu 9: Vì sao route controller cũ vẫn được giữ lại bên cạnh route Livewire?**
-Để tương thích ngược. Nhờ giữ cả hai, plugin đang chạy màn cũ không bị gãy đột ngột, còn
+
+→ Để tương thích ngược. Nhờ giữ cả hai, plugin đang chạy màn cũ không bị gãy đột ngột, còn
 bạn có thể chuyển dần sang màn Livewire mới.
 
 **Câu 10: Cách nhanh nhất để tạo một plugin v2 mới hoàn toàn (thay vì sửa từ v1) là gì?**
-Chạy lệnh artisan tạo plugin theo khuôn v2 rồi chép logic cũ của bạn sang:
+
+→ Chạy lệnh artisan tạo plugin theo khuôn v2 rồi chép logic cũ của bạn sang:
 
 ```bash
 php artisan gp247:make-plugin --name=YourPluginName --download=0

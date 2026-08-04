@@ -379,43 +379,53 @@ Therefore:
 ## 9. Q&A
 
 **Q1: Do I have to hand-write every plugin file?**
-No. Run `php artisan gp247:make-plugin --name=YourPlugin --download=0` to scaffold the full v2-standard
+
+→ No. Run `php artisan gp247:make-plugin --name=YourPlugin --download=0` to scaffold the full v2-standard
 skeleton, then just add your own logic.
 
 **Q2: What is `configKey` and must it match the folder name?**
-`configKey` is the plugin's unique identifier and **must exactly match the plugin folder name**. It is
+
+→ `configKey` is the plugin's unique identifier and **must exactly match the plugin folder name**. It is
 also the key used to match releases on update, so don't change it after release.
 
 **Q3: Why does the site owner lose everything when they edit `config.php` and then update?**
-Because 1-click update **overwrites every file** of the plugin, including `config.php`. Any value the
+
+→ Because 1-click update **overwrites every file** of the plugin, including `config.php`. Any value the
 site owner edits must be stored in the database (`admin_config`), not in a file. See Section 6.3.
 
 **Q4: How do I store the site owner's config so it survives an update?**
-Store it in the `admin_config` table with `code` = `<configKey>_config`, and at runtime overlay it on
+
+→ Store it in the `admin_config` table with `code` = `<configKey>_config`, and at runtime overlay it on
 the defaults from `config.php`. Use the sample `*_effective_config()` / `*_save_config()` functions in `function.php`.
 
 **Q5: My new release adds a database column. Where do I handle it?**
-In the `AppConfig::update($fromVersion)` hook. Check `$fromVersion` to run only the needed migration
+
+→ In the `AppConfig::update($fromVersion)` hook. Check `$fromVersion` to run only the needed migration
 step, and write it so running it multiple times causes no error. See Section 6.4.
 
 **Q6: What happens if the update fails midway?**
-The system automatically **rolls back** the plugin to the old version from the backup made before it
+
+→ The system automatically **rolls back** the plugin to the old version from the backup made before it
 touched live files, so the site is never stuck in a half-updated state.
 
 **Q7: My plugin is admin-only — do I need `Seo.php` and `FrontController.php`?**
-No. `Seo.php` is only needed when the plugin has a **public page** that should contribute URLs to
+
+→ No. `Seo.php` is only needed when the plugin has a **public page** that should contribute URLs to
 `sitemap.xml`; `FrontController.php` is only needed for a storefront page. An admin-only plugin can skip both.
 
 **Q8: Can I use jQuery or select2 on my plugin's admin screen?**
-No. GP247 2.0 uses TailAdmin (Tailwind + Alpine + Livewire) and **does not load jQuery**. Use
+
+→ No. GP247 2.0 uses TailAdmin (Tailwind + Alpine + Livewire) and **does not load jQuery**. Use
 Livewire/Alpine and the existing `<x-gp247::*>` components.
 
 **Q9: What format should `version` be — `1.0.0` or `1.0`?**
-Use a numeric semver like `1.0`, `1.1`, `2.0`. As long as each new release has a number **greater** than
+
+→ Use a numeric semver like `1.0`, `1.1`, `2.0`. As long as each new release has a number **greater** than
 the previous one (compared with `version_compare`), 1-click update will accept it.
 
 **Q10: After updating, the admin still shows the old version — what do I do?**
-Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This is the
+
+→ Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This is the
 most common issue, caused by Laravel keeping the old cache.
 
 ---

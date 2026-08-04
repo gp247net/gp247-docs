@@ -211,45 +211,55 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi nên dùng nhóm API nào?**
-Nếu bạn xây app/khách hàng cho cửa hàng (xem sản phẩm, đặt hàng, xem đơn) → dùng **API Front**
+
+→ Nếu bạn xây app/khách hàng cho cửa hàng (xem sản phẩm, đặt hàng, xem đơn) → dùng **API Front**
 (`api/front`). Nếu bạn xây công cụ quản trị từ xa cho admin → dùng **API Core** (`api/core`).
 
 **Câu 2: Token lấy ở đâu và tồn tại bao lâu?**
-Token do endpoint `login` cấp. Mặc định hết hạn sau 7 ngày; nếu gửi `remember_me = true` thì
+
+→ Token do endpoint `login` cấp. Mặc định hết hạn sau 7 ngày; nếu gửi `remember_me = true` thì
 kéo dài (mặc định 30 ngày). Bạn có thể đổi qua biến môi trường `GP247_API_TOKEN_EXPIRE_DEFAULT`
 và `GP247_API_RECOMMEMBER`.
 
 **Câu 3: `apiconnection`/`apikey` khác gì với `access_token`?**
-`access_token` xác thực **người dùng** (bạn là ai). `apiconnection`/`apikey` xác thực **ứng dụng**
+
+→ `access_token` xác thực **người dùng** (bạn là ai). `apiconnection`/`apikey` xác thực **ứng dụng**
 (app nào được phép gọi API) và là **lớp tùy chọn** — chỉ bắt buộc khi admin bật
 `api_connection_required`.
 
 **Câu 4: Gọi endpoint công khai có cần token không?**
-Không. Các endpoint danh sách/chi tiết sản phẩm, danh mục, thương hiệu, banner, trang nội dung
+
+→ Không. Các endpoint danh sách/chi tiết sản phẩm, danh mục, thương hiệu, banner, trang nội dung
 là công khai. Nhưng nếu lớp API Connection đang bật, bạn vẫn phải gửi header `apiconnection`/`apikey`.
 
 **Câu 5: Tôi bị lỗi `Unauthorized` (401) dù gõ đúng mật khẩu?**
-Với API Core, tài khoản admin phải có `status = 1` (đang hoạt động). Với API Front, kiểm tra email
+
+→ Với API Core, tài khoản admin phải có `status = 1` (đang hoạt động). Với API Front, kiểm tra email
 đã đăng ký đúng chưa. Ngoài ra hãy chắc chắn gửi đúng trường: Core dùng `username`, Front dùng `email`.
 
 **Câu 6: Vì sao tôi nhận lỗi `Connection not correct`?**
-Lớp API Connection đang bật và cặp `apiconnection`/`apikey` của bạn sai, hết hạn (`expire`), hoặc
+
+→ Lớp API Connection đang bật và cặp `apiconnection`/`apikey` của bạn sai, hết hạn (`expire`), hoặc
 bị tắt (`status`). Vào trang quản trị GP247, mục quản lý API Connection để kiểm tra/tạo lại.
 
 **Câu 7: Có giới hạn số lần gọi không?**
-Có. Middleware giới hạn mặc định **1000 lần** trong một chu kỳ. Gọi vượt sẽ nhận HTTP `429` —
+
+→ Có. Middleware giới hạn mặc định **1000 lần** trong một chu kỳ. Gọi vượt sẽ nhận HTTP `429` —
 hãy giãn nhịp gọi hoặc cache lại kết quả phía ứng dụng.
 
 **Câu 8: Địa chỉ đầy đủ của một endpoint viết thế nào?**
-`https://<tên-miền-site>/<prefix>/<đường-dẫn>`. Ví dụ: `https://shop.example.com/api/front/product/list`.
+
+→ `https://<tên-miền-site>/<prefix>/<đường-dẫn>`. Ví dụ: `https://shop.example.com/api/front/product/list`.
 Tiền tố là `api/core` hoặc `api/front` tùy nhóm.
 
 **Câu 9: Làm sao đăng xuất an toàn?**
-Gọi `logout` (`api/core/logout` hoặc `api/front/logout`) với token hiện tại. Hệ thống sẽ **xóa
+
+→ Gọi `logout` (`api/core/logout` hoặc `api/front/logout`) với token hiện tại. Hệ thống sẽ **xóa
 token** đó khỏi cơ sở dữ liệu, nên token cũ không dùng lại được nữa.
 
 **Câu 10: Tôi cần thêm endpoint không có trong danh sách?**
-Danh sách trên là các endpoint sẵn có của `core`/`front`/`shop`. Nếu cần thêm, lập trình viên có
+
+→ Danh sách trên là các endpoint sẵn có của `core`/`front`/`shop`. Nếu cần thêm, lập trình viên có
 thể mở rộng bằng cách khai báo route trong plugin riêng — không sửa code lõi (theo nguyên tắc
 "plugin cắm vào core" của GP247).
 

@@ -185,43 +185,53 @@ Các bước:
 ## 8. Hỏi & Đáp (Q&A)
 
 **Câu 1: Cài plugin và cài template có khác nhau không?**
-Cách cài giống hệt nhau (cùng 3 cách). Chỉ khác nơi thao tác: plugin ở menu **Plugin**, template ở menu
+
+→ Cách cài giống hệt nhau (cùng 3 cách). Chỉ khác nơi thao tác: plugin ở menu **Plugin**, template ở menu
 **Template**. Riêng template phải **Kích hoạt** sau khi cài thì mới có hiệu lực.
 
 **Câu 2: Tôi không thấy mục "Online" trong admin?**
-Website của bạn chưa bật kết nối thư viện GP247 (`api_plugins`/`api_templates`). Hãy dùng Cách 2 (Import)
+
+→ Website của bạn chưa bật kết nối thư viện GP247 (`api_plugins`/`api_templates`). Hãy dùng Cách 2 (Import)
 hoặc Cách 3 (thủ công).
 
 **Câu 3: Muốn dùng thư viện online thì phải làm gì đầu tiên?**
-Đăng ký **API License** (miễn phí) một lần trong admin — xem Bước 0 phần Cách 1. Khoá này tự lưu vào
+
+→ Đăng ký **API License** (miễn phí) một lần trong admin — xem Bước 0 phần Cách 1. Khoá này tự lưu vào
 biến `GP247_API_LICENSE` trong file `.env`, giúp website kết nối và duyệt kho extension.
 
 **Câu 4: Extension trả phí cài thế nào?**
-Cài online như bình thường, nhưng ngoài API License miễn phí, extension trả phí còn cần **bản quyền
+
+→ Cài online như bình thường, nhưng ngoài API License miễn phí, extension trả phí còn cần **bản quyền
 riêng** cho tên miền của bạn (sau khi mua). Extension miễn phí thì không cần.
 
 **Câu 5: File `.zip` cần cấu trúc như thế nào để import được?**
-Bên trong `.zip` phải có file `gp247.json` (cùng `AppConfig.php` và các file của extension). Đừng nén dư
+
+→ Bên trong `.zip` phải có file `gp247.json` (cùng `AppConfig.php` và các file của extension). Đừng nén dư
 một lớp thư mục cha khiến `gp247.json` bị đẩy xuống quá sâu. File cũng phải ≤ 50MB; lớn hơn thì cài thủ công.
 
 **Câu 6: Cài thủ công xong mà admin không thấy extension?**
-Kiểm tra: đã chép đúng thư mục `app/GP247/Plugins/<Key>` hoặc `app/GP247/Templates/<Key>` chưa, thư mục có
+
+→ Kiểm tra: đã chép đúng thư mục `app/GP247/Plugins/<Key>` hoặc `app/GP247/Templates/<Key>` chưa, thư mục có
 `AppConfig.php` không, và `<Key>` có trùng `configKey` trong `gp247.json` không. Sau đó chạy
 `php artisan optimize:clear` rồi tải lại trang admin.
 
 **Câu 7: Import template xong sao lại nhảy về danh sách Plugin?**
-Đây là đặc điểm hiện tại của hệ thống — file template vẫn được cài đúng chỗ. Bạn chỉ cần sang menu
+
+→ Đây là đặc điểm hiện tại của hệ thống — file template vẫn được cài đúng chỗ. Bạn chỉ cần sang menu
 **Template** để thấy và kích hoạt nó.
 
 **Câu 8: Cài xong có phải xoá cache thủ công không?**
-Thường là không — GP247 tự xoá cache sau khi cài. Nếu chưa cập nhật, chạy `php artisan optimize:clear`.
+
+→ Thường là không — GP247 tự xoá cache sau khi cài. Nếu chưa cập nhật, chạy `php artisan optimize:clear`.
 
 **Câu 9: Cài đè bản mới lên bản cũ bằng cách import được không?**
-Không nên. Import từ chối nếu `configKey` đã tồn tại. Muốn lên bản mới, dùng chức năng **cập nhật
+
+→ Không nên. Import từ chối nếu `configKey` đã tồn tại. Muốn lên bản mới, dùng chức năng **cập nhật
 (update)** — nó giữ nguyên cấu hình đã lưu trong database.
 
 **Câu 10: Gỡ/xóa extension như thế nào, và làm sao tránh lỡ tay xóa mất source?**
-Trong danh sách extension có 2 mức xóa: **"Xóa dữ liệu"** (chỉ xóa dữ liệu/cấu hình trong database,
+
+→ Trong danh sách extension có 2 mức xóa: **"Xóa dữ liệu"** (chỉ xóa dữ liệu/cấu hình trong database,
 **giữ nguyên file source**) và **"Xóa file"** (xóa cả dữ liệu lẫn toàn bộ file source trên máy chủ).
 Lưu ý: không xóa được template đang được kích hoạt (phải chuyển sang template khác trước).
 
