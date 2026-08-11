@@ -36,7 +36,8 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Tax in GP247](./s-cart/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
 | [Product Bundle (Combo)](./s-cart/product-bundle.md) | Create a combo product of several child products; price & stock | 2026-08-04 |
 | [Product Structure (Single/Bundle/Group)](./s-cart/product-structure.md) | Compare the 3 product kinds with a chart; which to choose | 2026-08-04 |
+| [Product stock management](./s-cart/product-stock-management.md) | When stock moves; over-stock config; admin warns vs storefront blocks | 2026-08-12 |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-05 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-12 · ✍️ **Author:** GP247</sub>
