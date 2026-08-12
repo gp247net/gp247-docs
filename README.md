@@ -29,6 +29,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-07-30 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-08-05 |
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-08-05 |
+| [Cache Handling](./system/cache-system.md) | Config Cache Manager screen; what is/isn't cached; version-bump; helper functions | 2026-08-12 |
 
 ### S-Cart (store)
 | Document | Summary | Last updated |
