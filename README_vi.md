@@ -38,8 +38,9 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Sản phẩm gói (Bundle/Combo)](./s-cart/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
 | [Tổ chức sản phẩm (Single/Bundle/Group)](./s-cart/product-structure_vi.md) | So sánh 3 loại sản phẩm kèm sơ đồ; chọn loại nào | 2026-08-04 |
 | [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình cho mua vượt tồn; admin cảnh báo vs storefront chặn | 2026-08-12 |
+| [Thuộc tính sản phẩm (Color/Size)](./s-cart/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-12 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-13 · ✍️ **Tác giả (Author):** GP247</sub>
 
