@@ -82,14 +82,18 @@ Ví dụ: "Bộ quà" = 1 hộp bánh + 2 chai nước. Bán 1 bộ → trừ **
 
 ---
 
-## 6. Khác biệt quan trọng: Storefront chặn cứng, Admin cảnh báo
+## 6. Chặn vượt tồn: áp dụng THỐNG NHẤT cho cả storefront và admin
 
-Khi tắt "Cho phép mua khi hết hàng" mà số lượng vượt tồn:
+Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mua khi hết hàng" (`product_buy_out_of_stock`), nếu số lượng đặt vượt tồn:
 
-- **Ngoài storefront (khách tự mua):** hệ thống **chặn cứng** — không cho đặt đơn vượt tồn. Đây là để tránh bán quá số lượng thật.
-- **Trong admin (bạn tự tạo/sửa đơn):** hệ thống **vẫn cho lưu** nhưng **hiện cảnh báo** vượt tồn. Lý do: người quản trị có thẩm quyền (ví dụ bán trước, nhập bù sau), nhưng vẫn cần **thấy cảnh báo** để không nhầm.
+- **Ngoài storefront (khách tự mua):** hệ thống **chặn** — không cho đặt đơn vượt tồn.
+- **Trong admin (bạn tự tạo/sửa đơn):** hệ thống **cũng chặn y như storefront** — không lưu được đơn/dòng hàng vượt tồn, hiện thông báo lỗi. (Áp cho cả: tạo đơn mới, thêm dòng hàng, và tăng số lượng dòng hàng.)
 
-> Nói ngắn gọn: **khách bị chặn, admin được cảnh báo**. Cả hai đều tôn trọng cùng một cấu hình `product_buy_out_of_stock`, chỉ khác cách xử lý khi vượt.
+> Nói ngắn gọn: **cả khách lẫn admin đều bị chặn** khi vượt tồn — cùng một quy tắc, cùng một cấu hình `product_buy_out_of_stock`.
+>
+> **Lưu ý thay đổi (từ 2026-08-16):** trước đây admin chỉ bị *cảnh báo* nhưng vẫn lưu được đơn vượt tồn; nay đã **thống nhất chặn** để tránh bán quá số lượng thật ở mọi kênh.
+>
+> **Vẫn muốn tạo đơn vượt tồn qua admin** (bán trước, nợ hàng, nhập bù sau)? → **bật** "Cho phép mua khi hết hàng" (`product_buy_out_of_stock`). Khi đó cả hai kênh đều cho phép vượt tồn (kho có thể về âm).
 
 ---
 
@@ -123,13 +127,13 @@ Khi tắt "Cho phép mua khi hết hàng" mà số lượng vượt tồn:
 
 → Đó là lỗi cũ: đơn admin không trừ kho. Bản hiện tại đã sửa — đơn admin trừ/hoàn kho giống đơn khách đặt ngoài.
 
-**Câu 4: Trong admin tôi tạo đơn vượt tồn, hệ thống vẫn cho lưu?**
+**Câu 4: Trong admin tôi tạo đơn vượt tồn, hệ thống có cho lưu không?**
 
-→ Đúng. Admin được **cảnh báo** nhưng vẫn lưu được (bạn có thẩm quyền). Khách ngoài storefront thì bị **chặn** trong cùng tình huống.
+→ **Không** (khi đã bật "Quản lý tồn kho" và **tắt** "Cho phép mua khi hết hàng"). Từ **2026-08-16**, admin **bị chặn giống hệt khách** ngoài storefront — không tạo được đơn/dòng hàng vượt tồn. Nếu thực sự cần vượt tồn (bán trước, nợ hàng), hãy **bật** "Cho phép mua khi hết hàng".
 
 **Câu 5: Tồn kho có thể về số âm không?**
 
-→ Có, khi bật "Cho phép mua khi hết hàng" hoặc khi admin cố tình tạo đơn vượt tồn. Số âm nghĩa là bạn đang nợ hàng.
+→ Có, **chỉ khi bật** "Cho phép mua khi hết hàng" (`product_buy_out_of_stock`). Khi đó cả khách lẫn admin đều đặt được vượt tồn và kho về âm (bạn đang nợ hàng). Nếu **tắt** cấu hình này thì **không kênh nào** (kể cả admin) tạo được đơn vượt tồn.
 
 **Câu 6: Xóa đơn thì tồn kho có tự trả lại không?**
 
@@ -153,4 +157,4 @@ Khi tắt "Cho phép mua khi hết hàng" mà số lượng vượt tồn:
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-12 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-16 · ✍️ **Tác giả (Author):** GP247</sub>

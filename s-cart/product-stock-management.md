@@ -82,14 +82,18 @@ Example: "Gift set" = 1 box of cookies + 2 bottles of water. Selling 1 set → r
 
 ---
 
-## 6. An important difference: storefront hard-blocks, admin warns
+## 6. Over-stock is blocked UNIFORMLY on both storefront and admin
 
-When "Allow buy out of stock" is off and the quantity exceeds stock:
+When **Stock management** (`product_stock`) is on and **Allow buy out of stock** (`product_buy_out_of_stock`) is off, if the ordered quantity exceeds stock:
 
-- **On the storefront (customer buying):** the system **hard-blocks** — an over-stock order cannot be placed. This prevents overselling against real stock.
-- **In admin (you create/edit an order):** the system **still saves** but **shows a warning** about over-stock. Reason: the administrator has authority (e.g. sell first, restock later) but still needs to **see the warning** to avoid mistakes.
+- **On the storefront (customer buying):** the system **blocks** — an over-stock order cannot be placed.
+- **In admin (you create/edit an order):** the system **also blocks, exactly like the storefront** — an over-stock order/line cannot be saved and an error is shown. (Applies to: creating a new order, adding a line, and increasing a line's quantity.)
 
-> In short: **customers are blocked, admins are warned**. Both honour the same `product_buy_out_of_stock` setting; only the reaction on over-stock differs.
+> In short: **both customers and admins are blocked** on over-stock — same rule, same `product_buy_out_of_stock` setting.
+>
+> **Change note (from 2026-08-16):** previously admin was only *warned* but could still save an over-stock order; now it is **uniformly blocked** to prevent overselling against real stock on any channel.
+>
+> **Still need to create an over-stock order in admin** (sell first, backorder, restock later)? → **turn on** "Allow buy out of stock" (`product_buy_out_of_stock`). Both channels then allow over-stock (stock may go negative).
 
 ---
 
@@ -123,13 +127,13 @@ When "Allow buy out of stock" is off and the quantity exceeds stock:
 
 → That was an old bug: admin orders did not decrement stock. The current version is fixed — admin orders decrement/return stock like customer orders.
 
-**Q4: In admin I create an over-stock order and it still saves?**
+**Q4: In admin, can I save an over-stock order?**
 
-→ Correct. Admins get a **warning** but can still save (you have authority). Customers on the storefront are **blocked** in the same situation.
+→ **No** (when Stock management is on and "Allow buy out of stock" is off). From **2026-08-16**, admin is **blocked just like the storefront customer** — an over-stock order/line cannot be created. If you genuinely need over-stock (sell first, backorder), **turn on** "Allow buy out of stock".
 
 **Q5: Can stock go negative?**
 
-→ Yes, when "Allow buy out of stock" is on, or when an admin deliberately creates an over-stock order. A negative number means you owe stock.
+→ Yes, **only when "Allow buy out of stock"** (`product_buy_out_of_stock`) is on. Then both customers and admins can order beyond stock and it goes negative (you owe stock). With that setting off, **no channel** (admin included) can create an over-stock order.
 
 **Q6: Does deleting an order return stock automatically?**
 
@@ -153,4 +157,4 @@ When "Allow buy out of stock" is off and the quantity exceeds stock:
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-12 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-16 · ✍️ **Author:** GP247</sub>
