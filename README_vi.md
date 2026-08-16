@@ -30,6 +30,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-08-05 |
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-08-05 |
 | [Xử lý Cache](./system/cache-system_vi.md) | Màn Config Cache Manager; cache gì/không cache gì; version-bump; hàm helper | 2026-08-12 |
+| [Phân quyền (Quyền · Vai trò · Người dùng)](./system/permission-and-role_vi.md) | RBAC admin: 3 khối, 2 vai trò đặc biệt, cách gác theo địa chỉ+phương thức, công thức chiến lược | 2026-08-16 |
 
 ### S-Cart (bán hàng)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -42,5 +43,5 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-13 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-16 · ✍️ **Tác giả (Author):** GP247</sub>
 
