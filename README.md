@@ -30,6 +30,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-08-05 |
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-08-05 |
 | [Cache Handling](./system/cache-system.md) | Config Cache Manager screen; what is/isn't cached; version-bump; helper functions | 2026-08-12 |
+| [Custom Fields](./system/custom-fields.md) | The 4 hook links; coverage limited to customer/product; dev guide to wire other tables | 2026-08-14 |
 
 ### S-Cart (store)
 | Document | Summary | Last updated |
@@ -42,4 +43,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-13 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-14 · ✍️ **Author:** GP247</sub>
