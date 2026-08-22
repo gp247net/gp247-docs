@@ -41,6 +41,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:make-template` | front | Sinh khung một template giao diện mới |
 | `gp247:template-setup` | front | Thiết lập template mặc định cho store gốc |
 | `gp247:shop-install` | shop | Cài đặt module bán hàng (ecommerce) |
+| `gp247:shop-update` | shop | Nâng cấp schema/dữ liệu shop không phá dữ liệu (site đang chạy) |
 | `gp247:shop-uninstall` | shop | Gỡ module shop (xóa bảng shop) |
 | `gp247:shop-sample` | shop | Tạo dữ liệu mẫu (⚠️ xóa dữ liệu shop hiện có) |
 | `gp247:shop-clear-cart` | shop | Xóa giỏ hàng / wishlist / so sánh đã hết hạn |
@@ -309,7 +310,41 @@ php artisan gp247:shop-install
 
 ---
 
-### 11. `gp247:shop-uninstall`
+### 11. `gp247:shop-update`
+
+> ℹ️ **Có từ:** gp247/shop 2.1
+
+**Chức năng:** Nâng cấp module shop **không phá dữ liệu** cho một site đã cài sẵn. Khác với
+`gp247:shop-install` (xóa và tạo lại toàn bộ bảng shop → **mất dữ liệu**), lệnh này chỉ chạy các
+**migration nâng cấp tăng dần, idempotent** trong thư mục
+`vendor/gp247/shop/src/Admin/Database/Migrations/upgrade` (cố tình **không** đụng tới migration tạo
+bảng gốc), nên site đang chạy **giữ nguyên** danh mục, sản phẩm, đơn hàng... Sau khi migrate xong,
+lệnh nhắc bạn chạy `gp247:language-update` để làm mới các nhãn ngôn ngữ mới/đổi tên (ví dụ nhãn địa
+chỉ city/district và address1/2/3).
+
+**Tham số:** không có.
+
+**Cách dùng:**
+
+```bash
+composer update
+php artisan gp247:shop-update
+```
+
+**Trường hợp sử dụng & kết hợp:**
+- Chạy **sau `composer update`** khi bạn nâng phiên bản `gp247/shop` trên **site thật đang có dữ
+  liệu** — đây là lệnh thay thế an toàn cho `gp247:shop-install` (vốn chỉ dành cho cài mới / cài lại
+  sạch, sẽ xóa dữ liệu).
+- Lệnh **idempotent**: chạy lại nhiều lần không gây hại; migration nào đã áp dụng trước đó sẽ được
+  bỏ qua.
+- Nếu bản nâng cấp có **bổ sung/đổi tên chuỗi ngôn ngữ**, chạy tiếp `gp247:language-update` như lệnh
+  nhắc (xem lệnh CORE số 5 — lưu ý cơ chế ghi đè chuỗi đã tùy biến).
+- Nếu migrate lỗi, terminal in `Shop upgrade failed: ...` và trả về mã lỗi; lỗi được ghi log qua
+  `gp247_report`. Xử lý nguyên nhân rồi chạy lại.
+
+---
+
+### 12. `gp247:shop-uninstall`
 
 **Chức năng:** Gỡ module shop: xóa các bảng dữ liệu shop (chạy `down()` của migration shop) và xóa
 bản ghi migration tương ứng.
@@ -329,7 +364,7 @@ php artisan gp247:shop-uninstall
 
 ---
 
-### 12. `gp247:shop-sample`
+### 13. `gp247:shop-sample`
 
 **Chức năng:** Tạo **dữ liệu mẫu** cho cửa hàng: danh mục nhiều cấp, thương hiệu, nhà cung cấp,
 sản phẩm đơn, sản phẩm bộ (bundle), sản phẩm nhóm (group), và khuyến mãi mẫu.
@@ -351,7 +386,7 @@ php artisan gp247:shop-sample
 
 ---
 
-### 13. `gp247:shop-clear-cart`
+### 14. `gp247:shop-clear-cart`
 
 **Chức năng:** Dọn các giỏ hàng đã **hết hạn**: giỏ hàng (`default`), danh sách yêu thích
 (`wishlist`) và so sánh (`compare`), dựa trên số ngày cấu hình trong
@@ -431,6 +466,7 @@ Sau khi vận hành, mỗi lần nâng cấp:
 ```bash
 composer update
 php artisan gp247:core-update
+php artisan gp247:shop-update   # nếu có dùng module shop (nâng cấp an toàn, không mất dữ liệu)
 ```
 
 Và đặt cron dọn giỏ hàng hết hạn: `php artisan gp247:shop-clear-cart` (chạy hằng ngày).
@@ -492,4 +528,13 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-29 · ✍️ **Tác giả (Author):** GP247</sub>
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-08-22 | gp247/shop 2.1 | Thêm lệnh `gp247:shop-update` — nâng cấp shop không phá dữ liệu cho site đang chạy |
+
+---
+
+<sub>📅 **Cập nhật lần cuối:** 2026-08-22 · ✍️ **Tác giả (Author):** GP247</sub>

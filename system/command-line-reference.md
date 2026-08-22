@@ -43,6 +43,7 @@ and you can copy-paste and run them right away.
 | `gp247:make-template` | front | Scaffold a new storefront template |
 | `gp247:template-setup` | front | Set up the default template for the root store |
 | `gp247:shop-install` | shop | Install the shop (ecommerce) module |
+| `gp247:shop-update` | shop | Non-destructive shop schema/data upgrade (live site) |
 | `gp247:shop-uninstall` | shop | Uninstall the shop module (drop shop tables) |
 | `gp247:shop-sample` | shop | Create sample data (⚠️ wipes existing shop data) |
 | `gp247:shop-clear-cart` | shop | Remove expired cart / wishlist / compare entries |
@@ -322,7 +323,40 @@ php artisan gp247:shop-install
 
 ---
 
-### 11. `gp247:shop-uninstall`
+### 11. `gp247:shop-update`
+
+> ℹ️ **Available since:** gp247/shop 2.1
+
+**Feature:** **Non-destructive** upgrade of the shop module for an already-installed site. Unlike
+`gp247:shop-install` (which drops and recreates every shop table → **data loss**), this command only
+runs the **incremental, idempotent upgrade migrations** in
+`vendor/gp247/shop/src/Admin/Database/Migrations/upgrade` (it deliberately **never** touches the
+create-tables migration), so a live site **keeps** its categories, products, orders, etc. After the
+migrations finish, the command reminds you to run `gp247:language-update` to refresh new/renamed
+language labels (e.g. the city/district and address1/2/3 address labels).
+
+**Options:** none.
+
+**Usage:**
+
+```bash
+composer update
+php artisan gp247:shop-update
+```
+
+**Use cases & combinations:**
+- Run it **after `composer update`** when you bump `gp247/shop` on a **live site that has real
+  data** — it is the safe replacement for `gp247:shop-install` (which is only for fresh / clean
+  reinstalls and wipes data).
+- It is **idempotent**: running it repeatedly is harmless; already-applied migrations are skipped.
+- If the upgrade **adds/renames language strings**, run `gp247:language-update` next as the command
+  suggests (see CORE command #5 — mind the overwrite of customized strings).
+- If a migration fails, the terminal prints `Shop upgrade failed: ...` and returns a failure code;
+  the error is logged via `gp247_report`. Fix the cause then run it again.
+
+---
+
+### 12. `gp247:shop-uninstall`
 
 **Feature:** Uninstall the shop module: drop the shop tables (runs the shop migration's `down()`)
 and delete the corresponding migration record.
@@ -344,7 +378,7 @@ php artisan gp247:shop-uninstall
 
 ---
 
-### 12. `gp247:shop-sample`
+### 13. `gp247:shop-sample`
 
 **Feature:** Create **sample data** for the store: multi-level categories, brands, suppliers, single
 products, bundle products, group products, and sample promotions.
@@ -367,7 +401,7 @@ php artisan gp247:shop-sample
 
 ---
 
-### 13. `gp247:shop-clear-cart`
+### 14. `gp247:shop-clear-cart`
 
 **Feature:** Clean up **expired** carts: the shopping cart (`default`), the wishlist (`wishlist`),
 and compare (`compare`), based on the number of days configured in
@@ -447,6 +481,7 @@ After going live, for each upgrade:
 ```bash
 composer update
 php artisan gp247:core-update
+php artisan gp247:shop-update   # if you use the shop module (safe, non-destructive upgrade)
 ```
 
 And set up a cron to clear expired carts: `php artisan gp247:shop-clear-cart` (run daily).
@@ -509,4 +544,13 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-29 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-08-22 | gp247/shop 2.1 | Added `gp247:shop-update` — non-destructive shop upgrade for live sites |
+
+---
+
+<sub>📅 **Last updated:** 2026-08-22 · ✍️ **Author:** GP247</sub>

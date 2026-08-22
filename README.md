@@ -25,7 +25,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### System
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for GP247 command-line commands | 2026-07-30 |
+| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for GP247 command-line commands (incl. `gp247:shop-update` from shop 2.1) | 2026-08-22 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-07-30 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-08-05 |
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-08-05 |

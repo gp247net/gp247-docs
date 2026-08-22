@@ -25,7 +25,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu các lệnh dòng lệnh của GP247 | 2026-07-30 |
+| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu các lệnh dòng lệnh của GP247 (kèm `gp247:shop-update` từ shop 2.1) | 2026-08-22 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-07-30 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-08-05 |
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-08-05 |
