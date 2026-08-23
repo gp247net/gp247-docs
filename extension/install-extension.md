@@ -301,10 +301,12 @@ it cannot be uninstalled or deleted from the interface, preventing source/data l
 action. To actually remove it, take its name out of the corresponding `.env` variable and try again.
 
 > On the command line, the two deletion levels map to `gp247:ext-uninstall --type=... --key=...`
-> (removes data **and** files) and `gp247:ext-uninstall ... --only-data` (removes data only, keeps
-> files). The CLI honors `GP247_PROTECTED_*` and the in-use/default-template guard just like the UI —
-> a protected or in-use extension is refused with a clear error.
+> (installed → removes data **and** files) and `gp247:ext-uninstall ... --only-data` (removes data
+> only, keeps files). An extension that is **not installed but still on disk** (e.g. a bundled plugin)
+> is refused unless you add `--purge` (which then deletes just its files). The CLI honors
+> `GP247_PROTECTED_*` and the in-use/default-template guard just like the UI — a protected or in-use
+> extension is refused with a clear error even with `--purge`.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-24 · ✍️ **Author:** GP247</sub>

@@ -464,10 +464,10 @@ hỗ trợ `--json`.
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
 | `gp247:ext-list` | `--type` | Liệt kê extension local kèm installed/active/version và có bản mới hay không (cache-only, không gọi API). |
-| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<thư-mục>`, `--key=<key>`, `--paid`, `--license=` | Cài từ file `.zip` (`--file`), thư mục đã giải nén (`--dir`), hoặc marketplace (`--key`; thêm `--paid --license=...` cho item trả phí). |
-| `gp247:ext-enable` | `--type`, `--key` | Bật extension đã cài. |
-| `gp247:ext-disable` | `--type`, `--key` | Tắt extension (chặn nếu template đang được dùng). |
-| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data` | Gỡ (tôn trọng `extension_protected` và guard template đang-dùng/mặc-định). `--only-data` chỉ xóa cấu hình DB, giữ file. |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<thư-mục>`, `--key=<key>`, `--paid`, `--license=` | Cài từ file `.zip` (`--file`), thư mục đã giải nén (`--dir`), hoặc theo key (`--key`). Với key: nếu extension **đã cài** → từ chối; nếu file **đã có trên đĩa nhưng chưa cài** (vd plugin bundled như `News`) → cài tại chỗ (giống nút "Install" của admin); còn lại → tải từ marketplace (thêm `--paid --license=...` cho item trả phí). |
+| `gp247:ext-enable` | `--type`, `--key` | Bật extension **đã cài** (từ chối kèm lỗi rõ nếu chưa cài). |
+| `gp247:ext-disable` | `--type`, `--key` | Tắt extension đã cài (từ chối nếu chưa cài, hoặc template đang được dùng). |
+| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Gỡ (tôn trọng `extension_protected` + guard template đang-dùng/mặc-định). **Đã cài**: xóa cấu hình DB **và** xóa file; `--only-data` thì giữ file. **Chưa cài nhưng có trên đĩa**: từ chối trừ khi có `--purge` (khi đó chỉ xóa file). `--only-data` và `--purge` không dùng chung. |
 | `gp247:ext-update` | `--type`, `--key`, `--all` | Cập nhật 1 extension hoặc mọi extension có bản mới (backup + rollback). |
 | `gp247:ext-check-update` | `--type`, `--force` | Báo các bản cập nhật (dùng cache trừ khi `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Duyệt/tìm catalog marketplace. |
@@ -494,12 +494,14 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > (`error.code: paid_multi_not_allowed`), vì một `--license` sẽ bị áp nhầm cho các plugin
 > khác. Mỗi lần cài trả phí dùng đúng một `--key`.
 
-> **Chạy lại / đã cài rồi.** `ext-install` theo nguyên tắc từ-chối-nếu-đã-có: nếu extension
-> đã cài (offline **hoặc** remote) → bị từ chối với lỗi "đã tồn tại" (remote kiểm tra **trước
-> khi** tải — không tốn băng thông, không ghi đè file), và **không** tạo bản ghi
-> `admin_config` trùng. Muốn làm mới extension đã cài dùng `gp247:ext-update`; muốn cài lại
-> thì `gp247:ext-uninstall` trước. Trong batch, key đã-cài chỉ bị ghi vào `failed`, các item
-> khác vẫn chạy tiếp.
+> **Chạy lại / đã cài rồi.** "Đã cài" = có dòng `admin_config` (không phải chỉ có file trên
+> đĩa). `ext-install` một extension **đã cài** → từ chối với lỗi "đã tồn tại" (remote kiểm tra
+> **trước khi** tải — không tốn băng thông), và **không** tạo bản ghi `admin_config` trùng. Muốn
+> làm mới extension đã cài dùng `gp247:ext-update`; muốn cài lại thì `gp247:ext-uninstall` trước.
+> Trong batch, key đã-cài chỉ bị ghi vào `failed`, các item khác vẫn chạy tiếp. Đối xứng lại:
+> `ext-enable`/`ext-disable`/`ext-uninstall` coi extension **chưa cài** là lỗi (enable/disable từ
+> chối; uninstall từ chối trừ khi `--purge`), nên plugin bundled trên đĩa không bị "bật" thành
+> no-op hay bị xóa bất ngờ.
 
 > CLI và admin UI nay chạy **cùng một** engine bên dưới (`ExtensionInstaller` /
 > `LibraryClient`) nên hành vi giống hệt nhau dù dùng đường nào. Extension được bảo vệ và
@@ -647,9 +649,10 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
 | 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Thêm lệnh `gp247:shop-update` — nâng cấp shop không phá dữ liệu cho site đang chạy |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-24 · ✍️ **Tác giả (Author):** GP247</sub>

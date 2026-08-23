@@ -291,11 +291,12 @@ Với extension đã được bảo vệ, admin sẽ **ẩn cả nút "Xóa dữ
 hay xóa chúng từ giao diện, tránh mất source/dữ liệu do thao tác nhầm. Muốn gỡ thật sự, hãy bỏ tên
 extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
-> Trên dòng lệnh, hai mức xóa tương ứng: `gp247:ext-uninstall --type=... --key=...` (xóa cả dữ liệu
-> **lẫn** file) và `gp247:ext-uninstall ... --only-data` (chỉ xóa dữ liệu, giữ file). CLI cũng tôn
-> trọng `GP247_PROTECTED_*` và guard template đang-dùng/mặc-định như UI — extension được bảo vệ hoặc
-> đang dùng sẽ bị từ chối kèm thông báo rõ.
+> Trên dòng lệnh, hai mức xóa tương ứng: `gp247:ext-uninstall --type=... --key=...` (đã cài → xóa cả
+> dữ liệu **lẫn** file) và `gp247:ext-uninstall ... --only-data` (chỉ xóa dữ liệu, giữ file). Extension
+> **chưa cài nhưng còn trên đĩa** (vd plugin bundled) sẽ bị từ chối trừ khi thêm `--purge` (khi đó chỉ
+> xóa file). CLI cũng tôn trọng `GP247_PROTECTED_*` và guard template đang-dùng/mặc-định như UI —
+> extension được bảo vệ hoặc đang dùng bị từ chối kèm thông báo rõ, kể cả khi có `--purge`.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-24 · ✍️ **Tác giả (Author):** GP247</sub>

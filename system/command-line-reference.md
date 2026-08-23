@@ -479,10 +479,10 @@ Plugins and templates share one command family; pick which with `--type=plugin|t
 | Command | Key options | What it does |
 | --- | --- | --- |
 | `gp247:ext-list` | `--type` | List local extensions with installed/active/version and whether an update is available (cache-only, no API call). |
-| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<folder>`, `--key=<key>`, `--paid`, `--license=` | Install from an offline `.zip` (`--file`), an already-extracted folder (`--dir`), or the marketplace (`--key`; add `--paid --license=...` for a paid item). |
-| `gp247:ext-enable` | `--type`, `--key` | Enable an installed extension. |
-| `gp247:ext-disable` | `--type`, `--key` | Disable an installed extension (blocked for a template still in use). |
-| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data` | Uninstall (honors `extension_protected` and the in-use/default-template guard). `--only-data` removes the DB config but keeps the files. |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<folder>`, `--key=<key>`, `--paid`, `--license=` | Install from an offline `.zip` (`--file`), an already-extracted folder (`--dir`), or by key (`--key`). For a key: if the extension is **already installed** → refused; if its files are **already on disk but not installed** (e.g. a bundled plugin like `News`) → installed locally (like the admin "Install" button); otherwise → fetched from the marketplace (add `--paid --license=...` for a paid item). |
+| `gp247:ext-enable` | `--type`, `--key` | Enable an **installed** extension (refused with a clear error if it is not installed). |
+| `gp247:ext-disable` | `--type`, `--key` | Disable an installed extension (refused if not installed, or for a template still in use). |
+| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Uninstall (honors `extension_protected` + in-use/default-template guard). **Installed**: removes DB config **and** deletes files; `--only-data` keeps the files. **Not installed but on disk**: refused unless `--purge` (then only the files are deleted). `--only-data` and `--purge` cannot be combined. |
 | `gp247:ext-update` | `--type`, `--key`, `--all` | Apply marketplace updates for one extension or every one with an update (backup + rollback). |
 | `gp247:ext-check-update` | `--type`, `--force` | Report available updates (cached unless `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Browse/search the marketplace catalog. |
@@ -510,12 +510,15 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > (`error.code: paid_multi_not_allowed`), because a single `--license` would be applied to
 > the wrong plugins. Run one `--key` per paid install.
 
-> **Re-running / already installed.** `ext-install` is refuse-if-present: if the extension
-> is already installed (offline **or** remote), it is rejected with the "already exists"
-> error (remote is checked **before** downloading — no wasted bandwidth, no file overwrite),
-> and no duplicate `admin_config` row is created. To refresh an installed extension use
-> `gp247:ext-update`; to reinstall, `gp247:ext-uninstall` first. In a batch, an
-> already-installed key is simply reported under `failed` while the other items proceed.
+> **Re-running / already installed.** "Installed" means it has an `admin_config` row (not
+> merely that files exist on disk). `ext-install` on an **already-installed** extension is
+> rejected with the "already exists" error (remote is checked **before** downloading — no
+> wasted bandwidth), and never creates a duplicate `admin_config` row. To refresh an installed
+> extension use `gp247:ext-update`; to reinstall, `gp247:ext-uninstall` first. In a batch, an
+> already-installed key is reported under `failed` while the other items proceed.
+> Symmetrically, `ext-enable`/`ext-disable`/`ext-uninstall` treat a **not-installed** extension
+> as an error (enable/disable refuse; uninstall refuses unless `--purge`), so a bundled
+> on-disk plugin is never enabled as a no-op or deleted by surprise.
 
 > The CLI and the admin UI now run the **same** underlying engine
 > (`ExtensionInstaller` / `LibraryClient`), so behavior is identical regardless of which
@@ -664,9 +667,10 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
 | 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Added `gp247:shop-update` — non-destructive shop upgrade for live sites |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-24 · ✍️ **Author:** GP247</sub>
