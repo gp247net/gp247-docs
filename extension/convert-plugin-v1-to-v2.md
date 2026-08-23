@@ -33,7 +33,8 @@ v1 and v2 templates:
 | New-style admin screen | *(none)* | Livewire component `Livewire/AdminLivewire.php` |
 | SEO sitemap integration | *(none)* | `Seo.php` file + registration in `Provider.php` |
 | LayoutBlock page-type registration | *(none)* | Register `token => lang-key` in `Provider.php` (if the plugin has its own public page) |
-| `gp247.json` → `requireCore` | `["1.2"]` | `["2.0"]` |
+| `gp247.json` → `requireCore` | `["1.2"]` | `["2.1"]` |
+| `gp247.json` → dependency keys | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (renamed in core 2.1) |
 | `gp247.json` → `requireUpdateFrom` | *(none)* | `"1.0"` (1-click update condition) |
 
 **Conclusion:** your business logic (Model, data processing, install/uninstall) barely changes.
@@ -49,7 +50,7 @@ the new standard.
 
 | File | What to do | Required? |
 |---|---|---|
-| `gp247.json` | Change `requireCore` to `["2.0"]`, add `requireUpdateFrom` | ✅ Required |
+| `gp247.json` | Change `requireCore` to `["2.1"]`, add `requireUpdateFrom`, rename `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Required |
 | `Views/Admin.blade.php` | Switch the master layout to TailAdmin, remove jQuery/AdminLTE | ✅ Required |
 | `AppConfig.php` | Change the error message in `disable()` to the multilingual helper | ✅ Required |
 | `Livewire/AdminLivewire.php` | **Create new** — Livewire-style admin screen | 🟡 Recommended |
@@ -81,8 +82,9 @@ the new standard.
 
 ### Step 2 — Update `gp247.json`
 
-Open the `gp247.json` file in the plugin folder. Find the `requireCore` line and change it,
-and also **add** the `requireUpdateFrom` line.
+Open the `gp247.json` file in the plugin folder. Change `requireCore`, **add** `requireUpdateFrom`,
+and **rename** the two dependency keys per the core 2.1 standard: `requirePackages` →
+`requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`.
 
 **Before (v1):**
 
@@ -95,20 +97,21 @@ and also **add** the `requireUpdateFrom` line.
 }
 ```
 
-**After (v2):**
+**After (v2 — core 2.1):**
 
 ```json
 {
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": [],
-    "requireExtensions": []
+    "requireComposerPackages": [],
+    "requireGp247Extensions": []
 }
 ```
 
-Meaning of the two lines:
-- `requireCore`: the GP247 core version this plugin is valid for. Set it to `["2.0"]` to declare the plugin targets Core 2.0.
+Meaning of the lines:
+- `requireCore`: the GP247 core version this plugin is valid for. Set it to `["2.1"]` to declare the plugin targets Core 2.1.
+- `requireComposerPackages` / `requireGp247Extensions`: renamed from `requirePackages` / `requireExtensions` to state the dependency source (Composer package vs GP247 extension). Core 2.1 still reads the old keys (backward compatible) but they are deprecated — use the new keys.
 - `requireUpdateFrom`: the **minimum** currently-installed version allowed to 1-click update to
   this release. Leaving it at `"1.0"` is safe (practically no restriction). Only raise this
   number when you ship a major release that cannot auto-migrate from older lines.
@@ -439,7 +442,7 @@ HTTP endpoint if you genuinely expose a headless/API entry of your own; it is no
 
 ## 4. Checklist before calling it "done"
 
-- [ ] `gp247.json`: `requireCore` = `["2.0"]`, `requireUpdateFrom` added.
+- [ ] `gp247.json`: `requireCore` = `["2.1"]`, `requireUpdateFrom` added, keys renamed to `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout changed to `gp247-admin::layouts.admin`.
 - [ ] No `$(...)`, pjax, or jQuery widgets (select2/daterangepicker…) left in views/assets.
 - [ ] Displayed text rendered via `gp247_language_render(...)`, not hardcoded.

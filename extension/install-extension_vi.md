@@ -20,9 +20,11 @@ bằng cách chép thư mục vào máy chủ. Đọc xong, bạn sẽ biết ch
 1. Bạn cần đăng nhập admin bằng tài khoản **có quyền quản lý extension**.
 2. Extension phải **tương thích** với website của bạn. Khi cài, GP247 tự kiểm tra 3 điều kiện khai báo
    trong file `gp247.json` của extension:
-   - `requireCore`: phiên bản `gp247/core` yêu cầu (chuẩn hiện tại là `2.0`).
-   - `requirePackages`: các gói bắt buộc phải có (ví dụ template luôn cần `gp247/front`).
-   - `requireExtensions`: các extension khác phải cài trước.
+   - `requireCore`: phiên bản `gp247/core` yêu cầu (chuẩn hiện tại là `2.1`).
+   - `requireComposerPackages`: các gói bắt buộc phải có (ví dụ template luôn cần `gp247/front`).
+   - `requireGp247Extensions`: các extension khác phải cài trước.
+
+   > Từ gp247/core 2.1, hai khóa `requireComposerPackages`/`requireGp247Extensions` thay cho tên cũ `requirePackages`/`requireExtensions`. Core 2.1 vẫn đọc khóa cũ (tương thích ngược) nhưng đã deprecated.
 
    Nếu thiếu điều kiện nào, GP247 sẽ **báo lỗi và không cho cài** — hãy cài phần còn thiếu trước.
 3. Sau khi cài, GP247 **tự xoá cache** (route/config) nên bạn không cần làm thủ công. Với **template**,
@@ -170,7 +172,7 @@ Các bước:
 
 ## 7. Xử lý sự cố thường gặp
 
-- **Báo lỗi tương thích khi cài:** thiếu điều kiện `requireCore` / `requirePackages` / `requireExtensions`.
+- **Báo lỗi tương thích khi cài:** thiếu điều kiện `requireCore` / `requireComposerPackages` / `requireGp247Extensions`.
   Cài phần còn thiếu (ví dụ cài `gp247/front` trước khi cài template) rồi thử lại.
 - **Import báo "sai cấu hình":** file `.zip` không chứa `gp247.json` ở đúng cấp, hoặc bạn nén sai (nén cả
   thư mục cha thừa một lớp). Kiểm tra lại cấu trúc file nén.

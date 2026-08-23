@@ -32,7 +32,8 @@ khuôn v1 và v2:
 | Màn admin kiểu mới | *(không có)* | Livewire component `Livewire/AdminLivewire.php` |
 | Tích hợp sitemap SEO | *(không có)* | File `Seo.php` + đăng ký trong `Provider.php` |
 | Đăng ký page-type LayoutBlock | *(không có)* | Đăng ký `token => lang-key` trong `Provider.php` (nếu plugin có trang public riêng) |
-| `gp247.json` → `requireCore` | `["1.2"]` | `["2.0"]` |
+| `gp247.json` → `requireCore` | `["1.2"]` | `["2.1"]` |
+| `gp247.json` → khóa phụ thuộc | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (đổi tên từ core 2.1) |
 | `gp247.json` → `requireUpdateFrom` | *(không có)* | `"1.0"` (điều kiện cập nhật 1-click) |
 
 **Kết luận:** logic nghiệp vụ (Model, xử lý dữ liệu, cài/gỡ) của bạn gần như không đổi.
@@ -47,7 +48,7 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 
 | File | Cần làm gì | Bắt buộc? |
 |---|---|---|
-| `gp247.json` | Đổi `requireCore` thành `["2.0"]`, thêm `requireUpdateFrom` | ✅ Bắt buộc |
+| `gp247.json` | Đổi `requireCore` thành `["2.1"]`, thêm `requireUpdateFrom`, đổi `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Bắt buộc |
 | `Views/Admin.blade.php` | Đổi layout master sang TailAdmin, bỏ jQuery/AdminLTE | ✅ Bắt buộc |
 | `AppConfig.php` | Đổi thông báo lỗi trong `disable()` sang đa ngôn ngữ | ✅ Bắt buộc |
 | `Livewire/AdminLivewire.php` | **Tạo mới** — màn admin kiểu Livewire | 🟡 Khuyến nghị |
@@ -79,8 +80,9 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 
 ### Bước 2 — Cập nhật `gp247.json`
 
-Mở file `gp247.json` trong thư mục plugin. Tìm dòng `requireCore` và sửa lại, đồng thời
-**thêm** dòng `requireUpdateFrom`.
+Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `requireUpdateFrom`, và
+**đổi tên** 2 khóa phụ thuộc theo chuẩn core 2.1: `requirePackages` → `requireComposerPackages`,
+`requireExtensions` → `requireGp247Extensions`.
 
 **Trước (v1):**
 
@@ -93,20 +95,21 @@ Mở file `gp247.json` trong thư mục plugin. Tìm dòng `requireCore` và s�
 }
 ```
 
-**Sau (v2):**
+**Sau (v2 — core 2.1):**
 
 ```json
 {
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": [],
-    "requireExtensions": []
+    "requireComposerPackages": [],
+    "requireGp247Extensions": []
 }
 ```
 
-Ý nghĩa 2 dòng:
-- `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Đặt `["2.0"]` để báo plugin dành cho Core 2.0.
+Ý nghĩa các dòng:
+- `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Đặt `["2.1"]` để báo plugin dành cho Core 2.1.
+- `requireComposerPackages` / `requireGp247Extensions`: đổi tên từ `requirePackages` / `requireExtensions` cho rõ nguồn phụ thuộc (gói Composer vs extension GP247). Core 2.1 vẫn đọc khóa cũ (tương thích ngược) nhưng đã deprecated — hãy dùng khóa mới.
 - `requireUpdateFrom`: phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này.
   Để `"1.0"` là an toàn (gần như không giới hạn). Chỉ nâng số này lên khi bạn phát hành bản
   lớn mà không thể tự động migrate từ dòng cũ.
@@ -435,7 +438,7 @@ không thuộc UI checkout.
 
 ## 4. Danh sách kiểm tra trước khi coi là "xong"
 
-- [ ] `gp247.json`: `requireCore` = `["2.0"]`, đã thêm `requireUpdateFrom`.
+- [ ] `gp247.json`: `requireCore` = `["2.1"]`, đã thêm `requireUpdateFrom`, đã đổi sang `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout đã đổi sang `gp247-admin::layouts.admin`.
 - [ ] Không còn `$(...)`, pjax, hay widget jQuery (select2/daterangepicker…) nào trong view/asset.
 - [ ] Text hiển thị render qua `gp247_language_render(...)`, không hardcode.

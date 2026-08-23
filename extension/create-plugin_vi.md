@@ -121,10 +121,10 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
     "configCode": "MyBanner",
     "configKey": "MyBanner",
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": [],
-    "requireExtensions": []
+    "requireComposerPackages": [],
+    "requireGp247Extensions": []
 }
 ```
 
@@ -139,10 +139,12 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
 | `configCode` | Mã cấu hình, thường trùng `configKey`. |
 | `configKey` | **Mã định danh duy nhất, phải trùng tên thư mục plugin.** Không đổi giá trị này sau khi phát hành. |
 | **`version`** | **Phiên bản plugin (dạng semver: `1.0`, `1.1`, `2.0`...). Mỗi lần phát hành bản mới PHẢI tăng số này lên** thì cập nhật 1-click mới nhận. |
-| **`requireCore`** | Danh sách phiên bản `gp247/core` mà plugin hợp lệ. Với chuẩn v2 để `["2.0"]`. |
+| **`requireCore`** | Danh sách phiên bản `gp247/core` mà plugin hợp lệ. Với chuẩn v2 để `["2.1"]`. |
 | **`requireUpdateFrom`** | Phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này. Để `"1.0"` là an toàn (gần như không chặn). |
-| `requirePackages` | Các gói composer bắt buộc (từ packagist.org). |
-| `requireExtensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
+| `requireComposerPackages` | Các gói composer bắt buộc (từ packagist.org). |
+| `requireGp247Extensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
+
+> **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (tên nói rõ nguồn phụ thuộc). Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** và sẽ bị gỡ ở bản sau — plugin mới hãy dùng khóa mới.
 
 ---
 
@@ -333,7 +335,7 @@ Vì vậy:
 
 ### 6.6. Quy tắc 5 — Đặt `requireUpdateFrom` / `requireCore` đúng
 
-- `requireCore`: đảm bảo plugin chỉ cập nhật trên lõi tương thích. Với chuẩn v2 để `["2.0"]`.
+- `requireCore`: đảm bảo plugin chỉ cập nhật trên lõi tương thích. Với chuẩn v2 để `["2.1"]`.
 - `requireUpdateFrom`: chặn cập nhật 1-click từ một bản **quá cũ** mà hook `update()` của bạn không
   thể di trú. Để `"1.0"` khi bạn tự tin migrate được từ mọi bản; nâng lên (ví dụ `"2.0"` cho bản 2.9)
   khi bạn muốn buộc người ở dòng 1.x phải cài lại thủ công thay vì cập nhật thẳng.
@@ -359,7 +361,7 @@ Vì vậy:
 
 ## 8. Danh sách kiểm tra trước khi phát hành
 
-- [ ] `gp247.json`: `configKey` trùng tên thư mục; `requireCore` = `["2.0"]`.
+- [ ] `gp247.json`: `configKey` trùng tên thư mục; `requireCore` = `["2.1"]`.
 - [ ] `version` đã **tăng** so với bản trước (nếu là bản cập nhật).
 - [ ] Màn admin dùng Livewire + `<x-gp247::*>`; **không** còn jQuery/AdminLTE.
 - [ ] Mọi chữ render qua `trans(...)` / `gp247_language_render(...)`, không hardcode; có cả `vi` và `en`.

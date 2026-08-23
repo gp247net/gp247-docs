@@ -14,7 +14,7 @@ mechanism), so you know when you do and do not need to rewrite the shopping page
 >
 > 1. **A template only works when `gp247/front` is installed.** A template is the look of the
 >    storefront, and the whole storefront is provided by the `gp247/front` package. That is why a
->    template's `gp247.json` always declares `requirePackages: ["gp247/front"]`. Without `gp247/front`,
+>    template's `gp247.json` always declares `requireComposerPackages: ["gp247/front"]`. Without `gp247/front`,
 >    the template has no effect.
 > 2. **The sample template does NOT contain any `gp247/shop` views.** If your new template has no views
 >    for the shopping pages (product list, cart, checkout...), `gp247/shop` will **automatically use its
@@ -85,7 +85,7 @@ app/GP247/Templates/MyShopSkin/
 ├── AppConfig.php    # Main config file: install/uninstall/enable/disable/setupStore
 ├── config.php       # Template default config (OVERWRITTEN on update — see Section 7)
 ├── function.php     # The template's helper functions
-├── gp247.json       # ⭐ Declares template info (especially requirePackages)
+├── gp247.json       # ⭐ Declares template info (especially requireComposerPackages)
 ├── Provider.php     # Registers services (views, lang, config...)
 └── Route.php        # The template's own routes (if any)
 
@@ -120,10 +120,10 @@ Open `gp247.json`; the generated sample content is:
     "configCode": "MyShopSkin",
     "configKey": "MyShopSkin",
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": ["gp247/front"],
-    "requireExtensions": []
+    "requireComposerPackages": ["gp247/front"],
+    "requireGp247Extensions": []
 }
 ```
 
@@ -134,9 +134,11 @@ What the important fields mean:
 | `configGroup` | Always `"Templates"` for a template. |
 | `configKey` | **Unique identifier, same as the template folder name.** Never change it after release. |
 | `version` | Version (semver: `1.0`, `1.1`...). Every new release must **increase** this number. |
-| `requireCore` | Compatible `gp247/core` versions. For the v2 standard, use `["2.0"]`. |
-| **`requirePackages`** | **Always includes `"gp247/front"`** — because a template only runs with the storefront present. Add `"gp247/shop"` if the template is meant only for shopping sites. |
+| `requireCore` | Compatible `gp247/core` versions. For the v2 standard, use `["2.1"]`. |
+| **`requireComposerPackages`** | **Always includes `"gp247/front"`** — because a template only runs with the storefront present. Add `"gp247/shop"` if the template is meant only for shopping sites. |
 | `requireUpdateFrom` | The minimum version allowed to 1-click update to this one. `"1.0"` is a safe default. |
+
+> **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`. Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** — new templates should use the new keys (`requireComposerPackages` always includes `"gp247/front"`).
 
 ---
 
@@ -303,7 +305,7 @@ For full details on the safe-update mechanism, see the
 
 ## 9. Checklist before release
 
-- [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` matches the folder name, `requirePackages` includes `"gp247/front"`.
+- [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` matches the folder name, `requireComposerPackages` includes `"gp247/front"`.
 - [ ] `version` has **increased** from the previous release (if this is an update).
 - [ ] The interface uses Tailwind + Livewire/Alpine; **no** more old jQuery/Bootstrap widgets.
 - [ ] Every string is rendered through `gp247_language_render(...)` / `trans(...)`, not hardcoded; both `vi` and `en` present.

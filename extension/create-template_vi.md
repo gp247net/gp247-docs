@@ -14,7 +14,7 @@ biết khi nào cần và khi nào không cần tự viết lại các trang bá
 >
 > 1. **Template chỉ dùng được khi đã cài `gp247/front`.** Template là giao diện của phần storefront,
 >    mà toàn bộ phần storefront do gói `gp247/front` cung cấp. Vì vậy `gp247.json` của template luôn
->    khai báo `requirePackages: ["gp247/front"]`. Không cài `gp247/front` thì template không có tác dụng.
+>    khai báo `requireComposerPackages: ["gp247/front"]`. Không cài `gp247/front` thì template không có tác dụng.
 > 2. **Template mẫu KHÔNG chứa view của `gp247/shop`.** Nếu template mới của bạn không có view cho các
 >    trang bán hàng (danh sách sản phẩm, giỏ hàng, thanh toán...), `gp247/shop` sẽ **tự động dùng view
 >    mặc định trong gói của nó** theo cơ chế fallback (Phần 6). Bạn chỉ cần tự viết các trang này khi
@@ -82,7 +82,7 @@ app/GP247/Templates/MyShopSkin/
 ├── AppConfig.php    # File cấu hình chính: install/uninstall/enable/disable/setupStore
 ├── config.php       # Cấu hình mặc định của template (BỊ GHI ĐÈ khi cập nhật — xem Phần 7)
 ├── function.php     # Các hàm helper của template
-├── gp247.json       # ⭐ Khai báo thông tin template (đặc biệt requirePackages)
+├── gp247.json       # ⭐ Khai báo thông tin template (đặc biệt requireComposerPackages)
 ├── Provider.php     # Đăng ký service (view, lang, config...)
 └── Route.php        # Khai báo route riêng của template (nếu cần)
 
@@ -117,10 +117,10 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
     "configCode": "MyShopSkin",
     "configKey": "MyShopSkin",
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": ["gp247/front"],
-    "requireExtensions": []
+    "requireComposerPackages": ["gp247/front"],
+    "requireGp247Extensions": []
 }
 ```
 
@@ -131,9 +131,11 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
 | `configGroup` | Luôn là `"Templates"` với template. |
 | `configKey` | **Mã định danh duy nhất, trùng tên thư mục template.** Không đổi sau khi phát hành. |
 | `version` | Phiên bản (semver: `1.0`, `1.1`...). Mỗi bản phát hành mới phải **tăng** số này. |
-| `requireCore` | Phiên bản `gp247/core` tương thích. Chuẩn v2 để `["2.0"]`. |
-| **`requirePackages`** | **Luôn có `"gp247/front"`** — vì template chỉ chạy khi có storefront. Thêm `"gp247/shop"` nếu template chỉ dành cho site có bán hàng. |
+| `requireCore` | Phiên bản `gp247/core` tương thích. Chuẩn v2 để `["2.1"]`. |
+| **`requireComposerPackages`** | **Luôn có `"gp247/front"`** — vì template chỉ chạy khi có storefront. Thêm `"gp247/shop"` nếu template chỉ dành cho site có bán hàng. |
 | `requireUpdateFrom` | Phiên bản tối thiểu được cập nhật 1-click lên bản này. Để `"1.0"` là an toàn. |
+
+> **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`. Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** — template mới hãy dùng khóa mới (`requireComposerPackages` luôn có `"gp247/front"`).
 
 ---
 
@@ -295,7 +297,7 @@ Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
 
 ## 9. Danh sách kiểm tra trước khi phát hành
 
-- [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` trùng tên thư mục, `requirePackages` có `"gp247/front"`.
+- [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` trùng tên thư mục, `requireComposerPackages` có `"gp247/front"`.
 - [ ] `version` đã **tăng** so với bản trước (nếu là bản cập nhật).
 - [ ] Giao diện dùng Tailwind + Livewire/Alpine; **không** còn jQuery/Bootstrap widget cũ.
 - [ ] Mọi chữ render qua `gp247_language_render(...)` / `trans(...)`, không hardcode; có cả `vi` và `en`.

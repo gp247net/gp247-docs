@@ -122,10 +122,10 @@ This is the plugin's "ID card". Open `gp247.json`; the generated sample looks li
     "configCode": "MyBanner",
     "configKey": "MyBanner",
     "version": "1.0",
-    "requireCore": ["2.0"],
+    "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
-    "requirePackages": [],
-    "requireExtensions": []
+    "requireComposerPackages": [],
+    "requireGp247Extensions": []
 }
 ```
 
@@ -140,10 +140,12 @@ What the fields mean (the bold ones directly affect version updates — see Sect
 | `configCode` | Config code, usually the same as `configKey`. |
 | `configKey` | **Unique identifier; must match the plugin folder name.** Do not change it after release. |
 | **`version`** | **The plugin version (semver: `1.0`, `1.1`, `2.0`...). Every new release MUST increase this number** for 1-click update to accept it. |
-| **`requireCore`** | List of `gp247/core` versions the plugin is valid for. For the v2 standard use `["2.0"]`. |
+| **`requireCore`** | List of `gp247/core` versions the plugin is valid for. For the v2 standard use `["2.1"]`. |
 | **`requireUpdateFrom`** | The **minimum** currently-installed version allowed to 1-click update to this release. `"1.0"` is safe (practically no restriction). |
-| `requirePackages` | Required composer packages (from packagist.org). |
-| `requireExtensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
+| `requireComposerPackages` | Required composer packages (from packagist.org). |
+| `requireGp247Extensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
+
+> **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (the names now state the dependency source). Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** and will be removed in a future release — new plugins should use the new keys.
 
 ---
 
@@ -336,7 +338,7 @@ Therefore:
 
 ### 6.6. Rule 5 — Set `requireUpdateFrom` / `requireCore` correctly
 
-- `requireCore`: ensures the plugin only updates on a compatible core. For the v2 standard use `["2.0"]`.
+- `requireCore`: ensures the plugin only updates on a compatible core. For the v2 standard use `["2.1"]`.
 - `requireUpdateFrom`: blocks a 1-click update from a version that is **too old** for your `update()`
   hook to migrate. Use `"1.0"` when you are confident you can migrate from any version; raise it (e.g.
   `"2.0"` for a 2.9 release) when you want to force users on the 1.x line to reinstall manually instead
@@ -363,7 +365,7 @@ Therefore:
 
 ## 8. Pre-release checklist
 
-- [ ] `gp247.json`: `configKey` matches the folder name; `requireCore` = `["2.0"]`.
+- [ ] `gp247.json`: `configKey` matches the folder name; `requireCore` = `["2.1"]`.
 - [ ] `version` has been **increased** compared to the previous release (if this is an update).
 - [ ] The admin screen uses Livewire + `<x-gp247::*>`; **no** jQuery/AdminLTE left.
 - [ ] Every string rendered via `trans(...)` / `gp247_language_render(...)`, not hardcoded; both `vi` and `en` present.

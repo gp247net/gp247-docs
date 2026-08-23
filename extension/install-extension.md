@@ -21,9 +21,11 @@ suits you and how to follow each step.
 1. You must log in to admin with an account that **has permission to manage extensions**.
 2. The extension must be **compatible** with your website. On install, GP247 automatically checks the 3
    conditions declared in the extension's `gp247.json`:
-   - `requireCore`: the required `gp247/core` version (the current standard is `2.0`).
-   - `requirePackages`: mandatory packages (for example, a template always needs `gp247/front`).
-   - `requireExtensions`: other extensions that must be installed first.
+   - `requireCore`: the required `gp247/core` version (the current standard is `2.1`).
+   - `requireComposerPackages`: mandatory packages (for example, a template always needs `gp247/front`).
+   - `requireGp247Extensions`: other extensions that must be installed first.
+
+   > Since gp247/core 2.1, the keys `requireComposerPackages`/`requireGp247Extensions` replace the old `requirePackages`/`requireExtensions`. Core 2.1 still reads the old keys (backward compatible) but they are deprecated.
 
    If any condition is missing, GP247 **reports an error and refuses to install** — install the missing
    part first.
@@ -175,7 +177,7 @@ Steps:
 
 ## 7. Common troubleshooting
 
-- **Compatibility error on install:** a `requireCore` / `requirePackages` / `requireExtensions`
+- **Compatibility error on install:** a `requireCore` / `requireComposerPackages` / `requireGp247Extensions`
   condition is missing. Install the missing part (e.g. install `gp247/front` before a template) and retry.
 - **Import reports "wrong configuration":** the `.zip` doesn't contain `gp247.json` at the right level,
   or you zipped it wrong (an extra parent folder layer). Check the archive structure.
