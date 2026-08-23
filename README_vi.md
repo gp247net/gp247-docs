@@ -17,15 +17,15 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Mở rộng (Plugin)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Hướng dẫn tạo Plugin (chuẩn v2)](./extension/create-plugin_vi.md) | Tạo plugin mới đúng chuẩn v2, an toàn khi cập nhật phiên bản | 2026-07-30 |
-| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-07-30 |
-| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 3 cách cài: online (thư viện), import (.zip), thủ công | 2026-07-30 |
+| [Hướng dẫn tạo Plugin (chuẩn v2)](./extension/create-plugin_vi.md) | Tạo plugin mới đúng chuẩn v2, an toàn khi cập nhật phiên bản | 2026-08-23 |
+| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-08-23 |
+| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-08-23 |
 | [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-07-30 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu các lệnh dòng lệnh của GP247 (kèm `gp247:shop-update` từ shop 2.1) | 2026-08-22 |
+| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info (core 2.1) | 2026-08-23 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-07-30 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-08-05 |
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-08-05 |
@@ -45,4 +45,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>

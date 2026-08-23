@@ -5,12 +5,13 @@
 ## Introduction
 
 This document explains how to **install a plugin or template (collectively called an extension) into a
-GP247 website**, aimed at site owners — including non-technical ones. GP247 supports **3 installation
+GP247 website**, aimed at site owners — including non-technical ones. GP247 supports **4 installation
 methods**: install **online** via the official extension library, **import** a ready-made `.zip` file,
-or install **manually** by copying the folder onto the server. By the end, you will know which method
-suits you and how to follow each step.
+install **manually** by copying the folder onto the server, or use the **command line**
+(`gp247:ext-*`) for developers/automation. By the end, you will know which method suits you and how to
+follow each step.
 
-> 💡 Plugins and templates install **exactly the same way** — the same 3 methods. The only difference is
+> 💡 Plugins and templates install **exactly the same way** — the same methods. The only difference is
 > that they live under two different admin menus: **Plugin** and **Template**. Wherever this document
 > says "extension", it applies to both.
 
@@ -148,7 +149,46 @@ Steps:
 
 ---
 
-## 5. After installing — activate and verify
+## 5. Method 4 — Command line (`gp247:ext-*`)
+
+For developers, CI/CD, Docker or shared hosts with terminal access, the whole extension lifecycle is
+available from the command line — the **same engine** the admin UI uses (so compatibility checks,
+`GP247_PROTECTED_*` and the in-use/default-template guard all apply identically). Plugins and templates
+share one command family; choose with `--type=plugin|template`.
+
+```bash
+# List local extensions + status + available updates
+php artisan gp247:ext-list --type=plugin
+
+# Install from a local .zip, an extracted folder, or the marketplace (by key)
+php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBanner.zip
+php artisan gp247:ext-install --type=plugin --key=News
+
+# Enable / disable / uninstall (accept multiple keys)
+php artisan gp247:ext-enable  --type=plugin --key=News
+php artisan gp247:ext-uninstall --type=plugin --key=News
+
+# Update from the marketplace (one, or all with an available update)
+php artisan gp247:ext-update --type=plugin --all
+
+# Search the marketplace; manage a paid extension's license
+php artisan gp247:ext-search --type=plugin --keyword=blog
+php artisan gp247:ext-license --type=plugin --key=ProPlugin --license=XXItXX
+```
+
+Notes:
+- Add `--json` to any command for a machine-readable envelope (`{ok,command,data,warnings,error}`) with
+  a standard exit code (0 success / non-zero failure) — ideal for scripts and CI.
+- **Batch**: `ext-install/enable/disable/uninstall` accept multiple keys (`--key=A --key=B` or
+  `--key=A,B`); items run one at a time and independently, the cache is rebuilt once at the end, and the
+  command exits non-zero if any item failed. Install a **paid** extension one key at a time.
+- **Re-running is safe**: `ext-install` refuses an already-installed extension (use `ext-update` to
+  update, `ext-uninstall` to reinstall).
+- Full reference: [command-line-reference.md](../system/command-line-reference.md).
+
+---
+
+## 6. After installing — activate and verify
 
 1. **For a plugin:** it is usually ready to use after installing. Some plugins have **Enable/Disable**
    and **Config** buttons — adjust them if needed.
@@ -165,17 +205,18 @@ Steps:
 
 ---
 
-## 6. Which method should I use? (quick comparison)
+## 7. Which method should I use? (quick comparison)
 
 | Method | When to use | Advantage | Requires |
 |---|---|---|---|
 | **Online** | Want to browse & install quickly from the official store | Easiest, fully automatic | Site with library connection on; a license for paid ones |
 | **Import** | You already have the `.zip` file | No server access needed | A valid `.zip`, ≤ 50MB, containing `gp247.json` |
 | **Manual** | You have server file access / the two methods above aren't available | Full control, no upload/API dependency | FTP/SSH/File Manager access; copy to the right folder |
+| **CLI** (`gp247:ext-*`) | Developers, CI/CD, Docker, scripted/batch installs | Scriptable (`--json` + exit codes), batch multiple items, same engine as UI | Terminal access at the project root |
 
 ---
 
-## 7. Common troubleshooting
+## 8. Common troubleshooting
 
 - **Compatibility error on install:** a `requireCore` / `requireComposerPackages` / `requireGp247Extensions`
   condition is missing. Install the missing part (e.g. install `gp247/front` before a template) and retry.
@@ -191,11 +232,11 @@ Steps:
 
 ---
 
-## 8. Q&A
+## 9. Q&A
 
 **Q1: Is installing a plugin different from installing a template?**
 
-→ The installation is identical (the same 3 methods). Only the place differs: plugins under the **Plugin**
+→ The installation is identical (the same methods). Only the place differs: plugins under the **Plugin**
 menu, templates under the **Template** menu. A template additionally must be **Activated** after
 installing for it to take effect.
 
@@ -259,6 +300,11 @@ For a protected extension, admin **hides both the "Delete data" and "Remove file
 it cannot be uninstalled or deleted from the interface, preventing source/data loss from a mistaken
 action. To actually remove it, take its name out of the corresponding `.env` variable and try again.
 
+> On the command line, the two deletion levels map to `gp247:ext-uninstall --type=... --key=...`
+> (removes data **and** files) and `gp247:ext-uninstall ... --only-data` (removes data only, keeps
+> files). The CLI honors `GP247_PROTECTED_*` and the in-use/default-template guard just like the UI —
+> a protected or in-use extension is refused with a clear error.
+
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

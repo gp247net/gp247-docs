@@ -57,13 +57,15 @@ and the new layout), so you don't have to hand-create every file.
    - `--name=MyBanner`: the plugin name. Prefer **PascalCase** (capitalize the first letter of each word, no accents, no spaces), e.g. `MyBanner`, `ProductFeed`.
    - `--download=0`: create the plugin **directly** in `app/GP247/Plugins/MyBanner` (usable immediately). If you set `--download=1`, the command creates a `.zip` in `storage/tmp` for you to package and distribute.
 
-3. On success, the terminal returns a JSON line with `"error":0`, e.g.:
+3. On success, the terminal prints a human-readable line (e.g. `Success`); the folder
+   `app/GP247/Plugins/MyBanner` is created with all the sample files. Add `--json` if you
+   need the machine-readable envelope instead:
 
    ```json
-   {"error":0,"path":"","msg":"Success"}
+   {"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBanner","path":"","msg":"Success"},"warnings":[],"error":null}
    ```
 
-   The folder `app/GP247/Plugins/MyBanner` is created with all the sample files.
+   (With `--download=1` the zip path is in `data.path`.)
 
 > Note: if the website does **not** have `gp247/front` (the storefront) installed, the command
 > automatically **skips** `Controllers/FrontController.php` — this is normal, not an error.
@@ -125,7 +127,8 @@ This is the plugin's "ID card". Open `gp247.json`; the generated sample looks li
     "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
-    "requireGp247Extensions": []
+    "requireGp247Extensions": [],
+    "requireLivewire": false
 }
 ```
 
@@ -144,6 +147,7 @@ What the fields mean (the bold ones directly affect version updates — see Sect
 | **`requireUpdateFrom`** | The **minimum** currently-installed version allowed to 1-click update to this release. `"1.0"` is safe (practically no restriction). |
 | `requireComposerPackages` | Required composer packages (from packagist.org). |
 | `requireGp247Extensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
+| `requireLivewire` | Whether the plugin needs Livewire (`true`/`false`). The scaffold ships a Livewire admin screen registered in `Provider.php`, so `false` is a safe default (Livewire is bundled with core). |
 
 > **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (the names now state the dependency source). Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** and will be removed in a future release — new plugins should use the new keys.
 
@@ -198,7 +202,17 @@ The new UI standard for GP247 2.0 is **Livewire + TailAdmin**. The scaffold gene
 - Every displayed string must be rendered via `trans('Plugins/MyBanner::lang.title')` or
   `gp247_language_render(...)`; **do not hardcode** text, to support multiple languages.
 
-### 5.4. Routes and languages
+### 5.4. Routes, Livewire registration and languages
+
+- `Provider.php`: the scaffold already registers the plugin's Livewire class namespace so the
+  admin component resolves as `<livewire:MyBanner::admin-livewire>` (and via the full-page
+  route). It is guarded so a host without Livewire still boots cleanly:
+
+  ```php
+  if (class_exists(\Livewire\Livewire::class)) {
+      \Livewire\Livewire::addNamespace('MyBanner', classNamespace: 'App\\GP247\\Plugins\\MyBanner\\Livewire');
+  }
+  ```
 
 - `Route.php`: the scaffold already registers the legacy admin route **and** the Livewire route
   (guarded with `class_exists`, so it is safe). Only add your own routes when needed.
@@ -432,4 +446,4 @@ most common issue, caused by Laravel keeping the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

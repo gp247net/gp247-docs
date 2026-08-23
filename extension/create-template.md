@@ -58,13 +58,15 @@ file by hand.
    - `--name=MyShopSkin`: the template name. Use **PascalCase** (capitalize each word, no accents, no spaces).
    - `--download=0`: create the template **directly** in `app/GP247/Templates/MyShopSkin` (ready to use right away). With `--download=1`, the command creates a `.zip` file in `storage/tmp` for distribution/packaging.
 
-3. On success, the terminal returns a JSON line with `"error":0`:
+3. On success, the terminal prints a human-readable line (e.g. `Success`); the
+   `app/GP247/Templates/MyShopSkin` folder is created with all the sample files. Add `--json`
+   for the machine-readable envelope instead:
 
    ```json
-   {"error":0,"path":"","msg":"Success"}
+   {"ok":true,"command":"gp247:make-template","data":{"key":"MyShopSkin","path":"","msg":"Success"},"warnings":[],"error":null}
    ```
 
-   The `app/GP247/Templates/MyShopSkin` folder is created with all the sample files.
+   (With `--download=1` the zip path is in `data.path`.)
 
 ---
 
@@ -371,4 +373,4 @@ most common issue, caused by Laravel still holding the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

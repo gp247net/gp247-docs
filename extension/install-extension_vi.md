@@ -5,11 +5,12 @@
 ## Giới thiệu
 
 Tài liệu này hướng dẫn cách **cài đặt một plugin hoặc template (gọi chung là extension) vào website
-GP247**, dành cho chủ website — kể cả người không rành kỹ thuật. GP247 hỗ trợ **3 cách cài**: cài
-**online** qua thư viện extension chính thức, **import** một file `.zip` có sẵn, hoặc cài **thủ công**
-bằng cách chép thư mục vào máy chủ. Đọc xong, bạn sẽ biết chọn cách phù hợp và làm theo từng bước.
+GP247**, dành cho chủ website — kể cả người không rành kỹ thuật. GP247 hỗ trợ **4 cách cài**: cài
+**online** qua thư viện extension chính thức, **import** một file `.zip` có sẵn, cài **thủ công**
+bằng cách chép thư mục vào máy chủ, hoặc dùng **dòng lệnh** (`gp247:ext-*`) cho lập trình
+viên/automation. Đọc xong, bạn sẽ biết chọn cách phù hợp và làm theo từng bước.
 
-> 💡 Plugin và template cài **giống hệt nhau** — cùng 3 cách này. Khác biệt duy nhất là chúng nằm ở
+> 💡 Plugin và template cài **giống hệt nhau** — cùng các cách này. Khác biệt duy nhất là chúng nằm ở
 > hai mục menu khác nhau trong admin: **Plugin** (tiện ích) và **Template** (giao diện). Trong tài
 > liệu, chỗ nào ghi "extension" là áp dụng cho cả hai.
 
@@ -143,7 +144,46 @@ Các bước:
 
 ---
 
-## 5. Sau khi cài — kích hoạt và kiểm tra
+## 5. Cách 4 — Dòng lệnh (`gp247:ext-*`)
+
+Dành cho lập trình viên, CI/CD, Docker hoặc shared host có terminal: toàn bộ vòng đời extension làm
+được từ dòng lệnh — **cùng engine** với admin UI (nên kiểm tra tương thích, `GP247_PROTECTED_*` và
+guard template đang-dùng/mặc-định đều áp dụng y hệt). Plugin và template dùng chung một họ lệnh; chọn
+bằng `--type=plugin|template`.
+
+```bash
+# Liệt kê extension local + trạng thái + bản cập nhật
+php artisan gp247:ext-list --type=plugin
+
+# Cài từ file .zip local, thư mục đã giải nén, hoặc marketplace (theo key)
+php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBanner.zip
+php artisan gp247:ext-install --type=plugin --key=News
+
+# Bật / tắt / gỡ (nhận nhiều key)
+php artisan gp247:ext-enable  --type=plugin --key=News
+php artisan gp247:ext-uninstall --type=plugin --key=News
+
+# Cập nhật từ marketplace (một cái, hoặc tất cả cái có bản mới)
+php artisan gp247:ext-update --type=plugin --all
+
+# Tìm marketplace; quản lý license của extension trả phí
+php artisan gp247:ext-search --type=plugin --keyword=blog
+php artisan gp247:ext-license --type=plugin --key=ProPlugin --license=XXItXX
+```
+
+Ghi chú:
+- Thêm `--json` vào bất kỳ lệnh nào để lấy envelope máy-đọc (`{ok,command,data,warnings,error}`) kèm
+  mã thoát chuẩn (0 thành công / khác 0 thất bại) — hợp cho script và CI.
+- **Batch**: `ext-install/enable/disable/uninstall` nhận nhiều key (`--key=A --key=B` hoặc
+  `--key=A,B`); xử lý từng cái độc lập, rebuild cache một lần ở cuối, thoát khác 0 nếu bất kỳ item nào
+  fail. Extension **trả phí** cài từng key một.
+- **Chạy lại an toàn**: `ext-install` từ chối extension đã cài (dùng `ext-update` để cập nhật,
+  `ext-uninstall` để cài lại).
+- Tài liệu đầy đủ: [command-line-reference_vi.md](../system/command-line-reference_vi.md).
+
+---
+
+## 6. Sau khi cài — kích hoạt và kiểm tra
 
 1. **Với plugin:** cài xong thường đã dùng được. Một số plugin có nút **Bật/Tắt (Enable/Disable)** và
    **Cấu hình (Config)** — vào chỉnh nếu cần.
@@ -160,17 +200,18 @@ Các bước:
 
 ---
 
-## 6. Nên dùng cách nào? (so sánh nhanh)
+## 7. Nên dùng cách nào? (so sánh nhanh)
 
 | Cách | Khi nào dùng | Ưu điểm | Cần gì |
 |---|---|---|---|
 | **Online** | Muốn duyệt & cài nhanh từ kho chính thức | Dễ nhất, tự động hoàn toàn | Site bật kết nối thư viện; license nếu là bản trả phí |
 | **Import** | Đã có sẵn file `.zip` | Không cần truy cập máy chủ | File `.zip` hợp lệ, ≤ 50MB, có `gp247.json` |
 | **Thủ công** | Có quyền file máy chủ / hai cách trên không dùng được | Chủ động, không phụ thuộc upload/API | Quyền FTP/SSH/File Manager; chép đúng thư mục |
+| **CLI** (`gp247:ext-*`) | Lập trình viên, CI/CD, Docker, cài theo script/batch | Script hoá được (`--json` + mã thoát), batch nhiều item, cùng engine với UI | Quyền terminal ở gốc dự án |
 
 ---
 
-## 7. Xử lý sự cố thường gặp
+## 8. Xử lý sự cố thường gặp
 
 - **Báo lỗi tương thích khi cài:** thiếu điều kiện `requireCore` / `requireComposerPackages` / `requireGp247Extensions`.
   Cài phần còn thiếu (ví dụ cài `gp247/front` trước khi cài template) rồi thử lại.
@@ -184,11 +225,11 @@ Các bước:
 
 ---
 
-## 8. Hỏi & Đáp (Q&A)
+## 9. Hỏi & Đáp (Q&A)
 
 **Câu 1: Cài plugin và cài template có khác nhau không?**
 
-→ Cách cài giống hệt nhau (cùng 3 cách). Chỉ khác nơi thao tác: plugin ở menu **Plugin**, template ở menu
+→ Cách cài giống hệt nhau (cùng các cách). Chỉ khác nơi thao tác: plugin ở menu **Plugin**, template ở menu
 **Template**. Riêng template phải **Kích hoạt** sau khi cài thì mới có hiệu lực.
 
 **Câu 2: Tôi không thấy mục "Online" trong admin?**
@@ -250,6 +291,11 @@ Với extension đã được bảo vệ, admin sẽ **ẩn cả nút "Xóa dữ
 hay xóa chúng từ giao diện, tránh mất source/dữ liệu do thao tác nhầm. Muốn gỡ thật sự, hãy bỏ tên
 extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
+> Trên dòng lệnh, hai mức xóa tương ứng: `gp247:ext-uninstall --type=... --key=...` (xóa cả dữ liệu
+> **lẫn** file) và `gp247:ext-uninstall ... --only-data` (chỉ xóa dữ liệu, giữ file). CLI cũng tôn
+> trọng `GP247_PROTECTED_*` và guard template đang-dùng/mặc-định như UI — extension được bảo vệ hoặc
+> đang dùng sẽ bị từ chối kèm thông báo rõ.
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>

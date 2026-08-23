@@ -17,15 +17,15 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Creating a Plugin (v2 standard)](./extension/create-plugin.md) | Build a new v2-standard plugin that updates safely | 2026-07-30 |
-| [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-07-30 |
-| [Installing Plugins & Templates](./extension/install-extension.md) | 3 methods: online (library), import (.zip), manual | 2026-07-30 |
+| [Creating a Plugin (v2 standard)](./extension/create-plugin.md) | Build a new v2-standard plugin that updates safely | 2026-08-23 |
+| [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-08-23 |
+| [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-08-23 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-07-30 |
 
 ### System
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for GP247 command-line commands (incl. `gp247:shop-update` from shop 2.1) | 2026-08-22 |
+| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for all GP247 CLI commands: `--json`/exit-code output contract, `gp247:ext-*` lifecycle, install/update/doctor/info (core 2.1) | 2026-08-23 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-07-30 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-08-05 |
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-08-05 |
@@ -44,4 +44,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

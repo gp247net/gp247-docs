@@ -47,6 +47,44 @@ and you can copy-paste and run them right away.
 | `gp247:shop-uninstall` | shop | Uninstall the shop module (drop shop tables) |
 | `gp247:shop-sample` | shop | Create sample data (⚠️ wipes existing shop data) |
 | `gp247:shop-clear-cart` | shop | Remove expired cart / wishlist / compare entries |
+| `gp247:ext-list` | core | List local plugins/templates + status + available updates |
+| `gp247:ext-install` | core | Install a plugin/template from a .zip, a directory, or the marketplace |
+| `gp247:ext-enable` / `gp247:ext-disable` | core | Enable / disable an installed plugin/template |
+| `gp247:ext-uninstall` | core | Uninstall a plugin/template (honors protected + template guards) |
+| `gp247:ext-update` | core | Update plugin(s)/template(s) from the marketplace (backup/rollback) |
+| `gp247:ext-check-update` | core | Check the marketplace for available updates |
+| `gp247:ext-search` | core | Search the marketplace catalog |
+| `gp247:ext-license` | core | Set/show/remove the per-plugin license of a paid extension |
+| `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+sample]) |
+| `gp247:update` | core | Post-`composer update` refresh (core [+shop], safe for live) |
+| `gp247:cache-rebuild` | core | Rebuild route/config caches |
+| `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) |
+| `gp247:info` | core | Show status: versions, install marker, extension counts |
+
+---
+
+## Output contract (`--json` & exit codes)
+
+Since core 2.1 every `gp247:*` command shares one output contract, so scripts, CI/CD,
+Docker and cron can rely on it:
+
+- **`--json`**: pass it to any command to get a single machine-readable envelope on
+  **stdout**; all human/progress/warning lines go to **stderr**, so
+  `php artisan gp247:info --json | jq` stays clean. Without `--json` you get the usual
+  human-readable text/tables.
+- **Envelope shape**:
+
+  ```json
+  { "ok": true, "command": "gp247:ext-install", "data": { }, "warnings": [], "error": null }
+  ```
+
+  On failure: `"ok": false` and `"error": { "code": "...", "message": "..." }`.
+- **Exit codes**: `0` on success, non-zero on failure — for **every** command.
+
+> ⚠️ **Breaking (core 2.1):** `gp247:make-plugin` / `gp247:make-template` now emit the
+> envelope above instead of the old `{"error":0,"path":"...","msg":"Success"}`. The zip
+> path is at `data.path`. External tooling that parsed the old keys should read the new
+> envelope (pass `--json` for the machine format).
 
 ---
 
@@ -148,7 +186,7 @@ automatically omitted.
 | Option | Value | Meaning |
 | --- | --- | --- |
 | `--name` | string (**required**) | Plugin name, e.g. `MyBlog`. GP247 normalizes it into the class name and URL key. Leaving it empty → `Command error`. |
-| `--download` | `0` (default) or `1` | `0`: copy the plugin directly into `app/GP247/Plugins/<Name>` and `public/GP247/Plugins/<Name>`. `1`: do **not** copy into the app, instead package it as a `.zip` in `storage/tmp` (the JSON result returns the zip path). |
+| `--download` | `0` (default) or `1` | `0`: copy the plugin directly into `app/GP247/Plugins/<Name>` and `public/GP247/Plugins/<Name>`. `1`: do **not** copy into the app, instead package it as a `.zip` in `storage/tmp` (with `--json` the zip path is in `data.path`). |
 
 **Usage:**
 
@@ -162,7 +200,10 @@ Build a downloadable zip only (do not install into the app):
 php artisan gp247:make-plugin --name=MyBlog --download=1
 ```
 
-The command returns a JSON string like `{"error":0,"path":"...","msg":"Success"}`.
+By default the command prints human-readable text (`Success: <path>` when a zip was built).
+Add `--json` for the standardized envelope — e.g.
+`{"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBlog","path":"...","msg":"Success"},"warnings":[],"error":null}`
+(the zip path is at `data.path`). See "Output contract" above.
 
 **Use cases & combinations:**
 - When starting a new plugin — use the generated scaffold instead of hand-creating each file.
@@ -429,6 +470,80 @@ php artisan gp247:shop-clear-cart
 
 ---
 
+## Extension lifecycle commands — `gp247:ext-*` (core 2.1)
+
+These bring the full plugin/template lifecycle (previously admin-UI only) to the CLI.
+Plugins and templates share one command family; pick which with `--type=plugin|template`
+(default `plugin`). All support `--json`.
+
+| Command | Key options | What it does |
+| --- | --- | --- |
+| `gp247:ext-list` | `--type` | List local extensions with installed/active/version and whether an update is available (cache-only, no API call). |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<folder>`, `--key=<key>`, `--paid`, `--license=` | Install from an offline `.zip` (`--file`), an already-extracted folder (`--dir`), or the marketplace (`--key`; add `--paid --license=...` for a paid item). |
+| `gp247:ext-enable` | `--type`, `--key` | Enable an installed extension. |
+| `gp247:ext-disable` | `--type`, `--key` | Disable an installed extension (blocked for a template still in use). |
+| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data` | Uninstall (honors `extension_protected` and the in-use/default-template guard). `--only-data` removes the DB config but keeps the files. |
+| `gp247:ext-update` | `--type`, `--key`, `--all` | Apply marketplace updates for one extension or every one with an update (backup + rollback). |
+| `gp247:ext-check-update` | `--type`, `--force` | Report available updates (cached unless `--force`). |
+| `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Browse/search the marketplace catalog. |
+| `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Set / show / remove the per-plugin license of a paid extension (stored in `admin_config`, never in `.env`). |
+
+Examples:
+
+```bash
+php artisan gp247:ext-list --type=plugin --json
+php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
+php artisan gp247:ext-install --type=plugin --key=News
+php artisan gp247:ext-enable --type=plugin --key=News
+php artisan gp247:ext-update --type=plugin --all
+php artisan gp247:ext-uninstall --type=plugin --key=News
+```
+
+> **Batch (multiple items).** `ext-install`, `ext-enable`, `ext-disable` and
+> `ext-uninstall` accept **multiple keys** — repeat the option (`--key=A --key=B`) or
+> comma-separate (`--key=A,B`); `ext-install` likewise takes multiple `--file`/`--dir`.
+> Items are processed **one at a time and independently** (there is no atomic transaction
+> across different extensions — each is its own files+migrations+config unit), results are
+> reported per item, the route/config cache is rebuilt **once** at the end, and the command
+> exits non-zero if **any** item failed. **Paid remote extensions must be installed one at
+> a time** — `--paid` combined with more than one `--key` is **refused up front**
+> (`error.code: paid_multi_not_allowed`), because a single `--license` would be applied to
+> the wrong plugins. Run one `--key` per paid install.
+
+> **Re-running / already installed.** `ext-install` is refuse-if-present: if the extension
+> is already installed (offline **or** remote), it is rejected with the "already exists"
+> error (remote is checked **before** downloading — no wasted bandwidth, no file overwrite),
+> and no duplicate `admin_config` row is created. To refresh an installed extension use
+> `gp247:ext-update`; to reinstall, `gp247:ext-uninstall` first. In a batch, an
+> already-installed key is simply reported under `failed` while the other items proceed.
+
+> The CLI and the admin UI now run the **same** underlying engine
+> (`ExtensionInstaller` / `LibraryClient`), so behavior is identical regardless of which
+> you use. Protected extensions and the in-use/default template are refused from both.
+
+---
+
+## Orchestration & diagnostics (core 2.1)
+
+| Command | Key options | What it does |
+| --- | --- | --- |
+| `gp247:install` | `--with-front`, `--with-shop`, `--sample`, `--force=1` | Run the whole install in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample`). A failing step aborts with a non-zero exit. `--with-shop` implies `--with-front`. |
+| `gp247:update` | `--overwrite-lang` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), then `cache-rebuild`. Never runs a destructive (re)install. |
+| `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
+| `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker. Exits non-zero if any check fails — usable as a CI/pre-install gate. |
+| `gp247:info` | `--json` | Show status: installed package versions (core/front/shop), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
+
+Examples:
+
+```bash
+php artisan gp247:install --with-front --with-shop --force=1
+php artisan gp247:update
+php artisan gp247:doctor --json
+php artisan gp247:info --json
+```
+
+---
+
 ## Frequently paired `vendor:publish` commands
 
 These are standard Laravel commands (not GP247-specific), but they commonly accompany installation
@@ -549,8 +664,9 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Added `gp247:shop-update` — non-destructive shop upgrade for live sites |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

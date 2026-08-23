@@ -56,13 +56,15 @@ GP247 có sẵn lệnh tạo khung plugin theo đúng chuẩn v2 (đã kèm sẵ
    - `--name=MyBanner`: tên plugin. Nên viết kiểu **PascalCase** (viết hoa chữ cái đầu mỗi từ, không dấu, không khoảng trắng), ví dụ `MyBanner`, `ProductFeed`.
    - `--download=0`: tạo plugin **trực tiếp** vào thư mục `app/GP247/Plugins/MyBanner` (dùng ngay được). Nếu đặt `--download=1`, lệnh sẽ tạo một file `.zip` trong `storage/tmp` để bạn tải về đóng gói phân phối.
 
-3. Nếu thành công, terminal trả về một dòng JSON có `"error":0`, ví dụ:
+3. Nếu thành công, terminal in một dòng text human (ví dụ `Success`); đồng thời thư mục
+   `app/GP247/Plugins/MyBanner` được tạo ra với đầy đủ file mẫu. Thêm `--json` nếu cần envelope
+   máy-đọc:
 
    ```json
-   {"error":0,"path":"","msg":"Success"}
+   {"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBanner","path":"","msg":"Success"},"warnings":[],"error":null}
    ```
 
-   Đồng thời thư mục `app/GP247/Plugins/MyBanner` được tạo ra với đầy đủ file mẫu.
+   (Với `--download=1`, đường dẫn zip nằm ở `data.path`.)
 
 > Lưu ý: nếu website **chưa cài** `gp247/front` (phần storefront), lệnh sẽ tự động **bỏ qua**
 > file `Controllers/FrontController.php` — đây là hành vi bình thường, không phải lỗi.
@@ -124,7 +126,8 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
     "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
-    "requireGp247Extensions": []
+    "requireGp247Extensions": [],
+    "requireLivewire": false
 }
 ```
 
@@ -143,6 +146,7 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
 | **`requireUpdateFrom`** | Phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này. Để `"1.0"` là an toàn (gần như không chặn). |
 | `requireComposerPackages` | Các gói composer bắt buộc (từ packagist.org). |
 | `requireGp247Extensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
+| `requireLivewire` | Plugin có cần Livewire hay không (`true`/`false`). Scaffold đã ship sẵn màn admin Livewire + đăng ký trong `Provider.php`, nên `false` là mặc định an toàn (Livewire đã đi kèm core). |
 
 > **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (tên nói rõ nguồn phụ thuộc). Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** và sẽ bị gỡ ở bản sau — plugin mới hãy dùng khóa mới.
 
@@ -197,7 +201,17 @@ Chuẩn giao diện mới của GP247 2.0 là **Livewire + TailAdmin**. Khung si
 - Mọi chữ hiển thị phải render qua `trans('Plugins/MyBanner::lang.title')` hoặc
   `gp247_language_render(...)`, **không hardcode** để hỗ trợ đa ngôn ngữ.
 
-### 5.4. Route và ngôn ngữ
+### 5.4. Route, đăng ký Livewire và ngôn ngữ
+
+- `Provider.php`: khung đã đăng ký sẵn namespace class Livewire của plugin để component admin
+  resolve dạng `<livewire:MyBanner::admin-livewire>` (và qua route full-page). Có bảo vệ để host
+  không có Livewire vẫn boot sạch:
+
+  ```php
+  if (class_exists(\Livewire\Livewire::class)) {
+      \Livewire\Livewire::addNamespace('MyBanner', classNamespace: 'App\\GP247\\Plugins\\MyBanner\\Livewire');
+  }
+  ```
 
 - `Route.php`: khung đã đăng ký sẵn route admin cũ **và** route Livewire (có bảo vệ `class_exists`
   nên an toàn). Bạn chỉ thêm route riêng khi cần.
@@ -428,4 +442,4 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>

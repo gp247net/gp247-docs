@@ -105,12 +105,14 @@ and **rename** the two dependency keys per the core 2.1 standard: `requirePackag
     "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
-    "requireGp247Extensions": []
+    "requireGp247Extensions": [],
+    "requireLivewire": false
 }
 ```
 
 Meaning of the lines:
 - `requireCore`: the GP247 core version this plugin is valid for. Set it to `["2.1"]` to declare the plugin targets Core 2.1.
+- `requireLivewire`: whether the plugin needs Livewire (`true`/`false`). Add it when you introduce a Livewire screen in Step 5 (`false` is a safe default — Livewire ships with core).
 - `requireComposerPackages` / `requireGp247Extensions`: renamed from `requirePackages` / `requireExtensions` to state the dependency source (Composer package vs GP247 extension). Core 2.1 still reads the old keys (backward compatible) but they are deprecated — use the new keys.
 - `requireUpdateFrom`: the **minimum** currently-installed version allowed to 1-click update to
   this release. Leaving it at `"1.0"` is safe (practically no restriction). Only raise this
@@ -226,6 +228,15 @@ This is the new UI standard for v2. If you want the plugin to follow the standar
    - `<x-gp247::card>` is a shared TailAdmin component — you should prefer the existing
      `<x-gp247::*>` components over writing raw HTML.
    - The `dark:text-gray-300` class keeps the UI looking good in dark mode as well.
+
+3. In `Provider.php`, register the plugin's Livewire class namespace (guarded so a host without
+   Livewire still boots), so the component resolves as `<livewire:Extension_Key::admin-livewire>`:
+
+   ```php
+   if (class_exists(\Livewire\Livewire::class)) {
+       \Livewire\Livewire::addNamespace('Extension_Key', classNamespace: 'App\\GP247\\Plugins\\Extension_Key\\Livewire');
+   }
+   ```
 
 ### Step 6 — Add the Livewire route in `Route.php`
 
@@ -518,4 +529,4 @@ new layout) so you do not have to create each file by hand.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>

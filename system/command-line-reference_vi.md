@@ -45,6 +45,44 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:shop-uninstall` | shop | Gỡ module shop (xóa bảng shop) |
 | `gp247:shop-sample` | shop | Tạo dữ liệu mẫu (⚠️ xóa dữ liệu shop hiện có) |
 | `gp247:shop-clear-cart` | shop | Xóa giỏ hàng / wishlist / so sánh đã hết hạn |
+| `gp247:ext-list` | core | Liệt kê plugin/template local + trạng thái + bản cập nhật |
+| `gp247:ext-install` | core | Cài plugin/template từ file `.zip`, thư mục, hoặc marketplace |
+| `gp247:ext-enable` / `gp247:ext-disable` | core | Bật / tắt plugin/template đã cài |
+| `gp247:ext-uninstall` | core | Gỡ plugin/template (tôn trọng protected + guard template) |
+| `gp247:ext-update` | core | Cập nhật plugin/template từ marketplace (backup/rollback) |
+| `gp247:ext-check-update` | core | Kiểm tra bản cập nhật trên marketplace |
+| `gp247:ext-search` | core | Tìm kiếm catalog marketplace |
+| `gp247:ext-license` | core | Đặt/xem/xóa license theo plugin của extension trả phí |
+| `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+sample]) |
+| `gp247:update` | core | Làm mới sau `composer update` (core [+shop], an toàn cho site chạy) |
+| `gp247:cache-rebuild` | core | Rebuild cache route/config |
+| `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) |
+| `gp247:info` | core | Xem trạng thái: version, marker cài đặt, số lượng extension |
+
+---
+
+## Hợp đồng output (`--json` & mã thoát)
+
+Từ core 2.1, mọi lệnh `gp247:*` dùng chung một hợp đồng output để script, CI/CD,
+Docker và cron tin cậy được:
+
+- **`--json`**: thêm cờ này vào bất kỳ lệnh nào để nhận **một** envelope máy-đọc ra
+  **stdout**; mọi dòng human/tiến trình/cảnh báo ra **stderr**, nên
+  `php artisan gp247:info --json | jq` luôn sạch. Không có `--json` thì vẫn là
+  text/bảng human như thường.
+- **Cấu trúc envelope**:
+
+  ```json
+  { "ok": true, "command": "gp247:ext-install", "data": { }, "warnings": [], "error": null }
+  ```
+
+  Khi lỗi: `"ok": false` và `"error": { "code": "...", "message": "..." }`.
+- **Mã thoát**: `0` khi thành công, khác `0` khi thất bại — cho **mọi** lệnh.
+
+> ⚠️ **Breaking (core 2.1):** `gp247:make-plugin` / `gp247:make-template` nay xuất
+> envelope trên thay cho khóa cũ `{"error":0,"path":"...","msg":"Success"}`. Đường dẫn
+> zip nằm ở `data.path`. Tooling ngoài đang parse khóa cũ cần đọc envelope mới (dùng
+> `--json` để lấy định dạng máy).
 
 ---
 
@@ -142,7 +180,7 @@ FrontController và route front; nếu chưa, các phần front đó tự độn
 | Tham số | Giá trị | Ý nghĩa |
 | --- | --- | --- |
 | `--name` | chuỗi (**bắt buộc**) | Tên plugin, ví dụ `MyBlog`. GP247 tự chuẩn hóa thành tên class và url key. Bỏ trống → báo lỗi `Command error`. |
-| `--download` | `0` (mặc định) hoặc `1` | `0`: chép thẳng plugin vào `app/GP247/Plugins/<Tên>` và `public/GP247/Plugins/<Tên>`. `1`: **không** chép vào app mà đóng gói thành file `.zip` trong `storage/tmp` (kết quả JSON trả về đường dẫn file zip). |
+| `--download` | `0` (mặc định) hoặc `1` | `0`: chép thẳng plugin vào `app/GP247/Plugins/<Tên>` và `public/GP247/Plugins/<Tên>`. `1`: **không** chép vào app mà đóng gói thành file `.zip` trong `storage/tmp` (với `--json`, đường dẫn zip nằm ở `data.path`). |
 
 **Cách dùng:**
 
@@ -156,7 +194,10 @@ Chỉ tạo gói zip để tải về (không cài vào app):
 php artisan gp247:make-plugin --name=MyBlog --download=1
 ```
 
-Lệnh trả về một chuỗi JSON dạng `{"error":0,"path":"...","msg":"Success"}`.
+Mặc định lệnh in text human (`Success: <path>` khi có tạo zip). Thêm `--json` để lấy envelope
+chuẩn — ví dụ
+`{"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBlog","path":"...","msg":"Success"},"warnings":[],"error":null}`
+(đường dẫn zip ở `data.path`). Xem mục "Hợp đồng output" phía trên.
 
 **Trường hợp sử dụng & kết hợp:**
 - Khi bắt đầu viết một plugin mới — dùng khung sinh sẵn để khỏi tạo tay từng file.
@@ -414,6 +455,79 @@ php artisan gp247:shop-clear-cart
 
 ---
 
+## Lệnh vòng đời extension — `gp247:ext-*` (core 2.1)
+
+Đưa toàn bộ vòng đời plugin/template (trước chỉ có ở admin UI) lên CLI. Plugin và template
+dùng chung một họ lệnh; chọn bằng `--type=plugin|template` (mặc định `plugin`). Tất cả đều
+hỗ trợ `--json`.
+
+| Lệnh | Option chính | Chức năng |
+| --- | --- | --- |
+| `gp247:ext-list` | `--type` | Liệt kê extension local kèm installed/active/version và có bản mới hay không (cache-only, không gọi API). |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<thư-mục>`, `--key=<key>`, `--paid`, `--license=` | Cài từ file `.zip` (`--file`), thư mục đã giải nén (`--dir`), hoặc marketplace (`--key`; thêm `--paid --license=...` cho item trả phí). |
+| `gp247:ext-enable` | `--type`, `--key` | Bật extension đã cài. |
+| `gp247:ext-disable` | `--type`, `--key` | Tắt extension (chặn nếu template đang được dùng). |
+| `gp247:ext-uninstall` | `--type`, `--key`, `--only-data` | Gỡ (tôn trọng `extension_protected` và guard template đang-dùng/mặc-định). `--only-data` chỉ xóa cấu hình DB, giữ file. |
+| `gp247:ext-update` | `--type`, `--key`, `--all` | Cập nhật 1 extension hoặc mọi extension có bản mới (backup + rollback). |
+| `gp247:ext-check-update` | `--type`, `--force` | Báo các bản cập nhật (dùng cache trừ khi `--force`). |
+| `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Duyệt/tìm catalog marketplace. |
+| `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Đặt / xem / xóa license theo plugin của extension trả phí (lưu ở `admin_config`, không đụng `.env`). |
+
+Ví dụ:
+
+```bash
+php artisan gp247:ext-list --type=plugin --json
+php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
+php artisan gp247:ext-install --type=plugin --key=News
+php artisan gp247:ext-enable --type=plugin --key=News
+php artisan gp247:ext-update --type=plugin --all
+php artisan gp247:ext-uninstall --type=plugin --key=News
+```
+
+> **Nhiều item (batch).** `ext-install`, `ext-enable`, `ext-disable`, `ext-uninstall` nhận
+> **nhiều key** — lặp option (`--key=A --key=B`) hoặc phân tách bằng dấu phẩy (`--key=A,B`);
+> `ext-install` cũng nhận nhiều `--file`/`--dir`. Các item được xử lý **từng cái một, độc
+> lập** (không có transaction nguyên tử xuyên nhiều extension — mỗi cái là một đơn vị
+> file+migration+config riêng), báo cáo kết quả **theo từng item**, rebuild cache route/config
+> **một lần** ở cuối, và lệnh thoát khác 0 nếu **bất kỳ** item nào fail. **Extension trả phí
+> phải cài từng cái một** — `--paid` đi kèm nhiều `--key` sẽ **bị từ chối ngay từ đầu**
+> (`error.code: paid_multi_not_allowed`), vì một `--license` sẽ bị áp nhầm cho các plugin
+> khác. Mỗi lần cài trả phí dùng đúng một `--key`.
+
+> **Chạy lại / đã cài rồi.** `ext-install` theo nguyên tắc từ-chối-nếu-đã-có: nếu extension
+> đã cài (offline **hoặc** remote) → bị từ chối với lỗi "đã tồn tại" (remote kiểm tra **trước
+> khi** tải — không tốn băng thông, không ghi đè file), và **không** tạo bản ghi
+> `admin_config` trùng. Muốn làm mới extension đã cài dùng `gp247:ext-update`; muốn cài lại
+> thì `gp247:ext-uninstall` trước. Trong batch, key đã-cài chỉ bị ghi vào `failed`, các item
+> khác vẫn chạy tiếp.
+
+> CLI và admin UI nay chạy **cùng một** engine bên dưới (`ExtensionInstaller` /
+> `LibraryClient`) nên hành vi giống hệt nhau dù dùng đường nào. Extension được bảo vệ và
+> template đang-dùng/mặc-định bị từ chối gỡ ở cả hai.
+
+---
+
+## Điều phối & chẩn đoán (core 2.1)
+
+| Lệnh | Option chính | Chức năng |
+| --- | --- | --- |
+| `gp247:install` | `--with-front`, `--with-shop`, `--sample`, `--force=1` | Chạy cài đặt trọn bộ theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample`). Một bước lỗi thì dừng với mã thoát khác 0. `--with-shop` kéo theo `--with-front`. |
+| `gp247:update` | `--overwrite-lang` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. |
+| `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
+| `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt. Thoát khác 0 nếu có mục fail — dùng làm cổng CI/tiền-cài-đặt. |
+| `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
+
+Ví dụ:
+
+```bash
+php artisan gp247:install --with-front --with-shop --force=1
+php artisan gp247:update
+php artisan gp247:doctor --json
+php artisan gp247:info --json
+```
+
+---
+
 ## Lệnh `vendor:publish` hay dùng kèm
 
 Đây là các lệnh chuẩn của Laravel (không phải lệnh riêng của GP247) nhưng thường đi cùng khi cài
@@ -533,8 +647,9 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Thêm lệnh `gp247:shop-update` — nâng cấp shop không phá dữ liệu cho site đang chạy |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>

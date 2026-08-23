@@ -55,13 +55,15 @@ Trước khi bắt đầu, bạn cần:
    - `--name=MyShopSkin`: tên template. Nên viết **PascalCase** (viết hoa đầu mỗi từ, không dấu, không khoảng trắng).
    - `--download=0`: tạo template **trực tiếp** vào `app/GP247/Templates/MyShopSkin` (dùng ngay được). Nếu `--download=1`, lệnh tạo một file `.zip` trong `storage/tmp` để đóng gói phân phối.
 
-3. Nếu thành công, terminal trả về một dòng JSON có `"error":0`:
+3. Nếu thành công, terminal in một dòng text human (ví dụ `Success`); thư mục
+   `app/GP247/Templates/MyShopSkin` được tạo với đầy đủ file mẫu. Thêm `--json` để lấy envelope
+   máy-đọc:
 
    ```json
-   {"error":0,"path":"","msg":"Success"}
+   {"ok":true,"command":"gp247:make-template","data":{"key":"MyShopSkin","path":"","msg":"Success"},"warnings":[],"error":null}
    ```
 
-   Thư mục `app/GP247/Templates/MyShopSkin` được tạo với đầy đủ file mẫu.
+   (Với `--download=1`, đường dẫn zip nằm ở `data.path`.)
 
 ---
 
@@ -363,4 +365,4 @@ nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>

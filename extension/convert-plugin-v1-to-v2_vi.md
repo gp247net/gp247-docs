@@ -103,12 +103,14 @@ Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `
     "requireCore": ["2.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
-    "requireGp247Extensions": []
+    "requireGp247Extensions": [],
+    "requireLivewire": false
 }
 ```
 
 Ý nghĩa các dòng:
 - `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Đặt `["2.1"]` để báo plugin dành cho Core 2.1.
+- `requireLivewire`: plugin có cần Livewire hay không (`true`/`false`). Thêm khi bạn đưa màn Livewire vào ở Bước 5 (`false` là mặc định an toàn — Livewire đi kèm core).
 - `requireComposerPackages` / `requireGp247Extensions`: đổi tên từ `requirePackages` / `requireExtensions` cho rõ nguồn phụ thuộc (gói Composer vs extension GP247). Core 2.1 vẫn đọc khóa cũ (tương thích ngược) nhưng đã deprecated — hãy dùng khóa mới.
 - `requireUpdateFrom`: phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này.
   Để `"1.0"` là an toàn (gần như không giới hạn). Chỉ nâng số này lên khi bạn phát hành bản
@@ -223,6 +225,15 @@ Cách thay thế:
    - `<x-gp247::card>` là component dùng chung của TailAdmin — bạn nên ưu tiên các component
      `<x-gp247::*>` sẵn có thay vì viết lại HTML thô.
    - Lớp `dark:text-gray-300` giúp giao diện đẹp cả ở chế độ nền tối (dark-mode).
+
+3. Trong `Provider.php`, đăng ký namespace class Livewire của plugin (có bảo vệ để host không có
+   Livewire vẫn boot), để component resolve dạng `<livewire:Extension_Key::admin-livewire>`:
+
+   ```php
+   if (class_exists(\Livewire\Livewire::class)) {
+       \Livewire\Livewire::addNamespace('Extension_Key', classNamespace: 'App\\GP247\\Plugins\\Extension_Key\\Livewire');
+   }
+   ```
 
 ### Bước 6 — Thêm route cho Livewire trong `Route.php`
 
@@ -511,4 +522,4 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
