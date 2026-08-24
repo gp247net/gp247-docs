@@ -172,7 +172,7 @@ overwrite your edits**:
 
 | How to run | Mode | Effect |
 | --- | --- | --- |
-| `gp247:core-install` / `gp247:core-update` | **insertOrIgnore** (safe) | Only **adds** missing keys; **keeps** every string you edited |
+| `gp247:install` / `gp247:update` | **insertOrIgnore** (safe) | Only **adds** missing keys; **keeps** every string you edited |
 | `gp247:language-update` | **upsert** (overwrite) | **Overwrites** text back to the package defaults for every key |
 
 ### Safe update (keeps your edits)
@@ -180,10 +180,11 @@ overwrite your edits**:
 Run after updating packages with Composer:
 
 ```bash
-php artisan gp247:core-update
+php artisan gp247:update
 ```
 
-This command adds the **missing** strings without touching the text you customized in admin.
+The language step of this command adds the **missing** strings without touching the text you
+customized in admin.
 
 ### Overwrite update (reset to package defaults)
 
@@ -213,11 +214,12 @@ in Admin → *Language string manager* instead of editing the file.
 → Admin → **Language string manager** (`/language_manager`), filter by keyword, edit inline and save.
 No deploy or command needed.
 
-**Q3: What's the difference between `gp247:core-update` and `gp247:language-update`?**
+**Q3: What's the difference between `gp247:update` and `gp247:language-update`?**
 
-→ `core-update` is **safe** — it only adds missing keys and keeps your edits. `language-update`
-**overwrites** every string back to the package defaults. To keep customizations → use `core-update`;
-to reset to the latest defaults → use `language-update` (back up first).
+→ `gp247:update` is **safe** — its language step only adds missing keys and keeps your edits.
+`gp247:language-update` **overwrites** every string back to the package defaults. To keep
+customizations → use `gp247:update`; to reset to the latest defaults → run `gp247:language-update`
+(or `gp247:update --overwrite-lang`) — back up first.
 
 **Q4: I added a new language but the site is still blank in that language?**
 

@@ -163,7 +163,7 @@ chữ** (dòng trong `languages`). Cả hai làm trong khu vực Admin.
 
 | Cách chạy | Chế độ | Ảnh hưởng |
 | --- | --- | --- |
-| `gp247:core-install` / `gp247:core-update` | **insertOrIgnore** (an toàn) | Chỉ **thêm** mã còn thiếu; **giữ nguyên** mọi câu chữ bạn đã sửa |
+| `gp247:install` / `gp247:update` | **insertOrIgnore** (an toàn) | Chỉ **thêm** mã còn thiếu; **giữ nguyên** mọi câu chữ bạn đã sửa |
 | `gp247:language-update` | **upsert** (ghi đè) | **Ghi đè** text về đúng bản mặc định của gói cho mọi mã |
 
 ### Cập nhật an toàn (giữ chỉnh sửa)
@@ -171,10 +171,11 @@ chữ** (dòng trong `languages`). Cả hai làm trong khu vực Admin.
 Chạy sau khi cập nhật gói bằng Composer:
 
 ```bash
-php artisan gp247:core-update
+php artisan gp247:update
 ```
 
-Lệnh này bổ sung các chuỗi dịch **còn thiếu** mà không đụng tới câu chữ bạn đã tùy biến trong admin.
+Bước xử lý ngôn ngữ của lệnh này bổ sung các chuỗi dịch **còn thiếu** mà không đụng tới câu chữ bạn đã
+tùy biến trong admin.
 
 ### Cập nhật ghi đè (lấy lại bản chuẩn của gói)
 
@@ -203,11 +204,12 @@ Admin → *Quản lý chuỗi ngôn ngữ* thay vì sửa file.
 → Admin → **Quản lý chuỗi ngôn ngữ** (`/language_manager`), lọc theo từ khóa, sửa trực tiếp rồi lưu.
 Không cần deploy hay chạy lệnh.
 
-**Câu 3: Khác nhau giữa `gp247:core-update` và `gp247:language-update`?**
+**Câu 3: Khác nhau giữa `gp247:update` và `gp247:language-update`?**
 
-→ `core-update` **an toàn** — chỉ thêm mã còn thiếu, giữ nguyên chỉnh sửa của bạn. `language-update`
-**ghi đè** mọi chuỗi về bản mặc định của gói. Muốn giữ tùy biến → dùng `core-update`; muốn lấy lại
-bản chuẩn mới nhất → dùng `language-update` (nhớ sao lưu trước).
+→ `gp247:update` **an toàn** — bước ngôn ngữ chỉ thêm mã còn thiếu, giữ nguyên chỉnh sửa của bạn.
+`gp247:language-update` **ghi đè** mọi chuỗi về bản mặc định của gói. Muốn giữ tùy biến → dùng
+`gp247:update`; muốn lấy lại bản chuẩn mới nhất → chạy `gp247:language-update` (hoặc
+`gp247:update --overwrite-lang`) — nhớ sao lưu trước.
 
 **Câu 4: Thêm ngôn ngữ mới nhưng site vẫn trống chữ ở ngôn ngữ đó?**
 

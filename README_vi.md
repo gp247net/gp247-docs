@@ -26,6 +26,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info (core 2.1) | 2026-08-24 |
+| [Hướng dẫn cập nhật GP247](./system/update-gp247_vi.md) | Cập nhật an toàn cho site đang chạy, ưu tiên lệnh chuẩn hóa `gp247:update`; tùy chọn `--overwrite-lang`, `--publish` | 2026-08-24 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-07-30 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-08-05 |
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-08-05 |
