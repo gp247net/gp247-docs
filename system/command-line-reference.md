@@ -531,7 +531,7 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 | Command | Key options | What it does |
 | --- | --- | --- |
 | `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` when `--sample`). A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
-| `gp247:update` | `--overwrite-lang` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), then `cache-rebuild`. Never runs a destructive (re)install. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
 | `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker. Exits non-zero if any check fails — usable as a CI/pre-install gate. |
 | `gp247:info` | `--json` | Show status: installed package versions (core/front/shop), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
@@ -542,10 +542,37 @@ Examples:
 php artisan gp247:install            # interactive: shows the plan + data-loss warnings, then asks to confirm
 php artisan gp247:install --force=1  # unattended (CI/Docker): skips confirmation — see the safety note
 php artisan gp247:install --sample   # also seed demo shop data (interactive by default)
-php artisan gp247:update
+php artisan gp247:update                       # default: refresh only, publishes NOTHING (safe for live)
+php artisan gp247:update --publish=core-public  # also re-publish compiled admin assets (safe)
+php artisan gp247:update --publish=front-view   # also re-publish live storefront templates (DESTRUCTIVE — see note)
+php artisan gp247:update --publish=all          # re-publish every target (DESTRUCTIVE — back up first)
 php artisan gp247:doctor --json
 php artisan gp247:info --json
 ```
+
+> **Re-publish (`--publish=<tokens>`) — opt-in, tiered by impact.** `composer update` refreshes the
+> vendor code but **not** the published copies under `public/GP247`, `app/GP247` and
+> `resources/views/vendor/*`. `--publish=` re-publishes them on demand. **Default (no `--publish`) publishes
+> nothing** — existing behavior, safe for live sites. Each token names a publish tag (naming its package),
+> comma-separated (e.g. `--publish=core-public,front-view`), or `all` for every token:
+>
+> | Token | Publishes to | Impact |
+> | --- | --- | --- |
+> | `core-public` | `public/GP247` (compiled admin CSS/JS) | **Safe** — regenerated artifact, not hand-edited |
+> | `core-view` | `resources/views/vendor/gp247-admin` | **Destructive** — overwrites your admin-view overrides |
+> | `front-public` | `public/GP247/Templates/GP247Front` | **Destructive** — overwrites the in-place-built storefront CSS |
+> | `front-view` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
+> | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Destructive** — overwrites your shop admin-view overrides |
+> | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
+>
+> **Back up the target folder(s) before publishing any destructive token** — the overwrite is not
+> reversible. There is **no** `--force` flag on `gp247:update`: typing a destructive token is itself your
+> consent. In a non-interactive / `--json` run the destructive tokens publish directly (with an impact
+> warning on stderr); in an **interactive terminal** the command warns, reminds you to back up, and asks
+> to confirm (default **no**) — declining skips only the destructive publish while the update and cache
+> steps still run. A per-target write failure (e.g. read-only shared host) is warned and skipped, not fatal.
+> (The `--force` in the underlying `vendor:publish --tag=… --force` is that command's own overwrite flag,
+> not an option of `gp247:update`.)
 
 > **Safety — confirmation is required by default.** `front-install` / `shop-install` **drop and recreate**
 > their tables (they call the matching `*-uninstall` first), so re-running the installer on a live site
@@ -659,8 +686,11 @@ to download / carry elsewhere.
 
 **Q8: After `composer update`, the admin UI doesn't change?**
 
-→ Run `php artisan gp247:core-update`. If it still doesn't change, re-publish the assets:
-`php artisan vendor:publish --tag=gp247:core-public --force`.
+→ Run `php artisan gp247:core-update`. If it still doesn't change, re-publish the compiled admin
+assets — either `php artisan vendor:publish --tag=gp247:core-public --force`, or do it as part of the
+refresh with `php artisan gp247:update --publish=core-public` (safe; publishes only the admin CSS/JS).
+Only reach for the destructive view/template tokens (and back up first) if you actually need to reset
+customized views — see the re-publish note under *Orchestration & diagnostics*.
 
 **Q9: What is `gp247:customize static` that `core-update` calls — do I need to install it?**
 
@@ -680,6 +710,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `gp247:update` gained an **opt-in** `--publish=<tokens>` option to re-publish assets/views after `composer update` (default publishes nothing). Tokens name the publish tag (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`) and are **tiered by impact**: only `core-public` is safe; view/template tokens overwrite your customizations. **No `--force` flag** — typing a destructive token is the consent; interactive runs still warn + confirm (default no). |
 | 2026-08-24 | gp247/core 2.1 | `gp247:install` and `gp247:doctor` now register in a **bootstrap tier** (available right after `composer require`, before the platform is installed — fixes "only `gp247:core-install` existed pre-install"). `gp247:install` **auto-detects** present packages; the `--with-front`/`--with-shop` flags were **removed** (never shipped in a stable release). **Safety:** `gp247:install` now **requires confirmation by default** — it refuses non-interactive/`--json` runs without `--force=1` and prompts (default no) interactively. `sc:install` delegates to `gp247:install`. |
 | 2026-08-24 | gp247/core 2.1 | `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
 | 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |

@@ -514,7 +514,7 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
 | `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` khi có `--sample`). Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
-| `gp247:update` | `--overwrite-lang` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
 | `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt. Thoát khác 0 nếu có mục fail — dùng làm cổng CI/tiền-cài-đặt. |
 | `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
@@ -525,10 +525,36 @@ Ví dụ:
 php artisan gp247:install            # tương tác: hiện kế hoạch + cảnh báo mất dữ liệu rồi hỏi xác nhận
 php artisan gp247:install --force=1  # không tương tác (CI/Docker): bỏ qua xác nhận — xem lưu ý an toàn
 php artisan gp247:install --sample   # đồng thời seed dữ liệu shop demo (mặc định vẫn tương tác)
-php artisan gp247:update
+php artisan gp247:update                       # mặc định: chỉ làm mới, KHÔNG publish gì (an toàn cho site chạy)
+php artisan gp247:update --publish=core-public  # đồng thời re-publish asset admin đã build (an toàn)
+php artisan gp247:update --publish=front-view   # đồng thời re-publish template storefront đang chạy (PHÁ DỮ LIỆU — xem lưu ý)
+php artisan gp247:update --publish=all          # re-publish mọi đích (PHÁ DỮ LIỆU — backup trước)
 php artisan gp247:doctor --json
 php artisan gp247:info --json
 ```
+
+> **Re-publish (`--publish=<tokens>`) — tùy chọn, phân tầng theo mức độ ảnh hưởng.** `composer update`
+> làm mới code trong vendor nhưng **không** làm mới bản đã publish ở `public/GP247`, `app/GP247` và
+> `resources/views/vendor/*`. `--publish=` re-publish chúng theo yêu cầu. **Mặc định (không `--publish`)
+> không publish gì** — giữ hành vi cũ, an toàn cho site đang chạy. Mỗi token là tên tag publish (nêu rõ
+> package), phân tách bằng dấu phẩy (vd `--publish=core-public,front-view`), hoặc `all` cho toàn bộ token:
+>
+> | Token | Publish tới | Mức độ ảnh hưởng |
+> | --- | --- | --- |
+> | `core-public` | `public/GP247` (CSS/JS admin đã build) | **An toàn** — artifact tái sinh, không sửa tay |
+> | `core-view` | `resources/views/vendor/gp247-admin` | **Phá dữ liệu** — ghi đè override view admin của bạn |
+> | `front-public` | `public/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè CSS storefront build tại chỗ |
+> | `front-view` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè template storefront đang chạy |
+> | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Phá dữ liệu** — ghi đè override view admin của shop |
+> | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè template storefront đang chạy |
+>
+> **Backup thư mục đích trước khi publish bất kỳ token phá-dữ-liệu nào** — việc ghi đè không thể hoàn tác.
+> `gp247:update` **không** có cờ `--force`: chính việc bạn tự gõ tên token phá-dữ-liệu là sự đồng thuận.
+> Ở chế độ không tương tác / `--json`, token phá-dữ-liệu sẽ publish thẳng (kèm cảnh báo ảnh hưởng ra stderr);
+> trong **terminal tương tác**, lệnh cảnh báo, nhắc backup rồi hỏi xác nhận (mặc định **không**) — từ chối chỉ
+> bỏ qua phần publish phá-dữ-liệu, các bước update và cache vẫn chạy. Lỗi ghi file ở một đích (vd shared host
+> read-only) chỉ cảnh báo và bỏ qua, không làm hỏng cả lệnh. (Cờ `--force` trong `vendor:publish --tag=… --force`
+> nội bộ là cờ ghi-đè của chính lệnh đó, không phải option của `gp247:update`.)
 
 > **An toàn — mặc định bắt buộc xác nhận.** `front-install` / `shop-install` **drop và tạo lại** bảng của
 > chúng (gọi `*-uninstall` tương ứng trước), nên chạy lại trình cài trên site đang chạy sẽ **phá hủy** dữ
@@ -641,8 +667,11 @@ về / mang đi nơi khác.
 
 **Câu 8: Sau khi `composer update`, giao diện admin không thay đổi?**
 
-→ Chạy `php artisan gp247:core-update`. Nếu vẫn chưa đổi, publish lại asset:
-`php artisan vendor:publish --tag=gp247:core-public --force`.
+→ Chạy `php artisan gp247:core-update`. Nếu vẫn chưa đổi, publish lại asset admin đã build — hoặc
+`php artisan vendor:publish --tag=gp247:core-public --force`, hoặc làm luôn trong lúc refresh bằng
+`php artisan gp247:update --publish=core-public` (an toàn; chỉ publish CSS/JS admin). Chỉ dùng các token
+view/template phá-dữ-liệu (và backup trước) nếu bạn thực sự cần reset các view đã tùy biến — xem lưu ý
+re-publish ở mục *Điều phối & chẩn đoán*.
 
 **Câu 9: Lệnh `gp247:customize static` mà `core-update` gọi là gì, tôi có cần cài không?**
 
@@ -662,6 +691,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `gp247:update` thêm option **tùy chọn** `--publish=<tokens>` để re-publish asset/view sau `composer update` (mặc định không publish gì). Token nêu rõ tên tag publish (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`), **phân tầng theo mức độ ảnh hưởng**: chỉ `core-public` an toàn; token view/template ghi đè tùy biến của bạn. **Không có cờ `--force`** — tự gõ token phá-dữ-liệu chính là đồng thuận; chạy tương tác vẫn cảnh báo + xác nhận (mặc định không). |
 | 2026-08-24 | gp247/core 2.1 | `gp247:install` và `gp247:doctor` nay đăng ký ở **bootstrap tier** (khả dụng ngay sau `composer require`, trước khi nền tảng được cài — sửa lỗi "chỉ `gp247:core-install` tồn tại khi chưa cài"). `gp247:install` **tự phát hiện** package đang có; đã **bỏ hẳn** flag `--with-front`/`--with-shop` (chưa từng phát hành ở bản ổn định). **An toàn:** `gp247:install` nay **mặc định bắt buộc xác nhận** — từ chối chạy không tương tác/`--json` khi thiếu `--force=1`, và hỏi (mặc định không) khi tương tác. `sc:install` ủy quyền cho `gp247:install`. |
 | 2026-08-24 | gp247/core 2.1 | `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
 | 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
