@@ -513,7 +513,7 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
-| `gp247:install` | `--with-front`, `--with-shop`, `--sample`, `--force=1` | Chạy cài đặt trọn bộ theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample`). Một bước lỗi thì dừng với mã thoát khác 0. `--with-shop` kéo theo `--with-front`. |
+| `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` khi có `--sample`). Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
 | `gp247:update` | `--overwrite-lang` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
 | `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt. Thoát khác 0 nếu có mục fail — dùng làm cổng CI/tiền-cài-đặt. |
@@ -522,11 +522,24 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 Ví dụ:
 
 ```bash
-php artisan gp247:install --with-front --with-shop --force=1
+php artisan gp247:install            # tương tác: hiện kế hoạch + cảnh báo mất dữ liệu rồi hỏi xác nhận
+php artisan gp247:install --force=1  # không tương tác (CI/Docker): bỏ qua xác nhận — xem lưu ý an toàn
+php artisan gp247:install --sample   # đồng thời seed dữ liệu shop demo (mặc định vẫn tương tác)
 php artisan gp247:update
 php artisan gp247:doctor --json
 php artisan gp247:info --json
 ```
+
+> **An toàn — mặc định bắt buộc xác nhận.** `front-install` / `shop-install` **drop và tạo lại** bảng của
+> chúng (gọi `*-uninstall` tương ứng trước), nên chạy lại trình cài trên site đang chạy sẽ **phá hủy** dữ
+> liệu front/shop. Vì vậy `gp247:install` khi **không** có `--force`:
+> - **từ chối** chạy trong ngữ cảnh không tương tác hoặc `--json` (trả `error.code = "confirmation_required"`,
+>   mã thoát khác 0, **không** chạy bước nào) — khiến việc vô tình mất dữ liệu ở chế độ tự động là không thể; và
+> - trong **terminal tương tác**, in kế hoạch phát hiện được kèm cảnh báo mất dữ liệu rồi hỏi
+>   `Proceed with installation?` (mặc định **không**). Từ chối thì thoát 0 mà không chạy gì.
+>
+> Chỉ dùng `--force=1` khi bạn thực sự muốn cài/cài-lại không tương tác. `sc:install` tự lấy xác nhận riêng
+> rồi ủy quyền cho `gp247:install --force=1`.
 
 ---
 
@@ -649,6 +662,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `gp247:install` và `gp247:doctor` nay đăng ký ở **bootstrap tier** (khả dụng ngay sau `composer require`, trước khi nền tảng được cài — sửa lỗi "chỉ `gp247:core-install` tồn tại khi chưa cài"). `gp247:install` **tự phát hiện** package đang có; đã **bỏ hẳn** flag `--with-front`/`--with-shop` (chưa từng phát hành ở bản ổn định). **An toàn:** `gp247:install` nay **mặc định bắt buộc xác nhận** — từ chối chạy không tương tác/`--json` khi thiếu `--force=1`, và hỏi (mặc định không) khi tương tác. `sc:install` ủy quyền cho `gp247:install`. |
 | 2026-08-24 | gp247/core 2.1 | `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
 | 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Thêm lệnh `gp247:shop-update` — nâng cấp shop không phá dữ liệu cho site đang chạy |

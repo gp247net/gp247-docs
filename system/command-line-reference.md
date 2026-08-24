@@ -530,7 +530,7 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 
 | Command | Key options | What it does |
 | --- | --- | --- |
-| `gp247:install` | `--with-front`, `--with-shop`, `--sample`, `--force=1` | Run the whole install in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample`). A failing step aborts with a non-zero exit. `--with-shop` implies `--with-front`. |
+| `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` when `--sample`). A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
 | `gp247:update` | `--overwrite-lang` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), then `cache-rebuild`. Never runs a destructive (re)install. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
 | `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker. Exits non-zero if any check fails — usable as a CI/pre-install gate. |
@@ -539,11 +539,24 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 Examples:
 
 ```bash
-php artisan gp247:install --with-front --with-shop --force=1
+php artisan gp247:install            # interactive: shows the plan + data-loss warnings, then asks to confirm
+php artisan gp247:install --force=1  # unattended (CI/Docker): skips confirmation — see the safety note
+php artisan gp247:install --sample   # also seed demo shop data (interactive by default)
 php artisan gp247:update
 php artisan gp247:doctor --json
 php artisan gp247:info --json
 ```
+
+> **Safety — confirmation is required by default.** `front-install` / `shop-install` **drop and recreate**
+> their tables (they call the matching `*-uninstall` first), so re-running the installer on a live site
+> **destroys** front/shop data. Because of this, `gp247:install` without `--force`:
+> - **refuses** to run in a non-interactive or `--json` context (returns `error.code = "confirmation_required"`,
+>   non-zero exit, and runs **no** steps) — this makes accidental unattended data loss impossible; and
+> - in an **interactive terminal**, prints the detected plan plus data-loss warnings and asks
+>   `Proceed with installation?` (default **no**). Declining exits 0 without running anything.
+>
+> Pass `--force=1` only when you genuinely intend an unattended (re)install. `sc:install` takes its own
+> confirmation and then delegates to `gp247:install --force=1`.
 
 ---
 
@@ -667,6 +680,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-08-24 | gp247/core 2.1 | `gp247:install` and `gp247:doctor` now register in a **bootstrap tier** (available right after `composer require`, before the platform is installed — fixes "only `gp247:core-install` existed pre-install"). `gp247:install` **auto-detects** present packages; the `--with-front`/`--with-shop` flags were **removed** (never shipped in a stable release). **Safety:** `gp247:install` now **requires confirmation by default** — it refuses non-interactive/`--json` runs without `--force=1` and prompts (default no) interactively. `sc:install` delegates to `gp247:install`. |
 | 2026-08-24 | gp247/core 2.1 | `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
 | 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Added `gp247:shop-update` — non-destructive shop upgrade for live sites |
