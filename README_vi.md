@@ -41,10 +41,10 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Thuế trong GP247](./s-cart/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
 | [Sản phẩm gói (Bundle/Combo)](./s-cart/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
 | [Tổ chức sản phẩm (Single/Bundle/Group)](./s-cart/product-structure_vi.md) | So sánh 3 loại sản phẩm kèm sơ đồ; chọn loại nào | 2026-08-04 |
-| [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình cho mua vượt tồn; admin cảnh báo vs storefront chặn | 2026-08-12 |
+| [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình vượt tồn; xóa đơn vs đổi trạng thái | 2026-08-27 |
 | [Thuộc tính sản phẩm (Color/Size)](./s-cart/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
 | [Thẻ từ khóa sản phẩm (Product Tag)](./s-cart/product-tag_vi.md) | Tạo/gán thẻ từ khóa cho sản phẩm; phân biệt với Loại giao hàng; tắt vs xóa (từ shop 2.1.6) | 2026-08-25 |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-25 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-27 · ✍️ **Tác giả (Author):** GP247</sub>

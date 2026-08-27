@@ -68,6 +68,8 @@ There are also two related (optional) settings:
 2. **Deleting a single line item** on an order.
 3. **Reducing a line item's quantity** (only the difference is returned).
 
+> ⚠️ **Changing order status does NOT return stock:** Setting an order to "Cancelled" or any other status does **not** automatically restore stock. Stock is only returned when an order or line item is **deleted**. If you cancel an order by changing its status and want the stock back, you must **delete the order** (or its line items) manually afterwards.
+
 > Key point: **admin-created orders decrement/return stock just like customer orders**. Previously admin orders did not touch stock, causing inconsistent figures — this is now unified.
 
 ---
@@ -137,7 +139,7 @@ When **Stock management** (`product_stock`) is on and **Allow buy out of stock**
 
 **Q6: Does deleting an order return stock automatically?**
 
-→ Yes. Deleting a whole order or an individual line item returns the corresponding stock. Reducing a line item's quantity returns only the difference.
+→ Yes. Deleting a whole order or an individual line item returns the corresponding stock. Reducing a line item's quantity returns only the difference. **Note:** only the **delete** action returns stock — changing an order status (even to "Cancelled") does **not** restore stock automatically.
 
 **Q7: How do Bundle products decrement stock?**
 
@@ -157,4 +159,4 @@ When **Stock management** (`product_stock`) is on and **Allow buy out of stock**
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-16 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-27 · ✍️ **Author:** GP247</sub>

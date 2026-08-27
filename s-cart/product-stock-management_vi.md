@@ -68,6 +68,8 @@ Ngoài ra còn hai cấu hình liên quan (không bắt buộc):
 2. **Xóa một dòng hàng** trong đơn.
 3. **Giảm số lượng** một dòng hàng (chỉ hoàn phần chênh lệch).
 
+> ⚠️ **Đổi trạng thái đơn KHÔNG hoàn kho:** Chuyển đơn sang trạng thái "Đã hủy" hay bất kỳ trạng thái nào khác **không** tự động trả lại tồn kho. Kho chỉ được hoàn khi **xóa** đơn hàng hoặc **xóa / giảm dòng hàng**. Nếu bạn hủy đơn bằng cách đổi trạng thái và muốn lấy lại kho, hãy **xóa đơn đó** (hoặc từng dòng hàng) sau đó.
+
 > Điểm quan trọng: **đơn tạo trong admin cũng trừ/hoàn kho y như đơn khách đặt ngoài**. Trước đây đơn admin từng không trừ kho, gây lệch số liệu — nay đã thống nhất.
 
 ---
@@ -137,7 +139,7 @@ Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mu
 
 **Câu 6: Xóa đơn thì tồn kho có tự trả lại không?**
 
-→ Có. Xóa cả đơn hoặc xóa từng dòng hàng đều hoàn kho tương ứng. Giảm số lượng dòng hàng thì hoàn phần chênh lệch.
+→ Có. Xóa cả đơn hoặc xóa từng dòng hàng đều hoàn kho tương ứng. Giảm số lượng dòng hàng thì hoàn phần chênh lệch. **Lưu ý:** chỉ thao tác **xóa** mới hoàn kho — đổi trạng thái đơn (kể cả chuyển sang "Đã hủy") **không** tự động trả kho.
 
 **Câu 7: Sản phẩm Gói (Bundle) trừ kho ra sao?**
 
@@ -157,4 +159,4 @@ Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mu
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-16 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-27 · ✍️ **Tác giả (Author):** GP247</sub>
