@@ -30,6 +30,12 @@ Một lần cập nhật GP247 luôn có **2 phần tách biệt**, phải làm 
 > ⚠️ Chỉ chạy `composer update` là **chưa đủ**. Nếu bỏ qua bước 2, site có thể lỗi
 > vì code mới nhưng cấu trúc dữ liệu / cache vẫn là bản cũ.
 
+> ℹ️ **Có từ GP247 v2.1 (bản public đầu tiên):** mọi thay đổi làm đổi cấu trúc dữ liệu —
+> **hoặc đổi ý nghĩa của dữ liệu đang có** — đều kèm sẵn phần chuyển đổi tự động, và
+> `gp247:update` chạy giúp bạn. Đó là lý do bước 2 là bắt buộc, và là lý do bạn **không
+> bao giờ** phải tự chạy `php artisan migrate`. Mỗi phần chuyển đổi đều an toàn khi chạy
+> lại: chạy lệnh hai lần cũng không thay đổi gì thêm.
+
 ---
 
 ## Chuẩn bị trước khi cập nhật
@@ -218,6 +224,13 @@ phiên bản PHP) để phát hiện sớm vấn đề môi trường.
 → Xem [Tài liệu tham chiếu dòng lệnh](./command-line-reference_vi.md) — liệt kê tất
 cả lệnh artisan của GP247 kèm tùy chọn và ví dụ.
 
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-08-29 | gp247/core 2.2 | `gp247:update` nay chạy thêm **migration nâng cấp của core** (qua `gp247:core-update`), trước đây lệnh này chỉ seed lại. Ghi rõ quy tắc có từ bản public v2.1: mọi thay đổi phá vỡ đều kèm phần chuyển đổi dữ liệu tự động, nên `composer update` + `gp247:update` là toàn bộ quy trình. |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-24 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>

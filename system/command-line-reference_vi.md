@@ -32,7 +32,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | Lệnh | Gói | Chức năng ngắn gọn |
 | --- | --- | --- |
 | `gp247:core-install` | core | Cài đặt GP247 (migrate, seed, publish asset) |
-| `gp247:core-update` | core | Cập nhật GP247 sau khi `composer update` |
+| `gp247:core-update` | core | Cập nhật GP247 sau khi `composer update` (chạy migration nâng cấp + seed an toàn) |
 | `gp247:core-info` | core | Xem thông tin & phiên bản hệ thống |
 | `gp247:make-plugin` | core | Sinh khung một plugin mới |
 | `gp247:language-update` | core | Ghi đè lại chuỗi ngôn ngữ theo mặc định gói (upsert) |
@@ -126,9 +126,18 @@ tài khoản mặc định `admin/admin`.
 
 ### 2. `gp247:core-update`
 
-**Chức năng:** Cập nhật GP247 sau khi bạn nâng phiên bản gói bằng `composer update`. Lệnh seed lại
-dữ liệu mặc định và dữ liệu ngôn ngữ ở chế độ **an toàn** (chỉ thêm bản ghi còn thiếu, **không**
-ghi đè dữ liệu bạn đã chỉnh), cập nhật file tĩnh, rồi in ra phiên bản core hiện tại.
+**Chức năng:** Cập nhật GP247 sau khi bạn nâng phiên bản gói bằng `composer update`. Lệnh chạy
+**theo thứ tự**: (1) các **migration nâng cấp** của core — phần chuyển đổi đưa cấu trúc dữ liệu và dữ
+liệu của site đã cài lên phiên bản mới; (2) seed lại dữ liệu mặc định và dữ liệu ngôn ngữ ở chế độ
+**an toàn** (chỉ thêm bản ghi còn thiếu, **không** ghi đè dữ liệu bạn đã chỉnh); (3) cập nhật file
+tĩnh, rồi in ra phiên bản core hiện tại.
+
+> ℹ️ **Có từ:** gp247/core 2.2 — trước đó lệnh chỉ seed lại, nên một thay đổi về cấu trúc dữ liệu của
+> core không có cách nào tới được site đã cài. Từ khi GP247 public ở **v2.1**, mọi thay đổi phá vỡ đều
+> kèm migration tự động, nên bạn **không bao giờ** phải tự chạy `php artisan migrate`.
+
+Migration **chỉ** chạy từ thư mục `upgrade/` của gói, không bao giờ chạy phần tạo bảng lúc cài — dữ
+liệu của bạn không bị xóa. Chạy lệnh hai lần cũng vô hại: migration đã chạy rồi sẽ được bỏ qua.
 
 **Tham số:** không có.
 
@@ -140,7 +149,12 @@ php artisan gp247:core-update
 ```
 
 **Trường hợp sử dụng & kết hợp:**
-- Chạy **sau mỗi lần `composer update`** để đồng bộ dữ liệu nền và asset với mã nguồn mới.
+- Chạy **sau mỗi lần `composer update`** để đồng bộ cấu trúc dữ liệu, dữ liệu nền và asset với mã
+  nguồn mới. **Hãy sao lưu (backup) database trước** — đây là thói quen an toàn cho mọi lần cập nhật
+  trên site đang chạy.
+- Dùng thường ngày thì nên chạy **`gp247:update`** (lệnh số 1): nó gọi lệnh này cùng các lệnh tương
+  ứng của front/shop theo đúng thứ tự. Chỉ chạy riêng `gp247:core-update` khi bạn cố ý muốn làm mỗi
+  bước của core.
 - Nếu bản cập nhật có bổ sung chuỗi ngôn ngữ và bạn muốn **ghi đè** về đúng bản mới nhất của gói,
   chạy thêm `gp247:language-update` (xem lệnh số 5 — khác biệt an-toàn vs ghi-đè).
 - Lưu ý kỹ thuật: bên trong, lệnh có gọi `gp247:customize static` để làm mới file tĩnh tùy biến.
@@ -691,10 +705,11 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-08-29 | gp247/core 2.2 | `gp247:core-update` nay chạy **migration nâng cấp của core** (`Migrations/upgrade/`) **trước** khi seed lại — trước đây lệnh chỉ seed, nên thay đổi cấu trúc dữ liệu của core không tới được site đã cài. Đây là một phần của quy tắc: từ bản public **v2.1** trở đi, mọi thay đổi phá vỡ đều kèm migration tự động, giao qua `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` thêm option **tùy chọn** `--publish=<tokens>` để re-publish asset/view sau `composer update` (mặc định không publish gì). Token nêu rõ tên tag publish (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`), **phân tầng theo mức độ ảnh hưởng**: chỉ `core-public` an toàn; token view/template ghi đè tùy biến của bạn. **Không có cờ `--force`** — tự gõ token phá-dữ-liệu chính là đồng thuận; chạy tương tác vẫn cảnh báo + xác nhận (mặc định không).<br>• `gp247:install` và `gp247:doctor` nay đăng ký ở **bootstrap tier** (khả dụng ngay sau `composer require`, trước khi nền tảng được cài — sửa lỗi "chỉ `gp247:core-install` tồn tại khi chưa cài"). `gp247:install` **tự phát hiện** package đang có; đã **bỏ hẳn** flag `--with-front`/`--with-shop` (chưa từng phát hành ở bản ổn định). **An toàn:** `gp247:install` nay **mặc định bắt buộc xác nhận** — từ chối chạy không tương tác/`--json` khi thiếu `--force=1`, và hỏi (mặc định không) khi tương tác. `sc:install` ủy quyền cho `gp247:install`.<br>• `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
 | 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Thêm lệnh `gp247:shop-update` — nâng cấp shop không phá dữ liệu cho site đang chạy |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-24 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -34,7 +34,7 @@ and you can copy-paste and run them right away.
 | Command | Package | Short description |
 | --- | --- | --- |
 | `gp247:core-install` | core | Install GP247 (migrate, seed, publish assets) |
-| `gp247:core-update` | core | Update GP247 after `composer update` |
+| `gp247:core-update` | core | Update GP247 after `composer update` (upgrade migrations + safe re-seed) |
 | `gp247:core-info` | core | Show system information & version |
 | `gp247:make-plugin` | core | Scaffold a new plugin |
 | `gp247:language-update` | core | Overwrite language strings with package defaults (upsert) |
@@ -130,9 +130,20 @@ the default account `admin/admin`.
 
 ### 2. `gp247:core-update`
 
-**Feature:** Update GP247 after you bump package versions with `composer update`. It re-seeds the
-default data and the language data in **safe** mode (only inserts missing rows, **never** overwrites
-data you have edited), refreshes static files, then prints the current core version.
+**Feature:** Update GP247 after you bump package versions with `composer update`. The command runs
+**in this order**: (1) the core **upgrade migrations** — the conversions that bring an already
+installed site's data structure and data up to the new version; (2) re-seeds the default data and the
+language data in **safe** mode (only inserts missing rows, **never** overwrites data you have edited);
+(3) refreshes static files, then prints the current core version.
+
+> ℹ️ **Available since:** gp247/core 2.2 — before this, the command only re-seeded, so a change to the
+> core data structure had no way of reaching an installed site. Since GP247 became public at **v2.1**,
+> every breaking change ships with its own automatic migration, so you never have to run
+> `php artisan migrate` by hand.
+
+Migrations run **only** from the package's `upgrade/` folder, never the install-time table creation —
+your data is never wiped. Running the command twice is harmless: a migration that has already run is
+skipped.
 
 **Options:** none.
 
@@ -144,7 +155,11 @@ php artisan gp247:core-update
 ```
 
 **Use cases & combinations:**
-- Run it **after every `composer update`** to sync base data and assets with the new source.
+- Run it **after every `composer update`** to sync the data structure, base data and assets with the
+  new source. **Back up the database first** — that is the safe habit for any update on a live site.
+- Prefer **`gp247:update`** (command #1) in day-to-day use: it runs this command plus the front/shop
+  counterparts in the right order. Use `gp247:core-update` on its own only when you deliberately want
+  the core step alone.
 - If the update adds language strings and you want to **overwrite** them back to the package's
   latest values, additionally run `gp247:language-update` (see command #5 — safe vs. overwrite).
 - Technical note: internally the command calls `gp247:customize static` to refresh customized
@@ -710,10 +725,11 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-08-29 | gp247/core 2.2 | `gp247:core-update` now runs the **core upgrade migrations** (`Migrations/upgrade/`) **before** re-seeding — previously it only re-seeded, so a core data-structure change could not reach an installed site. Part of the rule that, from the public **v2.1** onward, every breaking change ships an automatic migration delivered by `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` gained an **opt-in** `--publish=<tokens>` option to re-publish assets/views after `composer update` (default publishes nothing). Tokens name the publish tag (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`) and are **tiered by impact**: only `core-public` is safe; view/template tokens overwrite your customizations. **No `--force` flag** — typing a destructive token is the consent; interactive runs still warn + confirm (default no).<br>• `gp247:install` and `gp247:doctor` now register in a **bootstrap tier** (available right after `composer require`, before the platform is installed — fixes "only `gp247:core-install` existed pre-install"). `gp247:install` **auto-detects** present packages; the `--with-front`/`--with-shop` flags were **removed** (never shipped in a stable release). **Safety:** `gp247:install` now **requires confirmation by default** — it refuses non-interactive/`--json` runs without `--force=1` and prompts (default no) interactively. `sc:install` delegates to `gp247:install`.<br>• `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
 | 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |
 | 2026-08-22 | gp247/shop 2.1 | Added `gp247:shop-update` — non-destructive shop upgrade for live sites |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-24 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>

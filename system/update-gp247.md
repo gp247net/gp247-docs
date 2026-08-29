@@ -31,6 +31,12 @@ Updating GP247 always involves **2 distinct parts**, and you must do **both**:
 > site may break because the code is new but the data structure / cache is still
 > the old version.
 
+> ℹ️ **Available since GP247 v2.1 (the first public release):** every change that
+> alters the data structure — **or the meaning of existing data** — ships with its
+> own automatic conversion, run for you by `gp247:update`. That is why part 2 is
+> mandatory and why you never have to run `php artisan migrate` by hand. Each
+> conversion is safe to re-run: running the command twice changes nothing.
+
 ---
 
 ## Before you update
@@ -226,6 +232,13 @@ changing the server / PHP version) to catch environment issues early.
 → See the [Command-line reference](./command-line-reference.md) — it lists all of
 GP247's artisan commands with their options and examples.
 
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-08-29 | gp247/core 2.2 | `gp247:update` now also runs the **core** upgrade migrations (through `gp247:core-update`), which previously only re-seeded. Documented the rule introduced with the public v2.1: every breaking change ships an automatic data conversion, so `composer update` + `gp247:update` is the whole procedure. |
+
 ---
 
-<sub>📅 **Last updated:** 2026-08-24 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>
