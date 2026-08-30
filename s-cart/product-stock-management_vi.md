@@ -27,11 +27,12 @@ flowchart TD
     A["📦 Tồn kho sản phẩm (stock)"]
     A -->|"Tạo đơn (ngoài storefront HOẶC trong admin)"| B["stock giảm · sold tăng<br/>theo số lượng đặt"]
     A -->|"Thêm / tăng số lượng dòng hàng trong admin"| B
-    B -->|"Xóa đơn · xóa dòng hàng · giảm số lượng"| A
+    B -->|"HỦY ĐƠN · xóa dòng hàng · giảm số lượng"| A
+    A -->|"Mở lại đơn đã hủy (có kiểm tra tồn)"| B
     A -.->|"Sản phẩm loại Gói (Bundle)"| C["Trừ kho TỪNG sản phẩm con<br/>theo số lượng trong gói"]
 ```
 
-> Nếu nơi bạn đọc không vẽ được sơ đồ, hãy hiểu đơn giản: **có đơn thì trừ kho, gỡ đơn thì trả kho** — bất kể đơn được tạo ở đâu.
+> Nếu nơi bạn đọc không vẽ được sơ đồ, hãy hiểu đơn giản: **hàng đang nằm ở đơn thì không nằm trong kho**. Đặt đơn → hàng rời kho. Hủy đơn → hàng về kho. Mở lại đơn đã hủy → hàng lại rời kho.
 
 ---
 
@@ -61,14 +62,38 @@ Ngoài ra còn hai cấu hình liên quan (không bắt buộc):
 **Giảm kho** (`stock` giảm, `sold` tăng) xảy ra khi:
 1. Khách đặt hàng thành công ngoài **storefront** (thanh toán xong).
 2. Bạn **tạo đơn trong admin** (màn Tạo đơn hàng).
-3. Bạn **thêm** một dòng hàng, hoặc **tăng số lượng** một dòng hàng của đơn trong admin.
+3. Bạn **thêm** một dòng hàng vào đơn trong admin.
+4. Bạn **tăng số lượng** một dòng hàng (chỉ trừ phần chênh lệch).
+5. Bạn **mở lại một đơn đã hủy** — chuyển trạng thái từ "Đã hủy" sang trạng thái khác. Hàng đã trả về kho lúc hủy nay bị lấy ra lại. **Bước này có kiểm tra tồn kho** — xem cảnh báo bên dưới.
 
 **Hoàn kho** (`stock` được cộng lại) xảy ra khi:
-1. **Xóa cả đơn hàng** → hoàn kho tất cả dòng hàng của đơn.
+1. **Hủy đơn** — chuyển trạng thái sang "Đã hủy" → hoàn kho **toàn bộ** dòng hàng của đơn.
 2. **Xóa một dòng hàng** trong đơn.
 3. **Giảm số lượng** một dòng hàng (chỉ hoàn phần chênh lệch).
 
-> ⚠️ **Đổi trạng thái đơn KHÔNG hoàn kho:** Chuyển đơn sang trạng thái "Đã hủy" hay bất kỳ trạng thái nào khác **không** tự động trả lại tồn kho. Kho chỉ được hoàn khi **xóa** đơn hàng hoặc **xóa / giảm dòng hàng**. Nếu bạn hủy đơn bằng cách đổi trạng thái và muốn lấy lại kho, hãy **xóa đơn đó** (hoặc từng dòng hàng) sau đó.
+4. **Xóa đơn hàng** → hoàn kho **nếu hàng chưa về** (đơn đã hủy trước đó thì thôi, không cộng lần hai).
+
+**KHÔNG đụng tới tồn kho:**
+- **Mọi thay đổi trạng thái khác**, ví dụ "Mới" → "Đang xử lý" → "Hoàn thành". Chỉ việc **vào** và **rời** trạng thái "Đã hủy" mới làm kho biến động.
+
+> ℹ️ **Thay đổi từ v3.0 — đọc kỹ nếu bạn đã quen cách cũ.**
+> Trước v3.0, **xóa đơn** là cách duy nhất lấy lại tồn kho, còn đổi trạng thái sang "Đã hủy" thì không làm gì cả. Nay **ngược lại**:
+> - **Hủy đơn** (chuyển trạng thái sang "Đã hủy") → **hàng về kho**, đơn vẫn còn để tra cứu.
+> - **Xóa đơn** → hàng cũng **về kho** (nếu chưa về), nhưng đơn **mất vĩnh viễn**.
+>
+> Lý do: trước đây muốn lấy lại kho thì **buộc** phải xóa đơn, tức mỗi lần hủy một đơn là **mất luôn chứng từ**. Nay bạn chọn được: hủy để giữ lại hồ sơ, hoặc xóa nếu đơn đó vốn không nên tồn tại (nhập nhầm, đơn thử).
+
+> ✅ **Bạn không cần nhớ thứ tự nào cả.** Xóa đơn tự trả hàng về kho, và nếu đơn đã hủy từ trước thì hệ thống biết hàng đã về rồi nên **không cộng thêm lần nữa**.
+
+> 🚫 **Không xóa được đơn đã gửi hàng.** Nếu đơn đang ở trạng thái giao hàng "Đang gửi" hoặc "Đã gửi xong", hệ thống **chặn xóa** — vì xóa sẽ cộng hàng về kho trong khi hàng đang ở chỗ khách. Trường hợp đó hãy **đổi trạng thái đơn** thay vì xóa.
+
+> ⚠️ **Mở lại đơn đã hủy sẽ trừ kho lại — và có thể bị từ chối.** Trong lúc đơn nằm ở trạng thái "Đã hủy", hàng đã về kho và **có thể đã được bán cho người khác**. Khi bạn mở lại đơn, hệ thống kiểm tra tồn kho trước:
+> - Đủ hàng → trừ kho, đơn chuyển trạng thái bình thường.
+> - **Không đủ hàng** và bạn đang **tắt** "Cho phép mua khi hết hàng" → hệ thống **từ chối**, báo rõ lý do, và **không thay đổi gì cả**: không trừ dòng nào, trạng thái đơn giữ nguyên "Đã hủy". Muốn mở lại thì nhập thêm hàng, hoặc bật "Cho phép mua khi hết hàng".
+>
+> Kiểu từ chối "được ăn cả, ngã về không" này là có chủ đích: trừ được vài dòng rồi dừng giữa chừng sẽ làm kho sai mà đơn vẫn mang trạng thái cũ — không ai lần ra được.
+
+> ℹ️ **Hủy đi hủy lại không cộng kho nhiều lần.** Hệ thống ghi nhớ đơn nào **đang** có hàng nằm trong kho. Một đơn bị hủy rồi mở lại rồi hủy tiếp chỉ làm hàng đi về **đúng một lượt mỗi chiều** — không có chuyện bấm hủy hai lần thì kho cộng đôi.
 
 > Điểm quan trọng: **đơn tạo trong admin cũng trừ/hoàn kho y như đơn khách đặt ngoài**. Trước đây đơn admin từng không trừ kho, gây lệch số liệu — nay đã thống nhất.
 
@@ -139,7 +164,7 @@ Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mu
 
 **Câu 6: Xóa đơn thì tồn kho có tự trả lại không?**
 
-→ Có. Xóa cả đơn hoặc xóa từng dòng hàng đều hoàn kho tương ứng. Giảm số lượng dòng hàng thì hoàn phần chênh lệch. **Lưu ý:** chỉ thao tác **xóa** mới hoàn kho — đổi trạng thái đơn (kể cả chuyển sang "Đã hủy") **không** tự động trả kho.
+→ **Có** — và nếu đơn đã hủy từ trước (hàng đã về kho rồi) thì hệ thống không cộng thêm lần nữa. Lưu ý: đơn **đã gửi hàng** thì không xóa được, vì hàng đang ở chỗ khách chứ không ở kho.
 
 **Câu 7: Sản phẩm Gói (Bundle) trừ kho ra sao?**
 
@@ -157,6 +182,13 @@ Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mu
 
 → Bắt khách mua tối thiểu một lượng nhất định mỗi lần (ví dụ bán sỉ tối thiểu 10). Mặc định là 1.
 
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-08-29 | v3.0 | **Hủy đơn** nay hoàn kho (trước đây không); **xóa đơn** vẫn hoàn kho nhưng chỉ khi hàng chưa về, và **bị chặn nếu đơn đã gửi hàng**; **mở lại đơn đã hủy** trừ kho lại và bị **từ chối** nếu không đủ tồn + tắt "cho phép mua khi hết hàng"; hủy/mở lại/xóa nhiều lần chỉ chuyển hàng đúng một lượt mỗi chiều |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-27 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>

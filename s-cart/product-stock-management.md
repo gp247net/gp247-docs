@@ -27,11 +27,12 @@ flowchart TD
     A["📦 Product stock"]
     A -->|"Create order (storefront OR admin)"| B["stock down · sold up<br/>by the ordered quantity"]
     A -->|"Add / increase a line item in admin"| B
-    B -->|"Delete order · delete line · reduce quantity"| A
+    B -->|"CANCEL order · delete line · reduce quantity"| A
+    A -->|"Re-open a cancelled order (stock is checked)"| B
     A -.->|"Bundle-type product"| C["Decrement EACH component's stock<br/>by its quantity in the bundle"]
 ```
 
-> If your reader cannot render the diagram, think of it simply: **an order decreases stock, removing an order returns it** — regardless of where the order was created.
+> If your reader cannot render the diagram, think of it simply: **goods sitting on an order are not sitting in the warehouse**. Placing an order takes them out, cancelling puts them back, and re-opening a cancelled order takes them out again.
 
 ---
 
@@ -61,14 +62,38 @@ There are also two related (optional) settings:
 **Stock decreases** (`stock` down, `sold` up) when:
 1. A customer successfully places an order on the **storefront** (checkout completed).
 2. You **create an order in admin** (the Create Order screen).
-3. You **add** a line item, or **increase the quantity** of a line item on an admin order.
+3. You **add** a line item to an order in admin.
+4. You **increase the quantity** of a line item (only the difference is taken).
+5. You **re-open a cancelled order** — moving it from "Cancelled" to any other status. The goods returned when it was cancelled are taken back out. **This step checks stock first** — see the warning below.
 
 **Stock is returned** (`stock` added back) when:
-1. **Deleting a whole order** → returns stock for all of its line items.
+1. **Cancelling an order** — status → "Cancelled" → returns stock for **all** of its line items.
 2. **Deleting a single line item** on an order.
 3. **Reducing a line item's quantity** (only the difference is returned).
 
-> ⚠️ **Changing order status does NOT return stock:** Setting an order to "Cancelled" or any other status does **not** automatically restore stock. Stock is only returned when an order or line item is **deleted**. If you cancel an order by changing its status and want the stock back, you must **delete the order** (or its line items) manually afterwards.
+4. **Deleting an order** → returns stock **if the goods have not come back yet** (an order cancelled earlier is not credited a second time).
+
+**Nothing happens to stock when:**
+- **Any other status change**, e.g. "New" → "Processing" → "Done". Only moving **into** and **out of** "Cancelled" affects stock.
+
+> ℹ️ **Changed in v3.0 — read this if you are used to the old behaviour.**
+> Before v3.0, **deleting an order** was the only way to get stock back, and setting it to "Cancelled" did nothing. It is now **the other way round**:
+> - **Cancelling** an order (status → "Cancelled") → **stock comes back**, and the order stays on file.
+> - **Deleting** an order → stock **also** comes back (if it has not already), but the order is **gone for good**.
+>
+> Why: getting stock back used to *require* deleting the order, so every cancellation cost you the record. Now you choose: cancel to keep the paperwork, or delete when the order should never have existed at all (a typo, a test).
+
+> ✅ **There is no order of operations to remember.** Deleting returns the goods on its own, and if the order was cancelled earlier the system knows they are already back and does **not** credit them twice.
+
+> 🚫 **An order that has shipped cannot be deleted.** While its shipping status is "Sending" or "Shipping done", deletion is **blocked** — crediting the goods back to stock while they sit with the customer would be wrong. Change the order status instead.
+
+> ⚠️ **Re-opening a cancelled order takes the stock back out — and may be refused.** While the order sat cancelled, its goods were in the warehouse and **may have been sold to someone else**. When you re-open it, the system checks stock first:
+> - Enough stock → it is taken out and the status changes normally.
+> - **Not enough stock** and "Allow buying out of stock" is **off** → the system **refuses**, tells you why, and **changes nothing at all**: no line is touched and the order stays "Cancelled". To re-open it, restock the products or turn on "Allow buying out of stock".
+>
+> That all-or-nothing refusal is deliberate: taking a few lines and stopping halfway would leave stock wrong while the order still showed its old status — wrong in a way nobody could trace.
+
+> ℹ️ **Cancelling twice does not return the goods twice.** The system remembers which orders **currently** have their goods sitting in the warehouse. An order cancelled, re-opened and cancelled again moves the goods **exactly once each way** — pressing cancel twice never doubles your stock.
 
 > Key point: **admin-created orders decrement/return stock just like customer orders**. Previously admin orders did not touch stock, causing inconsistent figures — this is now unified.
 
@@ -139,7 +164,7 @@ When **Stock management** (`product_stock`) is on and **Allow buy out of stock**
 
 **Q6: Does deleting an order return stock automatically?**
 
-→ Yes. Deleting a whole order or an individual line item returns the corresponding stock. Reducing a line item's quantity returns only the difference. **Note:** only the **delete** action returns stock — changing an order status (even to "Cancelled") does **not** restore stock automatically.
+→ **Yes** — and if the order was already cancelled (the goods are back), the system does not credit them again. Note that an order which has **already shipped** cannot be deleted at all, because its goods are with the customer, not in your warehouse.
 
 **Q7: How do Bundle products decrement stock?**
 
@@ -157,6 +182,13 @@ When **Stock management** (`product_stock`) is on and **Allow buy out of stock**
 
 → It forces customers to buy at least a certain amount per order (e.g. wholesale minimum of 10). The default is 1.
 
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-08-29 | v3.0 | **Cancelling** an order now returns stock (it did not before); **deleting** still returns it but only when the goods have not already come back, and is **blocked once the order has shipped**; **re-opening a cancelled order** takes stock back and is **refused** when stock is short and "allow buying out of stock" is off; cancelling, re-opening and deleting repeatedly moves the goods exactly once each way |
+
 ---
 
-<sub>📅 **Last updated:** 2026-08-27 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>

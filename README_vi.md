@@ -25,6 +25,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
+| [Ghi chú phát hành v3.0 — tiền của đơn hàng](./system/release-notes-3.0_vi.md) | Nâng cấp từ v2.1/v3.0: sổ thanh toán từng đơn, dòng tiền tính theo ngày thu, sửa trạng thái thanh toán lệch một bậc, **giảm giá trừ trước thuế**; ghi chú cho lập trình viên plugin | 2026-08-30 |
 | [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info; `core-update` chạy migration nâng cấp (core 2.2) | 2026-08-29 |
 | [Hướng dẫn cập nhật GP247](./system/update-gp247_vi.md) | Cập nhật an toàn cho site đang chạy, ưu tiên lệnh chuẩn hóa `gp247:update`; dữ liệu tự chuyển đổi từ bản public v2.1; tùy chọn `--overwrite-lang`, `--publish` | 2026-08-29 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-07-30 |
@@ -37,11 +38,12 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### S-Cart (bán hàng)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
+| [Vòng đời đơn hàng](./s-cart/order-lifecycle_vi.md) | Từng chặng của đơn — đặt, sửa, thu tiền, hoàn tiền, hủy, mở lại, xóa — kèm tồn kho/tiền/lịch sử ở mỗi chặng và sơ đồ luồng | 2026-08-29 |
 | [Tiền tệ (Currency)](./s-cart/currency_vi.md) | Đồng tiền gốc tường minh, đổi gốc bảo toàn giá trị, ghi chú ô nhập tiền (từ shop 2.1) | 2026-08-22 |
 | [Thuế trong GP247](./s-cart/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
 | [Sản phẩm gói (Bundle/Combo)](./s-cart/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
 | [Tổ chức sản phẩm (Single/Bundle/Group)](./s-cart/product-structure_vi.md) | So sánh 3 loại sản phẩm kèm sơ đồ; chọn loại nào | 2026-08-04 |
-| [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình vượt tồn; xóa đơn vs đổi trạng thái | 2026-08-27 |
+| [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình vượt tồn; **hủy đơn hoàn kho, xóa đơn thì không** (đổi từ v3.0) | 2026-08-29 |
 | [Thuộc tính sản phẩm (Color/Size)](./s-cart/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
 | [Thẻ từ khóa sản phẩm (Product Tag)](./s-cart/product-tag_vi.md) | Tạo/gán thẻ từ khóa cho sản phẩm; phân biệt với Loại giao hàng; tắt vs xóa (từ shop 2.1.6) | 2026-08-25 |
 
