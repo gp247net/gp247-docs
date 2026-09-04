@@ -385,7 +385,7 @@ plugin có trang riêng phải tự đăng ký page-type của mình — cùng c
 
 ### Bước 8c — (Tùy chọn) Plugin total-method (coupon/point) hiển thị ở checkout
 
-Chỉ làm khi plugin là **total-method** (`configCode: "Total"` — vd coupon hoặc plugin tích điểm)
+Chỉ làm khi plugin là **total-method** (`configCode: "Promotion"` — vd coupon hoặc plugin tích điểm; giá trị cũ `"Total"` vẫn được chấp nhận để tương thích ngược)
 cần hiện ô nhập ở trang thanh toán. Ở v1, template checkout include thẳng `Views/render.blade.php`
 + `Views/script.blade.php` (jQuery) của plugin. GP247 2.0 thay bằng một **contract** để mọi template
 (mặc định hay tùy biến) làm việc được với mọi plugin total-method, không phụ thuộc lẫn nhau. Thay cho
@@ -416,7 +416,7 @@ render/script jQuery cũ, hãy làm:
 3. Layer dữ liệu giữ nguyên: `session('totalMethod')` → `getInfo()` → `ShopOrderTotal` →
    `addOrder()`. Giữ nguyên `getInfo()`.
 
-Checkout **tự động phát hiện** plugin (`code='total'` + implements interface) và render fragment vào
+Checkout **tự động phát hiện** plugin (configCode `Promotion`, legacy `Total` + implements interface) và render fragment vào
 vùng total-method. Plugin total **không** implements interface sẽ bị ẩn khỏi checkout 2.0 (có ghi
 `Log::warning`) tới khi bạn nâng cấp. Contract mới **thay thế hoàn toàn** đường AJAX jQuery cũ
 (`render.blade.php` + `script.blade.php` + endpoint `discount.process`/`discount.remove` + swap DOM

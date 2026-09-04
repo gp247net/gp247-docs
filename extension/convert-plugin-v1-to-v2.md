@@ -389,8 +389,9 @@ its page-type — the same way a plugin registers its sitemap in Step 8.
 
 ### Step 8c — (Optional) Total-method plugin (coupon/point) shown at checkout
 
-Do this only when the plugin is a **total-method** (`configCode: "Total"` — e.g. a coupon or a
-loyalty-point plugin) that must show an input at checkout. In v1 the checkout template included the
+Do this only when the plugin is a **total-method** (`configCode: "Promotion"` — e.g. a coupon or a
+loyalty-point plugin; the legacy value `"Total"` is still accepted for backward compatibility) that
+must show an input at checkout. In v1 the checkout template included the
 plugin's `Views/render.blade.php` + `Views/script.blade.php` (jQuery) directly. GP247 2.0 replaced
 that with a **contract** so any template (default or custom) works with any total-method plugin
 without template↔plugin coupling. Instead of the old jQuery render/script, do:
@@ -420,7 +421,7 @@ without template↔plugin coupling. Instead of the old jQuery render/script, do:
 3. The data layer is unchanged: `session('totalMethod')` → `getInfo()` → `ShopOrderTotal` →
    `addOrder()`. Keep your `getInfo()` as-is.
 
-The checkout **discovers** the plugin automatically (`code='total'` + implements the interface) and
+The checkout **discovers** the plugin automatically (configCode `Promotion`, legacy `Total` + implements the interface) and
 renders your fragment in the total-method zone. A total plugin that does **not** implement the
 interface is hidden from the 2.0 checkout (with a logged warning) until you upgrade it. The contract
 fully replaces the old jQuery AJAX path (`render.blade.php` + `script.blade.php` + the

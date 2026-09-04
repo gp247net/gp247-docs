@@ -27,7 +27,7 @@ Trước khi bắt đầu, bạn cần:
 3. Biết plugin của bạn sẽ làm gì: chỉ hiển thị trong trang admin, hay có cả **trang công khai
    (storefront)** cho khách xem. Điều này quyết định bạn có cần các file `Seo.php` / `FrontController.php` hay không.
 
-> ⭐ **Plugin total-method ở checkout** (mã giảm giá / tích điểm, `configCode: "Total"`) là trường hợp
+> ⭐ **Plugin total-method ở checkout** (mã giảm giá / tích điểm, `configCode: "Promotion"` — giá trị cũ `"Total"` vẫn được chấp nhận) là trường hợp
 > đặc biệt: ngoài `getInfo()` thông thường, `AppConfig` của plugin phải implement
 > `GP247\Shop\Front\Contracts\CheckoutTotalMethod` (`checkoutApply` / `checkoutRemove` / `checkoutView`)
 > để checkout Livewire hiển thị được ô nhập trên **mọi** template. Xem
