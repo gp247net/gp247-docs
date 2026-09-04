@@ -178,6 +178,26 @@ already done against that order.
 
 ---
 
+## Change 5 — Sensitive data encryption (from 3.0.3)
+
+**From `gp247/core` 3.0.3**, sensitive information stored in the database — **SMTP password, Google Captcha
+secret, OAuth client secrets, plugin licenses** — is **encrypted at rest** (stored as `enc:v2:…`, no longer
+plaintext). Earlier versions stored these values in plain text.
+
+Key points for operators:
+- GP247 uses a **dedicated key `GP247_ENCRYPTION_KEY`** in `.env`, **separate from `APP_KEY`** — so changing or
+  regenerating `APP_KEY` does **not** break secrets. Set the dedicated key right after install; until then it
+  falls back to `APP_KEY` and `gp247:doctor` reminds you.
+- **Change the key only via** `php artisan gp247:encryption-key-rotate` (re-encrypts everything with the new
+  key), **never by hand** — hand-editing makes old secrets unreadable.
+- Upgrading an existing site: current secrets are **encrypted automatically** by the upgrade migration
+  (`gp247:update`); the rest lazily (re-saving encrypts).
+
+Full details (key-change steps, recovery if the key is lost, encrypting custom columns for developers): see
+[Sensitive data encryption](./data-encryption.md).
+
+---
+
 ## Conditions & Rules (know before you act)
 
 **When recording a receipt or a refund**
@@ -286,4 +306,4 @@ with the right amount and date, and the "Balance" must be 0.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-04 · ✍️ **Author:** GP247</sub>

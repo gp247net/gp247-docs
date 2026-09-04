@@ -168,6 +168,26 @@ con số đã phát hành trên chứng từ, và sửa nó sẽ phá mọi đ�
 
 ---
 
+## Thay đổi 5 — Mã hoá dữ liệu nhạy cảm (từ 3.0.3)
+
+**Từ `gp247/core` 3.0.3**, các thông tin nhạy cảm lưu trong cơ sở dữ liệu — **mật khẩu SMTP, secret Google
+Captcha, OAuth client secret, license plugin** — được **mã hoá at-rest** (lưu dạng `enc:v2:…`, không còn thô).
+Bản trước đó lưu các giá trị này dạng chữ thường.
+
+Điểm quan trọng cho người vận hành:
+- GP247 dùng một **khoá riêng `GP247_ENCRYPTION_KEY`** trong `.env`, **tách khỏi `APP_KEY`** — nhờ vậy đổi/tạo
+  lại `APP_KEY` **không** làm hỏng bí mật. Nên đặt khoá riêng ngay sau khi cài; chưa đặt thì tạm dùng `APP_KEY`
+  và `gp247:doctor` sẽ nhắc.
+- **Đổi khoá phải qua lệnh** `php artisan gp247:encryption-key-rotate` (mã hoá lại toàn bộ bằng khoá mới), **không
+  sửa tay** — sửa tay sẽ làm mọi bí mật cũ không đọc được.
+- Site cũ nâng lên: bí mật đang có được **tự động mã hoá** khi chạy migration nâng cấp (`gp247:update`); lười cho
+  phần còn lại (lưu lại là mã).
+
+Chi tiết đầy đủ (các bước đổi khoá, khôi phục khi mất khoá, mã hoá cột bảng khác cho lập trình viên): xem
+[Mã hoá dữ liệu nhạy cảm](./data-encryption_vi.md).
+
+---
+
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 
 **Khi ghi một khoản thu hoặc hoàn tiền**
@@ -274,4 +294,4 @@ dòng thu với số tiền và ngày đúng, và ô "Còn lại" bằng 0.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-04 · ✍️ **Tác giả (Author):** GP247</sub>

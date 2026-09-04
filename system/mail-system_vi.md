@@ -60,7 +60,7 @@ Nhập các ô sau trong màn Email/SMTP:
 | Ô nhập | Ý nghĩa |
 | --- | --- |
 | `smtp_host` | Máy chủ SMTP (vd `smtp.gmail.com`) |
-| `smtp_user` / `smtp_password` | Tài khoản đăng nhập SMTP (mật khẩu hiển thị dạng ẩn ●●●) |
+| `smtp_user` / `smtp_password` | Tài khoản đăng nhập SMTP (mật khẩu ẩn ●●● và **mã hoá at-rest** — xem "Bí mật lưu mã hoá" bên dưới) |
 | `smtp_security` | Kiểu bảo mật: `ssl` / `tls` / để trống |
 | `smtp_port` | Cổng; **để trống** thì GP247 tự chọn theo bảng dưới |
 | `smtp_name` / `smtp_from` | Tên và địa chỉ người gửi (để trống → lấy tên & email cửa hàng) |
@@ -72,6 +72,14 @@ Nhập các ô sau trong màn Email/SMTP:
 | `ssl` | Mã hoá ngay (implicit TLS) | 465 |
 | `tls` | Nâng cấp mã hoá (STARTTLS) | 587 |
 | để trống | Không mã hoá / tự thương lượng | 587 |
+
+## Bí mật lưu mã hoá
+
+Mật khẩu SMTP — và các bí mật khác như OAuth client secret, secret captcha, license plugin —
+được **mã hoá trong cơ sở dữ liệu** (lưu dạng `enc:v2:…`, không bao giờ thô), bằng khoá riêng
+`GP247_ENCRYPTION_KEY`. **Hãy sao lưu khoá đó**, và **chỉ đổi khoá bằng lệnh
+`php artisan gp247:encryption-key-rotate`** (đừng sửa tay). Hướng dẫn đầy đủ — gồm các bước đổi
+khoá an toàn — xem [Mã hoá dữ liệu nhạy cảm](./data-encryption_vi.md).
 
 ## Chọn cách gửi theo môi trường
 
@@ -114,7 +122,7 @@ Ngay trên màn Email/SMTP, GP247 hiện một **khung nhắc nhở** tự đổ
 
 **Câu 5: Mật khẩu SMTP có bị lộ trên màn admin không?**
 
-→ Không hiển thị dạng chữ thường — ô mật khẩu che bằng ●●●. (Lưu ý kỹ thuật: hiện vẫn lưu ở dạng thô trong cơ sở dữ liệu; việc mã hoá lưu trữ đang trong kế hoạch.)
+→ Không hiển thị dạng chữ thường — ô mật khẩu che bằng ●●●, và được **mã hoá at-rest** trong cơ sở dữ liệu (`enc:v2:…`). Xem [Mã hoá dữ liệu nhạy cảm](./data-encryption_vi.md) để sao lưu / đổi khoá.
 
 **Câu 6: Site nhiều cửa hàng (multi-store) thì gửi từ đâu?**
 
@@ -138,4 +146,4 @@ Ngay trên màn Email/SMTP, GP247 hiện một **khung nhắc nhở** tự đổ
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-05 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-04 · ✍️ **Tác giả (Author):** GP247</sub>

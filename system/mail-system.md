@@ -60,7 +60,7 @@ Fill in these fields on the Email/SMTP screen:
 | Field | Meaning |
 | --- | --- |
 | `smtp_host` | SMTP server (e.g. `smtp.gmail.com`) |
-| `smtp_user` / `smtp_password` | SMTP login (the password is masked as ●●●) |
+| `smtp_user` / `smtp_password` | SMTP login (the password is masked as ●●● and stored **encrypted at rest** — see "Secrets at rest" below) |
 | `smtp_security` | Security type: `ssl` / `tls` / empty |
 | `smtp_port` | Port; **leave empty** and GP247 fills it per the table below |
 | `smtp_name` / `smtp_from` | Sender name and address (empty → use the store name & email) |
@@ -72,6 +72,14 @@ Fill in these fields on the Email/SMTP screen:
 | `ssl` | Encrypted immediately (implicit TLS) | 465 |
 | `tls` | Upgrade to encrypted (STARTTLS) | 587 |
 | empty | Unencrypted / negotiated | 587 |
+
+## Secrets at rest
+
+The SMTP password — and other secrets like OAuth client secrets, the captcha secret and
+plugin licenses — are **encrypted in the database** (stored as `enc:v2:…`, never plaintext),
+using a dedicated key `GP247_ENCRYPTION_KEY`. **Back up that key**, and **change it only with
+`php artisan gp247:encryption-key-rotate`** (never by hand). Full guide — including the safe
+step-by-step key change — is in [Sensitive data encryption](./data-encryption.md).
 
 ## Choosing how to send, by environment
 
@@ -114,7 +122,7 @@ Right above the Email/SMTP screen, GP247 shows a **reminder box** that adapts to
 
 **Q5: Is the SMTP password exposed on the admin screen?**
 
-→ It is not shown as plain text — the field is masked with ●●●. (Technical note: it is still stored in plain form in the database; at-rest encryption is planned.)
+→ It is not shown as plain text — the field is masked with ●●●, and it is **encrypted at rest** in the database (`enc:v2:…`). See [Sensitive data encryption](./data-encryption.md) for backup / key change.
 
 **Q6: On a multi-store site, where does mail send from?**
 
@@ -138,4 +146,4 @@ Right above the Email/SMTP screen, GP247 shows a **reminder box** that adapts to
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-05 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-04 · ✍️ **Author:** GP247</sub>

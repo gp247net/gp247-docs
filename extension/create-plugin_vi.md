@@ -147,6 +147,7 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
 | `requireComposerPackages` | Các gói composer bắt buộc (từ packagist.org). |
 | `requireGp247Extensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
 | `requireLivewire` | Plugin có cần Livewire hay không (`true`/`false`). Scaffold đã ship sẵn màn admin Livewire + đăng ký trong `Provider.php`, nên `false` là mặc định an toàn (Livewire đã đi kèm core). |
+| `storeScope` | Hành vi của plugin trên site nhiều cửa hàng / sàn: `"global"` (mặc định — toàn hệ, không cấu hình theo store; plugin cũ giữ nguyên), `"store"` (mỗi cửa hàng tự bật và có thông số riêng, ví dụ vận chuyển / khuyến mãi / thuế), hoặc `"platform"` (chỉ chủ sàn cấu hình, ví dụ thanh toán trong sàn — vendor không thấy màn). Xem Quy tắc 6 bên dưới. |
 
 > **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (tên nói rõ nguồn phụ thuộc). Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** và sẽ bị gỡ ở bản sau — plugin mới hãy dùng khóa mới.
 
@@ -353,6 +354,54 @@ Vì vậy:
 - `requireUpdateFrom`: chặn cập nhật 1-click từ một bản **quá cũ** mà hook `update()` của bạn không
   thể di trú. Để `"1.0"` khi bạn tự tin migrate được từ mọi bản; nâng lên (ví dụ `"2.0"` cho bản 2.9)
   khi bạn muốn buộc người ở dòng 1.x phải cài lại thủ công thay vì cập nhật thẳng.
+
+### 6.7. Quy tắc 6 — Cấu hình theo cửa hàng (multi-store / marketplace)
+
+GP247 hỗ trợ hai hình dạng nhiều cửa hàng: **multi-store** (mỗi domain một cửa hàng) và **marketplace**
+(một domain, nhiều vendor). Plugin trở nên "theo cửa hàng" với hai thay đổi nhỏ; trên site một cửa hàng
+thì không có gì đổi.
+
+1. **Khai phạm vi** trong `gp247.json`: `"storeScope": "store"` (thông số theo cửa hàng), `"platform"`
+   (chỉ chủ sàn, ví dụ thanh toán trong sàn), hoặc `"global"` (mặc định).
+
+2. **Đọc thông số theo cửa hàng hiệu lực, không đọc GLOBAL trực tiếp.** Dùng seam
+   `gp247_plugin_store_id()` (tự phân giải store của phiên admin / store lúc checkout trên sàn / store
+   theo domain storefront) để cùng một đoạn code chạy được cả hai hình dạng:
+
+   ```php
+   // Trong AppConfig::getInfo() hoặc nơi plugin đọc thông số:
+   $storeId = gp247_plugin_store_id();
+   $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
+       ->where('key', 'fee')->where('store_id', $storeId)->value('value');
+   if ($value === null && (string) $storeId !== (string) GP247_STORE_ID_GLOBAL) {
+       $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
+           ->where('key', 'fee')->where('store_id', GP247_STORE_ID_GLOBAL)->value('value');
+   }
+   ```
+
+   Giữ truy vấn **có group** (không dùng `gp247_config('fee')` trần) để key chung như `fee` không đụng
+   `fee` của plugin khác. Plugin mới nên đặt key có tiền tố (`myplugin_fee`).
+
+3. **Bật picker cửa hàng trên màn admin.** Nếu màn admin của bạn extend
+   `GP247\Core\AdminShell\Infrastructure\ConfigForm`, override `storeScoped(): bool` trả `true`
+   (và `enableKey(): ?string` trả `configKey` cho toggle bật/tắt theo store). Core tự dựng picker phạm
+   vi, badge kế thừa / riêng, nút "dùng cấu hình chung" và toggle — plugin không phải viết UI. Chỉ những
+   dòng cửa hàng thật sự ghi đè mới được lưu (lazy); còn lại kế thừa GLOBAL.
+
+4. **Cho store-admin vào được màn.** Trong `Provider.php`, bên trong khối `gp247_extension_check_active`,
+   thêm segment đường dẫn admin của bạn vào registry core để fence MultiStore Pro phân loại là
+   store-scoped:
+
+   ```php
+   config(['gp247-config.admin.store_scoped_segments' => array_values(array_unique(array_merge(
+       (array) config('gp247-config.admin.store_scoped_segments', []), ['mypluginsegment']
+   )))]);
+   ```
+
+5. **Bí mật được kế thừa nhưng không bao giờ lộ ở scope cửa hàng.** Key render kiểu `password` (hoặc dòng
+   `admin_config` gắn cờ `security = 1`) ở scope cửa hàng hiện ô trống kèm ghi chú "kế thừa"; giá trị
+   chung không bao giờ gửi ra trình duyệt. Vendor chỉ nhập được của mình, không đọc được của sàn.
+   `ShippingStandard` là bản mẫu tham chiếu.
 
 ---
 

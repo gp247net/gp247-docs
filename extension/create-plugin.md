@@ -148,6 +148,7 @@ What the fields mean (the bold ones directly affect version updates — see Sect
 | `requireComposerPackages` | Required composer packages (from packagist.org). |
 | `requireGp247Extensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
 | `requireLivewire` | Whether the plugin needs Livewire (`true`/`false`). The scaffold ships a Livewire admin screen registered in `Provider.php`, so `false` is a safe default (Livewire is bundled with core). |
+| `storeScope` | How the plugin behaves on a multi-store / marketplace site: `"global"` (default — system-wide, no per-store settings; existing plugins keep this behaviour), `"store"` (each store enables it and keeps its own settings, e.g. shipping / discount / tax), or `"platform"` (configured only by the platform owner, e.g. in-marketplace payment — a vendor never sees the screen). See Rule 6 below. |
 
 > **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (the names now state the dependency source). Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** and will be removed in a future release — new plugins should use the new keys.
 
@@ -357,6 +358,54 @@ Therefore:
   hook to migrate. Use `"1.0"` when you are confident you can migrate from any version; raise it (e.g.
   `"2.0"` for a 2.9 release) when you want to force users on the 1.x line to reinstall manually instead
   of updating straight through.
+
+### 6.7. Rule 6 — Per-store config (multi-store / marketplace)
+
+GP247 supports two multi-store shapes: **multi-store** (one store per domain) and **marketplace** (one
+domain, many vendors). A plugin becomes per-store aware with two small changes; on a single-store site
+nothing changes.
+
+1. **Declare the scope** in `gp247.json`: `"storeScope": "store"` (per-store settings), `"platform"`
+   (owner-only, e.g. in-marketplace payment), or `"global"` (default).
+
+2. **Read settings for the effective store, never GLOBAL directly.** Use the seam
+   `gp247_plugin_store_id()` (resolves the admin session store / the marketplace checkout store / the
+   storefront domain store) so the same code serves both shapes:
+
+   ```php
+   // In AppConfig::getInfo() or wherever the plugin reads its settings:
+   $storeId = gp247_plugin_store_id();
+   $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
+       ->where('key', 'fee')->where('store_id', $storeId)->value('value');
+   if ($value === null && (string) $storeId !== (string) GP247_STORE_ID_GLOBAL) {
+       $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
+           ->where('key', 'fee')->where('store_id', GP247_STORE_ID_GLOBAL)->value('value');
+   }
+   ```
+
+   Keep the query **group-qualified** (not a bare `gp247_config('fee')`) so a generic key like `fee`
+   never collides with another plugin's `fee`. Prefer prefixed keys (`myplugin_fee`) for new plugins.
+
+3. **Turn on the store picker on the admin screen.** If your admin screen extends
+   `GP247\Core\AdminShell\Infrastructure\ConfigForm`, override `storeScoped(): bool` to return `true`
+   (and `enableKey(): ?string` to return `configKey` for the per-store on/off toggle). Core renders the
+   scope picker, the inherit / override badges, the "use shared config" reset and the toggle for you —
+   no plugin UI. Only rows the store actually overrides are stored (lazy); the rest inherit GLOBAL.
+
+4. **Let a store-admin reach the screen.** In `Provider.php`, inside the `gp247_extension_check_active`
+   block, append your admin path segment to the core registry so the MultiStore Pro fence classifies it
+   as store-scoped:
+
+   ```php
+   config(['gp247-config.admin.store_scoped_segments' => array_values(array_unique(array_merge(
+       (array) config('gp247-config.admin.store_scoped_segments', []), ['mypluginsegment']
+   )))]);
+   ```
+
+5. **Secrets are inherited but never revealed at a sub-store.** A key rendered as `password` (or an
+   `admin_config` row flagged `security = 1`) shows blank at a store scope with an "inherited" note; the
+   shared value is never sent to the browser. A vendor can enter their own, never read the platform's.
+   `ShippingStandard` is the reference implementation.
 
 ---
 
