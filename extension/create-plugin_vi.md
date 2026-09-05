@@ -189,6 +189,37 @@ public function installExtension()
 }
 ```
 
+> ⚠️ **Gỡ → cài lại và bảng `migrations` — đọc kỹ trước khi dùng file migration của Laravel.**
+> Cách ở trên (tạo/xoá bảng trực tiếp bằng `Schema` ngay trong `ExtensionModel`) **tự nhiên re-entrant**:
+> `installExtension()` chạy mỗi lần cài và tạo lại bảng, nên **gỡ rồi cài lại luôn dựng lại bảng**. Không có
+> gì phải xử lý thêm — đây là cách **được khuyến nghị** cho bảng riêng của plugin.
+>
+> Nếu thay vào đó bạn tạo bảng bằng **file migration của Laravel** (`DB/migrations/` chạy qua
+> `Artisan::call('migrate', ['--path' => 'app/GP247/Plugins/<Name>/DB/migrations', '--force' => true])`),
+> bạn dính một cái bẫy: Laravel ghi mỗi migration vào **bảng `migrations` dùng chung** và **không bao giờ
+> chạy lại** một migration đã có tên trong đó. Vì vậy nếu `uninstall()` drop bảng nhưng **để lại dòng** trong
+> `migrations`, lần cài sau sẽ báo *"Nothing to migrate"* và bảng **không** được tạo lại — mọi màn đọc bảng đó
+> sẽ lỗi `SQLSTATE[42S02] ... table doesn't exist`. **Sự cố này đã xảy ra trên môi trường thật.**
+>
+> Nếu dùng file migration, bạn **bắt buộc**:
+> 1. **Dọn dòng của chính plugin khỏi bảng `migrations` khi gỡ** (và reconcile trước `migrate` ở
+>    install/update, để site đang hỏng **tự chữa lành** qua `gp247:update`):
+>    ```php
+>    // Trong uninstall() sau khi drop bảng, và trong install()/update() trước khi migrate():
+>    $names = array_map(
+>        fn ($p) => pathinfo($p, PATHINFO_FILENAME),
+>        glob(base_path('app/GP247/Plugins/<Name>/DB/migrations/*.php')) ?: []
+>    );
+>    if ($names) {
+>        \Illuminate\Support\Facades\DB::table('migrations')->whereIn('migration', $names)->delete();
+>    }
+>    ```
+> 2. Giữ **mọi** `up()` của migration có guard `Schema::hasTable()` để chạy lại là **no-op an toàn** với bảng
+>    còn tồn tại và chỉ tạo lại bảng bị thiếu.
+>
+> Đây chính là cách plugin `InOut` làm (`cleanMigrationRecords()`). Khớp dòng ledger theo **tên file** của
+> chính plugin (đọc từ `DB/migrations`) — **không** dùng `LIKE '%...%'` mờ.
+
 ### 5.3. Màn admin — dùng Livewire (chuẩn v2)
 
 Chuẩn giao diện mới của GP247 2.0 là **Livewire + TailAdmin**. Khung sinh sẵn 2 file:
@@ -434,6 +465,7 @@ thì không có gì đổi.
 - [ ] Nếu bản mới đổi DB: đã viết hook `update($fromVersion)` di trú an toàn, idempotent.
 - [ ] Không lưu file người dùng tải lên bên trong thư mục plugin.
 - [ ] `install()` / `uninstall()` tạo và dọn dữ liệu cân xứng (gỡ xong không để rác).
+- [ ] Nếu tạo bảng bằng **file migration Laravel**, `uninstall()` có dọn dòng của plugin khỏi bảng `migrations` (và install/update reconcile trước `migrate`); mọi `up()` đều guard `Schema::hasTable()` — để gỡ → cài lại thực sự tạo lại bảng (callout ở §5.2).
 - [ ] Đã `php artisan optimize:clear` và cài/gỡ thử thành công.
 
 ---
@@ -492,4 +524,4 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-05 · ✍️ **Tác giả (Author):** GP247</sub>

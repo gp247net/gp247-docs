@@ -190,6 +190,37 @@ public function installExtension()
 }
 ```
 
+> ⚠️ **Uninstall → reinstall and the `migrations` ledger — read this before using Laravel migration files.**
+> The pattern above (create/drop the table directly with `Schema` inside `ExtensionModel`) is **re-entrant by
+> design**: `installExtension()` runs on every install and recreates the table, so uninstall-then-reinstall
+> always rebuilds it. Nothing to reconcile — this is the recommended approach for a plugin's own tables.
+>
+> If instead you provision tables with **Laravel migration files** (`DB/migrations/` run via
+> `Artisan::call('migrate', ['--path' => 'app/GP247/Plugins/<Name>/DB/migrations', '--force' => true])`),
+> you inherit a trap: Laravel records each migration in the **shared `migrations` ledger** and **never
+> re-runs a migration already listed there**. So if `uninstall()` drops the table but leaves the ledger row,
+> the next install reports *"Nothing to migrate"* and the table is **not** recreated — every screen reading
+> it then fails with `SQLSTATE[42S02] ... table doesn't exist`. **This has happened in production.**
+>
+> If you use migration files you **must**:
+> 1. **Clean the plugin's own rows out of the `migrations` ledger on uninstall** (and reconcile before
+>    `migrate` on install/update, so a site that is already broken self-heals via `gp247:update`):
+>    ```php
+>    // In uninstall() after dropping the table(s), and in install()/update() before migrate():
+>    $names = array_map(
+>        fn ($p) => pathinfo($p, PATHINFO_FILENAME),
+>        glob(base_path('app/GP247/Plugins/<Name>/DB/migrations/*.php')) ?: []
+>    );
+>    if ($names) {
+>        \Illuminate\Support\Facades\DB::table('migrations')->whereIn('migration', $names)->delete();
+>    }
+>    ```
+> 2. Keep **every** migration `up()` guarded with `Schema::hasTable()` so re-running it is a safe no-op for
+>    tables that still exist and only recreates the missing ones.
+>
+> This is the pattern the `InOut` plugin uses (`cleanMigrationRecords()`). Match the ledger rows by the
+> plugin's own **file names** (read from `DB/migrations`) — never a loose `LIKE '%something%'`.
+
 ### 5.3. Admin screen — use Livewire (the v2 standard)
 
 The new UI standard for GP247 2.0 is **Livewire + TailAdmin**. The scaffold generates two files:
@@ -438,6 +469,7 @@ nothing changes.
 - [ ] If the new release changes the DB: an `update($fromVersion)` hook is written, migrating safely and idempotently.
 - [ ] No user-uploaded files are stored inside the plugin folder.
 - [ ] `install()` / `uninstall()` create and clean up data symmetrically (no leftovers after uninstall).
+- [ ] If you provision tables with **Laravel migration files**, `uninstall()` also cleans the plugin's rows from the `migrations` ledger (and install/update reconcile before `migrate`); every migration `up()` is `Schema::hasTable()`-guarded — so uninstall → reinstall actually recreates the table (§5.2 callout).
 - [ ] Ran `php artisan optimize:clear` and successfully tested install/uninstall.
 
 ---
@@ -496,4 +528,4 @@ most common issue, caused by Laravel keeping the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-05 · ✍️ **Author:** GP247</sub>
