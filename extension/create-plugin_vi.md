@@ -147,7 +147,7 @@ Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) 
 | `requireComposerPackages` | Các gói composer bắt buộc (từ packagist.org). |
 | `requireGp247Extensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
 | `requireLivewire` | Plugin có cần Livewire hay không (`true`/`false`). Scaffold đã ship sẵn màn admin Livewire + đăng ký trong `Provider.php`, nên `false` là mặc định an toàn (Livewire đã đi kèm core). |
-| `storeScope` | Hành vi của plugin trên site nhiều cửa hàng / sàn: `"global"` (mặc định — toàn hệ, không cấu hình theo store; plugin cũ giữ nguyên), `"store"` (mỗi cửa hàng tự bật và có thông số riêng, ví dụ vận chuyển / khuyến mãi / thuế), hoặc `"platform"` (chỉ chủ sàn cấu hình, ví dụ thanh toán trong sàn — vendor không thấy màn). Xem Quy tắc 6 bên dưới. |
+| `storeScope` | Thông số / bật-tắt của plugin có **khác nhau theo cửa hàng** không? `"global"` (mặc định — một giá trị chung toàn hệ, không cấu hình theo store; plugin cũ giữ nguyên) hoặc `"store"` (mỗi cửa hàng bật riêng và có thông số riêng, ví dụ vận chuyển / khuyến mãi / thuế / tài khoản thanh toán). *Ai được sửa* plugin `store` là nút riêng: append segment admin vào `store_scoped_segments` để chủ store/vendor tự cấu hình, hoặc bỏ qua để chỉ chủ site cấu hình (root đặt giá trị theo store, vendor bị fence chặn). `"platform"` là alias cũ (deprecated) của `"store"`. Xem Quy tắc 6 bên dưới. |
 
 > **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (tên nói rõ nguồn phụ thuộc). Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** và sẽ bị gỡ ở bản sau — plugin mới hãy dùng khóa mới.
 
@@ -361,8 +361,9 @@ GP247 hỗ trợ hai hình dạng nhiều cửa hàng: **multi-store** (mỗi do
 (một domain, nhiều vendor). Plugin trở nên "theo cửa hàng" với hai thay đổi nhỏ; trên site một cửa hàng
 thì không có gì đổi.
 
-1. **Khai phạm vi** trong `gp247.json`: `"storeScope": "store"` (thông số theo cửa hàng), `"platform"`
-   (chỉ chủ sàn, ví dụ thanh toán trong sàn), hoặc `"global"` (mặc định).
+1. **Khai phạm vi** trong `gp247.json`: `"storeScope": "store"` (thông số / bật-tắt khác theo cửa hàng)
+   hoặc `"global"` (mặc định — một giá trị chung). `"platform"` là alias cũ (deprecated) của `"store"`. Vendor
+   có được tự cấu hình plugin `store` hay không quyết định riêng bằng `store_scoped_segments` (bước 5).
 
 2. **Đọc thông số theo cửa hàng hiệu lực, không đọc GLOBAL trực tiếp.** Dùng seam
    `gp247_plugin_store_id()` (tự phân giải store của phiên admin / store lúc checkout trên sàn / store

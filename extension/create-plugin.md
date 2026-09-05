@@ -148,7 +148,7 @@ What the fields mean (the bold ones directly affect version updates — see Sect
 | `requireComposerPackages` | Required composer packages (from packagist.org). |
 | `requireGp247Extensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
 | `requireLivewire` | Whether the plugin needs Livewire (`true`/`false`). The scaffold ships a Livewire admin screen registered in `Provider.php`, so `false` is a safe default (Livewire is bundled with core). |
-| `storeScope` | How the plugin behaves on a multi-store / marketplace site: `"global"` (default — system-wide, no per-store settings; existing plugins keep this behaviour), `"store"` (each store enables it and keeps its own settings, e.g. shipping / discount / tax), or `"platform"` (configured only by the platform owner, e.g. in-marketplace payment — a vendor never sees the screen). See Rule 6 below. |
+| `storeScope` | Can this plugin's settings / on-off differ per store? `"global"` (default — one shared value system-wide, no per-store settings; existing plugins keep this behaviour) or `"store"` (each store can be enabled separately and keep its own settings, e.g. shipping / discount / tax / a payment account). *Who may edit* a `store` plugin is a separate knob: append your admin segment to `store_scoped_segments` to let store-admins/vendors self-configure, or leave it out for owner-only (root sets per-store values, vendors are fenced). `"platform"` is a deprecated alias of `"store"`. See Rule 6 below. |
 
 > **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (the names now state the dependency source). Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** and will be removed in a future release — new plugins should use the new keys.
 
@@ -365,8 +365,9 @@ GP247 supports two multi-store shapes: **multi-store** (one store per domain) an
 domain, many vendors). A plugin becomes per-store aware with two small changes; on a single-store site
 nothing changes.
 
-1. **Declare the scope** in `gp247.json`: `"storeScope": "store"` (per-store settings), `"platform"`
-   (owner-only, e.g. in-marketplace payment), or `"global"` (default).
+1. **Declare the scope** in `gp247.json`: `"storeScope": "store"` (settings / on-off can differ per store)
+   or `"global"` (default — one shared value). `"platform"` is a deprecated alias of `"store"`. Whether a
+   vendor may self-configure a `store` plugin is decided separately by `store_scoped_segments` (step 5).
 
 2. **Read settings for the effective store, never GLOBAL directly.** Use the seam
    `gp247_plugin_store_id()` (resolves the admin session store / the marketplace checkout store / the
