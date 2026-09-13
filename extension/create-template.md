@@ -194,7 +194,7 @@ controller does **not** call a fixed view file directly. It resolves the view th
 2. **If the template has that file → it uses it** (the template has "overridden" the shop view).
 3. **If the template does NOT have it → it falls back to the shop package's default view:**
    `gp247-shop-front::screen.shop_product_list` (i.e. the file
-   `vendor/gp247/shop/src/Views/front/screen/shop_product_list.blade.php`).
+   `vendor/gp247/shop/src/Views/templates/GP247Front/screen/shop_product_list.blade.php`).
 
 **Consequence:** a new template that contains **no** shop page at all still runs the shopping website
 normally — every shop page automatically uses the default in the `gp247/shop` package. This is exactly
@@ -239,30 +239,36 @@ reference, then copy them into your template to customize:
 1. Run the command to publish the shop's storefront views:
 
    ```bash
-   php artisan vendor:publish --tag=gp247:shop-view-front
+   # one file at a time (recommended)
+   php artisan gp247:template-publish GP247Front --file=screen/shop_product_list.blade.php
    ```
 
-   On success, the terminal lists the copied files. All of the shop's default front views are copied
-   into the default template folder `app/GP247/Templates/GP247Front` (this is the command's fixed destination).
+   The file lands in `app/GP247/Templates/GP247Front/screen/shop_product_list.blade.php`. To dump the
+   whole tree instead, `php artisan vendor:publish --tag=gp247:shop-view-front` still works — but read
+   the warning below before you do.
 
-2. Open the just-published folder (`app/GP247/Templates/GP247Front`) to see the full structure of a
-   template that includes the shop: `screen/shop_*.blade.php`, `account/`, `auth/`, `blocks/`,
-   `common/`, `livewire/`...
+2. To **read** the shop's page structure you do not have to publish anything: browse
+   `vendor/gp247/shop/src/Views/templates/GP247Front/` (`screen/shop_*.blade.php`, `account/`, `auth/`,
+   `blocks/`, `common/`, `livewire/`, `partials/`) and the front half in
+   `vendor/gp247/front/src/Views/templates/GP247Front/`. Those are the files actually being rendered.
 
 3. **Copy the shop pages you want to customize into your own template**, keeping the same sub-path.
    For example, to customize the product-list page for `MyShopSkin`:
 
    ```
-   Copy:  app/GP247/Templates/GP247Front/screen/shop_product_list.blade.php
+   Copy:  vendor/gp247/shop/src/Views/templates/GP247Front/screen/shop_product_list.blade.php
    To:    app/GP247/Templates/MyShopSkin/screen/shop_product_list.blade.php
    ```
 
    Then edit the file inside `MyShopSkin` as you wish. Thanks to the mechanism in 6.1, `gp247/shop` will
    **prefer the version in your template**, while any shop pages you did **not** copy still use the default.
 
-> Tip: only copy the pages you truly want to change. Copying the whole set and leaving it untouched
-> creates needless maintenance burden (and when the shop package updates, the copy kept in your template
-> will not update along with it).
+> ⚠️ **Only copy the pages you truly want to change.** Since 2026-09-14 a template's Blade is served
+> straight from `gp247/front` / `gp247/shop`; a file only lands under `app/` when you publish it — and from
+> that moment it **shadows the package for good**, so `composer update` can never fix it again. Publishing
+> the whole tree (`--tag=gp247:shop-view-front`, `--tag=gp247:front-view`) freezes every file at once.
+> `php artisan gp247:template-prune GP247Front --dry-run` lists published files that are still identical to
+> the package and can be handed back.
 
 > Distinguishing the tags: `gp247:shop-view-front` is the **storefront** views (for templates).
 > `gp247:shop-view-admin` is the shop's **admin** views — **unrelated** to the storefront template,
@@ -373,4 +379,4 @@ most common issue, caused by Laravel still holding the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-14 · ✍️ **Author:** GP247</sub>

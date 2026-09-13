@@ -40,6 +40,8 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:front-uninstall` | front | Gỡ module front (xóa bảng front) |
 | `gp247:make-template` | front | Sinh khung một template giao diện mới |
 | `gp247:template-setup` | front | Thiết lập template mặc định cho store gốc |
+| `gp247:template-publish` | front | Lấy file template từ package ra `app/` để sửa (từng file) |
+| `gp247:template-prune` | front | Trả lại cho package những file template đã publish mà chưa ai sửa |
 | `gp247:shop-install` | shop | Cài đặt module bán hàng (ecommerce) |
 | `gp247:shop-update` | shop | Nâng cấp schema/dữ liệu shop không phá dữ liệu (site đang chạy) |
 | `gp247:shop-uninstall` | shop | Gỡ module shop (xóa bảng shop) |
@@ -334,8 +336,82 @@ php artisan gp247:template-setup
 **Trường hợp sử dụng & kết hợp:**
 - Được `gp247:front-install` gọi tự động ở cuối; bạn chỉ cần chạy tay khi bước publish template
   trước đó bị lỗi và bạn đã copy template thủ công.
-- Nếu terminal in `Class template Default not found`, nghĩa là template mặc định chưa được copy
-  vào `app/GP247/Templates` — hãy publish/copy template rồi chạy lại.
+- Nếu terminal in `Class template Default not found`, nghĩa là **vỏ extension** của template
+  (`AppConfig.php` và các file đi kèm) chưa có trong `app/GP247/Templates/<Tên>` — chỉ vỏ mới cần nằm ở đó,
+  còn file Blade được phục vụ thẳng từ package. Chạy
+  `php artisan vendor:publish --tag=gp247:front-template --force` (hoặc copy vỏ thủ công) rồi chạy lại.
+
+### 10. `gp247:template-publish`
+
+**Chức năng:** Lấy file template **từ package phát hành nó** ra `app/GP247/Templates/<Tên>/` để bạn sửa.
+
+Blade của template được phục vụ thẳng từ `vendor/gp247/front` và `vendor/gp247/shop` — một file chỉ nằm dưới
+`app/` khi bạn publish nó. Publish **từng file** là cách tuỳ biến một màn mà **phần còn lại vẫn nhận bản vá**
+qua `composer update`.
+
+**Tham số & tuỳ chọn:**
+
+| Tên | Giá trị | Ý nghĩa |
+| --- | --- | --- |
+| `<template>` | vd `GP247Front` | Tên template (phân biệt hoa/thường) |
+| `--file=` | đường dẫn tương đối | Publish đúng một file, vd `--file=screen/home.blade.php` |
+| `--all` | cờ | Publish toàn bộ file mà các package cung cấp cho template này |
+| `--force` | cờ | Ghi đè file đã có dưới `app/` (mặc định: **giữ** bản của bạn) |
+| `--json` | cờ | Envelope máy-đọc-được |
+
+**Cách dùng:**
+
+```bash
+php artisan gp247:template-publish GP247Front --file=screen/home.blade.php
+php artisan gp247:template-publish GP247Front --file=blocks/shop_product_home.blade.php
+php artisan gp247:template-publish GP247Front --all           # cả cây (tương đương vendor:publish --tag=gp247:front-view)
+```
+
+**Trường hợp sử dụng & kết hợp:**
+- Tuỳ biến một màn storefront mà không đóng băng phần còn lại của template.
+- Đường dẫn sai → lỗi `error.code = "template_file_not_found"` kèm gợi ý file gần đúng.
+- Không có `--force` thì file bạn đã sửa được **giữ nguyên** và báo là bỏ qua — publish không bao giờ âm thầm
+  phá công sức của bạn.
+
+---
+
+### 11. `gp247:template-prune`
+
+**Chức năng:** Xoá những file template đã publish mà **trùng khít từng byte** với bản của package, trả chúng về
+cho package để cập nhật lại chạm tới được.
+
+Đây là đường nâng cấp cho các site cài từ trước khi template chuyển vào package: `app/GP247/Templates/<Tên>/`
+của họ đang giữ một bản sao đầy đủ che mất bản package **vĩnh viễn**.
+
+**Những thứ lệnh không bao giờ xoá:** file bạn đã sửa (so bằng **hash nội dung**, không theo tên/thời gian),
+file không package nào cung cấp (block do plugin chèn, file bạn tự viết), và **vỏ extension** của template
+(`AppConfig.php`, `Provider.php`, `Route.php`, `config.php`, `function.php`, `gp247.json`, `Lang/`) — xoá
+`AppConfig.php` sẽ khiến template biến mất khỏi hệ thống.
+
+**Tham số & tuỳ chọn:**
+
+| Tên | Giá trị | Ý nghĩa |
+| --- | --- | --- |
+| `<template>` | vd `GP247Front` | Tên template |
+| `--dry-run` | cờ | Liệt kê sẽ xoá gì / giữ gì, **không** đụng vào đĩa |
+| `--json` | cờ | Envelope máy-đọc-được |
+
+**Cách dùng:**
+
+```bash
+php artisan gp247:template-prune GP247Front --dry-run   # luôn xem trước
+php artisan gp247:template-prune GP247Front             # hỏi xác nhận (mặc định: không)
+php artisan gp247:template-prune GP247Front --json      # tự động hoá: chạy không hỏi
+```
+
+**Trường hợp sử dụng & kết hợp:**
+- Chạy một lần sau khi nâng cấp, rồi `gp247:doctor` (mục `template_source`) phải báo
+  `templates served from their package`.
+- `gp247:update` chỉ **gợi ý** lệnh này — không bao giờ tự xoá file giúp bạn.
+- Trong script hãy dùng `--json` (đó là đường đồng thuận); `--no-interaction` trả lời prompt bằng mặc định
+  **không** ⇒ huỷ.
+- Template không package nào cung cấp (theme của chính bạn) bị từ chối với `template_source_missing` — không có
+  gì để trả lại nên không được phép xoá.
 
 ---
 
@@ -344,7 +420,7 @@ php artisan gp247:template-setup
 > Nhóm này chỉ có khi dự án đã cài gói `gp247/shop` (module bán hàng). `gp247/shop` yêu cầu sẵn
 > `gp247/core` và `gp247/front`.
 
-### 10. `gp247:shop-install`
+### 12. `gp247:shop-install`
 
 **Chức năng:** Cài đặt module bán hàng (ecommerce). Lệnh **tự gỡ shop cũ trước** (gọi
 `gp247:shop-uninstall`), tạo lại bảng dữ liệu shop, seed dữ liệu khởi tạo + dữ liệu mặc định cho
@@ -365,7 +441,7 @@ php artisan gp247:shop-install
 
 ---
 
-### 11. `gp247:shop-update`
+### 13. `gp247:shop-update`
 
 > ℹ️ **Có từ:** gp247/shop 2.1
 
@@ -399,7 +475,7 @@ php artisan gp247:shop-update
 
 ---
 
-### 12. `gp247:shop-uninstall`
+### 14. `gp247:shop-uninstall`
 
 **Chức năng:** Gỡ module shop: xóa các bảng dữ liệu shop (chạy `down()` của migration shop) và xóa
 bản ghi migration tương ứng.
@@ -419,7 +495,7 @@ php artisan gp247:shop-uninstall
 
 ---
 
-### 13. `gp247:shop-sample`
+### 15. `gp247:shop-sample`
 
 **Chức năng:** Tạo **dữ liệu mẫu** cho cửa hàng: danh mục nhiều cấp, thương hiệu, nhà cung cấp,
 sản phẩm đơn, sản phẩm bộ (bundle), sản phẩm nhóm (group), và khuyến mãi mẫu.
@@ -441,7 +517,7 @@ php artisan gp247:shop-sample
 
 ---
 
-### 14. `gp247:shop-clear-cart`
+### 16. `gp247:shop-clear-cart`
 
 **Chức năng:** Dọn các giỏ hàng đã **hết hạn**: giỏ hàng (`default`), danh sách yêu thích
 (`wishlist`) và so sánh (`compare`), dựa trên số ngày cấu hình trong
@@ -541,7 +617,7 @@ php artisan gp247:install --force=1  # không tương tác (CI/Docker): bỏ qua
 php artisan gp247:install --sample   # đồng thời seed dữ liệu shop demo (mặc định vẫn tương tác)
 php artisan gp247:update                       # mặc định: chỉ làm mới, KHÔNG publish gì (an toàn cho site chạy)
 php artisan gp247:update --publish=core-public  # đồng thời re-publish asset admin đã build (an toàn)
-php artisan gp247:update --publish=front-view   # đồng thời re-publish template storefront đang chạy (PHÁ DỮ LIỆU — xem lưu ý)
+php artisan gp247:update --publish=front-view   # đồng thời copy cả cây Blade GP247Front vào app/ (PHÁ DỮ LIỆU — xem lưu ý)
 php artisan gp247:update --publish=all          # re-publish mọi đích (PHÁ DỮ LIỆU — backup trước)
 php artisan gp247:doctor --json
 php artisan gp247:info --json
@@ -557,10 +633,17 @@ php artisan gp247:info --json
 > | --- | --- | --- |
 > | `core-public` | `public/GP247` (CSS/JS admin đã build) | **An toàn** — artifact tái sinh, không sửa tay |
 > | `core-view` | `resources/views/vendor/gp247-admin` | **Phá dữ liệu** — ghi đè override view admin của bạn |
-> | `front-public` | `public/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè CSS storefront build tại chỗ |
-> | `front-view` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè template storefront đang chạy |
+> | `front-public` | `public/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè CSS/JS storefront đã build |
+> | `front-template` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè **vỏ extension** của template (`AppConfig`, `Provider`, `Route`, `config.php`, `function.php`, `gp247.json`, `Lang/`) |
+> | `front-view` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — copy **toàn bộ** cây Blade của GP247Front vào app. Từ đó các file này che mất bản của package **vĩnh viễn**: `composer update` không bao giờ vá được nữa. Nên dùng `gp247:template-publish --file=` |
 > | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Phá dữ liệu** — ghi đè override view admin của shop |
-> | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè template storefront đang chạy |
+> | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — như `front-view`, cho phần view shop của template |
+>
+> **`all` không bao giờ dựng lại template mà site không dùng.** Khi template mặc định của site không phải
+> `GP247Front` (không store nào chọn nó và `app/GP247/Templates/GP247Front` đã bị xoá), `all` **tự bỏ qua**
+> `front-public`, `front-template`, `front-view`, `shop-view-front` kèm thông báo — site dùng template riêng
+> sẽ không thấy GP247Front hồi sinh sau khi update. Gõ **đích danh** một trong các token đó thì vẫn publish:
+> đó là quyết định của bạn.
 >
 > **Backup thư mục đích trước khi publish bất kỳ token phá-dữ-liệu nào** — việc ghi đè không thể hoàn tác.
 > `gp247:update` **không** có cờ `--force`: chính việc bạn tự gõ tên token phá-dữ-liệu là sự đồng thuận.
@@ -592,9 +675,10 @@ php artisan gp247:info --json
 | --- | --- |
 | `php artisan vendor:publish --tag=gp247:core-public --force` | Asset (CSS/JS) admin của core ra `public/GP247` |
 | `php artisan vendor:publish --tag=gp247:front-public --force` | Asset của module front |
-| `php artisan vendor:publish --tag=gp247:front-view --force` | View template front mặc định |
+| `php artisan vendor:publish --tag=gp247:front-template --force` | **Vỏ extension** của template mặc định → `app/GP247/Templates/GP247Front` (bước chạy khi cài) |
+| `php artisan vendor:publish --tag=gp247:front-view --force` | **Cả cây Blade** của template mặc định → `app/...` (chỉ khi muốn override toàn bộ; xem `gp247:template-publish --file=`) |
 | `php artisan vendor:publish --tag=gp247:shop-view-admin` | View admin của shop (để override) → `resources/views/vendor/gp247-shop-admin` |
-| `php artisan vendor:publish --tag=gp247:shop-view-front` | View front của shop → `app/GP247/Templates/GP247Front` |
+| `php artisan vendor:publish --tag=gp247:shop-view-front` | Cả cây view front của shop → `app/GP247/Templates/GP247Front` (chỉ khi muốn override toàn bộ) |
 
 > Sau khi **cập nhật gói** bằng `composer update`, nếu giao diện admin không đổi theo, hãy chạy
 > lại `vendor:publish --tag=gp247:core-public --force` để làm mới asset đã publish.
@@ -712,4 +796,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-14 · ✍️ **Tác giả (Author):** GP247</sub>

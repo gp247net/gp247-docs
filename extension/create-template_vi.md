@@ -189,7 +189,7 @@ gọi thẳng một file view cố định. Nó gọi qua hàm chọn view `gp24
 2. **Nếu template có file đó → dùng nó** (template đã "override" giao diện shop).
 3. **Nếu template KHÔNG có → rơi về (fallback) view mặc định của gói shop:**
    `gp247-shop-front::screen.shop_product_list` (tức file
-   `vendor/gp247/shop/src/Views/front/screen/shop_product_list.blade.php`).
+   `vendor/gp247/shop/src/Views/templates/GP247Front/screen/shop_product_list.blade.php`).
 
 **Hệ quả:** một template mới **không cần** chứa bất kỳ trang shop nào vẫn chạy website bán hàng bình
 thường — mọi trang shop tự động dùng bản mặc định trong gói `gp247/shop`. Đây chính là lý do template
@@ -220,17 +220,19 @@ Ngoài `screen/`, gói shop còn có các thư mục view khác có thể overri
 Để không phải viết trang shop từ con số 0, hãy **publish (xuất) view mặc định của `gp247/shop` ra ngoài**
 làm bản tham khảo, rồi chép sang template của bạn để chỉnh:
 
-1. Chạy lệnh publish view storefront của shop:
+1. Lấy **từng file** bạn định sửa (cách khuyến nghị):
 
    ```bash
-   php artisan vendor:publish --tag=gp247:shop-view-front
+   php artisan gp247:template-publish GP247Front --file=screen/shop_product_list.blade.php
    ```
 
-   Nếu thành công, terminal liệt kê các file được copy. Toàn bộ view front mặc định của shop được đổ
-   vào thư mục template mặc định `app/GP247/Templates/GP247Front` (đây là đích cố định của lệnh này).
+   File sẽ nằm ở `app/GP247/Templates/GP247Front/screen/shop_product_list.blade.php`. Muốn đổ **cả cây**
+   thì `php artisan vendor:publish --tag=gp247:shop-view-front` vẫn dùng được — nhưng hãy đọc cảnh báo bên dưới.
 
-2. Mở thư mục vừa publish (`app/GP247/Templates/GP247Front`) để xem cấu trúc đầy đủ của một template có
-   cả shop: `screen/shop_*.blade.php`, `account/`, `auth/`, `blocks/`, `common/`, `livewire/`...
+2. Chỉ để **đọc** cấu trúc trang của shop thì **không cần publish gì cả**: mở thẳng
+   `vendor/gp247/shop/src/Views/templates/GP247Front/` (`screen/shop_*.blade.php`, `account/`, `auth/`,
+   `blocks/`, `common/`, `livewire/`, `partials/`) và phần của front ở
+   `vendor/gp247/front/src/Views/templates/GP247Front/`. Đó chính là các file đang được render.
 
 > ⭐ Plugin total-method (coupon/point) **tự động** hoạt động khi bạn **không** override view checkout —
 > bản default của `gp247/shop` đã render sẵn vùng total-method (cách khuyến nghị). **Chỉ khi bạn override
@@ -255,6 +257,13 @@ làm bản tham khảo, rồi chép sang template của bạn để chỉnh:
 
 > Mẹo: chỉ chép những trang bạn thực sự muốn đổi. Chép cả bộ rồi để nguyên không sửa sẽ tạo gánh nặng
 > bảo trì vô ích (và khi gói shop cập nhật, bản bạn giữ trong template sẽ không tự cập nhật theo).
+
+> ⚠️ **Chỉ copy đúng những trang bạn thật sự muốn đổi.** Từ 2026-09-14, Blade của template được phục vụ
+> thẳng từ `gp247/front` / `gp247/shop`; một file chỉ nằm dưới `app/` khi bạn publish nó — và từ lúc đó nó
+> **che mất bản của package vĩnh viễn**, `composer update` không bao giờ vá được file đó nữa. Publish cả cây
+> (`--tag=gp247:shop-view-front`, `--tag=gp247:front-view`) là đóng băng toàn bộ cùng lúc.
+> `php artisan gp247:template-prune GP247Front --dry-run` liệt kê các file đã publish mà vẫn trùng khít bản
+> package và có thể trả lại.
 
 > Phân biệt tag: `gp247:shop-view-front` là view **storefront** (dành cho template). Còn
 > `gp247:shop-view-admin` là view **admin** của shop — **không** liên quan tới template storefront,
@@ -365,4 +374,4 @@ nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-14 · ✍️ **Tác giả (Author):** GP247</sub>

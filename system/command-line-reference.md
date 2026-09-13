@@ -346,8 +346,83 @@ php artisan gp247:template-setup
 **Use cases & combinations:**
 - It is called automatically at the end of `gp247:front-install`; you only need to run it manually
   when the earlier template publish step failed and you copied the template by hand.
-- If the terminal prints `Class template Default not found`, the default template has not been
-  copied into `app/GP247/Templates` — publish/copy the template then re-run.
+- If the terminal prints `Class template Default not found`, the template's **extension shell**
+  (`AppConfig.php` & friends) is missing from `app/GP247/Templates/<Name>` — only the shell has to be
+  there; the Blade files are served from the package. Run
+  `php artisan vendor:publish --tag=gp247:front-template --force` (or copy the shell by hand) and re-run.
+
+### 10. `gp247:template-publish`
+
+**Feature:** Copy template files **out of the package that ships them** into
+`app/GP247/Templates/<Name>/`, so you can edit them.
+
+A template's Blade is served straight from `vendor/gp247/front` and `vendor/gp247/shop` — a file only
+lands under `app/` when you publish it. Publishing **one file** is how you customize a screen while
+every other file keeps receiving fixes through `composer update`.
+
+**Arguments & options:**
+
+| Name | Values | Meaning |
+| --- | --- | --- |
+| `<template>` | e.g. `GP247Front` | Template name (case-sensitive) |
+| `--file=` | relative path | Publish a single file, e.g. `--file=screen/home.blade.php` |
+| `--all` | flag | Publish every file the packages provide for this template |
+| `--force` | flag | Overwrite a file that already exists under `app/` (default: keep yours) |
+| `--json` | flag | Machine-readable envelope |
+
+**Usage:**
+
+```bash
+php artisan gp247:template-publish GP247Front --file=screen/home.blade.php
+php artisan gp247:template-publish GP247Front --file=blocks/shop_product_home.blade.php
+php artisan gp247:template-publish GP247Front --all           # the whole tree (same as vendor:publish --tag=gp247:front-view)
+```
+
+**Use cases & combinations:**
+- Customizing one storefront screen without freezing the rest of the template.
+- An unknown path fails with `error.code = "template_file_not_found"` and suggests close matches.
+- Without `--force`, a file you already edited is **kept** and reported as skipped — publishing can
+  never silently destroy your work.
+
+---
+
+### 11. `gp247:template-prune`
+
+**Feature:** Delete published template files that are **byte-for-byte identical** to the package copy,
+handing them back so updates reach them again.
+
+This is the migration path for sites installed before the template moved into the packages: their
+`app/GP247/Templates/<Name>/` holds a full copy that shadows the package for ever.
+
+**What it never deletes:** files you edited (compared by **content hash**, not name or timestamp),
+files no package provides (a plugin's block, your own files), and the template's **extension shell**
+(`AppConfig.php`, `Provider.php`, `Route.php`, `config.php`, `function.php`, `gp247.json`, `Lang/`) —
+removing `AppConfig.php` would make the template disappear from the platform.
+
+**Arguments & options:**
+
+| Name | Values | Meaning |
+| --- | --- | --- |
+| `<template>` | e.g. `GP247Front` | Template name |
+| `--dry-run` | flag | List what would be deleted and kept, touching nothing |
+| `--json` | flag | Machine-readable envelope |
+
+**Usage:**
+
+```bash
+php artisan gp247:template-prune GP247Front --dry-run   # always look first
+php artisan gp247:template-prune GP247Front             # asks to confirm (default: no)
+php artisan gp247:template-prune GP247Front --json      # automation: runs without asking
+```
+
+**Use cases & combinations:**
+- Run it once after upgrading, then `gp247:doctor` (check `template_source`) should report
+  `templates served from their package`.
+- `gp247:update` only **hints** at this command — it never deletes files for you.
+- In a script, use `--json` (that is the consent path); `--no-interaction` answers the prompt with its
+  default **no** and cancels.
+- A template no package provides (your own theme) is refused with `template_source_missing` — there is
+  nothing to hand back, so nothing may be deleted.
 
 ---
 
@@ -356,7 +431,7 @@ php artisan gp247:template-setup
 > This group is only available when the `gp247/shop` package (the shop module) is installed.
 > `gp247/shop` requires both `gp247/core` and `gp247/front`.
 
-### 10. `gp247:shop-install`
+### 12. `gp247:shop-install`
 
 **Feature:** Install the shop (ecommerce) module. The command **uninstalls the old shop first**
 (calls `gp247:shop-uninstall`), recreates the shop tables, seeds the initialization data + the
@@ -379,7 +454,7 @@ php artisan gp247:shop-install
 
 ---
 
-### 11. `gp247:shop-update`
+### 13. `gp247:shop-update`
 
 > ℹ️ **Available since:** gp247/shop 2.1
 
@@ -412,7 +487,7 @@ php artisan gp247:shop-update
 
 ---
 
-### 12. `gp247:shop-uninstall`
+### 14. `gp247:shop-uninstall`
 
 **Feature:** Uninstall the shop module: drop the shop tables (runs the shop migration's `down()`)
 and delete the corresponding migration record.
@@ -434,7 +509,7 @@ php artisan gp247:shop-uninstall
 
 ---
 
-### 13. `gp247:shop-sample`
+### 15. `gp247:shop-sample`
 
 **Feature:** Create **sample data** for the store: multi-level categories, brands, suppliers, single
 products, bundle products, group products, and sample promotions.
@@ -457,7 +532,7 @@ php artisan gp247:shop-sample
 
 ---
 
-### 14. `gp247:shop-clear-cart`
+### 16. `gp247:shop-clear-cart`
 
 **Feature:** Clean up **expired** carts: the shopping cart (`default`), the wishlist (`wishlist`),
 and compare (`compare`), based on the number of days configured in
@@ -559,7 +634,7 @@ php artisan gp247:install --force=1  # unattended (CI/Docker): skips confirmatio
 php artisan gp247:install --sample   # also seed demo shop data (interactive by default)
 php artisan gp247:update                       # default: refresh only, publishes NOTHING (safe for live)
 php artisan gp247:update --publish=core-public  # also re-publish compiled admin assets (safe)
-php artisan gp247:update --publish=front-view   # also re-publish live storefront templates (DESTRUCTIVE — see note)
+php artisan gp247:update --publish=front-view   # also copy the whole GP247Front Blade tree into app/ (DESTRUCTIVE — see note)
 php artisan gp247:update --publish=all          # re-publish every target (DESTRUCTIVE — back up first)
 php artisan gp247:doctor --json
 php artisan gp247:info --json
@@ -579,6 +654,12 @@ php artisan gp247:info --json
 > | `front-view` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
 > | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Destructive** — overwrites your shop admin-view overrides |
 > | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
+>
+> **`all` never re-creates a template you do not use.** When this site's default template is not
+> `GP247Front` (no store selects it and `app/GP247/Templates/GP247Front` is gone), `all` silently skips
+> `front-public`, `front-template`, `front-view` and `shop-view-front` and says so — a site running its own
+> template will not find GP247Front resurrected after an update. Typing one of those tokens **by name**
+> still publishes it: that is your own decision.
 >
 > **Back up the target folder(s) before publishing any destructive token** — the overwrite is not
 > reversible. There is **no** `--force` flag on `gp247:update`: typing a destructive token is itself your
@@ -732,4 +813,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-14 · ✍️ **Author:** GP247</sub>
