@@ -633,7 +633,7 @@ php artisan gp247:info --json
 > | --- | --- | --- |
 > | `core-public` | `public/GP247` (CSS/JS admin đã build) | **An toàn** — artifact tái sinh, không sửa tay |
 > | `core-view` | `resources/views/vendor/gp247-admin` | **Phá dữ liệu** — ghi đè override view admin của bạn |
-> | `front-public` | `public/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè CSS/JS storefront đã build |
+> | `front-public` | `public/GP247/Templates/GP247Front` | **An toàn** — bản sao tái sinh được của bản dựng trong package. Thường không cần gõ: asset storefront **tự làm mới** khi package ship bản dựng mới |
 > | `front-template` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — ghi đè **vỏ extension** của template (`AppConfig`, `Provider`, `Route`, `config.php`, `function.php`, `gp247.json`, `Lang/`) |
 > | `front-view` | `app/GP247/Templates/GP247Front` | **Phá dữ liệu** — copy **toàn bộ** cây Blade của GP247Front vào app. Từ đó các file này che mất bản của package **vĩnh viễn**: `composer update` không bao giờ vá được nữa. Nên dùng `gp247:template-publish --file=` |
 > | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Phá dữ liệu** — ghi đè override view admin của shop |
@@ -674,7 +674,7 @@ php artisan gp247:info --json
 | Lệnh | Xuất bản gì |
 | --- | --- |
 | `php artisan vendor:publish --tag=gp247:core-public --force` | Asset (CSS/JS) admin của core ra `public/GP247` |
-| `php artisan vendor:publish --tag=gp247:front-public --force` | Asset của module front |
+| `php artisan vendor:publish --tag=gp247:front-public --force` | Asset storefront đã build → `public/GP247/Templates/GP247Front` (thường tự động — package tự làm mới khi có bản dựng mới) |
 | `php artisan vendor:publish --tag=gp247:front-template --force` | **Vỏ extension** của template mặc định → `app/GP247/Templates/GP247Front` (bước chạy khi cài) |
 | `php artisan vendor:publish --tag=gp247:front-view --force` | **Cả cây Blade** của template mặc định → `app/...` (chỉ khi muốn override toàn bộ; xem `gp247:template-publish --file=`) |
 | `php artisan vendor:publish --tag=gp247:shop-view-admin` | View admin của shop (để override) → `resources/views/vendor/gp247-shop-admin` |

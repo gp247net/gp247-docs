@@ -650,7 +650,7 @@ php artisan gp247:info --json
 > | --- | --- | --- |
 > | `core-public` | `public/GP247` (compiled admin CSS/JS) | **Safe** — regenerated artifact, not hand-edited |
 > | `core-view` | `resources/views/vendor/gp247-admin` | **Destructive** — overwrites your admin-view overrides |
-> | `front-public` | `public/GP247/Templates/GP247Front` | **Destructive** — overwrites the in-place-built storefront CSS |
+> | `front-public` | `public/GP247/Templates/GP247Front` | **Safe** — regenerable mirror of the package build. Normally unnecessary: the storefront assets refresh themselves when the package ships a new build |
 > | `front-view` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
 > | `shop-view-admin` | `resources/views/vendor/gp247-shop-admin` | **Destructive** — overwrites your shop admin-view overrides |
 > | `shop-view-front` | `app/GP247/Templates/GP247Front` | **Destructive** — overwrites your live storefront templates |
@@ -691,7 +691,7 @@ or UI **customization**. They use the `--tag` flag to select the group of files 
 | Command | What it publishes |
 | --- | --- |
 | `php artisan vendor:publish --tag=gp247:core-public --force` | Core admin assets (CSS/JS) to `public/GP247` |
-| `php artisan vendor:publish --tag=gp247:front-public --force` | Front module assets |
+| `php artisan vendor:publish --tag=gp247:front-public --force` | Compiled storefront assets → `public/GP247/Templates/GP247Front` (normally automatic — the package refreshes them on boot when it ships a new build) |
 | `php artisan vendor:publish --tag=gp247:front-view --force` | Default front template views |
 | `php artisan vendor:publish --tag=gp247:shop-view-admin` | Shop admin views (to override) → `resources/views/vendor/gp247-shop-admin` |
 | `php artisan vendor:publish --tag=gp247:shop-view-front` | Shop front views → `app/GP247/Templates/GP247Front` |
