@@ -136,6 +136,8 @@ Vào khu admin → **Chợ bán hàng** → **Cấu hình nhanh**. Đây là **t
 
 > ⚠️ Email của sàn đi qua cấu hình email chung của S-Cart: nếu **Chế độ gửi email** của hệ thống đang tắt thì **không email nào được gửi**, kể cả khi các cờ trên đang bật.
 
+Công tắc bị khóa hiển thị **đúng thứ đang chạy** (không bật / *Chỉ trạng thái vận chuyển*), không phải giá trị đã lưu trước đó — giá trị cũ vẫn còn và trở lại khi mở bản Pro.
+
 Trên bản miễn phí, các công tắc chỉ-Pro hiện ở trạng thái **khóa** kèm mô tả và link giải thích; các màn Pro vẫn nằm trong menu và mở trang giải thích cho tới khi cài thêm bản Pro.
 
 ## Cấu hình theo từng gian hàng

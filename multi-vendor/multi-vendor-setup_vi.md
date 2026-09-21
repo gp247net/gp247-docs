@@ -83,6 +83,9 @@ Nếu thành công, plugin hiện trong danh sách với nút **Kích hoạt**. 
 3. Bấm **Lưu**. Ý nghĩa đầy đủ từng cấu hình xem [Phần 2 — Vận hành](./multi-vendor-operations_vi.md).
 
 Nếu bạn dùng bản miễn phí, các công tắc thuộc bản Pro hiện ở trạng thái **khóa** kèm link giải thích — đó là trạng thái đúng, không phải lỗi.
+Công tắc bị khóa luôn hiển thị **đúng thứ đang chạy**, không phải giá trị đã lưu trước đó: nếu site từng dùng bản Pro rồi tắt đi, các ô đó hiện **không bật**
+và ô *Phạm vi xử lý đơn của người bán* hiện **Chỉ trạng thái vận chuyển** — vì đó mới là những gì bản miễn phí thực sự áp dụng. Giá trị bạn từng lưu
+**không mất**: mở lại bản Pro là nó trở về như cũ.
 
 ## Bước 4: Tạo gian hàng đầu tiên
 
@@ -110,6 +113,14 @@ Lệnh tạo 3 gian hàng mẫu `vendor01`–`vendor03`. Mỗi gian hàng có s�
 | `/shop/vendor03` | `vendor03@gp247.local` | `123456` |
 
 Ba gian hàng đúng bằng giới hạn của bản miễn phí, nên dữ liệu mẫu dùng được cho cả hai bản. Chạy lại lệnh sẽ thay thế chính các gian hàng mẫu đó chứ không tạo thêm, và không đụng tới gian hàng bạn tự tạo. **Hãy đổi hoặc xóa các tài khoản này trước khi đưa site lên chạy thật.**
+
+Lệnh còn **tự lo plugin *Product Rating & Review*** để trang gian hàng có sẵn tab **Đánh giá**: plugin đã cài thì giữ nguyên (chỉ bật lên nếu đang tắt),
+chưa cài thì cài — lấy từ thư mục plugin nếu site đã có sẵn file, không có thì tải từ kho plugin. Nếu site không ra được Internet, hoặc bản bạn dùng cần
+giấy phép, lệnh **vẫn seed xong dữ liệu mẫu** và chỉ in ra câu lệnh cần chạy để cài tiếp. Không muốn lệnh chạm tới plugin nào khác:
+
+```bash
+php artisan gp247:vendor-sample --skip-rating
+```
 
 ## Bước 5: Kiểm tra sàn chạy đúng
 1. Mở `https://ten-mien-cua-ban/shop/vendor01` — trang gian hàng hiện danh mục và sản phẩm của người bán (trống nếu chưa đăng sản phẩm).

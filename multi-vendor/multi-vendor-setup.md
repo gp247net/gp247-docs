@@ -83,6 +83,9 @@ If it succeeds, the plugin appears in the list with an **Enable** button. Detail
 3. Click **Save**. Every setting is explained in [Part 2 — Operations](./multi-vendor-operations.md).
 
 On the free edition, Pro-only switches appear **locked** with a link to an explanation page — that is the correct state, not a bug.
+A locked switch always shows **what is actually running**, not a value saved earlier: if the site once ran Pro and then switched it off, those boxes read
+**off** and *Vendor order actions* reads **Shipping status only**, because that is what the free edition really applies. The value you saved is **not lost**:
+turn Pro back on and it comes back.
 
 ## Step 4: Create your first shop
 
@@ -110,6 +113,15 @@ The command creates three sample shops, `vendor01`–`vendor03`. Each comes with
 | `/shop/vendor03` | `vendor03@gp247.local` | `123456` |
 
 Three shops is exactly the free edition's limit, so the sample data works on both editions. Running the command again replaces those sample shops rather than adding more, and never touches shops you created yourself. **Change or delete these accounts before the site goes live.**
+
+The command also **settles the *Product Rating & Review* plugin** so the shop pages come with their **Reviews** tab: an installed plugin is left as it is
+(only switched on if it was off), and one that is not installed gets installed — from the plugin folder when the files are already on the site, otherwise
+downloaded from the plugin library. If the site cannot reach the internet, or your copy needs a license, the command **still finishes seeding** and simply
+prints the command to run afterwards. To leave other plugins alone entirely:
+
+```bash
+php artisan gp247:vendor-sample --skip-rating
+```
 
 ## Step 5: Check that the marketplace works
 1. Open `https://your-domain/shop/vendor01` — the shop page shows that seller's categories and products (empty if nothing is listed yet).

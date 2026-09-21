@@ -136,6 +136,8 @@ Go to the admin → **Marketplace** → **Quick config**. This is the **complete
 
 > ⚠️ Marketplace email goes through S-Cart's shared mail configuration: if the system's **mail mode** is off, **no email is sent at all**, even with these switches on.
 
+A locked switch shows **what is actually running** (off / *Shipping status only*), not a value saved earlier — the earlier value survives and returns when Pro is switched on.
+
 On the free edition, Pro-only switches appear **locked** with a description and a link to an explanation page; Pro screens stay in the menu and open an explanation page until the Pro edition is installed.
 
 ## Per-shop settings
