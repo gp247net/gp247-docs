@@ -115,24 +115,26 @@ sequenceDiagram
 ## Cấu hình sàn
 Vào khu admin → **Chợ bán hàng** → **Cấu hình nhanh**. Đây là **toàn bộ** cấu hình cấp sàn.
 
-| Cấu hình | Ý nghĩa | Mặc định | Bản |
-| --- | --- | --- | --- |
-| Tỷ lệ hoa hồng (%) | Phần trăm sàn **giữ lại** trên tổng đơn đã hoàn thành trước khi trả người bán | 0 | Free |
-| Cho phép đăng ký vendor | Bật: ai cũng có thể tự đăng ký tại `/vendor_admin/register`. Tắt: chỉ admin tạo tài khoản | Tắt | Free |
-| Tự động duyệt vendor | Tắt: gian hàng mới ở trạng thái **chờ duyệt** (đóng) cho tới khi admin mở | Tắt | Free |
-| Tự động duyệt sản phẩm | Tắt: sản phẩm người bán tạo **hoặc sửa** đều chờ admin duyệt mới hiện lên sàn | Tắt | Free |
-| Email cho vendor khi có đơn mới | Gửi mọi tài khoản đang hoạt động của gian hàng khi có đơn thuộc gian hàng đó | Bật | Free |
-| Đặt hàng nhanh | Bật trang đặt hàng số lượng lớn theo gian hàng | Tắt | Pro |
-| Vendor được làm gì với đơn | **Chỉ giao hàng** · **Xác nhận + giao hàng** · **Xác nhận + giao hàng + hoàn tất** (đơn vào kỳ chi trả kế tiếp) | Xác nhận + giao hàng | Pro (bản miễn phí luôn ở mức *Xác nhận + giao hàng*) |
-| Bắt buộc xác minh danh tính (KYC) | Bật: gian hàng chưa xác minh **không đưa được sản phẩm lên sàn** và dòng chi trả bị giữ ở trạng thái chờ | Tắt | Pro |
-| Cửa sổ khiếu nại (số ngày sau khi đơn hoàn tất) | Khách chỉ mở được khiếu nại trong khoảng ngày này | 14 | Pro |
-| Số ngày vendor phải phản hồi | Quá hạn mà gian hàng chưa trả lời, khiếu nại tự chuyển lên sàn | 3 | Pro |
-| Email cho admin khi có mục chờ duyệt | Báo sàn khi có gian hàng hoặc sản phẩm chờ duyệt | Bật | Pro |
-| Email cho vendor khi được duyệt | Báo người bán khi gian hàng được mở | Bật | Pro |
-| Email cho vendor khi đã trả tiền | Báo khi một kỳ chi trả được đánh dấu đã trả | Bật | Pro |
-| Email khi có điều chỉnh thanh toán | Báo khi có dòng thu hồi | Bật | Pro |
-| Email khi có khiếu nại | Báo các bên ở từng bước của khiếu nại | Bật | Pro |
-| Vendor tự cấu hình: … | Một dòng cho mỗi plugin sàn cho phép gian hàng tự chỉnh | Không mở plugin nào | Pro |
+Cột **Khoá** là tên hàng trong bảng `admin_config` — cần khi bạn phải xem hoặc sửa giá trị ngoài giao diện admin (truy vấn cơ sở dữ liệu, script nâng cấp, hoặc khi trao đổi với bộ phận hỗ trợ). Nhãn hiển thị đổi theo ngôn ngữ, khoá thì không.
+
+| Cấu hình | Khoá (`admin_config`) | Ý nghĩa | Mặc định | Bản |
+| --- | --- | --- | --- | --- |
+| Tỷ lệ hoa hồng (%) | `MultiVendor_commission` | Phần trăm sàn **giữ lại** trên tổng đơn đã hoàn thành trước khi trả người bán | 0 | Free |
+| Cho phép đăng ký vendor | `MultiVendor_allow_register` | Bật: ai cũng có thể tự đăng ký tại `/vendor_admin/register`. Tắt: chỉ admin tạo tài khoản | Tắt | Free |
+| Tự động duyệt vendor | `MultiVendor_vendor_auto_approve` | Tắt: gian hàng mới ở trạng thái **chờ duyệt** (đóng) cho tới khi admin mở | Tắt | Free |
+| Tự động duyệt sản phẩm | `MultiVendor_product_auto_approve` | Tắt: sản phẩm người bán tạo **hoặc sửa** đều chờ admin duyệt mới hiện lên sàn | Tắt | Free |
+| Email cho vendor khi có đơn mới | `MultiVendor_mail_order_created` | Gửi mọi tài khoản đang hoạt động của gian hàng khi có đơn thuộc gian hàng đó | Bật | Free |
+| Đặt hàng nhanh | `MultiVendor_quick_order` | Bật trang đặt hàng số lượng lớn theo gian hàng | Tắt | Pro |
+| Vendor được làm gì với đơn | `MultiVendor_vendor_order_scope` | **Chỉ giao hàng** · **Xác nhận + giao hàng** · **Xác nhận + giao hàng + hoàn tất** (đơn vào kỳ chi trả kế tiếp) | Xác nhận + giao hàng | Pro (bản miễn phí luôn ở mức *Xác nhận + giao hàng*) |
+| Bắt buộc xác minh danh tính (KYC) | `MultiVendor_kyc_required` | Bật: gian hàng chưa xác minh **không đưa được sản phẩm lên sàn** và dòng chi trả bị giữ ở trạng thái chờ | Tắt | Pro |
+| Cửa sổ khiếu nại (số ngày sau khi đơn hoàn tất) | `MultiVendor_dispute_window_days` | Khách chỉ mở được khiếu nại trong khoảng ngày này | 14 | Pro |
+| Số ngày vendor phải phản hồi | `MultiVendor_dispute_vendor_days` | Quá hạn mà gian hàng chưa trả lời, khiếu nại tự chuyển lên sàn | 3 | Pro |
+| Email cho admin khi có mục chờ duyệt | `MultiVendor_mail_pending_review` | Báo sàn khi có gian hàng hoặc sản phẩm chờ duyệt | Bật | Pro |
+| Email cho vendor khi được duyệt | `MultiVendor_mail_vendor_approved` | Báo người bán khi gian hàng được mở | Bật | Pro |
+| Email cho vendor khi đã trả tiền | `MultiVendor_mail_payout_done` | Báo khi một kỳ chi trả được đánh dấu đã trả | Bật | Pro |
+| Email khi có điều chỉnh thanh toán | `MultiVendor_mail_payout_clawback` | Báo khi có dòng thu hồi | Bật | Pro |
+| Email khi có khiếu nại | `MultiVendor_mail_dispute` | Báo các bên ở từng bước của khiếu nại | Bật | Pro |
+| Vendor tự cấu hình: … | `MultiVendor_vendor_plugin_<mã plugin>` | Một dòng cho mỗi plugin sàn cho phép gian hàng tự chỉnh | Không mở plugin nào | Pro |
 
 > ⚠️ Email của sàn đi qua cấu hình email chung của S-Cart: nếu **Chế độ gửi email** của hệ thống đang tắt thì **không email nào được gửi**, kể cả khi các cờ trên đang bật.
 

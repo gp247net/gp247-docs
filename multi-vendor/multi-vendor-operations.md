@@ -115,24 +115,26 @@ sequenceDiagram
 ## Marketplace settings
 Go to the admin → **Marketplace** → **Quick config**. This is the **complete** set of marketplace-level settings.
 
-| Setting | What it does | Default | Edition |
-| --- | --- | --- | --- |
-| Commission rate (%) | The percentage the marketplace **keeps** on completed order totals before paying the seller | 0 | Free |
-| Allow vendor registration | On: anyone can register at `/vendor_admin/register`. Off: only the admin creates accounts | Off | Free |
-| Auto-approve vendors | Off: new shops stay **pending** (closed) until the admin opens them | Off | Free |
-| Auto-approve products | Off: products a seller creates **or edits** wait for admin approval before going live | Off | Free |
-| Email sellers on new orders | Emails every active account of the shop when an order for that shop arrives | On | Free |
-| Quick order | Enables the per-shop bulk ordering page | Off | Pro |
-| Seller order scope | **Ship only** · **Confirm + ship** · **Confirm + ship + complete** (which puts the order into the next payout period) | Confirm + ship | Pro (the free edition is always at *Confirm + ship*) |
-| Require identity verification (KYC) | On: an unverified shop **cannot put products live** and its payout lines are held pending | Off | Pro |
-| Dispute window (days after completion) | Customers can only open a dispute within this window | 14 | Pro |
-| Seller response days | Past this deadline an unanswered dispute escalates to the marketplace | 3 | Pro |
-| Email the admin on pending reviews | Alerts the marketplace when a shop or product is waiting for review | On | Pro |
-| Email sellers on approval | Alerts the seller when their shop is opened | On | Pro |
-| Email sellers on payout | Alerts them when a payout period is marked paid | On | Pro |
-| Email on payout adjustments | Alerts them when a clawback line is created | On | Pro |
-| Email on disputes | Alerts the parties at each step of a dispute | On | Pro |
-| Seller-configurable: … | One row per plugin the marketplace lets shops configure themselves | No plugin opened | Pro |
+The **Key** column is the row name in the `admin_config` table — what you need when a value has to be read or changed outside the admin screens (a database query, an upgrade script, or a support conversation). Screen labels change with the language; keys do not.
+
+| Setting | Key (`admin_config`) | What it does | Default | Edition |
+| --- | --- | --- | --- | --- |
+| Commission rate (%) | `MultiVendor_commission` | The percentage the marketplace **keeps** on completed order totals before paying the seller | 0 | Free |
+| Allow vendor registration | `MultiVendor_allow_register` | On: anyone can register at `/vendor_admin/register`. Off: only the admin creates accounts | Off | Free |
+| Auto-approve vendors | `MultiVendor_vendor_auto_approve` | Off: new shops stay **pending** (closed) until the admin opens them | Off | Free |
+| Auto-approve products | `MultiVendor_product_auto_approve` | Off: products a seller creates **or edits** wait for admin approval before going live | Off | Free |
+| Email sellers on new orders | `MultiVendor_mail_order_created` | Emails every active account of the shop when an order for that shop arrives | On | Free |
+| Quick order | `MultiVendor_quick_order` | Enables the per-shop bulk ordering page | Off | Pro |
+| Seller order scope | `MultiVendor_vendor_order_scope` | **Ship only** · **Confirm + ship** · **Confirm + ship + complete** (which puts the order into the next payout period) | Confirm + ship | Pro (the free edition is always at *Confirm + ship*) |
+| Require identity verification (KYC) | `MultiVendor_kyc_required` | On: an unverified shop **cannot put products live** and its payout lines are held pending | Off | Pro |
+| Dispute window (days after completion) | `MultiVendor_dispute_window_days` | Customers can only open a dispute within this window | 14 | Pro |
+| Seller response days | `MultiVendor_dispute_vendor_days` | Past this deadline an unanswered dispute escalates to the marketplace | 3 | Pro |
+| Email the admin on pending reviews | `MultiVendor_mail_pending_review` | Alerts the marketplace when a shop or product is waiting for review | On | Pro |
+| Email sellers on approval | `MultiVendor_mail_vendor_approved` | Alerts the seller when their shop is opened | On | Pro |
+| Email sellers on payout | `MultiVendor_mail_payout_done` | Alerts them when a payout period is marked paid | On | Pro |
+| Email on payout adjustments | `MultiVendor_mail_payout_clawback` | Alerts them when a clawback line is created | On | Pro |
+| Email on disputes | `MultiVendor_mail_dispute` | Alerts the parties at each step of a dispute | On | Pro |
+| Seller-configurable: … | `MultiVendor_vendor_plugin_<plugin key>` | One row per plugin the marketplace lets shops configure themselves | No plugin opened | Pro |
 
 > ⚠️ Marketplace email goes through S-Cart's shared mail configuration: if the system's **mail mode** is off, **no email is sent at all**, even with these switches on.
 
