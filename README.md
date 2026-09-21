@@ -48,9 +48,12 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Product Attributes (Color/Size)](./s-cart/product-attribute.md) | Attribute groups & values + surcharge; admin setup; price/cart/order flow; price safety | 2026-08-13 |
 | [Product keyword tags (Product Tag)](./s-cart/product-tag.md) | Create/assign keyword tags to products; vs Delivery type; disable vs delete (from shop 2.1.6) | 2026-08-25 |
 
-### Marketplace (Multi-Vendor)
+### Multi-store & Marketplace
+> The two models are **mutually exclusive** — pick one: several stores of your own (Multi-Store), or one marketplace for many sellers (Multi-Vendor).
+
 | Document | Summary | Last updated |
 | --- | --- | --- |
+| [Multi-Store — many websites, one admin](./multi-store/multi-store.md) | Several stores of one business, each with its own domain/theme/language/currency: the model, features, Free/Pro comparison; index of setup, operations and customization | 2026-09-21 |
 | [Multi-Vendor — multi-seller marketplace](./multi-vendor/multi-vendor.md) | Turn S-Cart into a marketplace on one domain: the model, features, Free/Pro comparison, Multi-Store comparison; index of setup, operations and customization | 2026-09-21 |
 
 ---

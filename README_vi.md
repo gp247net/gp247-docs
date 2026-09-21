@@ -48,9 +48,12 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Thuộc tính sản phẩm (Color/Size)](./s-cart/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
 | [Thẻ từ khóa sản phẩm (Product Tag)](./s-cart/product-tag_vi.md) | Tạo/gán thẻ từ khóa cho sản phẩm; phân biệt với Loại giao hàng; tắt vs xóa (từ shop 2.1.6) | 2026-08-25 |
 
-### Chợ bán hàng (Multi-Vendor)
+### Nhiều cửa hàng & Sàn bán hàng
+> Hai mô hình **loại trừ lẫn nhau** — chọn một: nhiều cửa hàng của chính bạn (Multi-Store), hay một sàn cho nhiều người bán (Multi-Vendor).
+
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
+| [Multi-Store — nhiều website, một admin](./multi-store/multi-store_vi.md) | Nhiều cửa hàng của cùng một doanh nghiệp, mỗi cửa hàng một tên miền/giao diện/ngôn ngữ/tiền tệ: mô hình, tính năng, so sánh Free/Pro; mục lục dẫn tới cài đặt, vận hành và tùy chỉnh | 2026-09-21 |
 | [Multi-Vendor — sàn nhiều người bán](./multi-vendor/multi-vendor_vi.md) | Biến S-Cart thành sàn trên một tên miền: mô hình, tính năng, so sánh Free/Pro, so sánh Multi-Store; mục lục dẫn tới cài đặt, vận hành và tùy chỉnh | 2026-09-21 |
 
 ---
