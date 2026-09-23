@@ -34,6 +34,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-08-05 |
 | [Xử lý Cache](./system/cache-system_vi.md) | Màn Config Cache Manager; cache gì/không cache gì; version-bump; hàm helper | 2026-08-12 |
 | [Trường tùy chỉnh (Custom Field)](./system/custom-fields_vi.md) | Cơ chế 4 hook; độ phủ chỉ customer/product; hướng dẫn dev bật cho bảng khác | 2026-08-14 |
+| [Khối bố cục (Layout Block)](./system/layout-block-system_vi.md) | Cơ chế hiển thị khối: thứ tự ưu tiên giao diện → plugin, 3 cách tùy chỉnh không mất khi cập nhật, cách plugin đăng ký khối | 2026-09-22 |
 | [Phân quyền (Quyền · Vai trò · Người dùng)](./system/permission-and-role_vi.md) | RBAC admin: 3 khối, 2 vai trò đặc biệt, cách gác theo địa chỉ+phương thức, công thức chiến lược | 2026-08-16 |
 
 ### S-Cart (bán hàng)
@@ -58,4 +59,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-22 · ✍️ **Tác giả (Author):** GP247</sub>

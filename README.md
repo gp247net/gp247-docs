@@ -34,6 +34,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-08-05 |
 | [Cache Handling](./system/cache-system.md) | Config Cache Manager screen; what is/isn't cached; version-bump; helper functions | 2026-08-12 |
 | [Custom Fields](./system/custom-fields.md) | The 4 hook links; coverage limited to customer/product; dev guide to wire other tables | 2026-08-14 |
+| [Layout Blocks](./system/layout-block-system.md) | How a block renders: template-first then plugin fallback, three update-safe ways to customise, how a plugin registers a block | 2026-09-22 |
 | [Permissions (Permission · Role · User)](./system/permission-and-role.md) | Admin RBAC: 3 building blocks, 2 special roles, address+method gating, strategy formula | 2026-08-16 |
 
 ### S-Cart (store)
@@ -58,4 +59,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-22 · ✍️ **Author:** GP247</sub>
