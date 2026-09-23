@@ -26,7 +26,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | Document | Summary | Last updated |
 | --- | --- | --- |
 | [GP247 v3.0 release notes — order money](./system/release-notes-3.0.md) | Upgrading from v2.1/v3.0: payment ledger per order, cash flow counted by receipt date, payment status off-by-one fixed, **discount taken before tax**; note for plugin developers | 2026-09-04 |
-| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for all GP247 CLI commands: `--json`/exit-code output contract, `gp247:ext-*` lifecycle, install/update/doctor/info; `core-update` runs the upgrade migrations (core 2.2) | 2026-08-29 |
+| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for all GP247 CLI commands: `--json`/exit-code output contract, `gp247:ext-*` lifecycle, install/update/doctor/info; `core-update` runs the upgrade migrations (core 2.2) | 2026-09-23 |
 | [How to update GP247](./system/update-gp247.md) | Safe update for a live site, prioritizing the standardized `gp247:update`; automatic data conversion since the public v2.1; `--overwrite-lang`, `--publish` options | 2026-08-29 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-07-30 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-08-05 |
@@ -59,4 +59,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-23 · ✍️ **Author:** GP247</sub>

@@ -623,8 +623,53 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 | `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` when `--sample`). A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
-| `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker. Exits non-zero if any check fails — usable as a CI/pre-install gate. |
+| `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker, plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |
 | `gp247:info` | `--json` | Show status: installed package versions (core/front/shop), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
+
+### What `gp247:doctor` checks
+
+Every row comes back as one of three states: **PASS** (fine), **WARN** (worth cleaning up, but nothing is
+blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop CI or an install).
+
+| Check | Meaning |
+| --- | --- |
+| `php_version`, `ext_*` | PHP version and the required/recommended extensions |
+| `env_file`, `writable_*` | `.env` is present; `storage`, `bootstrap/cache`, `app/GP247`, `public/GP247` are writable |
+| `db_connection`, `installed` | The database is reachable; whether the site is installed |
+| `encryption_key_dedicated` | Whether `GP247_ENCRYPTION_KEY` is set for secrets, or they ride on `APP_KEY` |
+| `secret_decryptable` | Encrypted config secrets still decrypt (the tell-tale of a changed `APP_KEY`) |
+| `template_source` | How many published template files are identical to the package copy — i.e. will never receive an update |
+| `file_bom` | Any `.php` / `.blade.php` file starting with a **UTF-8 BOM** |
+
+> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check)
+
+**Why `file_bom` is worth checking.** A BOM (Byte Order Mark) is **three invisible bytes** (`EF BB BF`) that
+many Windows editors add to the front of a file when saving as "UTF-8". Those bytes sit **outside** the
+`<?php ?>` tags, so PHP prints them **before anything else**. The results:
+
+- **"headers already sent"** errors in any file that calls `header()` / `redirect()`;
+- JSON / XML / CSV responses corrupted at the very first character;
+- views rendering HTML that opens with an invisible character.
+
+Open the file and it looks **perfectly normal**; the diff shows nothing either — this is a defect only a
+machine can spot, so `doctor` spots it for you. It is a **WARN**, not a FAIL: worth cleaning up, but not worth
+blocking an install or a CI run over (especially when the BOM is inside a third-party plugin you cannot fix
+today).
+
+The scan covers the code this install actually runs — `app/GP247/**` and
+`vendor/gp247/{core,front,shop}/src/**` — and reads only the first 3 bytes of each file, so it is fast (about
+1.2 seconds for ~1,200 files, Laravel's own start-up included).
+
+What it looks like when a file is affected:
+
+```
+| file_bom | WARN | 1 file(s) start with a UTF-8 BOM, which is echoed before any output:
+                    app/GP247/Plugins/MyPlugin/Views/index.blade.php — re-save each as UTF-8 WITHOUT BOM |
+```
+
+**How to fix it:** open the file in your editor and save it as **UTF-8 without BOM** (VS Code: click
+`UTF-8 with BOM` in the bottom-right status bar → *Save with Encoding* → *UTF-8*). Run `gp247:doctor` again to
+confirm the check is back to **PASS**.
 
 Examples:
 
@@ -806,6 +851,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-09-23 |  | `gp247:doctor` gained the `file_bom` check: reports `.php`/`.blade.php` files starting with a UTF-8 BOM (WARN — never changes the exit code) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` now runs the **core upgrade migrations** (`Migrations/upgrade/`) **before** re-seeding — previously it only re-seeded, so a core data-structure change could not reach an installed site. Part of the rule that, from the public **v2.1** onward, every breaking change ships an automatic migration delivered by `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` gained an **opt-in** `--publish=<tokens>` option to re-publish assets/views after `composer update` (default publishes nothing). Tokens name the publish tag (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`) and are **tiered by impact**: only `core-public` is safe; view/template tokens overwrite your customizations. **No `--force` flag** — typing a destructive token is the consent; interactive runs still warn + confirm (default no).<br>• `gp247:install` and `gp247:doctor` now register in a **bootstrap tier** (available right after `composer require`, before the platform is installed — fixes "only `gp247:core-install` existed pre-install"). `gp247:install` **auto-detects** present packages; the `--with-front`/`--with-shop` flags were **removed** (never shipped in a stable release). **Safety:** `gp247:install` now **requires confirmation by default** — it refuses non-interactive/`--json` runs without `--force=1` and prompts (default no) interactively. `sc:install` delegates to `gp247:install`.<br>• `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
 | 2026-08-23 | gp247/core 2.1 | Standardized CLI output contract (`--json` + exit codes, all commands); added the `gp247:ext-*` extension-lifecycle family, and `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` now emit the JSON envelope (path at `data.path`). |
@@ -813,4 +859,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-14 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-23 · ✍️ **Author:** GP247</sub>

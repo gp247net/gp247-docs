@@ -606,8 +606,51 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 | `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` khi có `--sample`). Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
-| `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt. Thoát khác 0 nếu có mục fail — dùng làm cổng CI/tiền-cài-đặt. |
+| `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |
 | `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
+
+### `gp247:doctor` kiểm những gì
+
+Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WARN** (nên dọn, nhưng không chặn), **FAIL**
+(phải sửa — lệnh thoát khác 0, đủ để chặn CI hoặc chặn cài đặt).
+
+| Mục | Ý nghĩa |
+| --- | --- |
+| `php_version`, `ext_*` | Phiên bản PHP và các extension bắt buộc/khuyến nghị |
+| `env_file`, `writable_*` | Có `.env`; quyền ghi `storage`, `bootstrap/cache`, `app/GP247`, `public/GP247` |
+| `db_connection`, `installed` | Kết nối được database; site đã cài hay chưa |
+| `encryption_key_dedicated` | Đã đặt `GP247_ENCRYPTION_KEY` riêng cho bí mật hay đang dùng chung `APP_KEY` |
+| `secret_decryptable` | Các bí mật đã mã hoá trong cấu hình còn giải mã được (dấu hiệu `APP_KEY` bị đổi) |
+| `template_source` | Bao nhiêu file giao diện đã publish nhưng giống hệt bản trong package — tức sẽ không bao giờ nhận được bản cập nhật |
+| `file_bom` | File `.php` / `.blade.php` nào bắt đầu bằng **BOM UTF-8** |
+
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`)
+
+**Vì sao `file_bom` đáng kiểm.** BOM (Byte Order Mark) là **3 byte vô hình** (`EF BB BF`) mà nhiều trình soạn
+thảo trên Windows tự thêm vào đầu file khi lưu "UTF-8". Ba byte đó nằm **ngoài** cặp thẻ `<?php ?>`, nên PHP
+in chúng ra **trước mọi thứ khác**. Hậu quả:
+
+- Lỗi **"headers already sent"** ở file có `header()` / `redirect()`;
+- Trả về JSON / XML / CSV bị hỏng ngay ký tự đầu tiên;
+- View render ra HTML mở đầu bằng một ký tự vô hình.
+
+Mở file lên thì **trông hoàn toàn bình thường**, diff cũng không hiện gì — đây là loại lỗi chỉ máy phát hiện
+được, nên `doctor` làm hộ bạn. Mục này là **WARN** chứ không phải FAIL: cần dọn, nhưng không đáng chặn việc
+cài đặt hay chặn CI (nhất là khi BOM nằm trong một plugin bên thứ ba bạn chưa sửa được ngay).
+
+Lệnh quét mã mà site này thực sự chạy — `app/GP247/**` và `vendor/gp247/{core,front,shop}/src/**` — và chỉ
+đọc 3 byte đầu mỗi file, nên rất nhanh (khoảng 1,2 giây cho ~1.200 file, tính cả thời gian khởi động Laravel).
+
+Kết quả khi có file dính BOM:
+
+```
+| file_bom | WARN | 1 file(s) start with a UTF-8 BOM, which is echoed before any output:
+                    app/GP247/Plugins/MyPlugin/Views/index.blade.php — re-save each as UTF-8 WITHOUT BOM |
+```
+
+**Cách sửa:** mở file bằng trình soạn thảo, lưu lại ở chế độ **UTF-8 without BOM** (VS Code: bấm vào chữ
+`UTF-8 with BOM` ở thanh dưới bên phải → *Save with Encoding* → *UTF-8*). Chạy lại `gp247:doctor` để xác nhận
+mục này trở về **PASS**.
 
 Ví dụ:
 
@@ -789,6 +832,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-09-23 |  | `gp247:doctor` thêm mục `file_bom`: báo file `.php`/`.blade.php` bắt đầu bằng BOM UTF-8 (mức WARN, không làm lệnh thoát khác 0) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` nay chạy **migration nâng cấp của core** (`Migrations/upgrade/`) **trước** khi seed lại — trước đây lệnh chỉ seed, nên thay đổi cấu trúc dữ liệu của core không tới được site đã cài. Đây là một phần của quy tắc: từ bản public **v2.1** trở đi, mọi thay đổi phá vỡ đều kèm migration tự động, giao qua `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` thêm option **tùy chọn** `--publish=<tokens>` để re-publish asset/view sau `composer update` (mặc định không publish gì). Token nêu rõ tên tag publish (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`), **phân tầng theo mức độ ảnh hưởng**: chỉ `core-public` an toàn; token view/template ghi đè tùy biến của bạn. **Không có cờ `--force`** — tự gõ token phá-dữ-liệu chính là đồng thuận; chạy tương tác vẫn cảnh báo + xác nhận (mặc định không).<br>• `gp247:install` và `gp247:doctor` nay đăng ký ở **bootstrap tier** (khả dụng ngay sau `composer require`, trước khi nền tảng được cài — sửa lỗi "chỉ `gp247:core-install` tồn tại khi chưa cài"). `gp247:install` **tự phát hiện** package đang có; đã **bỏ hẳn** flag `--with-front`/`--with-shop` (chưa từng phát hành ở bản ổn định). **An toàn:** `gp247:install` nay **mặc định bắt buộc xác nhận** — từ chối chạy không tương tác/`--json` khi thiếu `--force=1`, và hỏi (mặc định không) khi tương tác. `sc:install` ủy quyền cho `gp247:install`.<br>• `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
 | 2026-08-23 | gp247/core 2.1 | Chuẩn hóa hợp đồng output CLI (`--json` + mã thoát cho mọi lệnh); thêm họ vòng đời extension `gp247:ext-*`, và `gp247:install` / `gp247:update` / `gp247:cache-rebuild` / `gp247:doctor` / `gp247:info`. **Breaking:** `make-plugin`/`make-template` nay xuất envelope JSON (đường dẫn ở `data.path`). |
@@ -796,4 +840,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-14 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-23 · ✍️ **Tác giả (Author):** GP247</sub>
