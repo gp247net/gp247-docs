@@ -31,7 +31,8 @@ follow each step.
    If any condition is missing, GP247 **reports an error and refuses to install** — install the missing
    part first.
 3. After installing, GP247 **clears the cache automatically** (routes/config), so you don't have to do
-   it by hand. For a **template**, after installing you must also **Activate** it for the look to take effect.
+   it by hand. For a **template**, after installing you must also **activate** it on the **Website
+   information** screen (see section 6) for the look to take effect.
 
 > Quick glossary:
 > - **Extension**: the collective name for plugins and templates.
@@ -111,7 +112,7 @@ Steps:
 > ℹ️ Small note: after importing a **template** successfully, the screen may return to the **Plugin
 > list** instead of the Template list (this is a current characteristic of the system). Don't worry —
 > the template files are installed correctly into the template folder; just go to the **Template** menu
-> to see and **Activate** it.
+> to see it, then activate it on the **Website information** screen (section 6).
 
 ---
 
@@ -173,6 +174,9 @@ php artisan gp247:ext-install --type=plugin --key=News
 
 # Paid extension: add that extension's own license, and install one key at a time
 php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<your-license>
+
+# Template: same command, different --type (still has to be activated afterwards, see section 6)
+php artisan gp247:ext-install --type=template --key=<TemplateName>
 ```
 
 - Before step 1, set `APP_URL` in `.env` to the website's **real domain** (not `http://localhost`) —
@@ -182,7 +186,8 @@ php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<yo
   keep it secret, do not commit it.
 - If `ext-install` fails with a license/domain error, it suggests re-running `gp247:ext-register-license`.
 - An installed plugin is **enabled** and caches are refreshed automatically. An installed **template**
-  still has to be **Activated** (section 6).
+  still has to be activated on the **Website information** screen — there is no command for that step
+  (section 6).
 - An extension whose files are already on disk but not installed (copied manually, or shipped with the
   installer) → `--key` **installs it in place** instead of downloading it again.
 - Newer version: `php artisan gp247:ext-update --type=plugin --key=News` (or `--all`).
@@ -227,8 +232,19 @@ Notes:
 
 1. **For a plugin:** it is usually ready to use after installing. Some plugins have **Enable/Disable**
    and **Config** buttons — adjust them if needed.
-2. **For a template:** after installing, you must click **Activate** to make it the store's active look.
-   Only one template is active at a time.
+2. **For a template:** once installed, the template is only *present* on the site. To make a store use
+   it, **activate** it: in admin go to **System management → Website information**, pick the template in
+   the **Template** field, then **confirm**. Each store uses one template; a multi-store site
+   (MultiStore) picks one per store.
+
+   > ⚠️ Switching template **deletes the old template's home-page layout blocks and banners**, then seeds
+   > sample data for the new one. This cannot be undone, which is why the admin always asks you to
+   > confirm first. Re-picking the template already in use changes nothing.
+
+   > ℹ️ The command line has **no** command that activates a template for a store:
+   > `gp247:ext-enable --type=template` only enables the template's config row, and
+   > `gp247:template-setup` only applies the default template (`GP247_TEMPLATE_FRONT_DEFAULT`) to the root
+   > store. Activation is always done in the admin.
 3. GP247 clears the cache after installing. If for some reason the look/feature isn't updated, run the
    following command at the website root to clear the cache manually:
 
@@ -272,8 +288,8 @@ Notes:
 **Q1: Is installing a plugin different from installing a template?**
 
 → The installation is identical (the same methods). Only the place differs: plugins under the **Plugin**
-menu, templates under the **Template** menu. A template additionally must be **Activated** after
-installing for it to take effect.
+menu, templates under the **Template** menu. A template additionally has to be **activated** under
+**System management → Website information** after installing for it to take effect.
 
 **Q2: I don't see the "Online" menu in admin?**
 
@@ -305,7 +321,7 @@ the folder have `AppConfig.php`, and does `<Key>` match the `configKey` in `gp24
 **Q7: Why does importing a template jump back to the Plugin list?**
 
 → This is a current characteristic of the system — the template files are still installed in the right
-place. Just go to the **Template** menu to see and activate it.
+place. Just go to the **Template** menu to see it, then activate it on **Website information** (section 6).
 
 **Q8: Do I have to clear the cache manually after installing?**
 
@@ -344,4 +360,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-25 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>

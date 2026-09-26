@@ -298,11 +298,26 @@ Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
 
    Nếu thành công, terminal hiện các dòng như `... cleared successfully`.
 
-2. Vào admin → mục **Templates**, tìm template của bạn, bấm **Cài đặt** rồi **Kích hoạt** (gán làm
-   template đang dùng của cửa hàng).
-3. Mở trang chủ website để xem giao diện template mới. Nếu có `gp247/shop`, mở thử trang danh sách sản
+2. Cài template — chọn một trong hai cách:
+   - **Trong admin:** vào mục **Templates**, tìm template của bạn rồi bấm **Cài đặt (Install)**.
+   - **Bằng dòng lệnh:** thư mục template đã nằm sẵn ở `app/GP247/Templates/MyShopSkin`, nên lệnh **cài tại
+     chỗ** — không tải gì về và không cần API License:
+
+     ```bash
+     php artisan gp247:ext-install --type=template --key=MyShopSkin
+     php artisan gp247:ext-list --type=template
+     ```
+
+     Lệnh thứ hai để kiểm tra template đã ở trạng thái **đã cài**. Khi mang template sang site khác, nén
+     thư mục thành `.zip` rồi cài bằng `php artisan gp247:ext-install --type=template --file=MyShopSkin.zip`.
+3. **Kích hoạt** template cho cửa hàng: admin → **Quản lý hệ thống → Thông tin website**, ở ô **Giao diện**
+   chọn template rồi bấm xác nhận. Bước này **không có lệnh CLI**.
+
+   > ⚠️ Đổi template sẽ xoá layout block và banner trang chủ của template cũ rồi nạp dữ liệu mẫu — hãy thử
+   > trên site phát triển, đừng thử trên site đang bán. Chi tiết: [Cài đặt Plugin & Template — mục 6](./install-extension_vi.md).
+4. Mở trang chủ website để xem giao diện template mới. Nếu có `gp247/shop`, mở thử trang danh sách sản
    phẩm và giỏ hàng: nếu bạn chưa override, chúng hiển thị bằng giao diện mặc định của shop (đúng như mong đợi).
-4. Kiểm tra hiển thị trên **điện thoại** (responsive) và ở **nền tối (dark-mode)** nếu template có hỗ trợ.
+5. Kiểm tra hiển thị trên **điện thoại** (responsive) và ở **nền tối (dark-mode)** nếu template có hỗ trợ.
 
 ---
 
@@ -315,7 +330,7 @@ Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
 - [ ] Nếu thêm class Tailwind mới: đã biên dịch lại CSS và kèm bản output trong `public/`.
 - [ ] Đã quyết định rõ trang shop nào override (chép vào `screen/` template), trang nào để fallback mặc định.
 - [ ] `config.php` chỉ chứa mặc định; lựa chọn chủ-site nằm trong `admin_config` (an toàn khi update).
-- [ ] Đã `php artisan optimize:clear`, cài + kích hoạt thử thành công; trang chủ và trang shop hiển thị đúng.
+- [ ] Đã `php artisan optimize:clear`, cài (admin hoặc `gp247:ext-install --type=template`) và kích hoạt ở **Thông tin website** thử thành công; trang chủ và trang shop hiển thị đúng.
 - [ ] Kiểm tra responsive (điện thoại) và dark-mode (nếu hỗ trợ).
 
 ---
@@ -374,4 +389,4 @@ nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-14 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>

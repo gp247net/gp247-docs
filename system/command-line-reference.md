@@ -639,7 +639,8 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 >   `requireGp247Extensions` (it does not install dependencies) — install those first. A Pro edition
 >   goes after its Free edition, in a separate command (`--paid` takes a single `--key`).
 > - An installed plugin is **enabled**; the route/config cache is refreshed automatically. A template
->   still has to be activated.
+>   still has to be activated in admin → **Website information** (there is no CLI command for that step;
+>   `gp247:template-setup` only applies the default template to the root store).
 
 > The CLI and the admin UI now run the **same** underlying engine
 > (`ExtensionInstaller` / `LibraryClient`), so behavior is identical regardless of which

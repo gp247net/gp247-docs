@@ -303,11 +303,26 @@ For full details on the safe-update mechanism, see the
 
    On success, the terminal shows lines like `... cleared successfully`.
 
-2. Go to admin → **Templates**, find your template, click **Install** then **Activate** (set it as the
-   store's active template).
-3. Open the website's home page to see the new template. If `gp247/shop` is present, try the product-list
+2. Install the template — pick one of two ways:
+   - **In the admin:** go to **Templates**, find your template and click **Install**.
+   - **On the command line:** the template folder is already at `app/GP247/Templates/MyShopSkin`, so the
+     command **installs it in place** — nothing is downloaded and no API License is needed:
+
+     ```bash
+     php artisan gp247:ext-install --type=template --key=MyShopSkin
+     php artisan gp247:ext-list --type=template
+     ```
+
+     The second command checks that the template is now **installed**. To take the template to another
+     site, zip the folder and install it with `php artisan gp247:ext-install --type=template --file=MyShopSkin.zip`.
+3. **Activate** the template for the store: admin → **System management → Website information**, pick the
+   template in the **Template** field, then confirm. There is **no CLI command** for this step.
+
+   > ⚠️ Switching template deletes the old template's home-page layout blocks and banners, then seeds sample
+   > data — try it on a development site, not on a live shop. Details: [Installing Plugins & Templates — section 6](./install-extension.md).
+4. Open the website's home page to see the new template. If `gp247/shop` is present, try the product-list
    and cart pages: if you haven't overridden them, they display with the shop's default look (exactly as expected).
-4. Check the display on a **phone** (responsive) and in **dark mode** if the template supports it.
+5. Check the display on a **phone** (responsive) and in **dark mode** if the template supports it.
 
 ---
 
@@ -320,7 +335,7 @@ For full details on the safe-update mechanism, see the
 - [ ] If you added new Tailwind classes: you recompiled the CSS and included the output in `public/`.
 - [ ] You have clearly decided which shop pages to override (copied into the template's `screen/`) and which to leave on the default fallback.
 - [ ] `config.php` contains only defaults; site-owner choices live in `admin_config` (safe on update).
-- [ ] You ran `php artisan optimize:clear`, installed + activated successfully; home page and shop pages display correctly.
+- [ ] You ran `php artisan optimize:clear`, installed it (admin or `gp247:ext-install --type=template`) and activated it on **Website information** successfully; home page and shop pages display correctly.
 - [ ] Checked responsive (phone) and dark mode (if supported).
 
 ---
@@ -379,4 +394,4 @@ most common issue, caused by Laravel still holding the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-14 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>

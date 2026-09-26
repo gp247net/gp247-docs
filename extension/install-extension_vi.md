@@ -29,7 +29,8 @@ viên/automation. Đọc xong, bạn sẽ biết chọn cách phù hợp và là
 
    Nếu thiếu điều kiện nào, GP247 sẽ **báo lỗi và không cho cài** — hãy cài phần còn thiếu trước.
 3. Sau khi cài, GP247 **tự xoá cache** (route/config) nên bạn không cần làm thủ công. Với **template**,
-   cài xong bạn còn phải **Kích hoạt (Activate)** thì giao diện mới có hiệu lực.
+   cài xong bạn còn phải **kích hoạt** nó ở màn **Thông tin website** (xem mục 6) thì giao diện mới có
+   hiệu lực.
 
 > Thuật ngữ nhanh:
 > - **Extension**: tên gọi chung cho plugin và template.
@@ -106,7 +107,8 @@ Các bước:
 
 > ℹ️ Lưu ý nhỏ: sau khi import **template** thành công, màn hình có thể chuyển về **danh sách Plugin**
 > thay vì danh sách Template (đây là đặc điểm hiện tại của hệ thống). Đừng lo — file template vẫn được
-> cài đúng vào thư mục template; bạn chỉ cần sang menu **Template** để thấy và **Kích hoạt** nó.
+> cài đúng vào thư mục template; bạn chỉ cần sang menu **Template** để thấy nó, rồi kích hoạt ở màn
+> **Thông tin website** (mục 6).
 
 ---
 
@@ -168,6 +170,9 @@ php artisan gp247:ext-install --type=plugin --key=News
 
 # Extension trả phí: thêm bản quyền riêng của extension đó, và cài từng key một
 php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<license-của-bạn>
+
+# Template: cùng lệnh, đổi --type (cài xong vẫn phải kích hoạt, xem mục 6)
+php artisan gp247:ext-install --type=template --key=<TênTemplate>
 ```
 
 - Trước bước 1, đặt `APP_URL` trong `.env` là **domain thật** của website (không để `http://localhost`) —
@@ -175,7 +180,8 @@ php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<li
 - `ext-register-license` tự ghi khoá vào `GP247_API_LICENSE` trong `.env`. Nếu `.env` không ghi được
   (một số shared host khoá file), lệnh in khoá ra để bạn **tự dán** vào `.env` — giữ bí mật, không commit.
 - Nếu `ext-install` báo lỗi liên quan license/domain, lệnh sẽ gợi ý chạy lại `gp247:ext-register-license`.
-- Plugin cài xong được **bật sẵn** và cache tự làm mới. **Template** cài xong vẫn phải **Kích hoạt** (mục 6).
+- Plugin cài xong được **bật sẵn** và cache tự làm mới. **Template** cài xong vẫn phải kích hoạt ở màn
+  **Thông tin website** — dòng lệnh không có lệnh cho bước này (mục 6).
 - Extension có file sẵn trên đĩa nhưng chưa cài (chép thủ công, hoặc có sẵn theo bộ cài) → `--key` **cài
   tại chỗ**, không tải lại.
 - Lên bản mới: `php artisan gp247:ext-update --type=plugin --key=News` (hoặc `--all`).
@@ -220,8 +226,18 @@ Ghi chú:
 
 1. **Với plugin:** cài xong thường đã dùng được. Một số plugin có nút **Bật/Tắt (Enable/Disable)** và
    **Cấu hình (Config)** — vào chỉnh nếu cần.
-2. **Với template:** sau khi cài, phải bấm **Kích hoạt (Activate)** để đặt làm giao diện đang dùng của
-   cửa hàng. Chỉ một template được kích hoạt tại một thời điểm.
+2. **Với template:** cài xong, template mới chỉ *có mặt* trên site. Muốn cửa hàng dùng nó, phải
+   **kích hoạt**: vào admin → **Quản lý hệ thống → Thông tin website**, ở ô **Giao diện** chọn template
+   rồi bấm **xác nhận**. Mỗi cửa hàng dùng một template; site nhiều cửa hàng (MultiStore) chọn riêng cho
+   từng cửa hàng.
+
+   > ⚠️ Đổi template sẽ **xoá layout block và banner trang chủ của template cũ** rồi nạp dữ liệu mẫu cho
+   > template mới. Việc này không hoàn tác được, nên admin luôn hỏi xác nhận trước. Chọn lại đúng
+   > template đang dùng thì không có gì thay đổi.
+
+   > ℹ️ Dòng lệnh **không có** lệnh kích hoạt template cho cửa hàng: `gp247:ext-enable --type=template`
+   > chỉ bật dòng cấu hình của template, còn `gp247:template-setup` chỉ áp template mặc định
+   > (`GP247_TEMPLATE_FRONT_DEFAULT`) cho cửa hàng gốc. Bước kích hoạt luôn làm trong admin.
 3. GP247 tự xoá cache sau khi cài. Nếu vì lý do nào đó giao diện/chức năng chưa cập nhật, chạy lệnh sau
    tại thư mục gốc website để xoá cache thủ công:
 
@@ -263,7 +279,8 @@ Ghi chú:
 **Câu 1: Cài plugin và cài template có khác nhau không?**
 
 → Cách cài giống hệt nhau (cùng các cách). Chỉ khác nơi thao tác: plugin ở menu **Plugin**, template ở menu
-**Template**. Riêng template phải **Kích hoạt** sau khi cài thì mới có hiệu lực.
+**Template**. Riêng template, cài xong phải **kích hoạt** ở **Quản lý hệ thống → Thông tin website** thì
+mới có hiệu lực.
 
 **Câu 2: Tôi không thấy mục "Online" trong admin?**
 
@@ -294,7 +311,7 @@ một lớp thư mục cha khiến `gp247.json` bị đẩy xuống quá sâu. F
 **Câu 7: Import template xong sao lại nhảy về danh sách Plugin?**
 
 → Đây là đặc điểm hiện tại của hệ thống — file template vẫn được cài đúng chỗ. Bạn chỉ cần sang menu
-**Template** để thấy và kích hoạt nó.
+**Template** để thấy nó, rồi kích hoạt ở **Thông tin website** (mục 6).
 
 **Câu 8: Cài xong có phải xoá cache thủ công không?**
 
@@ -332,4 +349,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-25 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>

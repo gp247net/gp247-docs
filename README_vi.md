@@ -18,8 +18,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Hướng dẫn tạo Plugin (chuẩn v2)](./extension/create-plugin_vi.md) | Tạo plugin mới đúng chuẩn v2, an toàn khi cập nhật phiên bản | 2026-08-23 |
-| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-08-23 |
-| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-09-25 |
+| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-09-26 |
+| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-09-26 |
 | [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-07-30 |
 
 ### Hệ thống

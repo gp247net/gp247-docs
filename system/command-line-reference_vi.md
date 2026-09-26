@@ -620,7 +620,9 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > - `ext-install` chỉ **kiểm tra** `requireComposerPackages` (không tự `composer require`) và
 >   `requireGp247Extensions` (không tự cài phụ thuộc) — cài chúng trước. Bản Pro cài sau bản Free,
 >   bằng một lệnh riêng (vì `--paid` chỉ đi với một `--key`).
-> - Plugin cài xong được **bật sẵn**; cache route/config tự làm mới. Template vẫn phải kích hoạt.
+> - Plugin cài xong được **bật sẵn**; cache route/config tự làm mới. Template vẫn phải kích hoạt ở admin
+>   → **Thông tin website** (không có lệnh CLI cho bước này; `gp247:template-setup` chỉ áp template mặc
+>   định cho store gốc).
 
 > CLI và admin UI nay chạy **cùng một** engine bên dưới (`ExtensionInstaller` /
 > `LibraryClient`) nên hành vi giống hệt nhau dù dùng đường nào. Extension được bảo vệ và
