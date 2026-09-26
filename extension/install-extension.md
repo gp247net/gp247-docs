@@ -22,7 +22,7 @@ follow each step.
 1. You must log in to admin with an account that **has permission to manage extensions**.
 2. The extension must be **compatible** with your website. On install, GP247 automatically checks the 3
    conditions declared in the extension's `gp247.json`:
-   - `requireCore`: the required `gp247/core` version (the current standard is `2.1`).
+   - `requireCore`: the required `gp247/core` version (the current standard is `3.0`).
    - `requireComposerPackages`: mandatory packages (for example, a template always needs `gp247/front`).
    - `requireGp247Extensions`: other extensions that must be installed first.
 
@@ -44,6 +44,9 @@ follow each step.
 
 This is the **easiest** way: browse GP247's official extension store right inside admin and click to
 install, with no manual file download.
+
+> 💡 No admin access, or want to install from a script? The same library works from the command line —
+> see [section 5.1](#51-install-online-from-the-library-on-the-command-line-gp247-3x).
 
 > ⚠️ This method only appears if your website has the **GP247 library connection enabled** (the
 > `api_plugins` config for plugins / `api_templates` for templates is on). If you don't see the
@@ -155,6 +158,38 @@ For developers, CI/CD, Docker or shared hosts with terminal access, the whole ex
 available from the command line — the **same engine** the admin UI uses (so compatibility checks,
 `GP247_PROTECTED_*` and the in-use/default-template guard all apply identically). Plugins and templates
 share one command family; choose with `--type=plugin|template`.
+
+### 5.1. Install online from the library on the command line (gp247 3.x)
+
+This is **Online (Method 1) done in a terminal**: no admin needed, handy when a site is built by a script
+or in Docker. Run in the website's root folder:
+
+```bash
+# 1) Once per website: register the (free) API License — the same as Step 0 of Method 1
+php artisan gp247:ext-register-license
+
+# 2) Download a free extension from the library and install it (key = the extension's configKey)
+php artisan gp247:ext-install --type=plugin --key=News
+
+# Paid extension: add that extension's own license, and install one key at a time
+php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<your-license>
+```
+
+- Before step 1, set `APP_URL` in `.env` to the website's **real domain** (not `http://localhost`) —
+  the license is bound to that domain; with the wrong domain every later library call is refused.
+- `ext-register-license` writes the key to `GP247_API_LICENSE` in `.env`. If `.env` is not writable
+  (some shared hosts lock it), the command prints the key so you can **paste it yourself** into `.env` —
+  keep it secret, do not commit it.
+- If `ext-install` fails with a license/domain error, it suggests re-running `gp247:ext-register-license`.
+- An installed plugin is **enabled** and caches are refreshed automatically. An installed **template**
+  still has to be **Activated** (section 6).
+- An extension whose files are already on disk but not installed (copied manually, or shipped with the
+  installer) → `--key` **installs it in place** instead of downloading it again.
+- Newer version: `php artisan gp247:ext-update --type=plugin --key=News` (or `--all`).
+- Mandatory composer packages (`requireComposerPackages`, e.g. `laravel/socialite`)? `composer require`
+  them first — `ext-install` only checks them, it does not install composer packages.
+
+### 5.2. Other extension lifecycle commands
 
 ```bash
 # List local extensions + status + available updates
@@ -309,4 +344,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-24 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-25 · ✍️ **Author:** GP247</sub>

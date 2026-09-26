@@ -21,7 +21,7 @@ viên/automation. Đọc xong, bạn sẽ biết chọn cách phù hợp và là
 1. Bạn cần đăng nhập admin bằng tài khoản **có quyền quản lý extension**.
 2. Extension phải **tương thích** với website của bạn. Khi cài, GP247 tự kiểm tra 3 điều kiện khai báo
    trong file `gp247.json` của extension:
-   - `requireCore`: phiên bản `gp247/core` yêu cầu (chuẩn hiện tại là `2.1`).
+   - `requireCore`: phiên bản `gp247/core` yêu cầu (chuẩn hiện tại là `3.0`).
    - `requireComposerPackages`: các gói bắt buộc phải có (ví dụ template luôn cần `gp247/front`).
    - `requireGp247Extensions`: các extension khác phải cài trước.
 
@@ -42,6 +42,9 @@ viên/automation. Đọc xong, bạn sẽ biết chọn cách phù hợp và là
 
 Đây là cách **dễ nhất**: duyệt kho extension chính thức của GP247 ngay trong admin rồi bấm cài, không
 cần tải file thủ công.
+
+> 💡 Không vào được admin, hoặc muốn cài bằng script? Cùng thư viện này cài được bằng dòng lệnh —
+> xem [mục 5.1](#51-cài-online-từ-thư-viện-bằng-dòng-lệnh-gp247-3x).
 
 > ⚠️ Cách này chỉ hiện ra khi website của bạn đã **bật kết nối thư viện GP247** (cấu hình
 > `api_plugins` cho plugin / `api_templates` cho template được bật). Nếu không thấy mục **Online**,
@@ -150,6 +153,36 @@ Dành cho lập trình viên, CI/CD, Docker hoặc shared host có terminal: to�
 được từ dòng lệnh — **cùng engine** với admin UI (nên kiểm tra tương thích, `GP247_PROTECTED_*` và
 guard template đang-dùng/mặc-định đều áp dụng y hệt). Plugin và template dùng chung một họ lệnh; chọn
 bằng `--type=plugin|template`.
+
+### 5.1. Cài online từ thư viện bằng dòng lệnh (gp247 3.x)
+
+Đây là cách **Online (Cách 1) nhưng làm trên Terminal**: không cần mở admin, hợp khi dựng site bằng script
+hoặc Docker. Chạy tại thư mục gốc website:
+
+```bash
+# 1) Chỉ làm 1 lần cho mỗi website: đăng ký API License (miễn phí) — tương đương Bước 0 của Cách 1
+php artisan gp247:ext-register-license
+
+# 2) Tải extension miễn phí từ thư viện và cài (key = configKey của extension)
+php artisan gp247:ext-install --type=plugin --key=News
+
+# Extension trả phí: thêm bản quyền riêng của extension đó, và cài từng key một
+php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<license-của-bạn>
+```
+
+- Trước bước 1, đặt `APP_URL` trong `.env` là **domain thật** của website (không để `http://localhost`) —
+  license được gắn với domain này; sai domain thì mọi lệnh gọi thư viện sau đó đều bị từ chối.
+- `ext-register-license` tự ghi khoá vào `GP247_API_LICENSE` trong `.env`. Nếu `.env` không ghi được
+  (một số shared host khoá file), lệnh in khoá ra để bạn **tự dán** vào `.env` — giữ bí mật, không commit.
+- Nếu `ext-install` báo lỗi liên quan license/domain, lệnh sẽ gợi ý chạy lại `gp247:ext-register-license`.
+- Plugin cài xong được **bật sẵn** và cache tự làm mới. **Template** cài xong vẫn phải **Kích hoạt** (mục 6).
+- Extension có file sẵn trên đĩa nhưng chưa cài (chép thủ công, hoặc có sẵn theo bộ cài) → `--key` **cài
+  tại chỗ**, không tải lại.
+- Lên bản mới: `php artisan gp247:ext-update --type=plugin --key=News` (hoặc `--all`).
+- Có gói composer bắt buộc (`requireComposerPackages`, ví dụ `laravel/socialite`)? Chạy `composer require`
+  gói đó trước — `ext-install` chỉ kiểm tra, không tự cài gói composer.
+
+### 5.2. Các lệnh khác trong vòng đời extension
 
 ```bash
 # Liệt kê extension local + trạng thái + bản cập nhật
@@ -299,4 +332,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-24 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-25 · ✍️ **Tác giả (Author):** GP247</sub>
