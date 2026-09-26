@@ -55,6 +55,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:ext-check-update` | core | Kiểm tra bản cập nhật trên marketplace |
 | `gp247:ext-search` | core | Tìm kiếm catalog marketplace |
 | `gp247:ext-license` | core | Đặt/xem/xóa license theo plugin của extension trả phí |
+| `gp247:ext-register-license` | core | Đăng ký API License (miễn phí) cho domain để kết nối thư viện extension |
 | `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+sample]) |
 | `gp247:update` | core | Làm mới sau `composer update` (core [+shop], an toàn cho site chạy) |
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
@@ -562,10 +563,12 @@ hỗ trợ `--json`.
 | `gp247:ext-check-update` | `--type`, `--force` | Báo các bản cập nhật (dùng cache trừ khi `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Duyệt/tìm catalog marketplace. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Đặt / xem / xóa license theo plugin của extension trả phí (lưu ở `admin_config`, không đụng `.env`). |
+| `gp247:ext-register-license` | (không có) | Đăng ký **API License** (miễn phí) cho domain `APP_URL` với thư viện GP247 và ghi vào `GP247_API_LICENSE` trong `.env` — giống nút "Click here" trong admin. Cần trước khi `ext-install`/`ext-update`/`ext-search` gọi thư viện. `.env` không ghi được → thoát khác 0 (`env_write_failed`) và in khoá để tự dán. |
 
 Ví dụ:
 
 ```bash
+php artisan gp247:ext-register-license
 php artisan gp247:ext-list --type=plugin --json
 php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
 php artisan gp247:ext-install --type=plugin --key=News
@@ -592,6 +595,32 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > `ext-enable`/`ext-disable`/`ext-uninstall` coi extension **chưa cài** là lỗi (enable/disable từ
 > chối; uninstall từ chối trừ khi `--purge`), nên plugin bundled trên đĩa không bị "bật" thành
 > no-op hay bị xóa bất ngờ.
+
+> ℹ️ **Có từ:** gp247/core 2.1.1 (`gp247:ext-register-license`)
+
+> **Cài từ thư viện (marketplace) — `--key` tải về.** Khi `ext-install --key` phải tải từ
+> thư viện GP247 (extension chưa có trên đĩa), website cần một **API License** (miễn phí), chỉ đăng ký
+> **một lần** bằng `gp247:ext-register-license`:
+>
+> ```bash
+> php artisan gp247:ext-register-license
+> php artisan gp247:ext-install --type=plugin --key=News
+> php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<license-của-extension>
+> ```
+>
+> - Đặt `APP_URL` trong `.env` là **domain thật** trước khi đăng ký: license gắn với `url('/')`,
+>   để `http://localhost` thì mọi lệnh gọi thư viện sau đó bị từ chối (`domain_not_authorized`).
+> - Lệnh ghi khoá vào `GP247_API_LICENSE` trong `.env`. Nếu `.env` không ghi được, lệnh thoát khác 0
+>   (`error.code: env_write_failed`) và in khoá để bạn tự dán — giữ bí mật, không commit.
+> - Hai loại license khác nhau: **API License** (`GP247_API_LICENSE` trong `.env`, miễn phí, để kết
+>   nối thư viện) và **license của extension trả phí** (`--license=`, lưu ở `admin_config`).
+> - Lỗi license/domain khi tải (`api_license_required`, `domain_not_authorized`) được báo kèm gợi ý
+>   chạy lại `gp247:ext-register-license`. Key có trong thư viện nhưng là bản trả phí → thiếu
+>   `--paid --license=`; key không có trong thư viện → "not found in the marketplace".
+> - `ext-install` chỉ **kiểm tra** `requireComposerPackages` (không tự `composer require`) và
+>   `requireGp247Extensions` (không tự cài phụ thuộc) — cài chúng trước. Bản Pro cài sau bản Free,
+>   bằng một lệnh riêng (vì `--paid` chỉ đi với một `--key`).
+> - Plugin cài xong được **bật sẵn**; cache route/config tự làm mới. Template vẫn phải kích hoạt.
 
 > CLI và admin UI nay chạy **cùng một** engine bên dưới (`ExtensionInstaller` /
 > `LibraryClient`) nên hành vi giống hệt nhau dù dùng đường nào. Extension được bảo vệ và
@@ -840,4 +869,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>

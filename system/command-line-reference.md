@@ -55,6 +55,7 @@ and you can copy-paste and run them right away.
 | `gp247:ext-check-update` | core | Check the marketplace for available updates |
 | `gp247:ext-search` | core | Search the marketplace catalog |
 | `gp247:ext-license` | core | Set/show/remove the per-plugin license of a paid extension |
+| `gp247:ext-register-license` | core | Register the domain's (free) API License that connects the site to the extension library |
 | `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+sample]) |
 | `gp247:update` | core | Post-`composer update` refresh (core [+shop], safe for live) |
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
@@ -577,10 +578,12 @@ Plugins and templates share one command family; pick which with `--type=plugin|t
 | `gp247:ext-check-update` | `--type`, `--force` | Report available updates (cached unless `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Browse/search the marketplace catalog. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Set / show / remove the per-plugin license of a paid extension (stored in `admin_config`, never in `.env`). |
+| `gp247:ext-register-license` | (none) | Register the domain in `APP_URL` for a (free) **API License** with the GP247 library and write it to `GP247_API_LICENSE` in `.env` — same as the admin "Click here" button. Needed before `ext-install`/`ext-update`/`ext-search` call the library. `.env` not writable → exits non-zero (`env_write_failed`) and prints the key to paste. |
 
 Examples:
 
 ```bash
+php artisan gp247:ext-register-license
 php artisan gp247:ext-list --type=plugin --json
 php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
 php artisan gp247:ext-install --type=plugin --key=News
@@ -609,6 +612,34 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > Symmetrically, `ext-enable`/`ext-disable`/`ext-uninstall` treat a **not-installed** extension
 > as an error (enable/disable refuse; uninstall refuses unless `--purge`), so a bundled
 > on-disk plugin is never enabled as a no-op or deleted by surprise.
+
+> ℹ️ **Available since:** gp247/core 2.1.1 (`gp247:ext-register-license`)
+
+> **Installing from the library (marketplace) — `--key` downloads.** When `ext-install --key` has
+> to download from the GP247 library (the extension is not on disk), the site needs a (free)
+> **API License**, registered **once** with `gp247:ext-register-license`:
+>
+> ```bash
+> php artisan gp247:ext-register-license
+> php artisan gp247:ext-install --type=plugin --key=News
+> php artisan gp247:ext-install --type=plugin --key=ProPlugin --paid --license=<extension-license>
+> ```
+>
+> - Set `APP_URL` in `.env` to the **real domain** before registering: the license is bound to
+>   `url('/')`; with `http://localhost` every later library call is refused (`domain_not_authorized`).
+> - The command writes the key to `GP247_API_LICENSE` in `.env`. If `.env` is not writable it exits
+>   non-zero (`error.code: env_write_failed`) and prints the key for you to paste — keep it secret,
+>   do not commit it.
+> - Two different licenses: the **API License** (`GP247_API_LICENSE` in `.env`, free, connects the
+>   site to the library) and a **paid extension's license** (`--license=`, stored in `admin_config`).
+> - License/domain failures while downloading (`api_license_required`, `domain_not_authorized`) are
+>   reported with a hint to re-run `gp247:ext-register-license`. A key that is paid in the library →
+>   add `--paid --license=`; a key that is not in the library → "not found in the marketplace".
+> - `ext-install` only **checks** `requireComposerPackages` (it does not `composer require` them) and
+>   `requireGp247Extensions` (it does not install dependencies) — install those first. A Pro edition
+>   goes after its Free edition, in a separate command (`--paid` takes a single `--key`).
+> - An installed plugin is **enabled**; the route/config cache is refreshed automatically. A template
+>   still has to be activated.
 
 > The CLI and the admin UI now run the **same** underlying engine
 > (`ExtensionInstaller` / `LibraryClient`), so behavior is identical regardless of which
@@ -859,4 +890,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>
