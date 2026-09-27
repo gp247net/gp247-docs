@@ -135,9 +135,9 @@ Các bước:
    └── ...(các file còn lại)
    ```
 
-2. Nếu extension có thư mục `public/` (chứa css/js/ảnh), chép nội dung đó sang:
-   - Plugin → `public/GP247/Plugins/<TênExtension>`
-   - Template → `public/GP247/Templates/<TênExtension>`
+2. Thư mục `public/` của extension (chứa css/js/ảnh) **không cần chép tay**: khi bạn bấm **Cài đặt** ở bước 4,
+   GP247 tự chép nó sang `public/GP247/Plugins/<TênExtension>` (hoặc `public/GP247/Templates/<TênExtension>`).
+   Từ bản cập nhật ngày 2026-09-27; bản cũ hơn cần tự chép như trước.
 
 3. Vào admin, mở menu **Plugin** (hoặc **Template**). Extension bạn vừa chép sẽ **tự động xuất hiện**
    trong danh sách (GP247 quét thư mục để phát hiện). Nó ở trạng thái **chưa cài**.
@@ -269,6 +269,10 @@ Ghi chú:
 - **Import báo trùng:** extension đã cài rồi. Nếu muốn lên bản mới, dùng chức năng **cập nhật**, đừng import đè.
 - **Cài thủ công nhưng không thấy trong admin:** kiểm tra đã chép **đúng thư mục** (`app/GP247/Plugins`
   hay `Templates`) và thư mục có `AppConfig.php` chưa; sau đó `php artisan optimize:clear` rồi tải lại admin.
+- **Cài xong nhưng giao diện của extension bị vỡ (không có màu, nút không bấm được, ảnh không hiện):** file tĩnh
+  (css/js/ảnh) chưa được chép ra `public/`. Hay gặp ở site đã cài extension bằng cách chép thư mục trước bản cập nhật
+  ngày 2026-09-27. Chạy `php artisan gp247:doctor` — mục `extension_assets` nêu extension bị thiếu — rồi
+  `php artisan gp247:ext-publish --type=plugin --key=<TênExtension>` (template thì `--type=template`, hoặc `--all` cho tất cả).
 - **File `.zip` quá lớn không tải lên được:** vượt 50MB hoặc vượt giới hạn upload của máy chủ. Dùng Cách 3
   (thủ công) thay thế.
 
@@ -349,4 +353,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-27 · ✍️ **Tác giả (Author):** GP247</sub>

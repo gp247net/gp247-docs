@@ -56,6 +56,7 @@ and you can copy-paste and run them right away.
 | `gp247:ext-search` | core | Search the marketplace catalog |
 | `gp247:ext-license` | core | Set/show/remove the per-plugin license of a paid extension |
 | `gp247:ext-register-license` | core | Register the domain's (free) API License that connects the site to the extension library |
+| `gp247:ext-publish` | core | Copy the static files (CSS/JS/images) of installed plugins/templates to `public/` again |
 | `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+sample]) |
 | `gp247:update` | core | Post-`composer update` refresh (core [+shop], safe for live) |
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
@@ -570,7 +571,7 @@ Plugins and templates share one command family; pick which with `--type=plugin|t
 | Command | Key options | What it does |
 | --- | --- | --- |
 | `gp247:ext-list` | `--type` | List local extensions with installed/active/version and whether an update is available (cache-only, no API call). |
-| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<folder>`, `--key=<key>`, `--paid`, `--license=` | Install from an offline `.zip` (`--file`), an already-extracted folder (`--dir`), or by key (`--key`). For a key: if the extension is **already installed** → refused; if its files are **already on disk but not installed** (e.g. a bundled plugin like `News`) → installed locally (like the admin "Install" button); otherwise → fetched from the marketplace (add `--paid --license=...` for a paid item). |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<folder>`, `--key=<key>`, `--paid`, `--license=` | Install from an offline `.zip` (`--file`), an already-extracted folder (`--dir`), or by key (`--key`). For a key: if the extension is **already installed** → refused; if its files are **already on disk but not installed** (e.g. a bundled plugin like `News`, or a folder you copied up yourself) → installed in place (like the admin "Install" button), **copying the extension's `public/` folder to `public/GP247/...`**; otherwise → fetched from the marketplace (add `--paid --license=...` for a paid item). |
 | `gp247:ext-enable` | `--type`, `--key` | Enable an **installed** extension (refused with a clear error if it is not installed). |
 | `gp247:ext-disable` | `--type`, `--key` | Disable an installed extension (refused if not installed, or for a template still in use). |
 | `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Uninstall (honors `extension_protected` + in-use/default-template guard). **Installed**: removes DB config **and** deletes files; `--only-data` keeps the files. **Not installed but on disk**: refused unless `--purge` (then only the files are deleted). `--only-data` and `--purge` cannot be combined. |
@@ -579,6 +580,7 @@ Plugins and templates share one command family; pick which with `--type=plugin|t
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Browse/search the marketplace catalog. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Set / show / remove the per-plugin license of a paid extension (stored in `admin_config`, never in `.env`). |
 | `gp247:ext-register-license` | (none) | Register the domain in `APP_URL` for a (free) **API License** with the GP247 library and write it to `GP247_API_LICENSE` in `.env` — same as the admin "Click here" button. Needed before `ext-install`/`ext-update`/`ext-search` call the library. `.env` not writable → exits non-zero (`env_write_failed`) and prints the key to paste. |
+| `gp247:ext-publish` | `--type`, `--key`, `--all` | Copy the `public/` folder (CSS/JS/images) of an **installed** extension to `public/GP247/<Plugins\|Templates>/<Key>/` again, overwriting the old copy. `--all` = every installed extension that has a `public/` folder. Use it when `gp247:doctor` reports `extension_assets`. An extension that is not installed → error. |
 
 Examples:
 
@@ -590,6 +592,8 @@ php artisan gp247:ext-install --type=plugin --key=News
 php artisan gp247:ext-enable --type=plugin --key=News
 php artisan gp247:ext-update --type=plugin --all
 php artisan gp247:ext-uninstall --type=plugin --key=News
+php artisan gp247:ext-publish --type=template --key=MKP
+php artisan gp247:ext-publish --type=plugin --all
 ```
 
 > **Batch (multiple items).** `ext-install`, `ext-enable`, `ext-disable` and
@@ -613,7 +617,15 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > as an error (enable/disable refuse; uninstall refuses unless `--purge`), so a bundled
 > on-disk plugin is never enabled as a no-op or deleted by surprise.
 
-> ℹ️ **Available since:** gp247/core 2.1.1 (`gp247:ext-register-license`)
+> **An extension's static files (CSS/JS/images).** Browsers can only read the `public/` folder, so installing copies
+> `app/GP247/<Plugins|Templates>/<Key>/public/` to `public/GP247/<Plugins|Templates>/<Key>/`. Every way of installing does this:
+> a `.zip` file, the online library, and a folder already on disk (uploaded by FTP, `git clone`, baked into a Docker image)
+> followed by **Install** or `ext-install --key`. Before the 2026-09-27 update the last one did **not** copy `public/` — the
+> extension still reported a successful install but its screens were broken (CSS/JS/images answered 404). On a site
+> installed that way, run `gp247:doctor` to see which extensions are affected, then `gp247:ext-publish --type=... --key=...`
+> (or `--all`) to fix them.
+
+> ℹ️ **Available since:** gp247/core 2.1.1 (`gp247:ext-register-license`); the 2026-09-27 update (`gp247:ext-publish`)
 
 > **Installing from the library (marketplace) — `--key` downloads.** When `ext-install --key` has
 > to download from the GP247 library (the extension is not on disk), the site needs a (free)
@@ -672,8 +684,9 @@ blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop
 | `secret_decryptable` | Encrypted config secrets still decrypt (the tell-tale of a changed `APP_KEY`) |
 | `template_source` | How many published template files are identical to the package copy — i.e. will never receive an update |
 | `file_bom` | Any `.php` / `.blade.php` file starting with a **UTF-8 BOM** |
+| `extension_assets` | **Installed** plugins/templates missing static files in `public/GP247/...` (their CSS/JS/images answer 404). **WARN**, with the `gp247:ext-publish` fix |
 
-> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check)
+> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check); the 2026-09-27 update (the `extension_assets` check)
 
 **Why `file_bom` is worth checking.** A BOM (Byte Order Mark) is **three invisible bytes** (`EF BB BF`) that
 many Windows editors add to the front of a file when saving as "UTF-8". Those bytes sit **outside** the
@@ -891,4 +904,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-27 · ✍️ **Author:** GP247</sub>

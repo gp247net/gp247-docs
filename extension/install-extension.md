@@ -139,9 +139,9 @@ Steps:
    └── ...(the remaining files)
    ```
 
-2. If the extension has a `public/` folder (css/js/images), copy its contents to:
-   - Plugin → `public/GP247/Plugins/<ExtensionName>`
-   - Template → `public/GP247/Templates/<ExtensionName>`
+2. The extension's `public/` folder (css/js/images) **does not need copying by hand**: when you click **Install** in
+   step 4, GP247 copies it to `public/GP247/Plugins/<ExtensionName>` (or `public/GP247/Templates/<ExtensionName>`).
+   Since the 2026-09-27 update; older versions still need the manual copy.
 
 3. In admin, open the **Plugin** (or **Template**) menu. The extension you just copied will **appear
    automatically** in the list (GP247 scans the folder to detect it). It is in the **not-installed** state.
@@ -278,6 +278,11 @@ Notes:
 - **Manual install but admin doesn't show it:** check that you copied to the **right folder**
   (`app/GP247/Plugins` vs `Templates`) and that the folder has `AppConfig.php`; then run
   `php artisan optimize:clear` and reload admin.
+- **Installed, but the extension's screens look broken (no styling, buttons do nothing, images missing):** its static
+  files (css/js/images) never reached `public/`. Typical on sites that installed an extension by copying its folder
+  before the 2026-09-27 update. Run `php artisan gp247:doctor` — the `extension_assets` line names the affected
+  extensions — then `php artisan gp247:ext-publish --type=plugin --key=<ExtensionName>` (`--type=template` for a
+  template, or `--all` for every one).
 - **The `.zip` file is too big to upload:** over 50MB or over the server's upload limit. Use Method 3
   (manual) instead.
 
@@ -360,4 +365,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-27 · ✍️ **Author:** GP247</sub>

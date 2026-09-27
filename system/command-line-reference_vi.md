@@ -56,6 +56,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:ext-search` | core | Tìm kiếm catalog marketplace |
 | `gp247:ext-license` | core | Đặt/xem/xóa license theo plugin của extension trả phí |
 | `gp247:ext-register-license` | core | Đăng ký API License (miễn phí) cho domain để kết nối thư viện extension |
+| `gp247:ext-publish` | core | Chép lại file tĩnh (CSS/JS/ảnh) của plugin/template đã cài ra `public/` |
 | `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+sample]) |
 | `gp247:update` | core | Làm mới sau `composer update` (core [+shop], an toàn cho site chạy) |
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
@@ -555,7 +556,7 @@ hỗ trợ `--json`.
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
 | `gp247:ext-list` | `--type` | Liệt kê extension local kèm installed/active/version và có bản mới hay không (cache-only, không gọi API). |
-| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<thư-mục>`, `--key=<key>`, `--paid`, `--license=` | Cài từ file `.zip` (`--file`), thư mục đã giải nén (`--dir`), hoặc theo key (`--key`). Với key: nếu extension **đã cài** → từ chối; nếu file **đã có trên đĩa nhưng chưa cài** (vd plugin bundled như `News`) → cài tại chỗ (giống nút "Install" của admin); còn lại → tải từ marketplace (thêm `--paid --license=...` cho item trả phí). |
+| `gp247:ext-install` | `--type`, `--file=<zip>`, `--dir=<thư-mục>`, `--key=<key>`, `--paid`, `--license=` | Cài từ file `.zip` (`--file`), thư mục đã giải nén (`--dir`), hoặc theo key (`--key`). Với key: nếu extension **đã cài** → từ chối; nếu file **đã có trên đĩa nhưng chưa cài** (vd plugin bundled như `News`, hoặc thư mục bạn tự chép lên) → cài tại chỗ (giống nút "Install" của admin), **kèm chép thư mục `public/` của extension ra `public/GP247/...`**; còn lại → tải từ marketplace (thêm `--paid --license=...` cho item trả phí). |
 | `gp247:ext-enable` | `--type`, `--key` | Bật extension **đã cài** (từ chối kèm lỗi rõ nếu chưa cài). |
 | `gp247:ext-disable` | `--type`, `--key` | Tắt extension đã cài (từ chối nếu chưa cài, hoặc template đang được dùng). |
 | `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Gỡ (tôn trọng `extension_protected` + guard template đang-dùng/mặc-định). **Đã cài**: xóa cấu hình DB **và** xóa file; `--only-data` thì giữ file. **Chưa cài nhưng có trên đĩa**: từ chối trừ khi có `--purge` (khi đó chỉ xóa file). `--only-data` và `--purge` không dùng chung. |
@@ -564,6 +565,7 @@ hỗ trợ `--json`.
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Duyệt/tìm catalog marketplace. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Đặt / xem / xóa license theo plugin của extension trả phí (lưu ở `admin_config`, không đụng `.env`). |
 | `gp247:ext-register-license` | (không có) | Đăng ký **API License** (miễn phí) cho domain `APP_URL` với thư viện GP247 và ghi vào `GP247_API_LICENSE` trong `.env` — giống nút "Click here" trong admin. Cần trước khi `ext-install`/`ext-update`/`ext-search` gọi thư viện. `.env` không ghi được → thoát khác 0 (`env_write_failed`) và in khoá để tự dán. |
+| `gp247:ext-publish` | `--type`, `--key`, `--all` | Chép lại thư mục `public/` (CSS/JS/ảnh) của extension **đã cài** ra `public/GP247/<Plugins\|Templates>/<Key>/`, ghi đè bản cũ. `--all` = mọi extension đã cài có thư mục `public/`. Dùng khi `gp247:doctor` báo mục `extension_assets`. Extension chưa cài → lỗi. |
 
 Ví dụ:
 
@@ -575,6 +577,8 @@ php artisan gp247:ext-install --type=plugin --key=News
 php artisan gp247:ext-enable --type=plugin --key=News
 php artisan gp247:ext-update --type=plugin --all
 php artisan gp247:ext-uninstall --type=plugin --key=News
+php artisan gp247:ext-publish --type=template --key=MKP
+php artisan gp247:ext-publish --type=plugin --all
 ```
 
 > **Nhiều item (batch).** `ext-install`, `ext-enable`, `ext-disable`, `ext-uninstall` nhận
@@ -596,7 +600,14 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 > chối; uninstall từ chối trừ khi `--purge`), nên plugin bundled trên đĩa không bị "bật" thành
 > no-op hay bị xóa bất ngờ.
 
-> ℹ️ **Có từ:** gp247/core 2.1.1 (`gp247:ext-register-license`)
+> **File tĩnh của extension (CSS/JS/ảnh).** Trình duyệt chỉ đọc được thư mục `public/`, nên khi cài, thư mục
+> `app/GP247/<Plugins|Templates>/<Key>/public/` được chép ra `public/GP247/<Plugins|Templates>/<Key>/`. Mọi cách cài
+> đều làm việc này: file `.zip`, thư viện online, thư mục đã có trên đĩa (tải lên bằng FTP, `git clone`, chép vào
+> image Docker) rồi bấm **Install** hay chạy `ext-install --key`. Trước bản cập nhật ngày 2026-09-27, cách cuối **không**
+> chép `public/` — extension vẫn báo cài thành công nhưng giao diện hỏng (CSS/JS/ảnh báo lỗi 404). Site đã cài theo
+> cách đó chạy `gp247:doctor` để xem extension nào thiếu, rồi `gp247:ext-publish --type=... --key=...` (hoặc `--all`) để vá.
+
+> ℹ️ **Có từ:** gp247/core 2.1.1 (`gp247:ext-register-license`); bản cập nhật ngày 2026-09-27 (`gp247:ext-publish`)
 
 > **Cài từ thư viện (marketplace) — `--key` tải về.** Khi `ext-install --key` phải tải từ
 > thư viện GP247 (extension chưa có trên đĩa), website cần một **API License** (miễn phí), chỉ đăng ký
@@ -654,8 +665,9 @@ Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WAR
 | `secret_decryptable` | Các bí mật đã mã hoá trong cấu hình còn giải mã được (dấu hiệu `APP_KEY` bị đổi) |
 | `template_source` | Bao nhiêu file giao diện đã publish nhưng giống hệt bản trong package — tức sẽ không bao giờ nhận được bản cập nhật |
 | `file_bom` | File `.php` / `.blade.php` nào bắt đầu bằng **BOM UTF-8** |
+| `extension_assets` | Plugin/template **đã cài** nào thiếu file tĩnh trong `public/GP247/...` (CSS/JS/ảnh sẽ báo 404). **WARN**, kèm lệnh vá `gp247:ext-publish` |
 
-> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`)
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`); bản cập nhật ngày 2026-09-27 (mục `extension_assets`)
 
 **Vì sao `file_bom` đáng kiểm.** BOM (Byte Order Mark) là **3 byte vô hình** (`EF BB BF`) mà nhiều trình soạn
 thảo trên Windows tự thêm vào đầu file khi lưu "UTF-8". Ba byte đó nằm **ngoài** cặp thẻ `<?php ?>`, nên PHP
@@ -871,4 +883,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-27 · ✍️ **Tác giả (Author):** GP247</sub>
