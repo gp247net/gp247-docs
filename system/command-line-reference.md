@@ -51,7 +51,7 @@ and you can copy-paste and run them right away.
 | `gp247:ext-install` | core | Install a plugin/template from a .zip, a directory, or the marketplace |
 | `gp247:ext-enable` / `gp247:ext-disable` | core | Enable / disable an installed plugin/template |
 | `gp247:ext-uninstall` | core | Uninstall a plugin/template (honors protected + template guards) |
-| `gp247:ext-update` | core | Update plugin(s)/template(s) from the marketplace (backup/rollback) |
+| `gp247:ext-update` | core | Update plugin(s)/template(s) from the marketplace (backup/rollback); `--local` only runs the data update after you replaced the files yourself |
 | `gp247:ext-check-update` | core | Check the marketplace for available updates |
 | `gp247:ext-search` | core | Search the marketplace catalog |
 | `gp247:ext-license` | core | Set/show/remove the per-plugin license of a paid extension |
@@ -575,7 +575,7 @@ Plugins and templates share one command family; pick which with `--type=plugin|t
 | `gp247:ext-enable` | `--type`, `--key` | Enable an **installed** extension (refused with a clear error if it is not installed). |
 | `gp247:ext-disable` | `--type`, `--key` | Disable an installed extension (refused if not installed, or for a template still in use). |
 | `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Uninstall (honors `extension_protected` + in-use/default-template guard). **Installed**: removes DB config **and** deletes files; `--only-data` keeps the files. **Not installed but on disk**: refused unless `--purge` (then only the files are deleted). `--only-data` and `--purge` cannot be combined. |
-| `gp247:ext-update` | `--type`, `--key`, `--all` | Apply marketplace updates for one extension or every one with an update (backup + rollback). |
+| `gp247:ext-update` | `--type`, `--key`, `--all`, `--local`, `--dry-run` | Apply marketplace updates for one extension or every one with an update (backup + rollback). **`--local`** (available since the 2026-09-29 update): **downloads nothing** and only runs the data update (`AppConfig::update()`) of installed extensions whose files were replaced with `git pull`/Composer/a manual copy — i.e. whose `gp247.json` is newer than the version GP247 recorded at install; the new version is recorded when done. `--dry-run` only lists. Safe to re-run. Exits non-zero if **any** extension fails (the new files stay, the old version is kept so it can be retried). |
 | `gp247:ext-check-update` | `--type`, `--force` | Report available updates (cached unless `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Browse/search the marketplace catalog. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Set / show / remove the per-plugin license of a paid extension (stored in `admin_config`, never in `.env`). |
@@ -591,6 +591,8 @@ php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
 php artisan gp247:ext-install --type=plugin --key=News
 php artisan gp247:ext-enable --type=plugin --key=News
 php artisan gp247:ext-update --type=plugin --all
+php artisan gp247:ext-update --local --all --type=plugin --dry-run
+php artisan gp247:ext-update --local --type=plugin --key=InOut --json
 php artisan gp247:ext-uninstall --type=plugin --key=News
 php artisan gp247:ext-publish --type=template --key=MKP
 php artisan gp247:ext-publish --type=plugin --all
@@ -665,7 +667,7 @@ php artisan gp247:ext-publish --type=plugin --all
 | Command | Key options | What it does |
 | --- | --- | --- |
 | `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` when `--sample`). A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
-| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), the **extension data update** step (`ext-update --local --all` for plugins then templates — a failure only warns and never blocks the following steps; available since the 2026-09-29 update), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
 | `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.2, required extensions, write permissions, DB connectivity, install marker, plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |
 | `gp247:info` | `--json` | Show status: installed package versions (core/front/shop), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
@@ -685,8 +687,9 @@ blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop
 | `template_source` | How many published template files are identical to the package copy — i.e. will never receive an update |
 | `file_bom` | Any `.php` / `.blade.php` file starting with a **UTF-8 BOM** |
 | `extension_assets` | **Installed** plugins/templates missing static files in `public/GP247/...` (their CSS/JS/images answer 404). **WARN**, with the `gp247:ext-publish` fix |
+| `extension_data_pending` | **Installed** plugins/templates whose files are newer than the version GP247 recorded (just `git pull`ed / copied over), so their data update has not run yet. **WARN**, with the list and the `gp247:ext-update --local --all` fix |
 
-> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check); the 2026-09-27 update (the `extension_assets` check)
+> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check); the 2026-09-27 update (the `extension_assets` check); the 2026-09-29 update (the `extension_data_pending` check)
 
 **Why `file_bom` is worth checking.** A BOM (Byte Order Mark) is **three invisible bytes** (`EF BB BF`) that
 many Windows editors add to the front of a file when saving as "UTF-8". Those bytes sit **outside** the
@@ -896,6 +899,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-09-29 |  | `gp247:ext-update` gained `--local` / `--dry-run`: runs the data update of extensions whose files were replaced with `git pull`/Composer/a manual copy (GP247 now records the installed version); `gp247:update` runs this step for plugins and templates; `gp247:doctor` gained the `extension_data_pending` check. |
 | 2026-09-23 |  | `gp247:doctor` gained the `file_bom` check: reports `.php`/`.blade.php` files starting with a UTF-8 BOM (WARN — never changes the exit code) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` now runs the **core upgrade migrations** (`Migrations/upgrade/`) **before** re-seeding — previously it only re-seeded, so a core data-structure change could not reach an installed site. Part of the rule that, from the public **v2.1** onward, every breaking change ships an automatic migration delivered by `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` gained an **opt-in** `--publish=<tokens>` option to re-publish assets/views after `composer update` (default publishes nothing). Tokens name the publish tag (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`) and are **tiered by impact**: only `core-public` is safe; view/template tokens overwrite your customizations. **No `--force` flag** — typing a destructive token is the consent; interactive runs still warn + confirm (default no).<br>• `gp247:install` and `gp247:doctor` now register in a **bootstrap tier** (available right after `composer require`, before the platform is installed — fixes "only `gp247:core-install` existed pre-install"). `gp247:install` **auto-detects** present packages; the `--with-front`/`--with-shop` flags were **removed** (never shipped in a stable release). **Safety:** `gp247:install` now **requires confirmation by default** — it refuses non-interactive/`--json` runs without `--force=1` and prompts (default no) interactively. `sc:install` delegates to `gp247:install`.<br>• `ext-install --key` installs a bundled/on-disk plugin locally (or refuses if already installed); `ext-enable`/`ext-disable` refuse a not-installed extension; `ext-uninstall` refuses a not-installed on-disk extension unless `--purge` (`--only-data`/`--purge` mutually exclusive). |
@@ -904,4 +908,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-27 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>

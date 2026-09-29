@@ -89,6 +89,8 @@ Một lần cập nhật GP247 luôn có **2 phần tách biệt**, phải làm 
    Lệnh này tự động làm tuần tự (an toàn, không phá dữ liệu):
    - Cập nhật **core**;
    - Nâng cấp cấu trúc dữ liệu **shop** — *chỉ khi* site có cài module shop;
+   - Áp dụng **cập nhật dữ liệu của plugin/template** có file mới hơn dữ liệu đang dùng (ví dụ bạn vừa
+     `git pull` một plugin) — xem mục C bên dưới;
    - Làm mới lại **cache** (route/config) để site nhận code mới.
 
    Nếu thành công, màn hình in ra các bước đã chạy (ví dụ `gp247:core-update`,
@@ -135,6 +137,38 @@ Các token hợp lệ: `core-public`, `core-view`, `front-public`, `front-view`,
 
 > 📖 Muốn hiểu từng token ảnh hưởng tới thư mục nào, xem mục "`gp247:update`" trong
 > [Tài liệu tham chiếu dòng lệnh](./command-line-reference_vi.md).
+
+### C. Plugin/template cập nhật bằng `git pull`, Composer hoặc chép tay
+
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-29
+
+Khi bấm **Cập nhật** trên thư viện extension, GP247 vừa thay file vừa chạy phần **cập nhật dữ liệu** mà
+bản mới cần (thêm cấu hình mới, chuyển đổi dữ liệu cũ…). Nếu bạn tự thay file của plugin/template bằng
+cách khác — `git pull`, Composer, FTP, chép thư mục — thì chỉ có **file** đổi, phần dữ liệu **chưa** chạy.
+
+GP247 ghi nhớ phiên bản đã cài của từng extension, nên nhận ra được trường hợp này và cho bạn 3 cách
+áp dụng phần còn thiếu (chọn một):
+
+1. Chạy `php artisan gp247:update` như mọi lần — lệnh này đã có bước áp dụng cho mọi plugin và template.
+2. Chỉ chạy phần extension:
+
+   ```bash
+   php artisan gp247:ext-update --local --all --type=plugin --dry-run   # xem trước, chưa làm gì
+   php artisan gp247:ext-update --local --all --type=plugin             # áp dụng cho mọi plugin
+   php artisan gp247:ext-update --local --type=plugin --key=InOut       # hoặc chỉ một plugin
+   ```
+
+3. Không có dòng lệnh (hosting chia sẻ): vào **Plugin** (hoặc **Template**) trong trang quản trị. Extension
+   đang chờ có nhãn vàng **"Chờ cập nhật dữ liệu: x → y"** ở cột Phiên bản; bấm nút **Áp dụng cập nhật
+   dữ liệu** (biểu tượng cơ sở dữ liệu) ở cột thao tác.
+
+Lưu ý:
+- Chạy lại bao nhiêu lần cũng an toàn: extension đã áp dụng xong sẽ được bỏ qua.
+- Site cài từ trước ngày 2026-09-29 chưa có bản ghi phiên bản, nên **lần đầu** mọi plugin/template đã cài
+  đều hiện là "chờ". Áp dụng một lần là hết.
+- Nếu phần cập nhật dữ liệu của một extension báo lỗi, file mới vẫn giữ nguyên (không tự khôi phục như khi
+  cập nhật từ thư viện). Sửa nguyên nhân rồi chạy lại; `gp247:doctor` báo mục `extension_data_pending`
+  cho tới khi xong.
 
 ---
 
@@ -217,7 +251,8 @@ backup rồi thử lại.
 **Câu 9: Có cần chạy `gp247:doctor` mỗi lần cập nhật không?**
 
 → Không bắt buộc, nhưng nên chạy trước khi cập nhật (nhất là khi vừa đổi máy chủ /
-phiên bản PHP) để phát hiện sớm vấn đề môi trường.
+phiên bản PHP) để phát hiện sớm vấn đề môi trường. Sau khi cập nhật, mục
+`extension_data_pending` báo plugin/template nào còn chờ cập nhật dữ liệu (xem mục C).
 
 **Câu 10: Tôi muốn xem đầy đủ mọi lệnh GP247 và tùy chọn của chúng ở đâu?**
 
@@ -229,8 +264,9 @@ cả lệnh artisan của GP247 kèm tùy chọn và ví dụ.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-09-29 |  | `gp247:update` thêm bước **áp dụng cập nhật dữ liệu cho plugin/template** được cập nhật bằng `git pull`/Composer/chép tay (GP247 ghi nhớ phiên bản đã cài); có lệnh `gp247:ext-update --local` và nút **Áp dụng cập nhật dữ liệu** trên trang quản trị (mục C). |
 | 2026-08-29 | gp247/core 2.2 | `gp247:update` nay chạy thêm **migration nâng cấp của core** (qua `gp247:core-update`), trước đây lệnh này chỉ seed lại. Ghi rõ quy tắc có từ bản public v2.1: mọi thay đổi phá vỡ đều kèm phần chuyển đổi dữ liệu tự động, nên `composer update` + `gp247:update` là toàn bộ quy trình. |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>

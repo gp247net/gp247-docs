@@ -271,6 +271,15 @@ Khi chủ site bấm "Cập nhật", hệ thống làm tuần tự (nếu bướ
 **Điểm mấu chốt rút ra:** bước 4 **ghi đè sạch mọi file** của plugin, nhưng **database
 (`admin_config`, bảng dữ liệu của bạn) được giữ nguyên**. Đây là nền tảng của mọi quy tắc dưới đây.
 
+**Cập nhật không qua thư viện extension.** Nhiều chủ site thay file plugin bằng `git pull`, Composer hay
+chép tay. GP247 ghi nhớ phiên bản đã cài, nên sau đó vẫn gọi hook `AppConfig::update($fromVersion)` khi chủ
+site chạy `php artisan gp247:update` / `gp247:ext-update --local` hoặc bấm **Áp dụng cập nhật dữ liệu**.
+Khác với luồng thư viện ở trên: không có bước sao lưu/khôi phục file, và site cài trước khi GP247 ghi nhớ
+phiên bản sẽ gọi hook **một lần với `$fromVersion = null`**. Vì vậy hook phải chạy lại được nhiều lần và
+xử lý được `null` (Phần 6.4).
+
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-29
+
 ### 6.2. Quy tắc 1 — `version` phải tăng, `configKey` không được đổi
 
 - Mỗi lần phát hành bản mới, **tăng `version`** trong `gp247.json` (ví dụ `1.0` → `1.1`). Nếu số
@@ -351,7 +360,8 @@ mà không làm gì (đủ cho trường hợp chỉ thay code, không đổi DB
 public function update(?string $fromVersion = null)
 {
     // Ví dụ: bản >= 1.1 cần thêm cột "sort" vào bảng my_banner
-    if ($fromVersion !== null && version_compare($fromVersion, '1.1', '<')) {
+    // null = phiên bản cũ không rõ (site cập nhật file bằng git/composer trước khi GP247 ghi nhớ phiên bản)
+    if ($fromVersion === null || version_compare($fromVersion, '1.1', '<')) {
         if (\Illuminate\Support\Facades\Schema::hasTable('my_banner')
             && !\Illuminate\Support\Facades\Schema::hasColumn('my_banner', 'sort')) {
             \Illuminate\Support\Facades\Schema::table('my_banner', function ($table) {
@@ -368,6 +378,9 @@ public function update(?string $fromVersion = null)
   nhiều lần không gây lỗi).
 - Nếu hook trả về `['error' => 1, ...]` hoặc ném exception, hệ thống sẽ **khôi phục bản cũ** — nên
   hãy để nó thất bại rõ ràng khi di trú không an toàn, thay vì để dữ liệu dở dang.
+- **`$fromVersion` có thể là `null`**: đừng bỏ qua di trú khi `null` — hãy dựa vào trạng thái thật
+  (`Schema::hasColumn()`, dòng cấu hình đã có chưa…) như ví dụ trên. Hook cũng được gọi sau khi chủ site tự
+  thay file bằng `git pull`/Composer; khi đó lỗi **không** khôi phục file, chỉ giữ phiên bản cũ để chạy lại.
 
 ### 6.5. Quy tắc 4 — Không lưu dữ liệu người dùng trong thư mục plugin
 
@@ -462,7 +475,7 @@ thì không có gì đổi.
 - [ ] Mọi chữ render qua `trans(...)` / `gp247_language_render(...)`, không hardcode; có cả `vi` và `en`.
 - [ ] Cấu hình chủ-site-chỉnh nằm trong `admin_config` (không nằm trong `config.php`).
 - [ ] `config.php` chỉ chứa **mặc định**; đã dùng cặp helper `*_effective_config()` / `*_save_config()` nếu có settings.
-- [ ] Nếu bản mới đổi DB: đã viết hook `update($fromVersion)` di trú an toàn, idempotent.
+- [ ] Nếu bản mới đổi DB: đã viết hook `update($fromVersion)` di trú an toàn, idempotent, và chạy đúng cả khi `$fromVersion` là `null`.
 - [ ] Không lưu file người dùng tải lên bên trong thư mục plugin.
 - [ ] `install()` / `uninstall()` tạo và dọn dữ liệu cân xứng (gỡ xong không để rác).
 - [ ] Nếu tạo bảng bằng **file migration Laravel**, `uninstall()` có dọn dòng của plugin khỏi bảng `migrations` (và install/update reconcile trước `migrate`); mọi `up()` đều guard `Schema::hasTable()` — để gỡ → cài lại thực sự tạo lại bảng (callout ở §5.2).
@@ -495,7 +508,8 @@ trong `config.php`. Dùng cặp hàm `*_effective_config()` / `*_save_config()` 
 **Câu 5: Bản mới của tôi có thêm cột database. Tôi xử lý ở đâu?**
 
 → Trong hook `AppConfig::update($fromVersion)`. Kiểm tra `$fromVersion` để chỉ chạy đúng bước di trú
-cần thiết, và viết sao cho chạy lại nhiều lần không lỗi. Xem Phần 6.4.
+cần thiết, và viết sao cho chạy lại nhiều lần không lỗi. Hook này chạy cả khi chủ site cập nhật bằng
+`git pull`/Composer (qua `gp247:update` hoặc nút **Áp dụng cập nhật dữ liệu**). Xem Phần 6.1 và 6.4.
 
 **Câu 6: Nếu bước cập nhật bị lỗi giữa chừng thì sao?**
 
@@ -524,4 +538,13 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-05 · ✍️ **Tác giả (Author):** GP247</sub>
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-09-29 |  | Hook `AppConfig::update($fromVersion)` nay cũng được gọi khi chủ site thay file bằng `git pull`/Composer/chép tay (qua `gp247:update`, `gp247:ext-update --local`, nút **Áp dụng cập nhật dữ liệu**); lần đầu có thể nhận `null`. Ví dụ di trú ở 6.4 đổi điều kiện thành `$fromVersion === null \|\| …`. |
+
+---
+
+<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>

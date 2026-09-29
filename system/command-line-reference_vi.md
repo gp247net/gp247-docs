@@ -51,7 +51,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:ext-install` | core | Cài plugin/template từ file `.zip`, thư mục, hoặc marketplace |
 | `gp247:ext-enable` / `gp247:ext-disable` | core | Bật / tắt plugin/template đã cài |
 | `gp247:ext-uninstall` | core | Gỡ plugin/template (tôn trọng protected + guard template) |
-| `gp247:ext-update` | core | Cập nhật plugin/template từ marketplace (backup/rollback) |
+| `gp247:ext-update` | core | Cập nhật plugin/template từ marketplace (backup/rollback); `--local` chỉ chạy phần cập nhật dữ liệu sau khi đã tự thay file |
 | `gp247:ext-check-update` | core | Kiểm tra bản cập nhật trên marketplace |
 | `gp247:ext-search` | core | Tìm kiếm catalog marketplace |
 | `gp247:ext-license` | core | Đặt/xem/xóa license theo plugin của extension trả phí |
@@ -560,7 +560,7 @@ hỗ trợ `--json`.
 | `gp247:ext-enable` | `--type`, `--key` | Bật extension **đã cài** (từ chối kèm lỗi rõ nếu chưa cài). |
 | `gp247:ext-disable` | `--type`, `--key` | Tắt extension đã cài (từ chối nếu chưa cài, hoặc template đang được dùng). |
 | `gp247:ext-uninstall` | `--type`, `--key`, `--only-data`, `--purge` | Gỡ (tôn trọng `extension_protected` + guard template đang-dùng/mặc-định). **Đã cài**: xóa cấu hình DB **và** xóa file; `--only-data` thì giữ file. **Chưa cài nhưng có trên đĩa**: từ chối trừ khi có `--purge` (khi đó chỉ xóa file). `--only-data` và `--purge` không dùng chung. |
-| `gp247:ext-update` | `--type`, `--key`, `--all` | Cập nhật 1 extension hoặc mọi extension có bản mới (backup + rollback). |
+| `gp247:ext-update` | `--type`, `--key`, `--all`, `--local`, `--dry-run` | Cập nhật 1 extension hoặc mọi extension có bản mới (backup + rollback). **`--local`** (có từ bản cập nhật ngày 2026-09-29): **không tải gì**, chỉ chạy phần cập nhật dữ liệu (`AppConfig::update()`) cho extension đã cài mà file đã được thay bằng `git pull`/Composer/chép tay — tức `gp247.json` mới hơn phiên bản GP247 ghi nhớ lúc cài; ghi lại phiên bản mới khi xong. `--dry-run` chỉ liệt kê. Chạy lại an toàn. Thoát khác 0 nếu **bất kỳ** extension nào lỗi (file mới vẫn giữ, phiên bản cũ giữ để chạy lại). |
 | `gp247:ext-check-update` | `--type`, `--force` | Báo các bản cập nhật (dùng cache trừ khi `--force`). |
 | `gp247:ext-search` | `--type`, `--keyword=`, `--free`, `--page=` | Duyệt/tìm catalog marketplace. |
 | `gp247:ext-license` | `--type`, `--key`, `--license=`, `--delete` | Đặt / xem / xóa license theo plugin của extension trả phí (lưu ở `admin_config`, không đụng `.env`). |
@@ -576,6 +576,8 @@ php artisan gp247:ext-install --type=plugin --file=storage/tmp/MyBlog.zip
 php artisan gp247:ext-install --type=plugin --key=News
 php artisan gp247:ext-enable --type=plugin --key=News
 php artisan gp247:ext-update --type=plugin --all
+php artisan gp247:ext-update --local --all --type=plugin --dry-run
+php artisan gp247:ext-update --local --type=plugin --key=InOut --json
 php artisan gp247:ext-uninstall --type=plugin --key=News
 php artisan gp247:ext-publish --type=template --key=MKP
 php artisan gp247:ext-publish --type=plugin --all
@@ -646,7 +648,7 @@ php artisan gp247:ext-publish --type=plugin --all
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
 | `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` khi có `--sample`). Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
-| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), bước **áp dụng cập nhật dữ liệu extension** (`ext-update --local --all` cho plugin rồi template — lỗi chỉ cảnh báo, không chặn các bước sau; có từ bản cập nhật ngày 2026-09-29), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
 | `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.2, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |
 | `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
@@ -666,8 +668,9 @@ Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WAR
 | `template_source` | Bao nhiêu file giao diện đã publish nhưng giống hệt bản trong package — tức sẽ không bao giờ nhận được bản cập nhật |
 | `file_bom` | File `.php` / `.blade.php` nào bắt đầu bằng **BOM UTF-8** |
 | `extension_assets` | Plugin/template **đã cài** nào thiếu file tĩnh trong `public/GP247/...` (CSS/JS/ảnh sẽ báo 404). **WARN**, kèm lệnh vá `gp247:ext-publish` |
+| `extension_data_pending` | Plugin/template **đã cài** có file mới hơn phiên bản GP247 ghi nhớ (vừa `git pull`/chép đè) nên chưa chạy phần cập nhật dữ liệu. **WARN**, kèm danh sách và lệnh `gp247:ext-update --local --all` |
 
-> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`); bản cập nhật ngày 2026-09-27 (mục `extension_assets`)
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`); bản cập nhật ngày 2026-09-27 (mục `extension_assets`); bản cập nhật ngày 2026-09-29 (mục `extension_data_pending`)
 
 **Vì sao `file_bom` đáng kiểm.** BOM (Byte Order Mark) là **3 byte vô hình** (`EF BB BF`) mà nhiều trình soạn
 thảo trên Windows tự thêm vào đầu file khi lưu "UTF-8". Ba byte đó nằm **ngoài** cặp thẻ `<?php ?>`, nên PHP
@@ -875,6 +878,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-09-29 |  | `gp247:ext-update` thêm `--local` / `--dry-run`: chạy phần cập nhật dữ liệu cho extension đã được thay file bằng `git pull`/Composer/chép tay (GP247 ghi nhớ phiên bản đã cài); `gp247:update` chạy bước này cho plugin và template; `gp247:doctor` thêm mục `extension_data_pending`. |
 | 2026-09-23 |  | `gp247:doctor` thêm mục `file_bom`: báo file `.php`/`.blade.php` bắt đầu bằng BOM UTF-8 (mức WARN, không làm lệnh thoát khác 0) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` nay chạy **migration nâng cấp của core** (`Migrations/upgrade/`) **trước** khi seed lại — trước đây lệnh chỉ seed, nên thay đổi cấu trúc dữ liệu của core không tới được site đã cài. Đây là một phần của quy tắc: từ bản public **v2.1** trở đi, mọi thay đổi phá vỡ đều kèm migration tự động, giao qua `gp247:update`. |
 | 2026-08-24 | gp247/core 2.1 | • `gp247:update` thêm option **tùy chọn** `--publish=<tokens>` để re-publish asset/view sau `composer update` (mặc định không publish gì). Token nêu rõ tên tag publish (`core-public`/`core-view`/`front-public`/`front-view`/`shop-view-admin`/`shop-view-front`/`all`), **phân tầng theo mức độ ảnh hưởng**: chỉ `core-public` an toàn; token view/template ghi đè tùy biến của bạn. **Không có cờ `--force`** — tự gõ token phá-dữ-liệu chính là đồng thuận; chạy tương tác vẫn cảnh báo + xác nhận (mặc định không).<br>• `gp247:install` và `gp247:doctor` nay đăng ký ở **bootstrap tier** (khả dụng ngay sau `composer require`, trước khi nền tảng được cài — sửa lỗi "chỉ `gp247:core-install` tồn tại khi chưa cài"). `gp247:install` **tự phát hiện** package đang có; đã **bỏ hẳn** flag `--with-front`/`--with-shop` (chưa từng phát hành ở bản ổn định). **An toàn:** `gp247:install` nay **mặc định bắt buộc xác nhận** — từ chối chạy không tương tác/`--json` khi thiếu `--force=1`, và hỏi (mặc định không) khi tương tác. `sc:install` ủy quyền cho `gp247:install`.<br>• `ext-install --key` cài plugin bundled/có-sẵn-trên-đĩa tại chỗ (hoặc từ chối nếu đã cài); `ext-enable`/`ext-disable` từ chối extension chưa cài; `ext-uninstall` từ chối extension chưa-cài-trên-đĩa trừ khi `--purge` (`--only-data`/`--purge` loại trừ nhau). |
@@ -883,4 +887,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-27 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>

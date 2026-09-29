@@ -151,6 +151,16 @@ Steps:
 > ⚠️ The extension folder **must** contain `AppConfig.php` — GP247 relies on this file for detection. If
 > you copy without this file, the extension will **not appear** in the admin list.
 
+**Moving to a newer version by copying over it (or `git pull`).** Copying the new release over the old
+folder replaces the **files** only; the new release's **data update** has not run yet.
+
+> ℹ️ **Available since:** the 2026-09-29 update
+
+After copying, open the **Plugins** (or **Templates**) list again: the extension carries a yellow
+**"Data update pending: x → y"** badge in the Version column. Click its **Apply data update** button
+(database icon), or run `php artisan gp247:update`. Details:
+[How to update GP247 — section C](../system/update-gp247.md).
+
 ---
 
 ## 5. Method 4 — Command line (`gp247:ext-*`)
@@ -191,6 +201,9 @@ php artisan gp247:ext-install --type=template --key=<TemplateName>
 - An extension whose files are already on disk but not installed (copied manually, or shipped with the
   installer) → `--key` **installs it in place** instead of downloading it again.
 - Newer version: `php artisan gp247:ext-update --type=plugin --key=News` (or `--all`).
+- Already replaced the files with `git pull`/Composer/a manual copy: add `--local` to download nothing and
+  only run the missing data update — `php artisan gp247:ext-update --local --type=plugin --key=News` (or
+  `--all`; add `--dry-run` to preview). Available since the 2026-09-29 update.
 - Mandatory composer packages (`requireComposerPackages`, e.g. `laravel/socialite`)? `composer require`
   them first — `ext-install` only checks them, it does not install composer packages.
 
@@ -210,6 +223,10 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 
 # Update from the marketplace (one, or all with an available update)
 php artisan gp247:ext-update --type=plugin --all
+
+# Files already replaced by git pull / composer / a manual copy: run only the data update
+php artisan gp247:ext-update --local --all --type=plugin --dry-run
+php artisan gp247:ext-update --local --all --type=plugin
 
 # Search the marketplace; manage a paid extension's license
 php artisan gp247:ext-search --type=plugin --keyword=blog
@@ -335,7 +352,9 @@ place. Just go to the **Template** menu to see it, then activate it on **Website
 **Q9: Can I install a new version over the old one by importing?**
 
 → You shouldn't. Import refuses if the `configKey` already exists. To go to a newer version, use the
-**update** feature — it preserves the settings stored in the database.
+**update** feature — it preserves the settings stored in the database. If you copy the files over by hand
+or with `git pull`, click **Apply data update** next to the extension (or run `php artisan gp247:update`)
+so the new release runs its data part.
 
 **Q10: How do I uninstall/delete an extension, and how do I avoid accidentally deleting the source?**
 
@@ -365,4 +384,13 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-27 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-09-29 |  | Replacing an extension's files by hand / `git pull` / Composer: the list shows a **"Data update pending"** badge and an **Apply data update** button; new `gp247:ext-update --local` command (sections 4, 5). |
+
+---
+
+<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>

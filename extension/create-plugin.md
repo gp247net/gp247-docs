@@ -273,6 +273,15 @@ When the site owner clicks "Update", the system runs the following in order (if 
 **The key takeaway:** step 4 **wipes and replaces every file** of the plugin, but the **database
 (`admin_config`, your data tables) is kept intact**. This is the foundation of every rule below.
 
+**Updates that do not go through the extension library.** Many site owners replace plugin files with
+`git pull`, Composer or a manual copy. GP247 remembers the installed version, so it still calls the
+`AppConfig::update($fromVersion)` hook afterwards, when the site owner runs `php artisan gp247:update` /
+`gp247:ext-update --local` or clicks **Apply data update**. Unlike the library flow above there is no file
+backup/restore step, and a site installed before GP247 recorded versions calls the hook **once with
+`$fromVersion = null`**. So the hook must be safe to run repeatedly and must handle `null` (Section 6.4).
+
+> ℹ️ **Available since:** the 2026-09-29 update
+
 ### 6.2. Rule 1 — `version` must increase, `configKey` must not change
 
 - On every new release, **increase `version`** in `gp247.json` (e.g. `1.0` → `1.1`). If the version
@@ -354,7 +363,8 @@ needed, override it:
 public function update(?string $fromVersion = null)
 {
     // Example: version >= 1.1 needs a "sort" column on the my_banner table
-    if ($fromVersion !== null && version_compare($fromVersion, '1.1', '<')) {
+    // null = unknown previous version (files updated by git/composer before GP247 recorded versions)
+    if ($fromVersion === null || version_compare($fromVersion, '1.1', '<')) {
         if (\Illuminate\Support\Facades\Schema::hasTable('my_banner')
             && !\Illuminate\Support\Facades\Schema::hasColumn('my_banner', 'sort')) {
             \Illuminate\Support\Facades\Schema::table('my_banner', function ($table) {
@@ -371,6 +381,10 @@ public function update(?string $fromVersion = null)
   it again multiple times causes no error).
 - If the hook returns `['error' => 1, ...]` or throws an exception, the system will **restore the old
   version** — so let it fail loudly when a migration is unsafe, rather than leaving data half-migrated.
+- **`$fromVersion` can be `null`**: never skip a migration on `null` — rely on the real state
+  (`Schema::hasColumn()`, whether a config row exists…) as in the example above. The hook also runs after
+  the site owner replaced the files with `git pull`/Composer; then a failure does **not** restore the
+  files, it only keeps the old version so it can be retried.
 
 ### 6.5. Rule 4 — Do not store user data inside the plugin folder
 
@@ -466,7 +480,7 @@ nothing changes.
 - [ ] Every string rendered via `trans(...)` / `gp247_language_render(...)`, not hardcoded; both `vi` and `en` present.
 - [ ] Site-owner-editable config lives in `admin_config` (not in `config.php`).
 - [ ] `config.php` holds **defaults** only; the `*_effective_config()` / `*_save_config()` helper pair is used if there are settings.
-- [ ] If the new release changes the DB: an `update($fromVersion)` hook is written, migrating safely and idempotently.
+- [ ] If the new release changes the DB: an `update($fromVersion)` hook is written, migrating safely and idempotently, and correct when `$fromVersion` is `null`.
 - [ ] No user-uploaded files are stored inside the plugin folder.
 - [ ] `install()` / `uninstall()` create and clean up data symmetrically (no leftovers after uninstall).
 - [ ] If you provision tables with **Laravel migration files**, `uninstall()` also cleans the plugin's rows from the `migrations` ledger (and install/update reconcile before `migrate`); every migration `up()` is `Schema::hasTable()`-guarded — so uninstall → reinstall actually recreates the table (§5.2 callout).
@@ -499,7 +513,9 @@ the defaults from `config.php`. Use the sample `*_effective_config()` / `*_save_
 **Q5: My new release adds a database column. Where do I handle it?**
 
 → In the `AppConfig::update($fromVersion)` hook. Check `$fromVersion` to run only the needed migration
-step, and write it so running it multiple times causes no error. See Section 6.4.
+step, and write it so running it multiple times causes no error. The hook also runs when the site owner
+updates with `git pull`/Composer (through `gp247:update` or the **Apply data update** button). See
+Sections 6.1 and 6.4.
 
 **Q6: What happens if the update fails midway?**
 
@@ -528,4 +544,13 @@ most common issue, caused by Laravel keeping the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-05 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-09-29 |  | The `AppConfig::update($fromVersion)` hook now also runs when the site owner replaces the files with `git pull`/Composer/a manual copy (through `gp247:update`, `gp247:ext-update --local`, the **Apply data update** button); the first call may receive `null`. The 6.4 migration example now guards with `$fromVersion === null \|\| …`. |
+
+---
+
+<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>

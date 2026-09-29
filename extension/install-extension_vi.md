@@ -147,6 +147,16 @@ Các bước:
 > ⚠️ Thư mục extension **bắt buộc** phải có `AppConfig.php` — GP247 dựa vào file này để phát hiện. Nếu
 > chép thiếu file này, extension sẽ **không hiện** trong danh sách admin.
 
+**Lên bản mới bằng cách chép đè (hoặc `git pull`).** Chép bản mới đè lên thư mục cũ chỉ thay **file**;
+phần **cập nhật dữ liệu** của bản mới chưa chạy.
+
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-29
+
+Sau khi chép, mở lại danh sách **Plugin** (hoặc **Template**): extension có nhãn vàng **"Chờ cập nhật dữ
+liệu: x → y"** ở cột Phiên bản. Bấm nút **Áp dụng cập nhật dữ liệu** (biểu tượng cơ sở dữ liệu) bên cạnh
+nó, hoặc chạy `php artisan gp247:update`. Chi tiết:
+[Hướng dẫn cập nhật GP247 — mục C](../system/update-gp247_vi.md).
+
 ---
 
 ## 5. Cách 4 — Dòng lệnh (`gp247:ext-*`)
@@ -185,6 +195,9 @@ php artisan gp247:ext-install --type=template --key=<TênTemplate>
 - Extension có file sẵn trên đĩa nhưng chưa cài (chép thủ công, hoặc có sẵn theo bộ cài) → `--key` **cài
   tại chỗ**, không tải lại.
 - Lên bản mới: `php artisan gp247:ext-update --type=plugin --key=News` (hoặc `--all`).
+- Đã tự thay file bằng `git pull`/Composer/chép tay: thêm `--local` để không tải gì, chỉ chạy phần cập nhật
+  dữ liệu còn thiếu — `php artisan gp247:ext-update --local --type=plugin --key=News` (hoặc `--all`;
+  thêm `--dry-run` để xem trước). Có từ bản cập nhật ngày 2026-09-29.
 - Có gói composer bắt buộc (`requireComposerPackages`, ví dụ `laravel/socialite`)? Chạy `composer require`
   gói đó trước — `ext-install` chỉ kiểm tra, không tự cài gói composer.
 
@@ -204,6 +217,10 @@ php artisan gp247:ext-uninstall --type=plugin --key=News
 
 # Cập nhật từ marketplace (một cái, hoặc tất cả cái có bản mới)
 php artisan gp247:ext-update --type=plugin --all
+
+# Đã thay file bằng git pull / composer / chép tay: chỉ chạy phần cập nhật dữ liệu
+php artisan gp247:ext-update --local --all --type=plugin --dry-run
+php artisan gp247:ext-update --local --all --type=plugin
 
 # Tìm marketplace; quản lý license của extension trả phí
 php artisan gp247:ext-search --type=plugin --keyword=blog
@@ -324,7 +341,9 @@ một lớp thư mục cha khiến `gp247.json` bị đẩy xuống quá sâu. F
 **Câu 9: Cài đè bản mới lên bản cũ bằng cách import được không?**
 
 → Không nên. Import từ chối nếu `configKey` đã tồn tại. Muốn lên bản mới, dùng chức năng **cập nhật
-(update)** — nó giữ nguyên cấu hình đã lưu trong database.
+(update)** — nó giữ nguyên cấu hình đã lưu trong database. Nếu bạn chép đè file bằng tay hoặc `git pull`,
+hãy bấm **Áp dụng cập nhật dữ liệu** cạnh extension (hoặc chạy `php artisan gp247:update`) để bản mới chạy
+phần dữ liệu của nó.
 
 **Câu 10: Gỡ/xóa extension như thế nào, và làm sao tránh lỡ tay xóa mất source?**
 
@@ -353,4 +372,13 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-27 · ✍️ **Tác giả (Author):** GP247</sub>
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-09-29 |  | Thay file extension bằng chép tay / `git pull` / Composer: màn danh sách hiện nhãn **"Chờ cập nhật dữ liệu"** và nút **Áp dụng cập nhật dữ liệu**; lệnh `gp247:ext-update --local` (mục 4, 5). |
+
+---
+
+<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>

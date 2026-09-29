@@ -92,6 +92,8 @@ Updating GP247 always involves **2 distinct parts**, and you must do **both**:
    - Updates **core**;
    - Upgrades the **shop** data structure — *only if* the site has the shop module
      installed;
+   - Applies the **data update of plugins/templates** whose files are newer than the data in use
+     (for example after you `git pull` a plugin) — see section C below;
    - Rebuilds the **caches** (route/config) so the site picks up the new code.
 
    If successful, it prints the steps it ran (e.g. `gp247:core-update`,
@@ -139,6 +141,39 @@ Valid tokens: `core-public`, `core-view`, `front-public`, `front-view`,
 
 > 📖 To understand which folder each token affects, see the "`gp247:update`"
 > section of the [Command-line reference](./command-line-reference.md).
+
+### C. Plugins/templates updated with `git pull`, Composer or a manual copy
+
+> ℹ️ **Available since:** the 2026-09-29 update
+
+When you click **Update** in the extension library, GP247 replaces the files and also runs the **data
+update** the new release needs (new settings, converting old data…). If you replace a plugin's or
+template's files some other way — `git pull`, Composer, FTP, copying the folder — only the **files**
+change; the data part has **not** run yet.
+
+GP247 remembers the installed version of every extension, so it can tell, and offers 3 ways to apply
+what is missing (pick one):
+
+1. Run `php artisan gp247:update` as usual — it now includes this step for every plugin and template.
+2. Run only the extension part:
+
+   ```bash
+   php artisan gp247:ext-update --local --all --type=plugin --dry-run   # preview, changes nothing
+   php artisan gp247:ext-update --local --all --type=plugin             # apply to every plugin
+   php artisan gp247:ext-update --local --type=plugin --key=InOut       # or to one plugin
+   ```
+
+3. No command line (shared hosting): open **Plugins** (or **Templates**) in the admin. A waiting
+   extension carries a yellow **"Data update pending: x → y"** badge in the Version column; click its
+   **Apply data update** button (database icon) in the actions column.
+
+Notes:
+- Running it again is always safe: an extension that is already done is skipped.
+- A site installed before 2026-09-29 has no version record yet, so the **first** time every installed
+  plugin/template shows as pending. Applying once clears them all.
+- If an extension's data update reports an error, the new files stay in place (there is no automatic
+  restore as with a library update). Fix the cause and run it again; `gp247:doctor` keeps reporting
+  `extension_data_pending` until it is done.
 
 ---
 
@@ -225,7 +260,9 @@ backup and try again.
 **Q9: Do I need to run `gp247:doctor` on every update?**
 
 → Not required, but it's good to run before updating (especially right after
-changing the server / PHP version) to catch environment issues early.
+changing the server / PHP version) to catch environment issues early. After an
+update, its `extension_data_pending` check lists any plugin/template still waiting for its data update
+(see section C).
 
 **Q10: Where do I see every GP247 command and all its options?**
 
@@ -237,8 +274,9 @@ GP247's artisan commands with their options and examples.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-09-29 |  | `gp247:update` gained the step that **applies the data update of plugins/templates** updated with `git pull`/Composer/a manual copy (GP247 now remembers the installed version); new `gp247:ext-update --local` command and **Apply data update** button in the admin (section C). |
 | 2026-08-29 | gp247/core 2.2 | `gp247:update` now also runs the **core** upgrade migrations (through `gp247:core-update`), which previously only re-seeded. Documented the rule introduced with the public v2.1: every breaking change ships an automatic data conversion, so `composer update` + `gp247:update` is the whole procedure. |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>
