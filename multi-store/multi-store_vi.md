@@ -2,6 +2,8 @@
 
 # Multi-Store — Một trang quản trị, nhiều website bán hàng
 
+> 🚀 **Link MultiStore PRO:** [https://gp247.net/vi/product/multi-store-pro.html](https://gp247.net/vi/product/multi-store-pro.html)
+
 ## Giới thiệu
 Tài liệu này giới thiệu **Multi-Store**, plugin cho phép doanh nghiệp **vận hành nhiều website bán hàng từ một hệ thống quản trị duy nhất**: mỗi cửa hàng có tên miền riêng, giao diện riêng, ngôn ngữ và tiền tệ riêng, nhưng dùng chung một nền tảng và một nơi quản lý. Dành cho **chủ doanh nghiệp và người phụ trách vận hành**. Đọc xong trang này, bạn biết plugin làm được gì, bản miễn phí cho tới đâu, bản Pro thêm gì, và Multi-Store khác Multi-Vendor thế nào để chọn đúng mô hình ngay từ đầu.
 
@@ -77,7 +79,7 @@ Khi một khách truy cập, hệ thống nhận ra **tên miền** họ đang m
 
 Bản Pro cài **thêm** lên bản miễn phí, không thay thế: cài xong, các mục *(Pro)* đang khóa trong menu mở thẳng màn thật, và dữ liệu cửa hàng hiện có giữ nguyên. Cách cài: [Phần 1 — Cài đặt](./multi-store-setup_vi.md).
 
-🔗 Trang sản phẩm: [gp247.net/vi/product/multi-store-pro.html](https://gp247.net/vi/product/multi-store-pro.html) · [English](https://gp247.net/en/product/multi-store-pro.html)
+> 🚀 **Link MultiStore PRO:** [https://gp247.net/vi/product/multi-store-pro.html](https://gp247.net/vi/product/multi-store-pro.html)
 
 ## Multi-Store khác Multi-Vendor thế nào
 Hai plugin cùng nói về "nhiều cửa hàng" nhưng là **hai mô hình kinh doanh khác nhau**, và **không cài chung được** trên cùng một website (hệ thống chặn để tránh hỏng dữ liệu cửa hàng). Chọn đúng ngay từ đầu:

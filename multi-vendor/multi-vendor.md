@@ -2,6 +2,8 @@
 
 # Multi-Vendor — A multi-seller marketplace for S-Cart
 
+> 🚀 **Link MultiVendor PRO:** [https://gp247.net/en/product/multi-vendor-pro.html](https://gp247.net/en/product/multi-vendor-pro.html)
+
 ## Introduction
 This document introduces **Multi-Vendor**, the plugin that turns an S-Cart website into a **multi-seller marketplace on a single domain**: many vendors list products on one storefront, a customer buys from several shops in a single checkout, and the marketplace collects the money then pays each seller after keeping a commission. It is written for **business owners and S-Cart site owners** considering opening a marketplace. After reading this page you will know what the plugin does, how far the free edition goes, what the Pro edition adds, and how Multi-Vendor differs from Multi-Store so you can pick the right model from day one.
 
@@ -114,6 +116,8 @@ The free edition is **a real, working marketplace for up to 3 shops**. The Pro e
 | Support | community | GP247 paid channel |
 
 How to install Pro on top of the free edition: see [Part 1 — Setup](./multi-vendor-setup.md).
+
+> 🚀 **Link MultiVendor PRO:** [https://gp247.net/en/product/multi-vendor-pro.html](https://gp247.net/en/product/multi-vendor-pro.html)
 
 ## How Multi-Vendor differs from Multi-Store
 Both plugins talk about "multiple shops", but they are **two different business models**, and they **cannot be installed together** on one website (the system blocks it to protect your store data). Choose correctly from the start:

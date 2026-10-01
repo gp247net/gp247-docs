@@ -2,6 +2,8 @@
 
 # Multi-Store — One admin, many online stores
 
+> 🚀 **Link MultiStore PRO:** [https://gp247.net/en/product/multi-store-pro.html](https://gp247.net/en/product/multi-store-pro.html)
+
 ## Introduction
 This document introduces **Multi-Store**, the plugin that lets a business **run several online stores from a single admin**: each store has its own domain, its own theme, its own language and currency, while sharing one platform and one place to manage everything. It is written for **business owners and operations staff**. After reading this page you will know what the plugin does, how far the free edition goes, what the Pro edition adds, and how Multi-Store differs from Multi-Vendor so you can pick the right model from day one.
 
@@ -77,7 +79,7 @@ When a visitor arrives, the system recognises the **domain** they opened and ser
 
 Pro installs **on top of** the free edition rather than replacing it: once installed, the locked *(Pro)* menu items open the real screens and your existing store data stays exactly as it is. How to install: [Part 1 — Setup](./multi-store-setup.md).
 
-🔗 Product page: [gp247.net/en/product/multi-store-pro.html](https://gp247.net/en/product/multi-store-pro.html) · [Tiếng Việt](https://gp247.net/vi/product/multi-store-pro.html)
+> 🚀 **Link MultiStore PRO:** [https://gp247.net/en/product/multi-store-pro.html](https://gp247.net/en/product/multi-store-pro.html)
 
 ## How Multi-Store differs from Multi-Vendor
 Both plugins talk about "multiple stores", but they are **two different business models**, and they **cannot be installed together** on one website (the system blocks it to protect your store data). Choose correctly from the start:

@@ -2,6 +2,8 @@
 
 # Multi-Vendor — Sàn thương mại nhiều người bán cho S-Cart
 
+> 🚀 **Link MultiVendor PRO:** [https://gp247.net/vi/product/multi-vendor-pro.html](https://gp247.net/vi/product/multi-vendor-pro.html)
+
 ## Giới thiệu
 Tài liệu này giới thiệu **Multi-Vendor**, plugin biến một website S-Cart thành **sàn thương mại điện tử nhiều người bán trên một tên miền duy nhất**: nhiều nhà cung cấp (vendor) cùng đăng sản phẩm lên một storefront, khách mua hàng của nhiều gian hàng trong một lần thanh toán, sàn đứng ra thu tiền rồi trả lại người bán sau khi giữ hoa hồng. Dành cho **chủ doanh nghiệp và chủ website S-Cart** đang cân nhắc mở sàn. Đọc xong trang này, bạn biết plugin làm được gì, bản miễn phí cho tới đâu, bản Pro thêm gì, và Multi-Vendor khác Multi-Store thế nào để chọn đúng ngay từ đầu.
 
@@ -114,6 +116,8 @@ Bản miễn phí là **một sàn chạy thật cho tối đa 3 gian hàng**. B
 | Hỗ trợ | cộng đồng | kênh trả phí của GP247 |
 
 Cách cài bản Pro lên bản miễn phí: xem [Phần 1 — Cài đặt](./multi-vendor-setup_vi.md).
+
+> 🚀 **Link MultiVendor PRO:** [https://gp247.net/vi/product/multi-vendor-pro.html](https://gp247.net/vi/product/multi-vendor-pro.html)
 
 ## Multi-Vendor khác Multi-Store thế nào
 Hai plugin cùng nói về "nhiều cửa hàng" nhưng là **hai mô hình kinh doanh khác nhau**, và **không cài chung được** trên một website (hệ thống chặn để tránh hỏng dữ liệu cửa hàng). Chọn đúng ngay từ đầu:
