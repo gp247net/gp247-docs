@@ -40,14 +40,15 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### S-Cart (store)
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Order lifecycle](./s-cart/order-lifecycle.md) | Every stage of an order — placing, editing, receiving money, refunding, cancelling, re-opening, deleting — with stock/money/history at each, plus flow diagrams | 2026-08-29 |
-| [Currency](./s-cart/currency.md) | Explicit base currency, value-preserving rebase, money-input hint (from shop 2.1) | 2026-08-22 |
-| [Tax in GP247](./s-cart/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
-| [Product Bundle (Combo)](./s-cart/product-bundle.md) | Create a combo product of several child products; price & stock | 2026-08-04 |
-| [Product Structure (Single/Bundle/Group)](./s-cart/product-structure.md) | Compare the 3 product kinds with a chart; which to choose | 2026-08-04 |
-| [Product stock management](./s-cart/product-stock-management.md) | When stock decreases/returns; over-stock config; **cancelling returns stock, deleting no longer does** (changed in v3.0) | 2026-08-29 |
-| [Product Attributes (Color/Size)](./s-cart/product-attribute.md) | Attribute groups & values + surcharge; admin setup; price/cart/order flow; price safety | 2026-08-13 |
-| [Product keyword tags (Product Tag)](./s-cart/product-tag.md) | Create/assign keyword tags to products; vs Delivery type; disable vs delete (from shop 2.1.6) | 2026-08-25 |
+| [Order lifecycle](./s-cart/order-and-payment/order-lifecycle.md) | Every stage of an order — placing, editing, receiving money, refunding, cancelling, re-opening, deleting — with stock/money/history at each, plus flow diagrams | 2026-08-29 |
+| [Payment requests](./s-cart/order-and-payment/payment-request.md) | Money in/out outside the cart: online payment links, hand entries, refunds; 4 money flows, order/InOut/MultiVendor purposes, pay-out rights, flow diagrams | 2026-10-02 |
+| [Currency](./s-cart/tax-and-currency/currency.md) | Explicit base currency, value-preserving rebase, money-input hint (from shop 2.1) | 2026-08-22 |
+| [Tax in GP247](./s-cart/tax-and-currency/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
+| [Product Bundle (Combo)](./s-cart/product/product-bundle.md) | Create a combo product of several child products; price & stock | 2026-08-04 |
+| [Product Structure (Single/Bundle/Group)](./s-cart/product/product-structure.md) | Compare the 3 product kinds with a chart; which to choose | 2026-08-04 |
+| [Product stock management](./s-cart/product/product-stock-management.md) | When stock decreases/returns; over-stock config; **cancelling returns stock, deleting no longer does** (changed in v3.0) | 2026-08-29 |
+| [Product Attributes (Color/Size)](./s-cart/product/product-attribute.md) | Attribute groups & values + surcharge; admin setup; price/cart/order flow; price safety | 2026-08-13 |
+| [Product keyword tags (Product Tag)](./s-cart/product/product-tag.md) | Create/assign keyword tags to products; vs Delivery type; disable vs delete (from shop 2.1.6) | 2026-08-25 |
 
 ### Multi-store & Marketplace
 > The two models are **mutually exclusive** — pick one: several stores of your own (Multi-Store), or one marketplace for many sellers (Multi-Vendor).
@@ -59,4 +60,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-02 · ✍️ **Author:** GP247</sub>

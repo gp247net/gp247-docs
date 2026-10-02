@@ -40,14 +40,15 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### S-Cart (bán hàng)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Vòng đời đơn hàng](./s-cart/order-lifecycle_vi.md) | Từng chặng của đơn — đặt, sửa, thu tiền, hoàn tiền, hủy, mở lại, xóa — kèm tồn kho/tiền/lịch sử ở mỗi chặng và sơ đồ luồng | 2026-08-29 |
-| [Tiền tệ (Currency)](./s-cart/currency_vi.md) | Đồng tiền gốc tường minh, đổi gốc bảo toàn giá trị, ghi chú ô nhập tiền (từ shop 2.1) | 2026-08-22 |
-| [Thuế trong GP247](./s-cart/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
-| [Sản phẩm gói (Bundle/Combo)](./s-cart/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
-| [Tổ chức sản phẩm (Single/Bundle/Group)](./s-cart/product-structure_vi.md) | So sánh 3 loại sản phẩm kèm sơ đồ; chọn loại nào | 2026-08-04 |
-| [Quản lý tồn kho sản phẩm](./s-cart/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình vượt tồn; **hủy đơn hoàn kho, xóa đơn thì không** (đổi từ v3.0) | 2026-08-29 |
-| [Thuộc tính sản phẩm (Color/Size)](./s-cart/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
-| [Thẻ từ khóa sản phẩm (Product Tag)](./s-cart/product-tag_vi.md) | Tạo/gán thẻ từ khóa cho sản phẩm; phân biệt với Loại giao hàng; tắt vs xóa (từ shop 2.1.6) | 2026-08-25 |
+| [Vòng đời đơn hàng](./s-cart/order-and-payment/order-lifecycle_vi.md) | Từng chặng của đơn — đặt, sửa, thu tiền, hoàn tiền, hủy, mở lại, xóa — kèm tồn kho/tiền/lịch sử ở mỗi chặng và sơ đồ luồng | 2026-08-29 |
+| [Yêu cầu thanh toán (Payment Request)](./s-cart/order-and-payment/payment-request_vi.md) | Thu/chi tiền ngoài giỏ hàng: link thanh toán online, ghi nhận tay, hoàn tiền; 4 luồng tiền, mục đích đơn hàng/InOut/MultiVendor, phân quyền chi tiền, sơ đồ luồng | 2026-10-02 |
+| [Tiền tệ (Currency)](./s-cart/tax-and-currency/currency_vi.md) | Đồng tiền gốc tường minh, đổi gốc bảo toàn giá trị, ghi chú ô nhập tiền (từ shop 2.1) | 2026-08-22 |
+| [Thuế trong GP247](./s-cart/tax-and-currency/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
+| [Sản phẩm gói (Bundle/Combo)](./s-cart/product/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
+| [Tổ chức sản phẩm (Single/Bundle/Group)](./s-cart/product/product-structure_vi.md) | So sánh 3 loại sản phẩm kèm sơ đồ; chọn loại nào | 2026-08-04 |
+| [Quản lý tồn kho sản phẩm](./s-cart/product/product-stock-management_vi.md) | Tồn kho tăng/giảm khi nào; cấu hình vượt tồn; **hủy đơn hoàn kho, xóa đơn thì không** (đổi từ v3.0) | 2026-08-29 |
+| [Thuộc tính sản phẩm (Color/Size)](./s-cart/product/product-attribute_vi.md) | Nhóm & giá trị thuộc tính + phụ phí; khai báo ở admin; luồng giá/giỏ/đơn; an toàn giá | 2026-08-13 |
+| [Thẻ từ khóa sản phẩm (Product Tag)](./s-cart/product/product-tag_vi.md) | Tạo/gán thẻ từ khóa cho sản phẩm; phân biệt với Loại giao hàng; tắt vs xóa (từ shop 2.1.6) | 2026-08-25 |
 
 ### Nhiều cửa hàng & Sàn bán hàng
 > Hai mô hình **loại trừ lẫn nhau** — chọn một: nhiều cửa hàng của chính bạn (Multi-Store), hay một sàn cho nhiều người bán (Multi-Vendor).
@@ -59,4 +60,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-02 · ✍️ **Tác giả (Author):** GP247</sub>
