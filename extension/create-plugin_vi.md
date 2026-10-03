@@ -217,8 +217,8 @@ public function installExtension()
 > 2. Giữ **mọi** `up()` của migration có guard `Schema::hasTable()` để chạy lại là **no-op an toàn** với bảng
 >    còn tồn tại và chỉ tạo lại bảng bị thiếu.
 >
-> Đây chính là cách plugin `InOut` làm (`cleanMigrationRecords()`). Khớp dòng ledger theo **tên file** của
-> chính plugin (đọc từ `DB/migrations`) — **không** dùng `LIKE '%...%'` mờ.
+> Khớp dòng ledger theo **tên file** của chính plugin (đọc từ `DB/migrations`) — **không** dùng `LIKE '%...%'`
+> mờ, kẻo xoá nhầm dòng migration của plugin khác.
 
 ### 5.3. Màn admin — dùng Livewire (chuẩn v2)
 
@@ -547,4 +547,4 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>

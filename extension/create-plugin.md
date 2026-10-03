@@ -218,8 +218,8 @@ public function installExtension()
 > 2. Keep **every** migration `up()` guarded with `Schema::hasTable()` so re-running it is a safe no-op for
 >    tables that still exist and only recreates the missing ones.
 >
-> This is the pattern the `InOut` plugin uses (`cleanMigrationRecords()`). Match the ledger rows by the
-> plugin's own **file names** (read from `DB/migrations`) — never a loose `LIKE '%something%'`.
+> Match the ledger rows by the plugin's own **file names** (read from `DB/migrations`) — never a loose
+> `LIKE '%something%'`, which could delete another plugin's migration rows.
 
 ### 5.3. Admin screen — use Livewire (the v2 standard)
 
@@ -553,4 +553,4 @@ most common issue, caused by Laravel keeping the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
