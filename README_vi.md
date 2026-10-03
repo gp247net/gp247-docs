@@ -58,6 +58,11 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Multi-Store — nhiều website, một admin](./multi-store/multi-store_vi.md) | Nhiều cửa hàng của cùng một doanh nghiệp, mỗi cửa hàng một tên miền/giao diện/ngôn ngữ/tiền tệ: mô hình, tính năng, so sánh Free/Pro; mục lục dẫn tới cài đặt, vận hành và tùy chỉnh | 2026-09-21 |
 | [Multi-Vendor — sàn nhiều người bán](./multi-vendor/multi-vendor_vi.md) | Biến S-Cart thành sàn trên một tên miền: mô hình, tính năng, so sánh Free/Pro, so sánh Multi-Store; mục lục dẫn tới cài đặt, vận hành và tùy chỉnh | 2026-09-21 |
 
+### Nhập hàng, trả hàng & thu chi (InOut)
+| Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
+| --- | --- | --- |
+| [InOut — nhập hàng, trả hàng, thu chi & công nợ](./in-out/in-out_vi.md) | Plugin trả phí đưa chiều mua vào S-Cart: đơn nhập, đơn trả, sổ thu chi, công nợ hai chiều, thu/trả nợ qua yêu cầu thanh toán, khóa sổ, xuất Excel/PDF; mục lục dẫn tới 5 phần nghiệp vụ | 2026-10-03 |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-02 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -58,6 +58,11 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Multi-Store — many websites, one admin](./multi-store/multi-store.md) | Several stores of one business, each with its own domain/theme/language/currency: the model, features, Free/Pro comparison; index of setup, operations and customization | 2026-09-21 |
 | [Multi-Vendor — multi-seller marketplace](./multi-vendor/multi-vendor.md) | Turn S-Cart into a marketplace on one domain: the model, features, Free/Pro comparison, Multi-Store comparison; index of setup, operations and customization | 2026-09-21 |
 
+### Purchasing, returns & cash flow (InOut)
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [InOut — purchases, returns, cash flow & debts](./in-out/in-out.md) | Paid plugin that adds the buying side to S-Cart: purchase orders, return orders, cash book, two-way debts, collecting/paying debts through payment requests, period closing, Excel/PDF export; index of the 5 process guides | 2026-10-03 |
+
 ---
 
-<sub>📅 **Last updated:** 2026-10-02 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
