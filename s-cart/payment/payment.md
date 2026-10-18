@@ -72,8 +72,10 @@ ledger. See money and stock at each stage in [Order lifecycle](../order-processi
 > How to get the keys and each gateway's own fields are in that plugin's README (e.g. `StripePayment`, `PaypalExpress`).
 > Gateways only accept certain currencies — check that the store's currency is supported.
 
-**Payment without a gateway** (e.g. `CashPayment`): just install, enable and enter the **instruction note** shown to the
-customer (bank account, a reminder to prepare cash…). The order is placed unpaid; the money is recorded when you receive it.
+**Payment without a gateway** (e.g. `CashPayment`): just install and enable it. The default template's checkout only shows
+the method's **name**; for customers to see instructions (account number, transfer reference) the plugin needs its own
+instructions page — see the [bank transfer plugin](../../extension/create-payment-plugin.md) example. The order is placed
+unpaid; the money is recorded when you receive it.
 
 ### A4. Watching and recording money on the order
 
@@ -154,7 +156,7 @@ sequenceDiagram
 
 ### B4. Your job, case by case
 
-**Integrating a new gateway**
+**Integrating a new gateway** — step-by-step guide with code: [Creating a payment plugin](../../extension/create-payment-plugin.md)
 
 1. Create the plugin: `php artisan gp247:make-plugin --name=MyGateway --download=0`, set `configCode: "Payment"`,
    `requireComposerPackages: ["gp247/shop"]`.
@@ -184,8 +186,8 @@ pay links).
 > repository (copy the skill folder into your agent's skills folder, for example `.claude/skills/` for Claude Code). The
 > skill probes the site's version and capabilities before writing code, builds the plugin on the money contract above,
 > and is updated together with `gp247/shop` whenever the payment contract changes. For a shipping plugin use
-> `gp247-shipping-plugin-create`; for other plugins, `gp247-plugin-create`. General plugin guide:
-> [create-plugin.md](../../extension/create-plugin.md).
+> `gp247-shipping-plugin-create`; for other plugins, `gp247-plugin-create`. Step-by-step guide:
+> [Creating a payment plugin](../../extension/create-payment-plugin.md).
 
 ---
 
@@ -262,6 +264,15 @@ turned the auto-record setting on in the Shipping tab).
 
 → No. Recorded payments live in the order's payment ledger and stay as they are; uninstalling only removes the plugin's
 settings.
+
+---
+
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-10-18 | gp247/shop 3.1.4 | Payment without a gateway: the default template only shows the method name, transfer instructions need the plugin's own page; links to the payment plugin guide |
 
 ---
 

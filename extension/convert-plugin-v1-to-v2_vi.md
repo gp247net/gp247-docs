@@ -32,7 +32,7 @@ khuôn v1 và v2:
 | Màn admin kiểu mới | *(không có)* | Livewire component `Livewire/AdminLivewire.php` |
 | Tích hợp sitemap SEO | *(không có)* | File `Seo.php` + đăng ký trong `Provider.php` |
 | Đăng ký page-type LayoutBlock | *(không có)* | Đăng ký `token => lang-key` trong `Provider.php` (nếu plugin có trang public riêng) |
-| `gp247.json` → `requireCore` | `["1.2"]` | `["2.1"]` |
+| `gp247.json` → `requireCore` | `["1.2"]` | Phiên bản lõi đang chạy, ví dụ `["3.1"]` (xem `php artisan gp247:info`) |
 | `gp247.json` → khóa phụ thuộc | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (đổi tên từ core 2.1) |
 | `gp247.json` → `requireUpdateFrom` | *(không có)* | `"1.0"` (điều kiện cập nhật 1-click) |
 
@@ -48,7 +48,7 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 
 | File | Cần làm gì | Bắt buộc? |
 |---|---|---|
-| `gp247.json` | Đổi `requireCore` thành `["2.1"]`, thêm `requireUpdateFrom`, đổi `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Bắt buộc |
+| `gp247.json` | Đổi `requireCore` theo lõi đang chạy (ví dụ `["3.1"]`), thêm `requireUpdateFrom`, đổi `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Bắt buộc |
 | `Views/Admin.blade.php` | Đổi layout master sang TailAdmin, bỏ jQuery/AdminLTE | ✅ Bắt buộc |
 | `AppConfig.php` | Đổi thông báo lỗi trong `disable()` sang đa ngôn ngữ | ✅ Bắt buộc |
 | `Livewire/AdminLivewire.php` | **Tạo mới** — màn admin kiểu Livewire | 🟡 Khuyến nghị |
@@ -95,12 +95,12 @@ Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `
 }
 ```
 
-**Sau (v2 — core 2.1):**
+**Sau (v2 — ví dụ cho lõi 3.1):**
 
 ```json
 {
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
@@ -109,7 +109,7 @@ Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `
 ```
 
 Ý nghĩa các dòng:
-- `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Đặt `["2.1"]` để báo plugin dành cho Core 2.1.
+- `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Ghi đúng dòng `core` của `php artisan gp247:info` (ví dụ `["3.1"]`). Mỗi giá trị `"X.Y"` là khoảng "từ X.Y trong dòng X.x" — ghi `"2.1"` thì lõi 3.x **từ chối cài**.
 - `requireLivewire`: plugin có cần Livewire hay không (`true`/`false`). Thêm khi bạn đưa màn Livewire vào ở Bước 5 (`false` là mặc định an toàn — Livewire đi kèm core).
 - `requireComposerPackages` / `requireGp247Extensions`: đổi tên từ `requirePackages` / `requireExtensions` cho rõ nguồn phụ thuộc (gói Composer vs extension GP247). Core 2.1 vẫn đọc khóa cũ (tương thích ngược) nhưng đã deprecated — hãy dùng khóa mới.
 - `requireUpdateFrom`: phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này.
@@ -442,7 +442,7 @@ Plugin thanh toán (`configCode: "Payment"`) và vận chuyển (`configCode: "S
    vụ kèm thời gian giao, tạo vận đơn, in nhãn, theo dõi hay thu hộ thì thêm driver `ShippingProvider` theo hợp
    đồng vận chuyển của `gp247/shop`.
 
-Chi tiết từng điểm ở [create-plugin_vi.md](create-plugin_vi.md#55-plugin-thanh-toán-và-plugin-vận-chuyển) Phần 5.5.
+Hướng dẫn từng bước có code đầy đủ: [Tạo plugin thanh toán](create-payment-plugin_vi.md), [Tạo plugin vận chuyển](create-shipping-plugin_vi.md).
 Nếu làm cùng AI agent, dùng skill `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` của repo
 [gp247-skills](https://github.com/gp247net/gp247-skills).
 
@@ -467,7 +467,7 @@ Nếu làm cùng AI agent, dùng skill `gp247-payment-plugin-create` / `gp247-sh
 
 ## 4. Danh sách kiểm tra trước khi coi là "xong"
 
-- [ ] `gp247.json`: `requireCore` = `["2.1"]`, đã thêm `requireUpdateFrom`, đã đổi sang `requireComposerPackages`/`requireGp247Extensions`.
+- [ ] `gp247.json`: `requireCore` theo `gp247:info` (ví dụ `["3.1"]`), đã thêm `requireUpdateFrom`, đã đổi sang `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout đã đổi sang `gp247-admin::layouts.admin`.
 - [ ] Không còn `$(...)`, pjax, hay widget jQuery (select2/daterangepicker…) nào trong view/asset.
 - [ ] Text hiển thị render qua `gp247_language_render(...)`, không hardcode.
@@ -538,6 +538,15 @@ php artisan gp247:make-plugin --name=YourPluginName --download=0
 ```
 
 Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, Seo, layout mới) để bạn khỏi tạo tay từng file.
+
+---
+
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-10-18 | gp247/core 3.1 | **Sửa:** `requireCore` ghi theo lõi đang chạy (`php artisan gp247:info`) — giá trị `"2.1"` cũ bị lõi 3.x từ chối; Bước 8d trỏ sang hướng dẫn plugin thanh toán / vận chuyển |
 
 ---
 

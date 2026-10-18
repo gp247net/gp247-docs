@@ -42,7 +42,7 @@ Before you begin, you need:
 
 ---
 
-## 2. Step 1 — Scaffold the template with an artisan command
+## 2. Scaffold the template with an artisan command
 
 `gp247/front` ships a command that scaffolds a standard v2 template so you don't have to create every
 file by hand.
@@ -107,7 +107,7 @@ app/GP247/Templates/MyShopSkin/
 
 ---
 
-## 4. Step 2 — Declare `gp247.json`
+## 4. Declare `gp247.json`
 
 Open `gp247.json`; the generated sample content is:
 
@@ -122,7 +122,7 @@ Open `gp247.json`; the generated sample content is:
     "configCode": "MyShopSkin",
     "configKey": "MyShopSkin",
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/front"],
     "requireGp247Extensions": []
@@ -136,7 +136,7 @@ What the important fields mean:
 | `configGroup` | Always `"Templates"` for a template. |
 | `configKey` | **Unique identifier, same as the template folder name.** Never change it after release. |
 | `version` | Version (semver: `1.0`, `1.1`...). Every new release must **increase** this number. |
-| `requireCore` | Compatible `gp247/core` versions. For the v2 standard, use `["2.1"]`. |
+| `requireCore` | Core versions it runs on: write the `core` line of `php artisan gp247:info`, e.g. `["3.1"]`. Each `"X.Y"` value is the range "from X.Y within the X.x line" — `"2.1"` is refused by a 3.x core. |
 | **`requireComposerPackages`** | **Always includes `"gp247/front"`** — because a template only runs with the storefront present. Add `"gp247/shop"` if the template is meant only for shopping sites. |
 | `requireUpdateFrom` | The minimum version allowed to 1-click update to this one. `"1.0"` is a safe default. |
 
@@ -144,7 +144,7 @@ What the important fields mean:
 
 ---
 
-## 5. Step 3 — Build the template interface
+## 5. Build the template interface
 
 ### 5.1. `AppConfig.php` — the template lifecycle
 
@@ -276,7 +276,7 @@ reference, then copy them into your template to customize:
 
 ---
 
-## 7. Step 4 — Version updates (safe to update)
+## 7. Version updates (safe to update)
 
 A template uses the **same 1-click update mechanism** as a plugin: on update, the system overwrites
 **all files** of the template but **keeps the database (`admin_config`) intact**. Therefore the same
@@ -289,11 +289,11 @@ safety principles as for plugins apply to templates:
 - Do not store user-uploaded files inside the template folder.
 
 For full details on the safe-update mechanism, see the
-[Creating a Plugin](./create-plugin.md) guide (Section 6) — the principles are identical.
+[Update-safe plugins](./create-plugin-update-safety.md) guide — the principles are identical.
 
 ---
 
-## 8. Step 5 — Install and test
+## 8. Install and test
 
 1. Clear the Laravel cache to load the new routes/views/config:
 
@@ -394,4 +394,13 @@ most common issue, caused by Laravel still holding the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-26 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-10-18 | gp247/core 3.1 | **Fixed:** `requireCore` follows the running core (`php artisan gp247:info`) — the old `"2.1"` is refused by a 3.x core; section titles no longer carry a "Step" number that disagreed with the section number |
+
+---
+
+<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>

@@ -1,607 +1,545 @@
 > 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin_vi.md) · 🇬🇧 English (current)
 
-# Creating a Plugin for GP247 (v2 standard, update-safe)
+# Creating a plugin for GP247
 
 ## Introduction
 
-This document explains how to **create a new GP247 plugin following the v2 plugin standard (Core 2.0)**.
-It is for PHP/Laravel developers who want to build their own extension for a GP247 website. After reading
-it you will know how to scaffold a plugin, understand what each file does, write the install/uninstall/
-enable/disable logic, and — most importantly — **write the plugin the right way so it can be upgraded to
-a newer version safely** (without wiping the site owner's settings or corrupting data).
-
-> ⚠️ **The single most important thing in this document:** GP247 has a **1-click update** mechanism for
-> plugins. On update, the system **overwrites EVERY file** of the plugin with the new release, but **keeps
-> the configuration stored in the database (`admin_config`)**. If you write the plugin the wrong way (for
-> example, letting the site owner edit `config.php` directly), then **every update wipes their choices**.
-> Section 6 explains how to avoid this in detail. Read it carefully.
+This document is the **starting point** for PHP/Laravel developers who want to write a GP247 plugin (an add-on feature
+package you can enable, disable and remove from the admin). This page walks through 6 steps to build a plugin with a
+settings screen that installs and **updates to new versions without losing the store owner's settings**. Deeper topics
+live on their own pages, listed right below. After reading, you have a working plugin and know which page to read next for
+your kind of plugin.
 
 ---
 
-## 1. Prerequisites
+## Pick the right guide
 
-Before you start you need:
+| You are building… | Read |
+|---|---|
+| An admin feature, a display block, an ordinary plugin | **This page** |
+| A **payment** method (bank transfer, online gateway) | [Creating a payment plugin](./create-payment-plugin.md) |
+| A **shipping** method (price table, carrier with an API) | [Creating a shipping plugin](./create-shipping-plugin.md) |
+| Coupons / loyalty points, an own storefront page, layout blocks, per-store settings, secret keys | [Advanced plugins](./create-plugin-advanced.md) |
+| Own data tables, data migration on a new version | [Update-safe plugins](./create-plugin-update-safety.md) |
+| Upgrading a plugin written for GP247 1.x | [Converting a plugin from v1 to v2](./convert-plugin-v1-to-v2.md) |
+| A storefront look (template), not a plugin | [Creating a template](./create-template.md) |
 
-1. A working GP247 website (with `gp247/core` 2.0 or later installed).
-2. The ability to run `php artisan` commands on the server or dev machine (terminal / command line).
-3. To know what your plugin will do: admin-only, or also have a **public (storefront) page** for visitors.
-   This determines whether you need the `Seo.php` / `FrontController.php` files.
-
-> ⭐ **Checkout total-method plugins** (coupon / loyalty point, `configCode: "Promotion"` — legacy `"Total"` still accepted) are a special
-> case: besides the usual `getInfo()`, the plugin's `AppConfig` must implement
-> `GP247\Shop\Front\Contracts\CheckoutTotalMethod` (`checkoutApply` / `checkoutRemove` / `checkoutView`)
-> so the Livewire checkout can show its input on **any** template. See
-> [convert-plugin-v1-to-v2.md](convert-plugin-v1-to-v2.md) step 8c and the `ShopDiscount` plugin for the
-> reference implementation.
-
-> ⭐ **Payment plugins and shipping plugins** (`configCode: "Payment"` / `"Shipping"`) touch real money and
-> real orders, so besides the general part they have a contract of their own with `gp247/shop` — see
-> [Section 5.5](#55-payment-plugins-and-shipping-plugins). If you work with an AI agent, use the
-> `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` skill.
-
-> Quick glossary:
-> - **Plugin (extension)**: a feature package plugged into GP247 that can be enabled/disabled/removed in admin.
-> - **`configKey`**: the plugin's unique identifier, which **must match the plugin folder name**. For a plugin `MyBanner`, `configKey` is `MyBanner`.
-> - **Livewire**: a Laravel technology for building dynamic UI (button clicks, partial page reloads) **without writing jQuery**. The GP247 2.0 admin UI uses Livewire + Tailwind (the TailAdmin stack).
+> 💡 **Working with an AI agent?** Use GP247's skills from the [gp247-skills](https://github.com/gp247net/gp247-skills)
+> repository (copy the skill folder into your agent's skills folder, for example `.claude/skills/` for Claude Code):
+> `gp247-plugin-create` (ordinary plugins), `gp247-payment-plugin-create` (payment), `gp247-shipping-plugin-create`
+> (shipping). Each skill probes the site's version and follows the steps below.
 
 ---
 
-## 2. Step 1 — Scaffold the plugin with an artisan command
+## Roadmap
 
-GP247 ships a command that scaffolds a plugin following the v2 standard (already including Livewire, SEO,
-and the new layout), so you don't have to hand-create every file.
+```mermaid
+flowchart LR
+    S1["1 · Scaffold<br/>gp247:make-plugin"] --> S2["2 · Declare<br/>gp247.json"]
+    S2 --> S3["3 · Store settings<br/>in the database"]
+    S3 --> S4["4 · Admin screen<br/>+ routes"]
+    S4 --> S5["5 · Install<br/>and test"]
+    S5 --> S6["6 · Release<br/>a new version"]
+```
 
-1. Open a **Terminal** at the root of the GP247 website (where the `artisan` file lives).
-2. Type exactly the following line and press Enter (replace `MyBanner` with your plugin name):
+Three things to keep in mind all the way:
+
+1. **An update overwrites every file of the plugin and keeps the database.** Everything a store owner changes must live in the database.
+2. **Every release increases `version`; `configKey` never changes.**
+3. **Never edit `vendor/gp247/*`.** A plugin only "plugs in" through the existing seams.
+
+---
+
+## Prerequisites
+
+1. A running GP247 3.x website, and permission to run `php artisan` (a terminal on your development machine or server).
+2. Check the core version — you need it in Step 2:
 
    ```bash
-   php artisan gp247:make-plugin --name=MyBanner --download=0
+   php artisan gp247:info
    ```
 
-   What the parameters mean:
-   - `--name=MyBanner`: the plugin name. Prefer **PascalCase** (capitalize the first letter of each word, no accents, no spaces), e.g. `MyBanner`, `ProductFeed`.
-   - `--download=0`: create the plugin **directly** in `app/GP247/Plugins/MyBanner` (usable immediately). If you set `--download=1`, the command creates a `.zip` in `storage/tmp` for you to package and distribute.
+   Expected result: a `core` line such as `3.1`.
 
-3. On success, the terminal prints a human-readable line (e.g. `Success`); the folder
-   `app/GP247/Plugins/MyBanner` is created with all the sample files. Add `--json` if you
-   need the machine-readable envelope instead:
-
-   ```json
-   {"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBanner","path":"","msg":"Success"},"warnings":[],"error":null}
-   ```
-
-   (With `--download=1` the zip path is in `data.path`.)
-
-> Note: if the website does **not** have `gp247/front` (the storefront) installed, the command
-> automatically **skips** `Controllers/FrontController.php` — this is normal, not an error.
+| Term | Meaning |
+|---|---|
+| **Plugin (extension)** | An add-on package, located in `app/GP247/Plugins/<Name>` |
+| **`configKey`** | The plugin's unique id, **equal to its folder name** |
+| **`admin_config`** | The configuration table in the database — where settings survive updates |
+| **Livewire** | Laravel's way of building dynamic screens; the GP247 admin uses Livewire + Tailwind (TailAdmin), **no jQuery** |
 
 ---
 
-## 3. Plugin folder structure and the role of each file
+## Step 1 — Scaffold the plugin
 
-After scaffolding, your plugin has the structure below. The table explains **what each file is for**
-and **which files are mandatory**:
+1. Open a terminal in the website's root folder (where `artisan` is) and run (replace `MyPlugin` with your name, written
+   as one word, each word capitalised):
 
-```
-app/GP247/Plugins/MyBanner/
-├── Admin/
-│   └── AdminController.php     # Controller for the legacy admin screen (backward compatibility)
-├── Controllers/
-│   └── FrontController.php     # Controller for the public page (only if gp247/front is installed)
-├── Lang/
-│   ├── en/lang.php             # English language strings
-│   └── vi/lang.php             # Vietnamese language strings
-├── Livewire/
-│   └── AdminLivewire.php       # NEW-style admin screen (Livewire + TailAdmin) — the v2 standard
-├── Models/
-│   └── ExtensionModel.php      # Where you create/drop data tables on install/uninstall
-├── Views/
-│   ├── Admin.blade.php         # View for the legacy AdminController
-│   ├── livewire.blade.php      # View for AdminLivewire (v2 standard)
-│   └── Front.blade.php         # View for the public page
-├── public/
-│   └── images/logo.jpg         # Static assets (css/js/images), copied to public/GP247/Plugins/MyBanner
-├── AppConfig.php               # ⭐ Main config file: install/uninstall/enable/disable/update
-├── config.php                  # Plugin DEFAULT values (OVERWRITTEN on update — see Section 6)
-├── function.php                # The plugin's helper functions
-├── gp247.json                  # ⭐ Plugin manifest (version, compatibility...)
-├── Provider.php                # Registers services (views, lang, sitemap, page-type...)
-├── Route.php                   # Route declarations (admin and Livewire)
-└── Seo.php                     # Provides URLs for sitemap.xml (only needed if there is a public page)
-```
+   ```bash
+   php artisan gp247:make-plugin --name=MyPlugin --download=0
+   ```
 
-The two files you will **definitely edit**: `gp247.json` (the manifest) and `AppConfig.php` (install logic).
+   Expected result: a `Success` line, and the folder `app/GP247/Plugins/MyPlugin` is created. (`--download=1` builds a
+   `.zip` in `storage/tmp` for distribution instead.)
+2. Look at the generated files:
+
+| File | What it is for | What you do |
+|---|---|---|
+| `gp247.json` | Declares the plugin (name, version, compatibility) | **Edit** — Step 2 |
+| `AppConfig.php` | Install, uninstall, enable, disable, update | **Edit** — Step 3 |
+| `Livewire/AdminLivewire.php` | Admin screen | **Edit** — Step 4 |
+| `Route.php`, `Provider.php` | Register routes, languages, views | **Edit** — Step 4 |
+| `Lang/vi/lang.php`, `Lang/en/lang.php` | Display text | **Edit** — Step 4 |
+| `Admin/AdminController.php`, `Views/Admin.blade.php` | Old-style admin screen (backward compatibility) | Delete once you use Livewire |
+| `Controllers/FrontController.php`, `Views/Front.blade.php`, `Seo.php` | Public page and sitemap | Delete if the plugin is admin-only — see [Advanced plugins](./create-plugin-advanced.md) |
+| `Models/ExtensionModel.php` | Create/drop the plugin's own tables | Keep if you have own tables — see [Update-safe plugins](./create-plugin-update-safety.md) |
+| `config.php`, `function.php` | Defaults, helper functions | **Never** let the store owner edit `config.php` |
 
 ---
 
-## 4. Step 2 — Fill in `gp247.json`
-
-This is the plugin's "ID card". Open `gp247.json`; the generated sample looks like this:
+## Step 2 — Declare `gp247.json`
 
 ```json
 {
-    "name": "MyBanner module",
+    "name": "My plugin",
     "image": "images/logo.jpg",
-    "auth": "GP247",
-    "email": "support@gp247.net",
-    "link": "https://GP247.net",
+    "auth": "Your name",
+    "email": "you@example.com",
+    "link": "https://example.com",
     "configGroup": "Plugins",
-    "configCode": "MyBanner",
-    "configKey": "MyBanner",
+    "configCode": "MyPlugin",
+    "configKey": "MyPlugin",
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
-    "requireLivewire": false
+    "requireLivewire": false,
+    "storeScope": "global"
 }
 ```
 
-What the fields mean (the bold ones directly affect version updates — see Section 6):
-
 | Field | Meaning |
 |---|---|
-| `name` | The plugin's display name. |
-| `image` | Logo path (relative to the plugin's `public/` folder). |
-| `auth`, `email`, `link` | Author information. |
-| `configGroup` | Always `"Plugins"` for a plugin. |
-| `configCode` | Config code, usually the same as `configKey`. |
-| `configKey` | **Unique identifier; must match the plugin folder name.** Do not change it after release. |
-| **`version`** | **The plugin version (semver: `1.0`, `1.1`, `2.0`...). Every new release MUST increase this number** for 1-click update to accept it. |
-| **`requireCore`** | List of `gp247/core` versions the plugin is valid for. For the v2 standard use `["2.1"]`. |
-| **`requireUpdateFrom`** | The **minimum** currently-installed version allowed to 1-click update to this release. `"1.0"` is safe (practically no restriction). |
-| `requireComposerPackages` | Required composer packages (from packagist.org). |
-| `requireGp247Extensions` | Other GP247 extensions that must be present (e.g. `Shop`, `Front`, `News`). |
-| `requireLivewire` | Whether the plugin needs Livewire (`true`/`false`). The scaffold ships a Livewire admin screen registered in `Provider.php`, so `false` is a safe default (Livewire is bundled with core). |
-| `storeScope` | Can this plugin's settings / on-off differ per store? `"global"` (default — one shared value system-wide, no per-store settings; existing plugins keep this behaviour) or `"store"` (each store can be enabled separately and keep its own settings, e.g. shipping / discount / tax / a payment account). *Who may edit* a `store` plugin is a separate knob: append your admin segment to `store_scoped_segments` to let store-admins/vendors self-configure, or leave it out for owner-only (root sets per-store values, vendors are fenced). `"platform"` is a deprecated alias of `"store"`. See Rule 6 below. |
+| `configKey` | Equal to the folder name. **Never changes after release.** |
+| `configCode` | The plugin's role: `"Payment"`, `"Shipping"`, `"Promotion"` (coupons); any other plugin uses the same value as `configKey` |
+| `version` | `1.0`, `1.1`, `2.0`… Every release must be **greater** than the previous one |
+| `requireCore` | Core versions it runs on: write the `core` line of `gp247:info`, e.g. `["3.1"]` |
+| `requireUpdateFrom` | The lowest installed version allowed to update straight to this one; `"1.0"` blocks nothing |
+| `requireComposerPackages` | Required Composer packages, e.g. `["gp247/shop"]` for a selling plugin |
+| `requireGp247Extensions` | Other GP247 plugins that must be installed first (by `configKey`) |
+| `storeScope` | `"global"` (one shared setting) or `"store"` (one setting per store) |
 
-> **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (the names now state the dependency source). Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** and will be removed in a future release — new plugins should use the new keys.
+> ⚠️ **`requireCore` is a range per major version.** `"3.1"` means "from 3.1 upward, within the 3.x line" — it installs on
+> 3.1, 3.2…, but is **refused** on 4.x. Writing `"2.1"` makes a 3.x core refuse to install the plugin. To support several
+> major lines, write one value per line, e.g. `["3.1", "4.0"]`; never write a patch number such as `"3.1.2"`.
 
 ---
 
-## 5. Step 3 — Write the plugin logic
+## Step 3 — Store settings in the database
 
-### 5.1. `AppConfig.php` — the install lifecycle
-
-This file extends `ExtensionConfigDefault` and defines what happens when the site owner
-**installs / uninstalls / enables / disables / updates** the plugin. The main methods:
-
-| Method | Runs when | What you should do in it |
-|---|---|---|
-| `install()` | Site owner clicks "Install" | Write a config row into `admin_config`, call `ExtensionModel::installExtension()` to create data tables. |
-| `uninstall()` | Site owner clicks "Uninstall" | Delete the config rows you created, call `ExtensionModel::uninstallExtension()`. |
-| `enable()` / `disable()` | Temporary on / off | Flip the status flag; do **not** delete data. |
-| `update($fromVersion)` | Update to a newer version | Migrate data if needed — see Section 6.4. |
-| `getInfo()` | Admin shows plugin info | Return the info array (already provided, usually no change needed). |
-
-The generated scaffold works out of the box. You only need to add your own plugin logic.
-
-### 5.2. `Models/ExtensionModel.php` — create/drop data tables
-
-If your plugin needs its own table, put the create-table statement in `installExtension()`
-and the drop-table statement in `uninstallExtension()`. Example:
+An update **overwrites every file** (including `config.php`) but **keeps the database**. So each setting the store owner
+may change is **one row** in the `admin_config` table, keyed `<configKey>_<name>`, created on install and topped up on
+update. Replace the whole `AppConfig.php`:
 
 ```php
-public function installExtension()
+<?php
+
+namespace App\GP247\Plugins\MyPlugin;
+
+use GP247\Core\ExtensionConfigDefault;
+use GP247\Core\Models\AdminConfig;
+use GP247\Core\Models\AdminHome;
+
+class AppConfig extends ExtensionConfigDefault
 {
-    if (!\Illuminate\Support\Facades\Schema::hasTable('my_banner')) {
-        \Illuminate\Support\Facades\Schema::create('my_banner', function ($table) {
-            $table->increments('id');
-            $table->string('title');
-            $table->tinyInteger('status')->default(1);
-            $table->timestamps();
-        });
+    /** Settings the site owner edits: key => default. */
+    public const SETTINGS = [
+        'enabled_on_home' => '1',
+        'items_per_page'  => '20',
+    ];
+
+    public function __construct()
+    {
+        $config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+        $this->configGroup = $config['configGroup'];
+        $this->configKey = $config['configKey'];
+        $this->configCode = $config['configCode'];
+        $this->requireCore = $config['requireCore'] ?? [];
+        $this->requireComposerPackages = $config['requireComposerPackages'] ?? [];
+        $this->requireGp247Extensions = $config['requireGp247Extensions'] ?? [];
+        $this->appPath = $this->configGroup.'/'.$this->configKey;
+        $this->title = trans($this->appPath.'::lang.title');
+        $this->image = $this->appPath.'/'.$config['image'];
+        $this->version = $config['version'];
+        $this->auth = $config['auth'];
+        $this->link = $config['link'];
+    }
+
+    /**
+     * Every admin_config row this plugin owns: the on/off row + one row per setting.
+     */
+    private function seedRows(): array
+    {
+        $rows = [[
+            'group' => $this->configGroup, 'code' => $this->configCode, 'key' => $this->configKey,
+            'sort' => 0, 'store_id' => GP247_STORE_ID_GLOBAL, 'value' => self::ON,
+            'security' => 0, 'detail' => $this->appPath.'::lang.title',
+        ]];
+        $sort = 0;
+        foreach (self::SETTINGS as $key => $default) {
+            $rows[] = [
+                'group' => $this->configGroup, 'code' => $this->configKey.'_config',
+                'key' => $this->configKey.'_'.$key, 'sort' => ++$sort,
+                'store_id' => GP247_STORE_ID_GLOBAL, 'value' => $default,
+                'security' => 0, 'detail' => $this->appPath.'::lang.'.$key,
+            ];
+        }
+
+        return $rows;
+    }
+
+    public function install()
+    {
+        if (AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->exists()) {
+            return ['error' => 1, 'msg' => gp247_language_render('admin.extension.plugin_exist')];
+        }
+        try {
+            AdminConfig::insert($this->seedRows());
+
+            return ['error' => 0, 'msg' => gp247_language_render('admin.extension.install_success')];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Add the rows a newer version introduced; never touch a value the site owner saved.
+     */
+    public function update(?string $fromVersion = null)
+    {
+        try {
+            foreach ($this->seedRows() as $row) {
+                $exists = AdminConfig::where('group', $row['group'])->where('key', $row['key'])
+                    ->where('store_id', (string) $row['store_id'])->exists();
+                if (!$exists) {
+                    AdminConfig::insert($row);
+                }
+            }
+
+            return ['error' => 0, 'msg' => ''];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function uninstall()
+    {
+        try {
+            AdminConfig::where('group', $this->configGroup)->where(function ($q) {
+                $q->where('key', $this->configKey)
+                    ->orWhere('key', 'like', $this->configKey.'\_%')
+                    ->orWhere('code', $this->configKey.'_config');
+            })->delete();
+            AdminHome::where('extension', $this->appPath)->delete();
+
+            return ['error' => 0, 'msg' => gp247_language_render('admin.extension.uninstall_success')];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function enable()
+    {
+        AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->update(['value' => self::ON]);
+
+        return ['error' => 0, 'msg' => gp247_language_render('admin.extension.enable_success')];
+    }
+
+    public function disable()
+    {
+        AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->update(['value' => self::OFF]);
+
+        return ['error' => 0, 'msg' => ''];
+    }
+
+    // The ⚙ (Config) button on the Plugins list appears only when this returns a redirect.
+    public function clickApp()
+    {
+        return redirect(gp247_route_admin('admin_myplugin.index'));
+    }
+
+    public function setupStore($storeId = null)
+    {
+    }
+
+    public function removeStore($storeId = null)
+    {
+    }
+
+    /**
+     * A setting for a store (falls back to the shared value).
+     */
+    public function setting(string $key, $storeId = null): string
+    {
+        $storeId ??= gp247_plugin_store_id();
+
+        return (string) gp247_config($this->configKey.'_'.$key, $storeId, self::SETTINGS[$key] ?? '');
+    }
+
+    public function getInfo()
+    {
+        return [
+            'title' => $this->title,
+            'key' => $this->configKey,
+            'code' => $this->configCode,
+            'image' => $this->image,
+            'permission' => self::ALLOW,
+            'version' => $this->version,
+            'auth' => $this->auth,
+            'link' => $this->link,
+            'appPath' => $this->appPath,
+        ];
     }
 }
 ```
 
-> ⚠️ **Uninstall → reinstall and the `migrations` ledger — read this before using Laravel migration files.**
-> The pattern above (create/drop the table directly with `Schema` inside `ExtensionModel`) is **re-entrant by
-> design**: `installExtension()` runs on every install and recreates the table, so uninstall-then-reinstall
-> always rebuilds it. Nothing to reconcile — this is the recommended approach for a plugin's own tables.
->
-> If instead you provision tables with **Laravel migration files** (`DB/migrations/` run via
-> `Artisan::call('migrate', ['--path' => 'app/GP247/Plugins/<Name>/DB/migrations', '--force' => true])`),
-> you inherit a trap: Laravel records each migration in the **shared `migrations` ledger** and **never
-> re-runs a migration already listed there**. So if `uninstall()` drops the table but leaves the ledger row,
-> the next install reports *"Nothing to migrate"* and the table is **not** recreated — every screen reading
-> it then fails with `SQLSTATE[42S02] ... table doesn't exist`. **This has happened in production.**
->
-> If you use migration files you **must**:
-> 1. **Clean the plugin's own rows out of the `migrations` ledger on uninstall** (and reconcile before
->    `migrate` on install/update, so a site that is already broken self-heals via `gp247:update`):
->    ```php
->    // In uninstall() after dropping the table(s), and in install()/update() before migrate():
->    $names = array_map(
->        fn ($p) => pathinfo($p, PATHINFO_FILENAME),
->        glob(base_path('app/GP247/Plugins/<Name>/DB/migrations/*.php')) ?: []
->    );
->    if ($names) {
->        \Illuminate\Support\Facades\DB::table('migrations')->whereIn('migration', $names)->delete();
->    }
->    ```
-> 2. Keep **every** migration `up()` guarded with `Schema::hasTable()` so re-running it is a safe no-op for
->    tables that still exist and only recreates the missing ones.
->
-> Match the ledger rows by the plugin's own **file names** (read from `DB/migrations`) — never a loose
-> `LIKE '%something%'`, which could delete another plugin's migration rows.
+| Method | When it runs | What it does |
+|---|---|---|
+| `install()` | The store owner clicks **Install** | Writes the on/off row + one row per setting |
+| `update(?string $fromVersion)` | After the files were replaced by a newer version (1-click, `git pull`, Composer) | Only **adds** missing rows; safe to run again; may receive `null` |
+| `uninstall()` | The store owner clicks **Uninstall** | Deletes every row of the plugin |
+| `enable()` / `disable()` | Enable / disable | Switches the flag, deletes nothing |
+| `clickApp()` | The Plugins list draws the ⚙ button | Returns a redirect to the settings screen — returning `null` means **no button** |
+| `setting()` | Your code needs a value | Reads it for a store, falling back to the shared value |
 
-### 5.3. Admin screen — use Livewire (the v2 standard)
-
-The new UI standard for GP247 2.0 is **Livewire + TailAdmin**. The scaffold generates two files:
-`Livewire/AdminLivewire.php` (logic) and `Views/livewire.blade.php` (UI).
-
-- `AdminLivewire` extends `GP247AdminComponent`, so it **automatically has** permission checks (RBAC),
-  toast notifications and the shared admin layout — exactly like a core screen.
-- In `Views/livewire.blade.php`, prefer the shared `<x-gp247::*>` components
-  (e.g. `<x-gp247::card>`) over raw HTML.
-- **Absolutely no** jQuery / AdminLTE / select2... on the new screen — GP247 2.0 does not load jQuery.
-- Every displayed string must be rendered via `trans('Plugins/MyBanner::lang.title')` or
-  `gp247_language_render(...)`; **do not hardcode** text, to support multiple languages.
-
-### 5.4. Routes, Livewire registration and languages
-
-- `Provider.php`: the scaffold already registers the plugin's Livewire class namespace so the
-  admin component resolves as `<livewire:MyBanner::admin-livewire>` (and via the full-page
-  route). It is guarded so a host without Livewire still boots cleanly:
-
-  ```php
-  if (class_exists(\Livewire\Livewire::class)) {
-      \Livewire\Livewire::addNamespace('MyBanner', classNamespace: 'App\\GP247\\Plugins\\MyBanner\\Livewire');
-  }
-  ```
-
-- `Route.php`: the scaffold already registers the legacy admin route **and** the Livewire route
-  (guarded with `class_exists`, so it is safe). Only add your own routes when needed.
-- `Lang/vi/lang.php` and `Lang/en/lang.php`: add your plugin's display strings here.
-
-### 5.5. Payment plugins and shipping plugins
-
-> ℹ️ **Available since:** gp247/shop 3.1.4 (the standard shipping contract)
-
-Payment plugins (`configCode: "Payment"`) and shipping plugins (`configCode: "Shipping"`) work directly with
-real money and real orders. Besides the general rules of this document, they follow a contract of their own
-with `gp247/shop`. The mandatory points:
-
-**Payment plugins**
-
-- **Checkout hand-off:** the shop creates the order first, then calls the plugin's
-  `Controllers\FrontController::processOrder()` if it has one — usually to send the shopper to the gateway's
-  page. Without `processOrder()` the order completes at once (cash on delivery, bank transfer style).
-- **Record money only through the order's payment ledger:** `$order->recordPayment()` / `recordRefund()`,
-  keyed by the gateway's transaction id — a webhook delivered twice is still recorded once. Change the status
-  only through `$order->changeStatus()`. Never write the order's `status`, `payment_status` or `received`
-  yourself.
-- **Record only what the gateway confirmed** (a webhook whose signature was verified, or the payment read
-  back from the gateway's API — never the parameters of the return URL), and check amount and currency
-  against the order before recording.
-- **Webhook** goes **outside** the storefront middleware group, throttled, with the signature verified
-  **before** anything touches the database.
-- **Optional:** join the shop's [payment links and refunds](../s-cart/order-processing/payment-request.md) by
-  implementing `GP247\Shop\Payment\Contracts\PaymentGateway` and registering it in
-  `gp247-config.payment.gateways`.
-- Public reference plugins: `CashPayment` (no gateway call), `StripePayment`, `PaypalExpress` (gateway +
-  webhook).
-
-**Shipping plugins**
-
-- Write a driver implementing `GP247\Shop\Shipping\Contracts\ShippingProvider` (`rates()` is required) and
-  register it in `gp247-config.shop.shipping_providers.<Key>` from `Provider.php`. Each service of the
-  carrier (road, express…) becomes its own choice at checkout, with its price and delivery estimate.
-- Return prices in the **carrier's currency** — the shop converts them once. Ordinary failures (incomplete
-  address, not configured, carrier refused) are returned as an error result and never break the checkout page.
-- Declare only the capabilities the carrier really offers: book a shipment, cancel, print a label, track,
-  webhook, cash on delivery (COD) — each capability is its own interface.
-- The shop handles the shared parts: keeping the rate the shopper chose on the order, the shipment table, the
-  shared webhook route `/shipping/webhook/<Key>`, event de-duplication, the order's shipping status, the COD
-  amount. A plugin does **not** rewrite them.
-- On an older `gp247/shop` without this contract, the plugin runs the old way: `getInfo()` returns the fee in
-  `value` (display currency). One plugin can support both, like the reference plugin `ShippingStandard`.
-
-> 💡 **Working with an AI agent?** Use the dedicated skill instead of letting the agent guess the contract:
-> - `gp247-payment-plugin-create` — build a payment plugin.
-> - `gp247-shipping-plugin-create` — build a shipping plugin.
-> - `gp247-plugin-create` — every other kind of plugin.
->
-> The skills live in the [gp247-skills](https://github.com/gp247net/gp247-skills) repository; copy the skill
-> folder into your agent's skills folder (for example `.claude/skills/` for Claude Code). Each skill probes
-> the site's version and capabilities before writing code, and is updated together with `gp247/shop`
-> whenever the payment / shipping contract changes.
+A setting is a **secret** (API key, password)? Create its row with `'security' => 1` and declare the field as `password` in
+Step 4 — the core encrypts it and never sends it back to the browser. Details: [Advanced plugins](./create-plugin-advanced.md#2-secret-keys).
 
 ---
 
-## 6. ⭐ COMPLIANCE FOR VERSION UPDATES (read carefully)
+## Step 4 — Admin screen and routes
 
-This is the most important section. GP247 has a **1-click update** mechanism: from the admin panel,
-the site owner clicks one button and the plugin downloads and replaces itself with the new release.
-For your plugin to update **safely**, you must understand the mechanism and follow the 5 rules below.
-
-### 6.1. How the update mechanism works
-
-When the site owner clicks "Update", the system runs the following in order (if any step fails, it
-**automatically restores** — rolls back):
-
-1. **Backup** the entire current plugin folder (both `app/` and `public/`) into `storage/backups`.
-2. **Download** the new `.zip` from the GP247 marketplace (with a sha256 checksum to prevent corruption/tampering).
-3. **Validate** before touching live files: `configKey` must match, the new `version` must be **greater** than the installed one, and it must satisfy `requireUpdateFrom` and `requireCore`.
-4. **Overwrite files**: delete the old plugin folders (both `app/GP247/Plugins/...` and `public/GP247/Plugins/...`) then copy all the new files in.
-5. **Run the `AppConfig::update($oldVersion)` hook** so the plugin can migrate its data if needed.
-6. If any of steps 4–5 fails → **restore from the backup** made in step 1.
-
-**The key takeaway:** step 4 **wipes and replaces every file** of the plugin, but the **database
-(`admin_config`, your data tables) is kept intact**. This is the foundation of every rule below.
-
-**Updates that do not go through the extension library.** Many site owners replace plugin files with
-`git pull`, Composer or a manual copy. GP247 remembers the installed version, so it still calls the
-`AppConfig::update($fromVersion)` hook afterwards, when the site owner runs `php artisan gp247:update` /
-`gp247:ext-update --local` or clicks **Apply data update**. Unlike the library flow above there is no file
-backup/restore step, and a site installed before GP247 recorded versions calls the hook **once with
-`$fromVersion = null`**. So the hook must be safe to run repeatedly and must handle `null` (Section 6.4).
-
-> ℹ️ **Available since:** the 2026-09-29 update
-
-### 6.2. Rule 1 — `version` must increase, `configKey` must not change
-
-- On every new release, **increase `version`** in `gp247.json` (e.g. `1.0` → `1.1`). If the version
-  is not greater than the installed one, the system refuses the update ("not newer").
-- **Never change `configKey`** after release — it is the identifier used to match the old and new
-  releases. Changing it means the system treats it as a different plugin.
-
-### 6.3. Rule 2 (the most important) — the site owner's settings must live in the DATABASE, not in files
-
-Because the overwrite step wipes all plugin files, **anything the site owner edits directly in a file is lost on update.**
-Specifically:
-
-- **`config.php` holds DEFAULT values only** (decided by you, the author). This file is **overwritten**
-  on every update, so never expect the site owner to edit it.
-- **Any value the site owner is allowed to change** (feature toggles, items-per-page, their own API
-  key...) must be stored in the `admin_config` table (database), which the update **preserves**.
-- The standard approach: store an override row in `admin_config` with `code` = `<configKey>_config`,
-  then at runtime **overlay** that override on the defaults: `effective value = defaults (config.php) ⊕ override (DB)`.
-
-The scaffold already ships two sample helpers (commented out) in `function.php` — uncomment them and
-rename them for your plugin:
+**Settings screen** — extending the core's `ConfigForm` gives you the layout, permissions, Save button and store picker.
+Replace `Livewire/AdminLivewire.php`:
 
 ```php
-// Effective config = defaults ⊕ overrides in DB
-function MyBanner_effective_config()
+<?php
+
+namespace App\GP247\Plugins\MyPlugin\Livewire;
+
+use App\GP247\Plugins\MyPlugin\AppConfig;
+use GP247\Core\AdminShell\Infrastructure\ConfigForm;
+
+/**
+ * Settings screen: one field per row seeded by AppConfig::install().
+ */
+class AdminLivewire extends ConfigForm
 {
-    $defaults = (array) config('Plugins/MyBanner.settings', []);
+    protected ?string $permission = null;
 
-    $row = \GP247\Core\Models\AdminConfig::where('group', 'Plugins')
-        ->where('key', 'MyBanner_config')
-        ->first();
-    $overrides = $row ? json_decode((string) $row->value, true) : null;
+    protected function group(): string
+    {
+        return 'Plugins';
+    }
 
-    return is_array($overrides) ? array_merge($defaults, $overrides) : $defaults;
+    protected function heading(): string
+    {
+        return trans('Plugins/MyPlugin::lang.title');
+    }
+
+    // Required: without keys() the screen would list — and save — nothing of yours.
+    protected function keys(): array
+    {
+        return array_map(fn ($key) => 'MyPlugin_'.$key, array_keys(AppConfig::SETTINGS));
+    }
+
+    protected function fieldTypes(): array
+    {
+        return [
+            'MyPlugin_enabled_on_home' => 'bool',
+            'MyPlugin_items_per_page'  => 'number',
+        ];
+    }
 }
+```
 
-// Save the site owner's choices into the DB (update-safe)
-function MyBanner_save_config(array $settings)
-{
-    \GP247\Core\Models\AdminConfig::updateOrCreate(
-        ['group' => 'Plugins', 'key' => 'MyBanner_config'],
+Field types: `bool` (switch), `number`, `select` (with `fieldOptions()`), `password`, `text` (default). You can add
+`fieldHints()` (a hint next to a field) and `sections()` (titled blocks). A plugin that needs a screen other than settings
+extends `GP247\Core\AdminShell\Infrastructure\GP247AdminComponent` and writes its own view.
+
+**Routes** — replace `Route.php`; point the admin path straight at the Livewire screen:
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+$config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+
+if (gp247_extension_check_active($config['configGroup'], $config['configKey'])) {
+    Route::group(
         [
-            'code' => 'MyBanner_config',
-            'store_id' => GP247_STORE_ID_GLOBAL,
-            'value' => json_encode($settings),
-        ]
+            'prefix' => GP247_ADMIN_PREFIX.'/myplugin',
+            'middleware' => GP247_ADMIN_MIDDLEWARE,
+        ],
+        function () {
+            Route::get('/', \App\GP247\Plugins\MyPlugin\Livewire\AdminLivewire::class)
+                ->name('admin_myplugin.index');
+        }
     );
 }
 ```
 
-And in `config.php`, keep only the **defaults**:
+Then delete `Admin/AdminController.php` and `Views/Admin.blade.php` (the old-style screen).
+
+**Provider** — `Provider.php` loads languages and views and registers the plugin's Livewire name:
 
 ```php
-return [
-    'settings' => [
-        'enabled' => 0,
-        'items_per_page' => 20,
-    ],
-];
-```
+<?php
 
-> If your plugin has **no** site-owner-editable configuration (it runs with fixed behaviour), just
-> delete these two helpers to keep things tidy — you don't need to worry about this.
+$config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+$extensionPath = $config['configGroup'].'/'.$config['configKey'];
 
-### 6.4. Rule 3 — Migrate data with the `update()` hook
+$this->loadTranslationsFrom(__DIR__.'/Lang', $extensionPath);
 
-If a new release **changes the database structure** (adds a column, adds a table, changes the config
-format...), you must migrate data in the `AppConfig::update($fromVersion)` hook. By default this hook
-just returns "success" without doing anything (enough for a code-only change with no DB change). When
-needed, override it:
+if (gp247_extension_check_active($config['configGroup'], $config['configKey'])) {
+    $this->loadViewsFrom(__DIR__.'/Views', $extensionPath);
 
-```php
-/**
- * Migrate plugin data after files were replaced by a newer version.
- *
- * @param string|null $fromVersion Version installed before the update.
- * @return array ['error' => 0|1, 'msg' => string]
- */
-public function update(?string $fromVersion = null)
-{
-    // Example: version >= 1.1 needs a "sort" column on the my_banner table
-    // null = unknown previous version (files updated by git/composer before GP247 recorded versions)
-    if ($fromVersion === null || version_compare($fromVersion, '1.1', '<')) {
-        if (\Illuminate\Support\Facades\Schema::hasTable('my_banner')
-            && !\Illuminate\Support\Facades\Schema::hasColumn('my_banner', 'sort')) {
-            \Illuminate\Support\Facades\Schema::table('my_banner', function ($table) {
-                $table->integer('sort')->default(0);
-            });
-        }
+    if (class_exists(\Livewire\Livewire::class)) {
+        \Livewire\Livewire::addNamespace('MyPlugin', classNamespace: 'App\\GP247\\Plugins\\MyPlugin\\Livewire');
     }
-
-    return ['error' => 0, 'msg' => ''];
 }
 ```
 
-- Always check `$fromVersion` to **run only the migration steps that are needed** (idempotent — running
-  it again multiple times causes no error).
-- If the hook returns `['error' => 1, ...]` or throws an exception, the system will **restore the old
-  version** — so let it fail loudly when a migration is unsafe, rather than leaving data half-migrated.
-- **`$fromVersion` can be `null`**: never skip a migration on `null` — rely on the real state
-  (`Schema::hasColumn()`, whether a config row exists…) as in the example above. The hook also runs after
-  the site owner replaced the files with `git pull`/Composer; then a failure does **not** restore the
-  files, it only keeps the old version so it can be retried.
+**Languages** — every displayed text goes through `trans('Plugins/MyPlugin::lang.<key>')`, in both `vi` and `en`. The label of
+each settings field is the key with the setting's name:
 
-### 6.5. Rule 4 — Do not store user data inside the plugin folder
+```php
+<?php
 
-Both `app/GP247/Plugins/<key>` and `public/GP247/Plugins/<key>` are **deleted and replaced** on update.
-Therefore:
+return [
+    'title'           => 'My plugin',
+    'enabled_on_home' => 'Show on the home page',
+    'items_per_page'  => 'Items per page',
+];
+```
 
-- **Do not** put user-uploaded files (product images, uploads...) inside the plugin folder. Store them
-  under a shared data area in `public/GP247/...`, or in `storage/`.
-- The plugin's `public/` should contain only **the plugin's own static assets** (UI css/js/images) —
-  things shipped with the release that are safe to overwrite.
-
-### 6.6. Rule 5 — Set `requireUpdateFrom` / `requireCore` correctly
-
-- `requireCore`: ensures the plugin only updates on a compatible core. For the v2 standard use `["2.1"]`.
-- `requireUpdateFrom`: blocks a 1-click update from a version that is **too old** for your `update()`
-  hook to migrate. Use `"1.0"` when you are confident you can migrate from any version; raise it (e.g.
-  `"2.0"` for a 2.9 release) when you want to force users on the 1.x line to reinstall manually instead
-  of updating straight through.
-
-### 6.7. Rule 6 — Per-store config (multi-store / marketplace)
-
-GP247 supports two multi-store shapes: **multi-store** (one store per domain) and **marketplace** (one
-domain, many vendors). A plugin becomes per-store aware with two small changes; on a single-store site
-nothing changes.
-
-1. **Declare the scope** in `gp247.json`: `"storeScope": "store"` (settings / on-off can differ per store)
-   or `"global"` (default — one shared value). `"platform"` is a deprecated alias of `"store"`. Whether a
-   vendor may self-configure a `store` plugin is decided separately by `store_scoped_segments` (step 5).
-
-2. **Read settings for the effective store, never GLOBAL directly.** Use the seam
-   `gp247_plugin_store_id()` (resolves the admin session store / the marketplace checkout store / the
-   storefront domain store) so the same code serves both shapes:
-
-   ```php
-   // In AppConfig::getInfo() or wherever the plugin reads its settings:
-   $storeId = gp247_plugin_store_id();
-   $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
-       ->where('key', 'fee')->where('store_id', $storeId)->value('value');
-   if ($value === null && (string) $storeId !== (string) GP247_STORE_ID_GLOBAL) {
-       $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
-           ->where('key', 'fee')->where('store_id', GP247_STORE_ID_GLOBAL)->value('value');
-   }
-   ```
-
-   Keep the query **group-qualified** (not a bare `gp247_config('fee')`) so a generic key like `fee`
-   never collides with another plugin's `fee`. Prefer prefixed keys (`myplugin_fee`) for new plugins.
-
-3. **Turn on the store picker on the admin screen.** If your admin screen extends
-   `GP247\Core\AdminShell\Infrastructure\ConfigForm`, override `storeScoped(): bool` to return `true`
-   (and `enableKey(): ?string` to return `configKey` for the per-store on/off toggle). Core renders the
-   scope picker, the inherit / override badges, the "use shared config" reset and the toggle for you —
-   no plugin UI. Only rows the store actually overrides are stored (lazy); the rest inherit GLOBAL.
-
-4. **Let a store-admin reach the screen.** In `Provider.php`, inside the `gp247_extension_check_active`
-   block, append your admin path segment to the core registry so the MultiStore Pro fence classifies it
-   as store-scoped:
-
-   ```php
-   config(['gp247-config.admin.store_scoped_segments' => array_values(array_unique(array_merge(
-       (array) config('gp247-config.admin.store_scoped_segments', []), ['mypluginsegment']
-   )))]);
-   ```
-
-5. **Secrets are inherited but never revealed at a sub-store.** A key rendered as `password` (or an
-   `admin_config` row flagged `security = 1`) shows blank at a store scope with an "inherited" note; the
-   shared value is never sent to the browser. A vendor can enter their own, never read the platform's.
-   `ShippingStandard` is the reference implementation.
+UI rules: only `<x-gp247::*>` components, Livewire and Alpine; **no** jQuery, AdminLTE or select2.
 
 ---
 
-## 7. Step 4 — Install and test the plugin
+## Step 5 — Install and test
 
-1. Clear the Laravel cache to load the new routes/views/config:
+1. Clear the caches to load the new files:
 
    ```bash
    php artisan optimize:clear
    ```
 
-   On success, the terminal shows lines like `... cleared successfully`.
+2. Install the plugin: **Admin → Plugins → MyPlugin → Install**, or with a command:
 
-2. Log in to the admin panel, go to **Plugins**, find your plugin and click **Install**.
-3. After installing, try **enable/disable** and open the plugin's admin screen. If it renders correctly
-   with no "view not found" or "class not found" error, you're good.
-4. Check the UI in both **light and dark mode**.
+   ```bash
+   php artisan gp247:ext-install --type=plugin --key=MyPlugin
+   ```
 
----
+   Expected result: the plugin shows as enabled.
+3. Click ⚙ **Config**, change a value, click **Save**, reload the page — the value is still there.
+4. Try enable / disable; open the admin screen in both **light and dark mode**.
+5. Try uninstall then install again: the reinstall must create every settings row (and tables, menu if any).
 
-## 8. Pre-release checklist
-
-- [ ] `gp247.json`: `configKey` matches the folder name; `requireCore` = `["2.1"]`.
-- [ ] `version` has been **increased** compared to the previous release (if this is an update).
-- [ ] The admin screen uses Livewire + `<x-gp247::*>`; **no** jQuery/AdminLTE left.
-- [ ] Every string rendered via `trans(...)` / `gp247_language_render(...)`, not hardcoded; both `vi` and `en` present.
-- [ ] Site-owner-editable config lives in `admin_config` (not in `config.php`).
-- [ ] `config.php` holds **defaults** only; the `*_effective_config()` / `*_save_config()` helper pair is used if there are settings.
-- [ ] If the new release changes the DB: an `update($fromVersion)` hook is written, migrating safely and idempotently, and correct when `$fromVersion` is `null`.
-- [ ] No user-uploaded files are stored inside the plugin folder.
-- [ ] `install()` / `uninstall()` create and clean up data symmetrically (no leftovers after uninstall).
-- [ ] If you provision tables with **Laravel migration files**, `uninstall()` also cleans the plugin's rows from the `migrations` ledger (and install/update reconcile before `migrate`); every migration `up()` is `Schema::hasTable()`-guarded — so uninstall → reinstall actually recreates the table (§5.2 callout).
-- [ ] (Payment plugin) Money recorded through `recordPayment()` / `recordRefund()`, status through `changeStatus()`, webhook signature verified before touching the database (§5.5).
-- [ ] (Shipping plugin) The `ShippingProvider` driver returns prices in the carrier's currency and declares only the capabilities it really has (§5.5).
-- [ ] Ran `php artisan optimize:clear` and successfully tested install/uninstall.
+> ⚠️ **Uninstall a plugin you are developing with `--only-data`:**
+>
+> ```bash
+> php artisan gp247:ext-uninstall --type=plugin --key=MyPlugin --only-data
+> ```
+>
+> A plain uninstall (or the **Uninstall** button without "only remove data") **also deletes the plugin's source folder**.
 
 ---
 
-## 9. Q&A
+## Step 6 — Release a new version
 
-**Q1: Do I have to hand-write every plugin file?**
+1. Increase `version` in `gp247.json` (e.g. `1.0` → `1.1`).
+2. The new version adds a setting? Add the key to `SETTINGS` — `update()` creates the missing row and keeps old values.
+3. The new version adds a column / table or changes data? Write it in `update()` following [Update-safe plugins](./create-plugin-update-safety.md).
+4. Test it the way a store owner updating with `git pull` would:
 
-→ No. Run `php artisan gp247:make-plugin --name=YourPlugin --download=0` to scaffold the full v2-standard
-skeleton, then just add your own logic. If you work with an AI agent, use the `gp247-plugin-create` skill
-(or the payment / shipping skill of Section 5.5): it runs this command and edits the files to the standard.
+   ```bash
+   php artisan gp247:ext-update --type=plugin --key=MyPlugin --local --dry-run
+   ```
 
-**Q2: What is `configKey` and must it match the folder name?**
+   Expected result: the plugin is listed as pending; drop `--dry-run` to run `update()` for real.
 
-→ `configKey` is the plugin's unique identifier and **must exactly match the plugin folder name**. It is
-also the key used to match releases on update, so don't change it after release.
+---
 
-**Q3: Why does the site owner lose everything when they edit `config.php` and then update?**
+## Pre-release checklist
 
-→ Because 1-click update **overwrites every file** of the plugin, including `config.php`. Any value the
-site owner edits must be stored in the database (`admin_config`), not in a file. See Section 6.3.
+- [ ] `gp247.json`: `configKey` equals the folder name; `requireCore` follows `gp247:info`; `version` increased.
+- [ ] Every setting the store owner edits lives in `admin_config`; `config.php` only holds the author's defaults.
+- [ ] `install()` / `uninstall()` are symmetric; `update()` is safe to re-run and works with `null`.
+- [ ] `clickApp()` opens the settings screen; `keys()` lists every field; secrets are `password` fields.
+- [ ] The admin screen uses Livewire + `<x-gp247::*>`, no jQuery; text goes through `trans()` in both `vi` and `en`.
+- [ ] Ran `optimize:clear`, then install / enable / disable / uninstall `--only-data` / reinstall successfully.
+- [ ] Payment / shipping plugins: followed the dedicated guide for that kind.
 
-**Q4: How do I store the site owner's config so it survives an update?**
+---
 
-→ Store it in the `admin_config` table with `code` = `<configKey>_config`, and at runtime overlay it on
-the defaults from `config.php`. Use the sample `*_effective_config()` / `*_save_config()` functions in `function.php`.
+## Conditions & Rules (know before you act)
 
-**Q5: My new release adds a database column. Where do I handle it?**
+**When installing**
+- **The core refuses to install when `requireCore` does not match** the running core line (a range per major version) — so a plugin never runs on a core it was not tested on.
+- **Installing while the on/off row is still in the database is refused** ("plugin already exists") — uninstall first.
+- **A missing package in `requireComposerPackages` / plugin in `requireGp247Extensions` blocks the install.**
 
-→ In the `AppConfig::update($fromVersion)` hook. Check `$fromVersion` to run only the needed migration
-step, and write it so running it multiple times causes no error. The hook also runs when the site owner
-updates with `git pull`/Composer (through `gp247:update` or the **Apply data update** button). See
-Sections 6.1 and 6.4.
+**When updating**
+- **The new `version` must be greater than the installed one**, and the installed one not lower than `requireUpdateFrom` — otherwise the 1-click update refuses.
+- **When `update()` fails, the old version is restored** (1-click update); with `git pull` the files are not restored, the update just stays "pending" so it can run again.
 
-**Q6: What happens if the update fails midway?**
+---
 
-→ The system automatically **rolls back** the plugin to the old version from the backup made before it
-touched live files, so the site is never stuck in a half-updated state.
+## Q&A
 
-**Q7: My plugin is admin-only — do I need `Seo.php` and `FrontController.php`?**
+**Q1: Do I have to write every plugin file by hand?**
 
-→ No. `Seo.php` is only needed when the plugin has a **public page** that should contribute URLs to
-`sitemap.xml`; `FrontController.php` is only needed for a storefront page. An admin-only plugin can skip both.
+→ No. `php artisan gp247:make-plugin --name=YourPlugin --download=0` generates the skeleton; you only edit the files of Steps 2–4.
+With an AI agent, use the `gp247-plugin-create` skill.
 
-**Q8: Can I use jQuery or select2 on my plugin's admin screen?**
+**Q2: Must `configKey` equal the folder name?**
 
-→ No. GP247 2.0 uses TailAdmin (Tailwind + Alpine + Livewire) and **does not load jQuery**. Use
-Livewire/Alpine and the existing `<x-gp247::*>` components.
+→ Yes. It is the id used to match the old and the new version on update, so it must not change after release either.
 
-**Q9: What format should `version` be — `1.0.0` or `1.0`?**
+**Q3: The store owner edited `config.php` and lost everything after an update — why?**
 
-→ Use a numeric semver like `1.0`, `1.1`, `2.0`. As long as each new release has a number **greater** than
-the previous one (compared with `version_compare`), 1-click update will accept it.
+→ An update overwrites every file. Settings must live in the database as in Step 3.
 
-**Q10: After updating, the admin still shows the old version — what do I do?**
+**Q4: The core says "not compatible" when I install the plugin?**
 
-→ Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This is the
-most common issue, caused by Laravel keeping the old cache.
+→ `requireCore` does not match. Run `php artisan gp247:info` and write its `core` line (e.g. `["3.1"]`). The old value `"2.1"` cannot be installed on a 3.x core.
+
+**Q5: No ⚙ Config button on the Plugins list?**
+
+→ `clickApp()` returns `null` (the skeleton's default). Make it return a redirect to the settings screen as in Step 3.
+
+**Q6: The settings screen shows no field, or Save saves nothing?**
+
+→ `keys()` is missing in the settings screen, or `install()` did not create rows for those keys (uninstall with `--only-data`, then install again).
+
+**Q7: My new version adds a database column — where do I handle it?**
+
+→ In `update()`, checking the real state (`Schema::hasColumn`) rather than only the version number. See [Update-safe plugins](./create-plugin-update-safety.md).
+
+**Q8: May I use jQuery or select2 on the admin screen?**
+
+→ No. The GP247 admin does not load jQuery; use Livewire / Alpine and `<x-gp247::*>` components.
+
+**Q9: Should `version` be `1.0.0` or `1.0`?**
+
+→ Any numeric form works, as long as each release is **greater** than the previous one (compared with `version_compare`), e.g. `1.0` → `1.1` → `2.0`.
+
+**Q10: After updating, the admin still shows the old version?**
+
+→ Run `php artisan optimize:clear` and reload — Laravel still holds old caches.
 
 ---
 
@@ -610,7 +548,8 @@ most common issue, caused by Laravel keeping the old cache.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-09-29 |  | The `AppConfig::update($fromVersion)` hook now also runs when the site owner replaces the files with `git pull`/Composer/a manual copy (through `gp247:update`, `gp247:ext-update --local`, the **Apply data update** button); the first call may receive `null`. The 6.4 migration example now guards with `$fromVersion === null \|\| …`. |
+| 2026-10-18 | gp247/core 3.1 | Restructured into a 6-step main page; split out [Update-safe plugins](./create-plugin-update-safety.md) and [Advanced plugins](./create-plugin-advanced.md); added payment and shipping plugin guides. **Fixed:** `requireCore` follows `gp247:info` (the old `"2.1"` is refused by a 3.x core); settings default to one row per key with a `ConfigForm` screen (holds secrets); added `clickApp()` for the Config button |
+| 2026-09-29 |  | The `AppConfig::update($fromVersion)` hook now also runs when the site owner replaces files via `git pull`/Composer/manual copy (through `gp247:update`, `gp247:ext-update --local`, the **Apply data update** button); the first time it may receive `null`. |
 
 ---
 

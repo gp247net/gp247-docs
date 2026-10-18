@@ -69,8 +69,10 @@ trong sổ. Xem chi tiết tiền và tồn kho ở từng chặng tại [Vòng 
 > Cách lấy khoá và các ô riêng của từng cổng nằm trong README của plugin đó (ví dụ `StripePayment`, `PaypalExpress`).
 > Cổng chỉ nhận một số đồng tiền nhất định — kiểm tra đồng tiền của cửa hàng có được cổng hỗ trợ.
 
-**Thanh toán không qua cổng** (ví dụ `CashPayment`): chỉ cần cài, bật và nhập **ghi chú hướng dẫn** hiện cho khách
-(số tài khoản, lời nhắc chuẩn bị tiền mặt…). Đơn đặt xong ở trạng thái chưa thanh toán; tiền được ghi khi bạn nhận.
+**Thanh toán không qua cổng** (ví dụ `CashPayment`): chỉ cần cài và bật. Trang thanh toán của template mặc định chỉ
+hiện **tên** phương thức; muốn khách thấy hướng dẫn (số tài khoản, nội dung chuyển khoản) thì plugin cần trang hướng dẫn
+riêng — xem ví dụ [plugin chuyển khoản](../../extension/create-payment-plugin_vi.md). Đơn đặt xong ở trạng thái chưa
+thanh toán; tiền được ghi khi bạn nhận.
 
 ### A4. Theo dõi và ghi nhận tiền trên đơn
 
@@ -150,7 +152,7 @@ sequenceDiagram
 
 ### B4. Việc của bạn theo từng tình huống
 
-**Tích hợp một cổng thanh toán mới**
+**Tích hợp một cổng thanh toán mới** — hướng dẫn từng bước có code: [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md)
 
 1. Tạo plugin: `php artisan gp247:make-plugin --name=MyGateway --download=0`, đặt `configCode: "Payment"`,
    `requireComposerPackages: ["gp247/shop"]`.
@@ -177,7 +179,7 @@ thanh toán).
 > (chép thư mục skill vào thư mục skill của agent, ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản và
 > năng lực của site trước khi viết code, dựng plugin đúng hợp đồng tiền ở trên, và được cập nhật cùng `gp247/shop`
 > mỗi khi hợp đồng thanh toán thay đổi. Plugin vận chuyển: dùng `gp247-shipping-plugin-create`; các plugin khác:
-> `gp247-plugin-create`. Hướng dẫn chung về tạo plugin: [create-plugin_vi.md](../../extension/create-plugin_vi.md).
+> `gp247-plugin-create`. Hướng dẫn từng bước: [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md).
 
 ---
 
@@ -252,6 +254,15 @@ thử cả trường hợp đóng trình duyệt giữa chừng.
 **Câu 10: Gỡ plugin thanh toán có mất lịch sử tiền của các đơn cũ không?**
 
 → Không. Các khoản đã ghi nằm trong sổ thanh toán của đơn và giữ nguyên; gỡ plugin chỉ xoá thiết lập của plugin.
+
+---
+
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-10-18 | gp247/shop 3.1.4 | Thanh toán không qua cổng: template mặc định chỉ hiện tên phương thức, hướng dẫn chuyển khoản cần trang riêng của plugin; thêm liên kết hướng dẫn tạo plugin thanh toán |
 
 ---
 

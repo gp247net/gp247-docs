@@ -217,7 +217,7 @@ sequenceDiagram
 
 ### B4. Your job, case by case
 
-**Integrating a new carrier**
+**Integrating a new carrier** — step-by-step guide with code: [Creating a shipping plugin](../../extension/create-shipping-plugin.md)
 
 1. Create the plugin with `php artisan gp247:make-plugin --name=MyCarrier --download=0`, set `configCode: "Shipping"`,
    `requireComposerPackages: ["gp247/shop"]`.
@@ -247,8 +247,8 @@ both ways.
 > repository (copy the skill folder into your agent's skills folder, for example `.claude/skills/` for Claude Code). The
 > skill probes the site's version and capabilities before writing code, builds the plugin on the contract above, and is
 > updated together with `gp247/shop` whenever the shipping contract changes. For a non-shipping plugin use
-> `gp247-plugin-create`; for a payment plugin, `gp247-payment-plugin-create`. General plugin guide:
-> [create-plugin.md](../../extension/create-plugin.md).
+> `gp247-plugin-create`; for a payment plugin, `gp247-payment-plugin-create`. Step-by-step guide:
+> [Creating a shipping plugin](../../extension/create-shipping-plugin.md).
 
 ---
 

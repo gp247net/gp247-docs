@@ -1,595 +1,544 @@
 > 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-plugin.md)
 
-# Hướng dẫn tạo Plugin cho GP247 (chuẩn v2, an toàn khi cập nhật)
+# Hướng dẫn tạo plugin cho GP247
 
 ## Giới thiệu
 
-Tài liệu này hướng dẫn cách **tạo một plugin mới cho GP247 theo chuẩn plugin v2 (Core 2.0)**,
-dành cho lập trình viên PHP/Laravel muốn tự viết tính năng mở rộng cho website GP247. Đọc xong,
-bạn sẽ biết dùng lệnh sinh khung plugin, hiểu từng file trong plugin làm gì, viết được logic
-cài/gỡ/bật/tắt, và — quan trọng nhất — **viết plugin đúng cách để nó cập nhật lên phiên bản mới
-một cách an toàn** (không mất cấu hình của chủ site, không hỏng dữ liệu).
-
-> ⚠️ **Điều quan trọng nhất của tài liệu này:** GP247 có cơ chế **cập nhật 1-click** cho plugin.
-> Khi cập nhật, hệ thống **ghi đè TOÀN BỘ file** của plugin bằng bản mới, nhưng **giữ nguyên
-> cấu hình lưu trong database (`admin_config`)**. Nếu bạn viết plugin sai cách (ví dụ để chủ site
-> chỉnh sửa trực tiếp file `config.php`), thì **mỗi lần cập nhật sẽ xoá sạch lựa chọn của họ**.
-> Phần 6 giải thích chi tiết cách tránh điều này. Hãy đọc kỹ phần đó.
+Tài liệu này là **điểm bắt đầu** cho lập trình viên PHP/Laravel muốn viết plugin cho GP247 (gói tính năng cắm thêm,
+bật/tắt/gỡ được trong trang quản trị). Trang này đi qua 6 bước làm một plugin có màn cấu hình, cài được và **cập nhật
+lên bản mới mà không mất thiết lập của chủ cửa hàng**. Các chủ đề sâu hơn nằm ở trang riêng, liệt kê ngay bên dưới. Đọc
+xong, bạn có một plugin chạy được và biết cần đọc tiếp trang nào cho loại plugin của mình.
 
 ---
 
-## 1. Chuẩn bị
+## Chọn đúng hướng dẫn
 
-Trước khi bắt đầu, bạn cần:
+| Bạn đang làm… | Đọc |
+|---|---|
+| Một tính năng quản trị, một khối hiển thị, plugin thông thường | **Trang này** |
+| Phương thức **thanh toán** (chuyển khoản, cổng online) | [Tạo plugin thanh toán](./create-payment-plugin_vi.md) |
+| Phương thức **vận chuyển** (bảng giá, hãng giao hàng có API) | [Tạo plugin vận chuyển](./create-shipping-plugin_vi.md) |
+| Mã giảm giá / tích điểm, trang storefront riêng, khối layout, cấu hình theo cửa hàng, khoá bí mật | [Plugin nâng cao](./create-plugin-advanced_vi.md) |
+| Bảng dữ liệu riêng, di trú dữ liệu khi lên bản mới | [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) |
+| Nâng cấp plugin viết cho GP247 1.x | [Chuyển đổi plugin v1 lên v2](./convert-plugin-v1-to-v2_vi.md) |
+| Giao diện cửa hàng (template), không phải plugin | [Tạo template](./create-template_vi.md) |
 
-1. Một website GP247 đã cài đặt và chạy được (đã cài `gp247/core` bản 2.0 trở lên).
-2. Quyền chạy lệnh `php artisan` trên server hoặc máy phát triển (terminal / command line).
-3. Biết plugin của bạn sẽ làm gì: chỉ hiển thị trong trang admin, hay có cả **trang công khai
-   (storefront)** cho khách xem. Điều này quyết định bạn có cần các file `Seo.php` / `FrontController.php` hay không.
-
-> ⭐ **Plugin total-method ở checkout** (mã giảm giá / tích điểm, `configCode: "Promotion"` — giá trị cũ `"Total"` vẫn được chấp nhận) là trường hợp
-> đặc biệt: ngoài `getInfo()` thông thường, `AppConfig` của plugin phải implement
-> `GP247\Shop\Front\Contracts\CheckoutTotalMethod` (`checkoutApply` / `checkoutRemove` / `checkoutView`)
-> để checkout Livewire hiển thị được ô nhập trên **mọi** template. Xem
-> [convert-plugin-v1-to-v2.md](convert-plugin-v1-to-v2.md) bước 8c và plugin `ShopDiscount` làm mẫu.
-
-> ⭐ **Plugin thanh toán và plugin vận chuyển** (`configCode: "Payment"` / `"Shipping"`) chạm tới tiền và đơn
-> hàng thật, nên ngoài phần chung còn có hợp đồng riêng với `gp247/shop` — xem [Phần 5.5](#55-plugin-thanh-toán-và-plugin-vận-chuyển).
-> Nếu làm cùng AI agent, hãy dùng skill `gp247-payment-plugin-create` / `gp247-shipping-plugin-create`.
-
-> Thuật ngữ nhanh:
-> - **Plugin (extension)**: một gói tính năng cắm thêm vào GP247, có thể bật/tắt/gỡ trong admin.
-> - **`configKey`**: mã định danh duy nhất của plugin, **trùng đúng với tên thư mục** plugin. Ví dụ plugin `MyBanner` thì `configKey` là `MyBanner`.
-> - **Livewire**: công nghệ của Laravel giúp làm giao diện động (bấm nút, tải lại một phần trang) mà **không cần viết jQuery**. Giao diện admin GP247 2.0 dùng Livewire + Tailwind (bộ TailAdmin).
+> 💡 **Làm cùng AI agent?** Dùng skill của GP247 trong repo [gp247-skills](https://github.com/gp247net/gp247-skills) (chép
+> thư mục skill vào thư mục skill của agent, ví dụ `.claude/skills/` với Claude Code):
+> `gp247-plugin-create` (plugin thông thường), `gp247-payment-plugin-create` (thanh toán), `gp247-shipping-plugin-create`
+> (vận chuyển). Skill tự dò phiên bản site và làm đúng các bước dưới đây.
 
 ---
 
-## 2. Bước 1 — Sinh khung plugin bằng lệnh artisan
+## Lộ trình
 
-GP247 có sẵn lệnh tạo khung plugin theo đúng chuẩn v2 (đã kèm sẵn Livewire, SEO, layout mới),
-để bạn khỏi phải tạo tay từng file.
+```mermaid
+flowchart LR
+    S1["1 · Sinh khung<br/>gp247:make-plugin"] --> S2["2 · Khai báo<br/>gp247.json"]
+    S2 --> S3["3 · Lưu thiết lập<br/>trong database"]
+    S3 --> S4["4 · Màn quản trị<br/>+ route"]
+    S4 --> S5["5 · Cài và<br/>kiểm tra"]
+    S5 --> S6["6 · Phát hành<br/>bản mới"]
+```
 
-1. Mở **Terminal** tại thư mục gốc của website GP247 (nơi có file `artisan`).
-2. Gõ đúng dòng sau rồi nhấn Enter (thay `MyBanner` bằng tên plugin bạn muốn):
+Ba điều phải nhớ suốt lộ trình:
+
+1. **Cập nhật plugin ghi đè toàn bộ file, giữ nguyên database.** Mọi thứ chủ cửa hàng chỉnh phải nằm trong database.
+2. **Mỗi bản phát hành tăng `version`; `configKey` không bao giờ đổi.**
+3. **Không sửa `vendor/gp247/*`.** Plugin chỉ "cắm" vào qua điểm nối có sẵn.
+
+---
+
+## Chuẩn bị
+
+1. Một website GP247 3.x đang chạy, và quyền chạy `php artisan` (terminal trên máy phát triển hoặc server).
+2. Xem phiên bản lõi — cần cho Bước 2:
 
    ```bash
-   php artisan gp247:make-plugin --name=MyBanner --download=0
+   php artisan gp247:info
    ```
 
-   Ý nghĩa các tham số:
-   - `--name=MyBanner`: tên plugin. Nên viết kiểu **PascalCase** (viết hoa chữ cái đầu mỗi từ, không dấu, không khoảng trắng), ví dụ `MyBanner`, `ProductFeed`.
-   - `--download=0`: tạo plugin **trực tiếp** vào thư mục `app/GP247/Plugins/MyBanner` (dùng ngay được). Nếu đặt `--download=1`, lệnh sẽ tạo một file `.zip` trong `storage/tmp` để bạn tải về đóng gói phân phối.
+   Kết quả mong đợi: một dòng `core` như `3.1`.
 
-3. Nếu thành công, terminal in một dòng text human (ví dụ `Success`); đồng thời thư mục
-   `app/GP247/Plugins/MyBanner` được tạo ra với đầy đủ file mẫu. Thêm `--json` nếu cần envelope
-   máy-đọc:
-
-   ```json
-   {"ok":true,"command":"gp247:make-plugin","data":{"key":"MyBanner","path":"","msg":"Success"},"warnings":[],"error":null}
-   ```
-
-   (Với `--download=1`, đường dẫn zip nằm ở `data.path`.)
-
-> Lưu ý: nếu website **chưa cài** `gp247/front` (phần storefront), lệnh sẽ tự động **bỏ qua**
-> file `Controllers/FrontController.php` — đây là hành vi bình thường, không phải lỗi.
+| Thuật ngữ | Nghĩa |
+|---|---|
+| **Plugin (extension)** | Gói tính năng cắm thêm, nằm ở `app/GP247/Plugins/<Tên>` |
+| **`configKey`** | Mã định danh duy nhất của plugin, **trùng tên thư mục** |
+| **`admin_config`** | Bảng cấu hình trong database — nơi lưu thiết lập để cập nhật không làm mất |
+| **Livewire** | Cách làm giao diện động của Laravel; màn quản trị GP247 dùng Livewire + Tailwind (TailAdmin), **không dùng jQuery** |
 
 ---
 
-## 3. Cấu trúc thư mục plugin và vai trò từng file
+## Bước 1 — Sinh khung plugin
 
-Sau khi sinh khung, plugin của bạn có cấu trúc như sau. Bảng dưới giải thích **file nào để làm gì**
-và **file nào bắt buộc phải có**:
+1. Mở terminal tại thư mục gốc website (nơi có file `artisan`), chạy (thay `MyPlugin` bằng tên của bạn, viết liền,
+   hoa chữ cái đầu mỗi từ):
 
-```
-app/GP247/Plugins/MyBanner/
-├── Admin/
-│   └── AdminController.php     # Controller cho màn admin kiểu cũ (tương thích ngược)
-├── Controllers/
-│   └── FrontController.php     # Controller cho trang công khai (chỉ có nếu cài gp247/front)
-├── Lang/
-│   ├── en/lang.php             # Chuỗi ngôn ngữ tiếng Anh
-│   └── vi/lang.php             # Chuỗi ngôn ngữ tiếng Việt
-├── Livewire/
-│   └── AdminLivewire.php       # Màn admin kiểu MỚI (Livewire + TailAdmin) — chuẩn v2
-├── Models/
-│   └── ExtensionModel.php      # Nơi xử lý tạo/xoá bảng dữ liệu khi cài/gỡ plugin
-├── Views/
-│   ├── Admin.blade.php         # View cho AdminController cũ
-│   ├── livewire.blade.php      # View cho AdminLivewire (chuẩn v2)
-│   └── Front.blade.php         # View cho trang công khai
-├── public/
-│   └── images/logo.jpg         # Asset tĩnh (css/js/ảnh), sẽ được copy sang public/GP247/Plugins/MyBanner
-├── AppConfig.php               # ⭐ File cấu hình chính: install/uninstall/enable/disable/update
-├── config.php                  # Giá trị mặc định của plugin (BỊ GHI ĐÈ khi update — xem Phần 6)
-├── function.php                # Các hàm helper của plugin
-├── gp247.json                  # ⭐ Khai báo thông tin plugin (version, tương thích...)
-├── Provider.php                # Đăng ký service (view, lang, sitemap, page-type...)
-├── Route.php                   # Khai báo route (đường dẫn) admin và Livewire
-└── Seo.php                     # Cung cấp URL cho sitemap.xml (chỉ cần nếu có trang công khai)
-```
+   ```bash
+   php artisan gp247:make-plugin --name=MyPlugin --download=0
+   ```
 
-Hai file bạn **chắc chắn phải chỉnh sửa**: `gp247.json` (khai báo) và `AppConfig.php` (logic cài đặt).
+   Kết quả mong đợi: dòng `Success`, thư mục `app/GP247/Plugins/MyPlugin` được tạo. (`--download=1` thì tạo file `.zip`
+   trong `storage/tmp` để phân phối.)
+2. Xem các file vừa sinh:
+
+| File | Để làm gì | Bạn làm gì |
+|---|---|---|
+| `gp247.json` | Khai báo plugin (tên, phiên bản, tương thích) | **Sửa** — Bước 2 |
+| `AppConfig.php` | Cài, gỡ, bật, tắt, cập nhật | **Sửa** — Bước 3 |
+| `Livewire/AdminLivewire.php` | Màn quản trị | **Sửa** — Bước 4 |
+| `Route.php`, `Provider.php` | Đăng ký đường dẫn, ngôn ngữ, view | **Sửa** — Bước 4 |
+| `Lang/vi/lang.php`, `Lang/en/lang.php` | Chữ hiển thị | **Sửa** — Bước 4 |
+| `Admin/AdminController.php`, `Views/Admin.blade.php` | Màn quản trị kiểu cũ (tương thích ngược) | Xoá khi đã dùng Livewire |
+| `Controllers/FrontController.php`, `Views/Front.blade.php`, `Seo.php` | Trang công khai và sitemap | Xoá nếu plugin chỉ dùng trong quản trị — xem [Plugin nâng cao](./create-plugin-advanced_vi.md) |
+| `Models/ExtensionModel.php` | Tạo/xoá bảng dữ liệu riêng | Giữ nếu có bảng riêng — xem [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) |
+| `config.php`, `function.php` | Giá trị mặc định, hàm phụ | **Không** để chủ cửa hàng sửa `config.php` |
 
 ---
 
-## 4. Bước 2 — Khai báo `gp247.json`
-
-Đây là "chứng minh thư" của plugin. Mở file `gp247.json`, nội dung mẫu sinh sẵn như sau:
+## Bước 2 — Khai báo `gp247.json`
 
 ```json
 {
-    "name": "MyBanner module",
+    "name": "My plugin",
     "image": "images/logo.jpg",
-    "auth": "GP247",
-    "email": "support@gp247.net",
-    "link": "https://GP247.net",
+    "auth": "Your name",
+    "email": "you@example.com",
+    "link": "https://example.com",
     "configGroup": "Plugins",
-    "configCode": "MyBanner",
-    "configKey": "MyBanner",
+    "configCode": "MyPlugin",
+    "configKey": "MyPlugin",
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
-    "requireLivewire": false
+    "requireLivewire": false,
+    "storeScope": "global"
 }
 ```
 
-Ý nghĩa các trường (các trường in đậm ảnh hưởng trực tiếp tới cập nhật phiên bản — xem Phần 6):
-
 | Trường | Ý nghĩa |
 |---|---|
-| `name` | Tên hiển thị của plugin. |
-| `image` | Đường dẫn logo (tương đối trong thư mục `public/` của plugin). |
-| `auth`, `email`, `link` | Thông tin tác giả. |
-| `configGroup` | Luôn là `"Plugins"` với plugin. |
-| `configCode` | Mã cấu hình, thường trùng `configKey`. |
-| `configKey` | **Mã định danh duy nhất, phải trùng tên thư mục plugin.** Không đổi giá trị này sau khi phát hành. |
-| **`version`** | **Phiên bản plugin (dạng semver: `1.0`, `1.1`, `2.0`...). Mỗi lần phát hành bản mới PHẢI tăng số này lên** thì cập nhật 1-click mới nhận. |
-| **`requireCore`** | Danh sách phiên bản `gp247/core` mà plugin hợp lệ. Với chuẩn v2 để `["2.1"]`. |
-| **`requireUpdateFrom`** | Phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này. Để `"1.0"` là an toàn (gần như không chặn). |
-| `requireComposerPackages` | Các gói composer bắt buộc (từ packagist.org). |
-| `requireGp247Extensions` | Các extension GP247 khác bắt buộc phải có (ví dụ `Shop`, `Front`, `News`). |
-| `requireLivewire` | Plugin có cần Livewire hay không (`true`/`false`). Scaffold đã ship sẵn màn admin Livewire + đăng ký trong `Provider.php`, nên `false` là mặc định an toàn (Livewire đã đi kèm core). |
-| `storeScope` | Thông số / bật-tắt của plugin có **khác nhau theo cửa hàng** không? `"global"` (mặc định — một giá trị chung toàn hệ, không cấu hình theo store; plugin cũ giữ nguyên) hoặc `"store"` (mỗi cửa hàng bật riêng và có thông số riêng, ví dụ vận chuyển / khuyến mãi / thuế / tài khoản thanh toán). *Ai được sửa* plugin `store` là nút riêng: append segment admin vào `store_scoped_segments` để chủ store/vendor tự cấu hình, hoặc bỏ qua để chỉ chủ site cấu hình (root đặt giá trị theo store, vendor bị fence chặn). `"platform"` là alias cũ (deprecated) của `"store"`. Xem Quy tắc 6 bên dưới. |
+| `configKey` | Trùng tên thư mục. **Không đổi sau khi phát hành.** |
+| `configCode` | Vai trò của plugin: `"Payment"` (thanh toán), `"Shipping"` (vận chuyển), `"Promotion"` (mã giảm giá); plugin khác ghi giống `configKey` |
+| `version` | `1.0`, `1.1`, `2.0`… Mỗi bản phát hành phải **lớn hơn** bản trước |
+| `requireCore` | Phiên bản lõi chạy được: ghi dòng `core` của `gp247:info`, ví dụ `["3.1"]` |
+| `requireUpdateFrom` | Bản đang cài thấp nhất được cập nhật thẳng lên bản này; `"1.0"` là không chặn |
+| `requireComposerPackages` | Gói Composer bắt buộc, ví dụ `["gp247/shop"]` cho plugin bán hàng |
+| `requireGp247Extensions` | Plugin GP247 khác phải cài trước (theo `configKey`) |
+| `storeScope` | `"global"` (một thiết lập chung) hoặc `"store"` (mỗi cửa hàng một thiết lập) |
 
-> **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions` (tên nói rõ nguồn phụ thuộc). Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** và sẽ bị gỡ ở bản sau — plugin mới hãy dùng khóa mới.
+> ⚠️ **`requireCore` là một khoảng theo phiên bản lớn.** `"3.1"` nghĩa là "từ 3.1 trở lên, trong dòng 3.x" — cài được trên
+> 3.1, 3.2…, nhưng **bị từ chối** trên 4.x. Ghi `"2.1"` thì lõi 3.x từ chối cài. Hỗ trợ nhiều dòng lớn thì ghi mỗi dòng một
+> giá trị, ví dụ `["3.1", "4.0"]`; không ghi số bản vá như `"3.1.2"`.
 
 ---
 
-## 5. Bước 3 — Viết logic plugin
+## Bước 3 — Lưu thiết lập trong database
 
-### 5.1. `AppConfig.php` — vòng đời cài đặt
-
-File này kế thừa `ExtensionConfigDefault` và định nghĩa những việc xảy ra khi chủ site
-**cài / gỡ / bật / tắt / cập nhật** plugin. Các phương thức chính:
-
-| Phương thức | Chạy khi nào | Bạn nên làm gì trong đó |
-|---|---|---|
-| `install()` | Chủ site bấm "Cài đặt" | Ghi bản ghi cấu hình vào `admin_config`, gọi `ExtensionModel::installExtension()` để tạo bảng dữ liệu. |
-| `uninstall()` | Chủ site bấm "Gỡ" | Xoá các bản ghi cấu hình đã tạo, gọi `ExtensionModel::uninstallExtension()`. |
-| `enable()` / `disable()` | Bật / tắt tạm thời | Đổi cờ trạng thái, **không** xoá dữ liệu. |
-| `update($fromVersion)` | Cập nhật lên bản mới | Di trú (migrate) dữ liệu nếu cần — xem Phần 6.4. |
-| `getInfo()` | Admin hiển thị thông tin plugin | Trả về mảng thông tin (đã có sẵn, thường không cần sửa). |
-
-Khung sinh sẵn đã chạy được ngay. Bạn chỉ cần bổ sung logic riêng của plugin.
-
-### 5.2. `Models/ExtensionModel.php` — tạo/xoá bảng dữ liệu
-
-Nếu plugin cần bảng riêng trong database, hãy viết lệnh tạo bảng trong `installExtension()`
-và lệnh xoá bảng trong `uninstallExtension()`. Ví dụ:
+Cập nhật plugin **ghi đè toàn bộ file** (kể cả `config.php`) nhưng **giữ nguyên database**. Vì vậy mỗi thiết lập chủ cửa
+hàng được chỉnh là **một dòng** trong bảng `admin_config`, khoá `<configKey>_<tên>`, tạo lúc cài và bổ sung lúc cập nhật.
+Thay toàn bộ `AppConfig.php`:
 
 ```php
-public function installExtension()
+<?php
+
+namespace App\GP247\Plugins\MyPlugin;
+
+use GP247\Core\ExtensionConfigDefault;
+use GP247\Core\Models\AdminConfig;
+use GP247\Core\Models\AdminHome;
+
+class AppConfig extends ExtensionConfigDefault
 {
-    if (!\Illuminate\Support\Facades\Schema::hasTable('my_banner')) {
-        \Illuminate\Support\Facades\Schema::create('my_banner', function ($table) {
-            $table->increments('id');
-            $table->string('title');
-            $table->tinyInteger('status')->default(1);
-            $table->timestamps();
-        });
+    /** Settings the site owner edits: key => default. */
+    public const SETTINGS = [
+        'enabled_on_home' => '1',
+        'items_per_page'  => '20',
+    ];
+
+    public function __construct()
+    {
+        $config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+        $this->configGroup = $config['configGroup'];
+        $this->configKey = $config['configKey'];
+        $this->configCode = $config['configCode'];
+        $this->requireCore = $config['requireCore'] ?? [];
+        $this->requireComposerPackages = $config['requireComposerPackages'] ?? [];
+        $this->requireGp247Extensions = $config['requireGp247Extensions'] ?? [];
+        $this->appPath = $this->configGroup.'/'.$this->configKey;
+        $this->title = trans($this->appPath.'::lang.title');
+        $this->image = $this->appPath.'/'.$config['image'];
+        $this->version = $config['version'];
+        $this->auth = $config['auth'];
+        $this->link = $config['link'];
+    }
+
+    /**
+     * Every admin_config row this plugin owns: the on/off row + one row per setting.
+     */
+    private function seedRows(): array
+    {
+        $rows = [[
+            'group' => $this->configGroup, 'code' => $this->configCode, 'key' => $this->configKey,
+            'sort' => 0, 'store_id' => GP247_STORE_ID_GLOBAL, 'value' => self::ON,
+            'security' => 0, 'detail' => $this->appPath.'::lang.title',
+        ]];
+        $sort = 0;
+        foreach (self::SETTINGS as $key => $default) {
+            $rows[] = [
+                'group' => $this->configGroup, 'code' => $this->configKey.'_config',
+                'key' => $this->configKey.'_'.$key, 'sort' => ++$sort,
+                'store_id' => GP247_STORE_ID_GLOBAL, 'value' => $default,
+                'security' => 0, 'detail' => $this->appPath.'::lang.'.$key,
+            ];
+        }
+
+        return $rows;
+    }
+
+    public function install()
+    {
+        if (AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->exists()) {
+            return ['error' => 1, 'msg' => gp247_language_render('admin.extension.plugin_exist')];
+        }
+        try {
+            AdminConfig::insert($this->seedRows());
+
+            return ['error' => 0, 'msg' => gp247_language_render('admin.extension.install_success')];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Add the rows a newer version introduced; never touch a value the site owner saved.
+     */
+    public function update(?string $fromVersion = null)
+    {
+        try {
+            foreach ($this->seedRows() as $row) {
+                $exists = AdminConfig::where('group', $row['group'])->where('key', $row['key'])
+                    ->where('store_id', (string) $row['store_id'])->exists();
+                if (!$exists) {
+                    AdminConfig::insert($row);
+                }
+            }
+
+            return ['error' => 0, 'msg' => ''];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function uninstall()
+    {
+        try {
+            AdminConfig::where('group', $this->configGroup)->where(function ($q) {
+                $q->where('key', $this->configKey)
+                    ->orWhere('key', 'like', $this->configKey.'\_%')
+                    ->orWhere('code', $this->configKey.'_config');
+            })->delete();
+            AdminHome::where('extension', $this->appPath)->delete();
+
+            return ['error' => 0, 'msg' => gp247_language_render('admin.extension.uninstall_success')];
+        } catch (\Throwable $e) {
+            return ['error' => 1, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function enable()
+    {
+        AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->update(['value' => self::ON]);
+
+        return ['error' => 0, 'msg' => gp247_language_render('admin.extension.enable_success')];
+    }
+
+    public function disable()
+    {
+        AdminConfig::where('group', $this->configGroup)->where('key', $this->configKey)->update(['value' => self::OFF]);
+
+        return ['error' => 0, 'msg' => ''];
+    }
+
+    // The ⚙ (Config) button on the Plugins list appears only when this returns a redirect.
+    public function clickApp()
+    {
+        return redirect(gp247_route_admin('admin_myplugin.index'));
+    }
+
+    public function setupStore($storeId = null)
+    {
+    }
+
+    public function removeStore($storeId = null)
+    {
+    }
+
+    /**
+     * A setting for a store (falls back to the shared value).
+     */
+    public function setting(string $key, $storeId = null): string
+    {
+        $storeId ??= gp247_plugin_store_id();
+
+        return (string) gp247_config($this->configKey.'_'.$key, $storeId, self::SETTINGS[$key] ?? '');
+    }
+
+    public function getInfo()
+    {
+        return [
+            'title' => $this->title,
+            'key' => $this->configKey,
+            'code' => $this->configCode,
+            'image' => $this->image,
+            'permission' => self::ALLOW,
+            'version' => $this->version,
+            'auth' => $this->auth,
+            'link' => $this->link,
+            'appPath' => $this->appPath,
+        ];
     }
 }
 ```
 
-> ⚠️ **Gỡ → cài lại và bảng `migrations` — đọc kỹ trước khi dùng file migration của Laravel.**
-> Cách ở trên (tạo/xoá bảng trực tiếp bằng `Schema` ngay trong `ExtensionModel`) **tự nhiên re-entrant**:
-> `installExtension()` chạy mỗi lần cài và tạo lại bảng, nên **gỡ rồi cài lại luôn dựng lại bảng**. Không có
-> gì phải xử lý thêm — đây là cách **được khuyến nghị** cho bảng riêng của plugin.
->
-> Nếu thay vào đó bạn tạo bảng bằng **file migration của Laravel** (`DB/migrations/` chạy qua
-> `Artisan::call('migrate', ['--path' => 'app/GP247/Plugins/<Name>/DB/migrations', '--force' => true])`),
-> bạn dính một cái bẫy: Laravel ghi mỗi migration vào **bảng `migrations` dùng chung** và **không bao giờ
-> chạy lại** một migration đã có tên trong đó. Vì vậy nếu `uninstall()` drop bảng nhưng **để lại dòng** trong
-> `migrations`, lần cài sau sẽ báo *"Nothing to migrate"* và bảng **không** được tạo lại — mọi màn đọc bảng đó
-> sẽ lỗi `SQLSTATE[42S02] ... table doesn't exist`. **Sự cố này đã xảy ra trên môi trường thật.**
->
-> Nếu dùng file migration, bạn **bắt buộc**:
-> 1. **Dọn dòng của chính plugin khỏi bảng `migrations` khi gỡ** (và reconcile trước `migrate` ở
->    install/update, để site đang hỏng **tự chữa lành** qua `gp247:update`):
->    ```php
->    // Trong uninstall() sau khi drop bảng, và trong install()/update() trước khi migrate():
->    $names = array_map(
->        fn ($p) => pathinfo($p, PATHINFO_FILENAME),
->        glob(base_path('app/GP247/Plugins/<Name>/DB/migrations/*.php')) ?: []
->    );
->    if ($names) {
->        \Illuminate\Support\Facades\DB::table('migrations')->whereIn('migration', $names)->delete();
->    }
->    ```
-> 2. Giữ **mọi** `up()` của migration có guard `Schema::hasTable()` để chạy lại là **no-op an toàn** với bảng
->    còn tồn tại và chỉ tạo lại bảng bị thiếu.
->
-> Khớp dòng ledger theo **tên file** của chính plugin (đọc từ `DB/migrations`) — **không** dùng `LIKE '%...%'`
-> mờ, kẻo xoá nhầm dòng migration của plugin khác.
+| Hàm | Khi nào chạy | Làm gì |
+|---|---|---|
+| `install()` | Chủ cửa hàng bấm **Cài đặt** | Ghi dòng bật/tắt + mỗi thiết lập một dòng |
+| `update(?string $fromVersion)` | Sau khi file được thay bằng bản mới (1-click, `git pull`, Composer) | Chỉ **thêm** dòng còn thiếu; chạy lại nhiều lần vẫn an toàn; có thể nhận `null` |
+| `uninstall()` | Chủ cửa hàng bấm **Gỡ** | Xoá mọi dòng của plugin |
+| `enable()` / `disable()` | Bật / tắt | Đổi cờ, không xoá dữ liệu |
+| `clickApp()` | Danh sách Plugins vẽ nút ⚙ | Trả chuyển hướng tới màn cấu hình — trả `null` thì **không có nút** |
+| `setting()` | Code của bạn cần một giá trị | Đọc theo cửa hàng, không có thì lấy giá trị chung |
 
-### 5.3. Màn admin — dùng Livewire (chuẩn v2)
-
-Chuẩn giao diện mới của GP247 2.0 là **Livewire + TailAdmin**. Khung sinh sẵn 2 file:
-`Livewire/AdminLivewire.php` (logic) và `Views/livewire.blade.php` (giao diện).
-
-- `AdminLivewire` kế thừa `GP247AdminComponent`, nên **tự động có** kiểm tra quyền (RBAC),
-  toast thông báo và layout admin dùng chung — giống hệt màn của core.
-- Trong `Views/livewire.blade.php`, ưu tiên dùng các component dùng chung `<x-gp247::*>`
-  (ví dụ `<x-gp247::card>`) thay vì viết HTML thô.
-- **Tuyệt đối không** dùng jQuery / AdminLTE / select2... trên màn mới — GP247 2.0 không nạp jQuery.
-- Mọi chữ hiển thị phải render qua `trans('Plugins/MyBanner::lang.title')` hoặc
-  `gp247_language_render(...)`, **không hardcode** để hỗ trợ đa ngôn ngữ.
-
-### 5.4. Route, đăng ký Livewire và ngôn ngữ
-
-- `Provider.php`: khung đã đăng ký sẵn namespace class Livewire của plugin để component admin
-  resolve dạng `<livewire:MyBanner::admin-livewire>` (và qua route full-page). Có bảo vệ để host
-  không có Livewire vẫn boot sạch:
-
-  ```php
-  if (class_exists(\Livewire\Livewire::class)) {
-      \Livewire\Livewire::addNamespace('MyBanner', classNamespace: 'App\\GP247\\Plugins\\MyBanner\\Livewire');
-  }
-  ```
-
-- `Route.php`: khung đã đăng ký sẵn route admin cũ **và** route Livewire (có bảo vệ `class_exists`
-  nên an toàn). Bạn chỉ thêm route riêng khi cần.
-- `Lang/vi/lang.php` và `Lang/en/lang.php`: thêm các chuỗi hiển thị của plugin vào đây.
-
-### 5.5. Plugin thanh toán và plugin vận chuyển
-
-> ℹ️ **Có từ:** gp247/shop 3.1.4 (hợp đồng vận chuyển chuẩn)
-
-Plugin thanh toán (`configCode: "Payment"`) và plugin vận chuyển (`configCode: "Shipping"`) làm việc trực
-tiếp với tiền và đơn hàng thật. Ngoài các quy tắc chung của tài liệu này, chúng phải theo hợp đồng riêng
-của `gp247/shop`. Các điểm bắt buộc:
-
-**Plugin thanh toán**
-
-- **Chuyển giao từ checkout:** cửa hàng tạo đơn trước, rồi gọi `Controllers\FrontController::processOrder()`
-  của plugin nếu có — thường là chuyển khách sang trang của cổng thanh toán. Không có `processOrder()` thì
-  đơn hoàn tất ngay (kiểu thu tiền khi giao, chuyển khoản).
-- **Ghi tiền chỉ qua sổ thanh toán của đơn:** `$order->recordPayment()` / `recordRefund()`, khoá theo mã
-  giao dịch của cổng — webhook gửi hai lần vẫn chỉ ghi một lần. Đổi trạng thái chỉ qua `$order->changeStatus()`.
-  Không bao giờ tự ghi `status`, `payment_status` hay `received` của đơn.
-- **Chỉ ghi số tiền cổng đã xác nhận** (webhook đã xác minh chữ ký, hoặc đọc lại từ API của cổng — không tin
-  tham số trên URL trả về), và đối chiếu số tiền + tiền tệ với đơn trước khi ghi.
-- **Webhook** đặt **ngoài** nhóm middleware storefront, có throttle, xác minh chữ ký **trước** khi chạm database.
-- **Tuỳ chọn:** tham gia [link thanh toán và hoàn tiền](../s-cart/order-processing/payment-request_vi.md) của
-  cửa hàng bằng cách implement `GP247\Shop\Payment\Contracts\PaymentGateway` và đăng ký vào
-  `gp247-config.payment.gateways`.
-- Plugin mẫu công khai: `CashPayment` (không gọi cổng), `StripePayment`, `PaypalExpress` (cổng + webhook).
-
-**Plugin vận chuyển**
-
-- Viết một driver implement `GP247\Shop\Shipping\Contracts\ShippingProvider` (bắt buộc có `rates()`) và đăng
-  ký vào `gp247-config.shop.shipping_providers.<Key>` trong `Provider.php`. Mỗi dịch vụ của hãng (đường bộ,
-  hoả tốc…) hiện thành một lựa chọn riêng ở checkout, kèm giá và thời gian giao dự kiến.
-- Giá trả về theo **tiền tệ của hãng** — cửa hàng tự quy đổi một lần. Lỗi thông thường (thiếu địa chỉ, chưa
-  cấu hình, hãng từ chối) trả về dưới dạng kết quả lỗi, không làm hỏng trang checkout.
-- Chỉ khai báo những năng lực hãng thật sự có: tạo vận đơn, huỷ, in nhãn, tra cứu, webhook, thu hộ (COD) —
-  mỗi năng lực là một interface riêng.
-- Cửa hàng lo phần dùng chung: lưu mức phí khách đã chọn vào đơn, bảng vận đơn, route webhook chung
-  `/shipping/webhook/<Key>`, chống trùng sự kiện, trạng thái giao hàng của đơn, số tiền thu hộ. Plugin
-  **không** viết lại các phần này.
-- Trên `gp247/shop` cũ chưa có hợp đồng này, plugin chạy theo cách cũ: `getInfo()` trả phí trong `value`
-  (theo tiền hiển thị). Một plugin có thể hỗ trợ cả hai cách, như plugin mẫu `ShippingStandard`.
-
-> 💡 **Làm việc với AI agent?** Hãy dùng skill chuyên trách thay vì để agent tự đoán hợp đồng:
-> - `gp247-payment-plugin-create` — tạo plugin thanh toán.
-> - `gp247-shipping-plugin-create` — tạo plugin vận chuyển.
-> - `gp247-plugin-create` — các loại plugin còn lại.
->
-> Các skill nằm ở repo [gp247-skills](https://github.com/gp247net/gp247-skills); chép thư mục skill vào thư
-> mục skill của agent (ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản và khả năng của site
-> trước khi viết code, và được cập nhật cùng `gp247/shop` mỗi khi hợp đồng thanh toán / vận chuyển thay đổi.
+Thiết lập là **khoá bí mật** (API key, mật khẩu)? Tạo dòng với `'security' => 1` và khai ô là `password` ở Bước 4 — lõi mã
+hoá và không bao giờ gửi lại ra trình duyệt. Chi tiết: [Plugin nâng cao](./create-plugin-advanced_vi.md#2-khoá-bí-mật).
 
 ---
 
-## 6. ⭐ TUÂN THỦ ĐỂ HỖ TRỢ CẬP NHẬT PHIÊN BẢN (đọc kỹ)
+## Bước 4 — Màn quản trị và route
 
-Đây là phần quan trọng nhất. GP247 có cơ chế **cập nhật 1-click**: từ trang admin, chủ site
-bấm một nút là plugin tự tải bản mới về và thay thế. Để plugin của bạn cập nhật được **an toàn**,
-bạn phải hiểu cơ chế và tuân thủ 5 quy tắc dưới đây.
-
-### 6.1. Cơ chế cập nhật hoạt động thế nào
-
-Khi chủ site bấm "Cập nhật", hệ thống làm tuần tự (nếu bước nào lỗi sẽ **tự động khôi phục** — rollback):
-
-1. **Sao lưu (backup)** toàn bộ thư mục plugin hiện tại (cả `app/` và `public/`) vào `storage/backups`.
-2. **Tải về** file `.zip` bản mới từ marketplace GP247 (có kiểm tra checksum sha256 chống hỏng/giả mạo).
-3. **Kiểm tra hợp lệ** trước khi động vào file thật: `configKey` phải trùng, `version` mới phải **lớn hơn** bản đang cài, thoả `requireUpdateFrom` và `requireCore`.
-4. **Ghi đè file**: xoá thư mục plugin cũ (cả `app/GP247/Plugins/...` và `public/GP247/Plugins/...`) rồi copy toàn bộ file mới vào.
-5. **Chạy hook `AppConfig::update($oldVersion)`** để plugin tự di trú dữ liệu nếu cần.
-6. Nếu bất kỳ bước 4–5 nào lỗi → **khôi phục lại từ bản backup** ở bước 1.
-
-**Điểm mấu chốt rút ra:** bước 4 **ghi đè sạch mọi file** của plugin, nhưng **database
-(`admin_config`, bảng dữ liệu của bạn) được giữ nguyên**. Đây là nền tảng của mọi quy tắc dưới đây.
-
-**Cập nhật không qua thư viện extension.** Nhiều chủ site thay file plugin bằng `git pull`, Composer hay
-chép tay. GP247 ghi nhớ phiên bản đã cài, nên sau đó vẫn gọi hook `AppConfig::update($fromVersion)` khi chủ
-site chạy `php artisan gp247:update` / `gp247:ext-update --local` hoặc bấm **Áp dụng cập nhật dữ liệu**.
-Khác với luồng thư viện ở trên: không có bước sao lưu/khôi phục file, và site cài trước khi GP247 ghi nhớ
-phiên bản sẽ gọi hook **một lần với `$fromVersion = null`**. Vì vậy hook phải chạy lại được nhiều lần và
-xử lý được `null` (Phần 6.4).
-
-> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-29
-
-### 6.2. Quy tắc 1 — `version` phải tăng, `configKey` không được đổi
-
-- Mỗi lần phát hành bản mới, **tăng `version`** trong `gp247.json` (ví dụ `1.0` → `1.1`). Nếu số
-  version không lớn hơn bản đang cài, hệ thống sẽ từ chối cập nhật ("not newer").
-- **Không bao giờ đổi `configKey`** sau khi đã phát hành — nó là mã định danh dùng để đối chiếu
-  bản cũ và bản mới. Đổi nó = hệ thống coi như plugin khác.
-
-### 6.3. Quy tắc 2 (quan trọng nhất) — Cấu hình của chủ site phải nằm trong DATABASE, không nằm trong file
-
-Vì bước ghi đè xoá sạch file plugin, **mọi thứ chủ site chỉnh sửa trực tiếp trong file sẽ mất khi cập nhật.**
-Cụ thể:
-
-- **`config.php` chỉ chứa GIÁ TRỊ MẶC ĐỊNH** (do bạn — tác giả — quyết định). File này **bị ghi đè**
-  mỗi lần cập nhật, nên đừng bao giờ mong chủ site sửa nó.
-- **Mọi giá trị chủ site được phép thay đổi** (bật/tắt tính năng, số sản phẩm mỗi trang, API key
-  của họ...) phải lưu trong bảng `admin_config` (database) — nơi cập nhật **giữ nguyên**.
-- Cách làm chuẩn: lưu một bản ghi override trong `admin_config` với `code` = `<configKey>_config`,
-  rồi lúc chạy **phủ (overlay)** override đó lên mặc định: `giá trị chạy thật = mặc định (config.php) ⊕ override (DB)`.
-
-Khung sinh sẵn đã có 2 hàm helper mẫu (đang comment) trong `function.php` — bỏ comment và sửa tên
-cho đúng plugin của bạn:
+**Màn cấu hình** — kế thừa `ConfigForm` của lõi là có sẵn giao diện, phân quyền, nút Lưu, chọn cửa hàng.
+Thay `Livewire/AdminLivewire.php`:
 
 ```php
-// Lấy cấu hình đang có hiệu lực = mặc định ⊕ override trong DB
-function MyBanner_effective_config()
+<?php
+
+namespace App\GP247\Plugins\MyPlugin\Livewire;
+
+use App\GP247\Plugins\MyPlugin\AppConfig;
+use GP247\Core\AdminShell\Infrastructure\ConfigForm;
+
+/**
+ * Settings screen: one field per row seeded by AppConfig::install().
+ */
+class AdminLivewire extends ConfigForm
 {
-    $defaults = (array) config('Plugins/MyBanner.settings', []);
+    protected ?string $permission = null;
 
-    $row = \GP247\Core\Models\AdminConfig::where('group', 'Plugins')
-        ->where('key', 'MyBanner_config')
-        ->first();
-    $overrides = $row ? json_decode((string) $row->value, true) : null;
+    protected function group(): string
+    {
+        return 'Plugins';
+    }
 
-    return is_array($overrides) ? array_merge($defaults, $overrides) : $defaults;
+    protected function heading(): string
+    {
+        return trans('Plugins/MyPlugin::lang.title');
+    }
+
+    // Required: without keys() the screen would list — and save — nothing of yours.
+    protected function keys(): array
+    {
+        return array_map(fn ($key) => 'MyPlugin_'.$key, array_keys(AppConfig::SETTINGS));
+    }
+
+    protected function fieldTypes(): array
+    {
+        return [
+            'MyPlugin_enabled_on_home' => 'bool',
+            'MyPlugin_items_per_page'  => 'number',
+        ];
+    }
 }
+```
 
-// Lưu lựa chọn của chủ site vào DB (an toàn khi cập nhật)
-function MyBanner_save_config(array $settings)
-{
-    \GP247\Core\Models\AdminConfig::updateOrCreate(
-        ['group' => 'Plugins', 'key' => 'MyBanner_config'],
+Kiểu ô: `bool` (công tắc), `number`, `select` (kèm `fieldOptions()`), `password`, `text` (mặc định). Có thể thêm
+`fieldHints()` (gợi ý cạnh ô) và `sections()` (chia khối có tiêu đề). Plugin cần màn riêng không phải dạng cấu hình thì
+kế thừa `GP247\Core\AdminShell\Infrastructure\GP247AdminComponent` và tự viết view.
+
+**Route** — thay `Route.php`; trỏ thẳng đường dẫn quản trị vào màn Livewire:
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+$config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+
+if (gp247_extension_check_active($config['configGroup'], $config['configKey'])) {
+    Route::group(
         [
-            'code' => 'MyBanner_config',
-            'store_id' => GP247_STORE_ID_GLOBAL,
-            'value' => json_encode($settings),
-        ]
+            'prefix' => GP247_ADMIN_PREFIX.'/myplugin',
+            'middleware' => GP247_ADMIN_MIDDLEWARE,
+        ],
+        function () {
+            Route::get('/', \App\GP247\Plugins\MyPlugin\Livewire\AdminLivewire::class)
+                ->name('admin_myplugin.index');
+        }
     );
 }
 ```
 
-Và trong `config.php`, chỉ để **mặc định**:
+Sau đó xoá `Admin/AdminController.php` và `Views/Admin.blade.php` (màn kiểu cũ).
+
+**Provider** — `Provider.php` nạp ngôn ngữ, view và đăng ký tên Livewire của plugin:
 
 ```php
-return [
-    'settings' => [
-        'enabled' => 0,
-        'items_per_page' => 20,
-    ],
-];
-```
+<?php
 
-> Nếu plugin của bạn **không có** cấu hình cho chủ site chỉnh (chỉ chạy cố định), thì xoá luôn 2 hàm
-> helper này cho gọn — không cần bận tâm.
+$config = json_decode(file_get_contents(__DIR__.'/gp247.json'), true);
+$extensionPath = $config['configGroup'].'/'.$config['configKey'];
 
-### 6.4. Quy tắc 3 — Di trú dữ liệu bằng hook `update()`
+$this->loadTranslationsFrom(__DIR__.'/Lang', $extensionPath);
 
-Nếu bản mới **đổi cấu trúc database** (thêm cột, thêm bảng, đổi định dạng cấu hình...), bạn phải
-di trú dữ liệu trong hook `AppConfig::update($fromVersion)`. Mặc định hook này chỉ trả về "thành công"
-mà không làm gì (đủ cho trường hợp chỉ thay code, không đổi DB). Khi cần, hãy ghi đè nó:
+if (gp247_extension_check_active($config['configGroup'], $config['configKey'])) {
+    $this->loadViewsFrom(__DIR__.'/Views', $extensionPath);
 
-```php
-/**
- * Migrate plugin data after files were replaced by a newer version.
- *
- * @param string|null $fromVersion Version installed before the update.
- * @return array ['error' => 0|1, 'msg' => string]
- */
-public function update(?string $fromVersion = null)
-{
-    // Ví dụ: bản >= 1.1 cần thêm cột "sort" vào bảng my_banner
-    // null = phiên bản cũ không rõ (site cập nhật file bằng git/composer trước khi GP247 ghi nhớ phiên bản)
-    if ($fromVersion === null || version_compare($fromVersion, '1.1', '<')) {
-        if (\Illuminate\Support\Facades\Schema::hasTable('my_banner')
-            && !\Illuminate\Support\Facades\Schema::hasColumn('my_banner', 'sort')) {
-            \Illuminate\Support\Facades\Schema::table('my_banner', function ($table) {
-                $table->integer('sort')->default(0);
-            });
-        }
+    if (class_exists(\Livewire\Livewire::class)) {
+        \Livewire\Livewire::addNamespace('MyPlugin', classNamespace: 'App\\GP247\\Plugins\\MyPlugin\\Livewire');
     }
-
-    return ['error' => 0, 'msg' => ''];
 }
 ```
 
-- Luôn kiểm tra `$fromVersion` để **chỉ chạy đúng bước di trú cần thiết** (idempotent — chạy lại
-  nhiều lần không gây lỗi).
-- Nếu hook trả về `['error' => 1, ...]` hoặc ném exception, hệ thống sẽ **khôi phục bản cũ** — nên
-  hãy để nó thất bại rõ ràng khi di trú không an toàn, thay vì để dữ liệu dở dang.
-- **`$fromVersion` có thể là `null`**: đừng bỏ qua di trú khi `null` — hãy dựa vào trạng thái thật
-  (`Schema::hasColumn()`, dòng cấu hình đã có chưa…) như ví dụ trên. Hook cũng được gọi sau khi chủ site tự
-  thay file bằng `git pull`/Composer; khi đó lỗi **không** khôi phục file, chỉ giữ phiên bản cũ để chạy lại.
+**Ngôn ngữ** — mọi chữ hiển thị qua `trans('Plugins/MyPlugin::lang.<khoá>')`, có cả `vi` và `en`. Nhãn của mỗi ô cấu hình
+là khoá trùng tên thiết lập:
 
-### 6.5. Quy tắc 4 — Không lưu dữ liệu người dùng trong thư mục plugin
+```php
+<?php
 
-Cả `app/GP247/Plugins/<key>` lẫn `public/GP247/Plugins/<key>` đều **bị xoá và thay mới** khi cập nhật.
-Vì vậy:
+return [
+    'title'           => 'Plugin của tôi',
+    'enabled_on_home' => 'Hiện ở trang chủ',
+    'items_per_page'  => 'Số mục mỗi trang',
+];
+```
 
-- **Không** để file do người dùng tải lên (ảnh sản phẩm, file upload...) bên trong thư mục plugin.
-  Hãy lưu chúng ở `public/GP247/...` khu vực dữ liệu chung, hoặc `storage/`.
-- `public/` trong plugin chỉ nên chứa **asset tĩnh của chính plugin** (css/js/ảnh giao diện) — những
-  thứ đi kèm bản phát hành và có thể bị ghi đè an toàn.
-
-### 6.6. Quy tắc 5 — Đặt `requireUpdateFrom` / `requireCore` đúng
-
-- `requireCore`: đảm bảo plugin chỉ cập nhật trên lõi tương thích. Với chuẩn v2 để `["2.1"]`.
-- `requireUpdateFrom`: chặn cập nhật 1-click từ một bản **quá cũ** mà hook `update()` của bạn không
-  thể di trú. Để `"1.0"` khi bạn tự tin migrate được từ mọi bản; nâng lên (ví dụ `"2.0"` cho bản 2.9)
-  khi bạn muốn buộc người ở dòng 1.x phải cài lại thủ công thay vì cập nhật thẳng.
-
-### 6.7. Quy tắc 6 — Cấu hình theo cửa hàng (multi-store / marketplace)
-
-GP247 hỗ trợ hai hình dạng nhiều cửa hàng: **multi-store** (mỗi domain một cửa hàng) và **marketplace**
-(một domain, nhiều vendor). Plugin trở nên "theo cửa hàng" với hai thay đổi nhỏ; trên site một cửa hàng
-thì không có gì đổi.
-
-1. **Khai phạm vi** trong `gp247.json`: `"storeScope": "store"` (thông số / bật-tắt khác theo cửa hàng)
-   hoặc `"global"` (mặc định — một giá trị chung). `"platform"` là alias cũ (deprecated) của `"store"`. Vendor
-   có được tự cấu hình plugin `store` hay không quyết định riêng bằng `store_scoped_segments` (bước 5).
-
-2. **Đọc thông số theo cửa hàng hiệu lực, không đọc GLOBAL trực tiếp.** Dùng seam
-   `gp247_plugin_store_id()` (tự phân giải store của phiên admin / store lúc checkout trên sàn / store
-   theo domain storefront) để cùng một đoạn code chạy được cả hai hình dạng:
-
-   ```php
-   // Trong AppConfig::getInfo() hoặc nơi plugin đọc thông số:
-   $storeId = gp247_plugin_store_id();
-   $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
-       ->where('key', 'fee')->where('store_id', $storeId)->value('value');
-   if ($value === null && (string) $storeId !== (string) GP247_STORE_ID_GLOBAL) {
-       $value = \GP247\Core\Models\AdminConfig::where('group', $this->configKey)
-           ->where('key', 'fee')->where('store_id', GP247_STORE_ID_GLOBAL)->value('value');
-   }
-   ```
-
-   Giữ truy vấn **có group** (không dùng `gp247_config('fee')` trần) để key chung như `fee` không đụng
-   `fee` của plugin khác. Plugin mới nên đặt key có tiền tố (`myplugin_fee`).
-
-3. **Bật picker cửa hàng trên màn admin.** Nếu màn admin của bạn extend
-   `GP247\Core\AdminShell\Infrastructure\ConfigForm`, override `storeScoped(): bool` trả `true`
-   (và `enableKey(): ?string` trả `configKey` cho toggle bật/tắt theo store). Core tự dựng picker phạm
-   vi, badge kế thừa / riêng, nút "dùng cấu hình chung" và toggle — plugin không phải viết UI. Chỉ những
-   dòng cửa hàng thật sự ghi đè mới được lưu (lazy); còn lại kế thừa GLOBAL.
-
-4. **Cho store-admin vào được màn.** Trong `Provider.php`, bên trong khối `gp247_extension_check_active`,
-   thêm segment đường dẫn admin của bạn vào registry core để fence MultiStore Pro phân loại là
-   store-scoped:
-
-   ```php
-   config(['gp247-config.admin.store_scoped_segments' => array_values(array_unique(array_merge(
-       (array) config('gp247-config.admin.store_scoped_segments', []), ['mypluginsegment']
-   )))]);
-   ```
-
-5. **Bí mật được kế thừa nhưng không bao giờ lộ ở scope cửa hàng.** Key render kiểu `password` (hoặc dòng
-   `admin_config` gắn cờ `security = 1`) ở scope cửa hàng hiện ô trống kèm ghi chú "kế thừa"; giá trị
-   chung không bao giờ gửi ra trình duyệt. Vendor chỉ nhập được của mình, không đọc được của sàn.
-   `ShippingStandard` là bản mẫu tham chiếu.
+Quy tắc giao diện: chỉ dùng component `<x-gp247::*>`, Livewire và Alpine; **không** jQuery, AdminLTE, select2.
 
 ---
 
-## 7. Bước 4 — Cài đặt và kiểm tra plugin
+## Bước 5 — Cài và kiểm tra
 
-1. Xoá cache Laravel để nạp route/view/config mới:
+1. Xoá cache để nạp file mới:
 
    ```bash
    php artisan optimize:clear
    ```
 
-   Nếu thành công, terminal hiện các dòng như `... cleared successfully`.
+2. Cài plugin: **Admin → Plugins → MyPlugin → Cài đặt**, hoặc bằng lệnh:
 
-2. Đăng nhập trang admin, vào mục **Plugins** (Tiện ích mở rộng), tìm plugin của bạn và bấm **Cài đặt**.
-3. Sau khi cài, thử **bật/tắt** và mở màn admin của plugin. Nếu hiện đúng, không báo lỗi
-   "view not found" hay "class not found", là đạt.
-4. Kiểm tra giao diện ở cả **nền sáng và nền tối (dark-mode)**.
+   ```bash
+   php artisan gp247:ext-install --type=plugin --key=MyPlugin
+   ```
 
----
+   Kết quả mong đợi: plugin hiện trạng thái đang bật.
+3. Bấm ⚙ **Cấu hình**, đổi một giá trị, bấm **Lưu**, tải lại trang — giá trị vẫn còn.
+4. Thử bật / tắt; mở màn quản trị ở cả **nền sáng và nền tối**.
+5. Thử gỡ rồi cài lại: lần cài lại phải tạo đủ dòng cấu hình (và bảng, menu nếu có).
 
-## 8. Danh sách kiểm tra trước khi phát hành
-
-- [ ] `gp247.json`: `configKey` trùng tên thư mục; `requireCore` = `["2.1"]`.
-- [ ] `version` đã **tăng** so với bản trước (nếu là bản cập nhật).
-- [ ] Màn admin dùng Livewire + `<x-gp247::*>`; **không** còn jQuery/AdminLTE.
-- [ ] Mọi chữ render qua `trans(...)` / `gp247_language_render(...)`, không hardcode; có cả `vi` và `en`.
-- [ ] Cấu hình chủ-site-chỉnh nằm trong `admin_config` (không nằm trong `config.php`).
-- [ ] `config.php` chỉ chứa **mặc định**; đã dùng cặp helper `*_effective_config()` / `*_save_config()` nếu có settings.
-- [ ] Nếu bản mới đổi DB: đã viết hook `update($fromVersion)` di trú an toàn, idempotent, và chạy đúng cả khi `$fromVersion` là `null`.
-- [ ] Không lưu file người dùng tải lên bên trong thư mục plugin.
-- [ ] `install()` / `uninstall()` tạo và dọn dữ liệu cân xứng (gỡ xong không để rác).
-- [ ] Nếu tạo bảng bằng **file migration Laravel**, `uninstall()` có dọn dòng của plugin khỏi bảng `migrations` (và install/update reconcile trước `migrate`); mọi `up()` đều guard `Schema::hasTable()` — để gỡ → cài lại thực sự tạo lại bảng (callout ở §5.2).
-- [ ] (Nếu là plugin thanh toán) Tiền ghi qua `recordPayment()` / `recordRefund()`, trạng thái qua `changeStatus()`, webhook xác minh chữ ký trước khi chạm database (§5.5).
-- [ ] (Nếu là plugin vận chuyển) Driver `ShippingProvider` trả giá theo tiền tệ của hãng, chỉ khai báo năng lực thật sự có (§5.5).
-- [ ] Đã `php artisan optimize:clear` và cài/gỡ thử thành công.
+> ⚠️ **Gỡ plugin đang phát triển luôn dùng `--only-data`:**
+>
+> ```bash
+> php artisan gp247:ext-uninstall --type=plugin --key=MyPlugin --only-data
+> ```
+>
+> Gỡ thường (hoặc nút **Gỡ** không chọn "chỉ xoá dữ liệu") **xoá luôn thư mục mã nguồn** của plugin.
 
 ---
 
-## 9. Hỏi & Đáp (Q&A)
+## Bước 6 — Phát hành bản mới
+
+1. Tăng `version` trong `gp247.json` (ví dụ `1.0` → `1.1`).
+2. Bản mới thêm thiết lập? Thêm khoá vào `SETTINGS` — `update()` tự tạo dòng còn thiếu, giữ nguyên giá trị cũ.
+3. Bản mới thêm cột / bảng hay đổi dữ liệu? Viết trong `update()` theo [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md).
+4. Thử như chủ cửa hàng sẽ cập nhật bằng `git pull`:
+
+   ```bash
+   php artisan gp247:ext-update --type=plugin --key=MyPlugin --local --dry-run
+   ```
+
+   Kết quả mong đợi: plugin hiện trong danh sách chờ áp dụng; bỏ `--dry-run` để chạy `update()` thật.
+
+---
+
+## Danh sách kiểm tra trước khi phát hành
+
+- [ ] `gp247.json`: `configKey` trùng tên thư mục; `requireCore` theo `gp247:info`; `version` đã tăng.
+- [ ] Mọi thiết lập chủ cửa hàng chỉnh nằm trong `admin_config`; `config.php` chỉ có mặc định của tác giả.
+- [ ] `install()` / `uninstall()` cân xứng; `update()` chạy lại an toàn và chạy được với `null`.
+- [ ] `clickApp()` mở màn cấu hình; `keys()` liệt kê đủ ô; khoá bí mật là ô `password`.
+- [ ] Màn quản trị dùng Livewire + `<x-gp247::*>`, không jQuery; chữ qua `trans()` có cả `vi` và `en`.
+- [ ] Đã `optimize:clear`, cài / bật / tắt / gỡ `--only-data` / cài lại thành công.
+- [ ] Plugin thanh toán / vận chuyển: đã theo hướng dẫn riêng của loại đó.
+
+---
+
+## Điều kiện & ràng buộc (hiểu trước khi thao tác)
+
+**Khi cài đặt**
+- **Lõi từ chối cài nếu `requireCore` không khớp** dòng lõi đang chạy (khoảng theo phiên bản lớn) — tránh plugin chạy trên lõi chưa thử.
+- **Cài lại khi dòng bật/tắt còn trong database bị từ chối** ("plugin đã tồn tại") — gỡ trước rồi mới cài.
+- **Thiếu gói trong `requireComposerPackages` / plugin trong `requireGp247Extensions` thì không cài được.**
+
+**Khi cập nhật**
+- **`version` mới phải lớn hơn bản đang cài**, và bản đang cài không thấp hơn `requireUpdateFrom` — nếu không, cập nhật 1-click từ chối.
+- **`update()` báo lỗi thì bản cũ được khôi phục** (cập nhật 1-click); với `git pull` thì file không khôi phục, chỉ giữ trạng thái "chờ áp dụng" để chạy lại.
+
+---
+
+## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi phải viết tay từng file plugin à?**
 
-→ Không. Chạy `php artisan gp247:make-plugin --name=TenPlugin --download=0` để sinh sẵn toàn bộ khung
-chuẩn v2, rồi chỉ bổ sung logic riêng của bạn. Nếu làm cùng AI agent, dùng skill `gp247-plugin-create`
-(hoặc skill thanh toán / vận chuyển ở Phần 5.5): skill chạy đúng lệnh này rồi sửa file theo chuẩn.
+→ Không. `php artisan gp247:make-plugin --name=TenPlugin --download=0` sinh sẵn khung; bạn chỉ sửa các file ở Bước 2–4.
+Làm cùng AI agent thì dùng skill `gp247-plugin-create`.
 
-**Câu 2: `configKey` là gì và có bắt buộc trùng tên thư mục không?**
+**Câu 2: `configKey` có bắt buộc trùng tên thư mục không?**
 
-→ `configKey` là mã định danh duy nhất của plugin và **bắt buộc trùng đúng tên thư mục** plugin. Nó
-cũng là mã dùng để đối chiếu khi cập nhật, nên đừng đổi sau khi đã phát hành.
+→ Có. Nó là mã định danh dùng để đối chiếu bản cũ và bản mới khi cập nhật, nên cũng không được đổi sau khi phát hành.
 
-**Câu 3: Vì sao chủ site sửa `config.php` xong, cập nhật một cái là mất hết?**
+**Câu 3: Chủ cửa hàng sửa `config.php`, cập nhật xong là mất hết — vì sao?**
 
-→ Vì cập nhật 1-click **ghi đè toàn bộ file** plugin, gồm cả `config.php`. Mọi giá trị chủ site chỉnh
-phải lưu ở database (`admin_config`), không lưu trong file. Xem Phần 6.3.
+→ Cập nhật ghi đè toàn bộ file. Thiết lập phải nằm trong database như Bước 3.
 
-**Câu 4: Làm sao lưu cấu hình của chủ site cho an toàn khi cập nhật?**
+**Câu 4: Lõi báo "không tương thích" khi cài plugin?**
 
-→ Lưu vào bảng `admin_config` với `code` = `<configKey>_config`, và lúc chạy thì phủ nó lên mặc định
-trong `config.php`. Dùng cặp hàm `*_effective_config()` / `*_save_config()` mẫu trong `function.php`.
+→ `requireCore` không khớp. Chạy `php artisan gp247:info`, ghi đúng dòng `core` (ví dụ `["3.1"]`). Giá trị `"2.1"` cũ không cài được trên lõi 3.x.
 
-**Câu 5: Bản mới của tôi có thêm cột database. Tôi xử lý ở đâu?**
+**Câu 5: Không thấy nút ⚙ Cấu hình trên danh sách Plugins?**
 
-→ Trong hook `AppConfig::update($fromVersion)`. Kiểm tra `$fromVersion` để chỉ chạy đúng bước di trú
-cần thiết, và viết sao cho chạy lại nhiều lần không lỗi. Hook này chạy cả khi chủ site cập nhật bằng
-`git pull`/Composer (qua `gp247:update` hoặc nút **Áp dụng cập nhật dữ liệu**). Xem Phần 6.1 và 6.4.
+→ `clickApp()` đang trả `null` (mặc định của khung). Cho nó trả chuyển hướng tới màn cấu hình như Bước 3.
 
-**Câu 6: Nếu bước cập nhật bị lỗi giữa chừng thì sao?**
+**Câu 6: Màn cấu hình không hiện ô nào, hoặc Lưu không lưu?**
 
-→ Hệ thống tự **khôi phục (rollback)** plugin về bản cũ từ backup đã tạo trước khi động vào file thật,
-nên site không bị kẹt ở trạng thái dở dang.
+→ Thiếu `keys()` trong màn cấu hình, hoặc `install()` chưa tạo dòng cho các khoá đó (cài lại bằng gỡ `--only-data` rồi cài).
 
-**Câu 7: Plugin của tôi chỉ dùng trong admin, có cần `Seo.php` và `FrontController.php` không?**
+**Câu 7: Bản mới có thêm cột database — xử lý ở đâu?**
 
-→ Không. `Seo.php` chỉ cần khi plugin có **trang công khai** muốn góp URL vào `sitemap.xml`;
-`FrontController.php` chỉ cần khi plugin có trang storefront. Plugin admin-only có thể bỏ qua.
+→ Trong `update()`, kiểm tra trạng thái thật (`Schema::hasColumn`) chứ không chỉ dựa vào số phiên bản. Xem [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md).
 
-**Câu 8: Tôi có được dùng jQuery hay select2 trên màn admin của plugin không?**
+**Câu 8: Có được dùng jQuery hay select2 trên màn quản trị không?**
 
-→ Không. GP247 2.0 dùng TailAdmin (Tailwind + Alpine + Livewire) và **không nạp jQuery**. Hãy dùng
-Livewire/Alpine và các component `<x-gp247::*>` sẵn có.
+→ Không. Màn quản trị GP247 không nạp jQuery; dùng Livewire / Alpine và component `<x-gp247::*>`.
 
-**Câu 9: `version` để dạng nào? `1.0.0` hay `1.0`?**
+**Câu 9: `version` ghi `1.0.0` hay `1.0`?**
 
-→ Dùng semver dạng số, ví dụ `1.0`, `1.1`, `2.0`. Miễn là mỗi bản phát hành mới có số **lớn hơn** bản
-trước (so sánh theo `version_compare`), cập nhật 1-click sẽ nhận.
+→ Dạng số nào cũng được, miễn bản sau **lớn hơn** bản trước (so bằng `version_compare`), ví dụ `1.0` → `1.1` → `2.0`.
 
-**Câu 10: Cập nhật xong mà admin vẫn hiện bản cũ, phải làm sao?**
+**Câu 10: Cập nhật xong mà quản trị vẫn hiện bản cũ?**
 
-→ Chạy `php artisan optimize:clear` để xoá cache route/view/config rồi tải lại trang. Đây là lỗi hay
-gặp nhất do Laravel còn giữ cache cũ.
+→ Chạy `php artisan optimize:clear` rồi tải lại trang — Laravel còn giữ cache cũ.
 
 ---
 
@@ -598,7 +547,8 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-09-29 |  | Hook `AppConfig::update($fromVersion)` nay cũng được gọi khi chủ site thay file bằng `git pull`/Composer/chép tay (qua `gp247:update`, `gp247:ext-update --local`, nút **Áp dụng cập nhật dữ liệu**); lần đầu có thể nhận `null`. Ví dụ di trú ở 6.4 đổi điều kiện thành `$fromVersion === null \|\| …`. |
+| 2026-10-18 | gp247/core 3.1 | Sắp xếp lại thành trang chính 6 bước; tách [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) và [Plugin nâng cao](./create-plugin-advanced_vi.md); thêm hướng dẫn plugin thanh toán và vận chuyển. **Sửa:** `requireCore` ghi theo `gp247:info` (giá trị `"2.1"` cũ bị lõi 3.x từ chối); thiết lập mặc định lưu mỗi khoá một dòng với màn `ConfigForm` (giữ được khoá bí mật); thêm `clickApp()` cho nút Cấu hình |
+| 2026-09-29 |  | Hook `AppConfig::update($fromVersion)` nay cũng được gọi khi chủ site thay file bằng `git pull`/Composer/chép tay (qua `gp247:update`, `gp247:ext-update --local`, nút **Áp dụng cập nhật dữ liệu**); lần đầu có thể nhận `null`. |
 
 ---
 

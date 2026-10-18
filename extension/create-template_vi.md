@@ -40,7 +40,7 @@ Trước khi bắt đầu, bạn cần:
 
 ---
 
-## 2. Bước 1 — Sinh khung template bằng lệnh artisan
+## 2. Sinh khung template bằng lệnh artisan
 
 `gp247/front` có sẵn lệnh tạo khung template chuẩn v2, để bạn khỏi tạo tay từng file.
 
@@ -104,7 +104,7 @@ app/GP247/Templates/MyShopSkin/
 
 ---
 
-## 4. Bước 2 — Khai báo `gp247.json`
+## 4. Khai báo `gp247.json`
 
 Mở `gp247.json`, nội dung mẫu sinh sẵn:
 
@@ -119,7 +119,7 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
     "configCode": "MyShopSkin",
     "configKey": "MyShopSkin",
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/front"],
     "requireGp247Extensions": []
@@ -133,7 +133,7 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
 | `configGroup` | Luôn là `"Templates"` với template. |
 | `configKey` | **Mã định danh duy nhất, trùng tên thư mục template.** Không đổi sau khi phát hành. |
 | `version` | Phiên bản (semver: `1.0`, `1.1`...). Mỗi bản phát hành mới phải **tăng** số này. |
-| `requireCore` | Phiên bản `gp247/core` tương thích. Chuẩn v2 để `["2.1"]`. |
+| `requireCore` | Phiên bản lõi chạy được: ghi dòng `core` của `php artisan gp247:info`, ví dụ `["3.1"]`. Mỗi giá trị `"X.Y"` là khoảng "từ X.Y trong dòng X.x" — `"2.1"` bị lõi 3.x từ chối. |
 | **`requireComposerPackages`** | **Luôn có `"gp247/front"`** — vì template chỉ chạy khi có storefront. Thêm `"gp247/shop"` nếu template chỉ dành cho site có bán hàng. |
 | `requireUpdateFrom` | Phiên bản tối thiểu được cập nhật 1-click lên bản này. Để `"1.0"` là an toàn. |
 
@@ -141,7 +141,7 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
 
 ---
 
-## 5. Bước 3 — Xây giao diện template
+## 5. Xây giao diện template
 
 ### 5.1. `AppConfig.php` — vòng đời template
 
@@ -271,7 +271,7 @@ làm bản tham khảo, rồi chép sang template của bạn để chỉnh:
 
 ---
 
-## 7. Bước 4 — Cập nhật phiên bản (an toàn khi update)
+## 7. Cập nhật phiên bản (an toàn khi update)
 
 Template dùng **chung cơ chế cập nhật 1-click** với plugin: khi cập nhật, hệ thống ghi đè **toàn bộ
 file** template nhưng **giữ nguyên database (`admin_config`)**. Vì vậy các nguyên tắc an toàn giống hệt
@@ -284,11 +284,11 @@ plugin cũng áp dụng cho template:
 - Không lưu file người dùng tải lên bên trong thư mục template.
 
 Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
-[Hướng dẫn tạo Plugin](./create-plugin_vi.md) (Phần 6) — nguyên tắc y hệt.
+[Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) — nguyên tắc y hệt.
 
 ---
 
-## 8. Bước 5 — Cài đặt và kiểm tra
+## 8. Cài đặt và kiểm tra
 
 1. Xoá cache Laravel để nạp route/view/config mới:
 
@@ -389,4 +389,13 @@ nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-26 · ✍️ **Tác giả (Author):** GP247</sub>
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-10-18 | gp247/core 3.1 | **Sửa:** `requireCore` ghi theo lõi đang chạy (`php artisan gp247:info`) — giá trị `"2.1"` cũ bị lõi 3.x từ chối; tiêu đề mục bỏ số "Bước" lệch với số mục |
+
+---
+
+<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>

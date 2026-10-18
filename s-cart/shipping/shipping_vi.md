@@ -215,7 +215,7 @@ sequenceDiagram
 
 ### B4. Việc của bạn theo từng tình huống
 
-**Tích hợp một hãng vận chuyển mới**
+**Tích hợp một hãng vận chuyển mới** — hướng dẫn từng bước có code: [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md)
 
 1. Tạo plugin bằng `php artisan gp247:make-plugin --name=MyCarrier --download=0`, đặt `configCode: "Shipping"`,
    `requireComposerPackages: ["gp247/shop"]`.
@@ -244,7 +244,7 @@ vụ, vận đơn, theo dõi, thu hộ thì thêm driver như trên — plugin m
 > (chép thư mục skill vào thư mục skill của agent, ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản
 > và năng lực của site trước khi viết code, dựng plugin đúng hợp đồng ở trên, và được cập nhật cùng `gp247/shop`
 > mỗi khi hợp đồng vận chuyển thay đổi. Plugin không phải vận chuyển: dùng `gp247-plugin-create`; plugin thanh
-> toán: `gp247-payment-plugin-create`. Hướng dẫn chung về tạo plugin: [create-plugin_vi.md](../../extension/create-plugin_vi.md).
+> toán: `gp247-payment-plugin-create`. Hướng dẫn từng bước: [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md).
 
 ---
 

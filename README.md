@@ -17,8 +17,12 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Creating a Plugin (v2 standard)](./extension/create-plugin.md) | Build a new v2-standard plugin that updates safely | 2026-10-18 |
-| [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-09-26 |
+| [Creating a Plugin](./extension/create-plugin.md) | Starting point: pick the right guide for your kind of plugin, a 6-step roadmap with code (settings in the database, settings screen, install, release) | 2026-10-18 |
+| [Creating a payment plugin](./extension/create-payment-plugin.md) | Step by step with code: a bank transfer plugin that works right away + a skeleton for an online gateway (money recorded once, webhook) | 2026-10-18 |
+| [Creating a shipping plugin](./extension/create-shipping-plugin.md) | Step by step with code: a weight-based price plugin that works right away + a skeleton for a carrier with an API (shipments, webhook, COD) | 2026-10-18 |
+| [Update-safe plugins](./extension/create-plugin-update-safety.md) | How updates run, 6 rules, the `update()` hook, own data tables | 2026-10-18 |
+| [Advanced plugins](./extension/create-plugin-advanced.md) | Per-store settings, secret keys, storefront pages / blocks / hooks, coupons, menus | 2026-10-18 |
+| [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-10-18 |
 | [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-09-29 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-10-18 |
 

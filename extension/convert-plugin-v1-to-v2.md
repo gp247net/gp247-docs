@@ -33,7 +33,7 @@ v1 and v2 templates:
 | New-style admin screen | *(none)* | Livewire component `Livewire/AdminLivewire.php` |
 | SEO sitemap integration | *(none)* | `Seo.php` file + registration in `Provider.php` |
 | LayoutBlock page-type registration | *(none)* | Register `token => lang-key` in `Provider.php` (if the plugin has its own public page) |
-| `gp247.json` → `requireCore` | `["1.2"]` | `["2.1"]` |
+| `gp247.json` → `requireCore` | `["1.2"]` | The running core version, e.g. `["3.1"]` (see `php artisan gp247:info`) |
 | `gp247.json` → dependency keys | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (renamed in core 2.1) |
 | `gp247.json` → `requireUpdateFrom` | *(none)* | `"1.0"` (1-click update condition) |
 
@@ -50,7 +50,7 @@ the new standard.
 
 | File | What to do | Required? |
 |---|---|---|
-| `gp247.json` | Change `requireCore` to `["2.1"]`, add `requireUpdateFrom`, rename `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Required |
+| `gp247.json` | Set `requireCore` to the running core (e.g. `["3.1"]`), add `requireUpdateFrom`, rename `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Required |
 | `Views/Admin.blade.php` | Switch the master layout to TailAdmin, remove jQuery/AdminLTE | ✅ Required |
 | `AppConfig.php` | Change the error message in `disable()` to the multilingual helper | ✅ Required |
 | `Livewire/AdminLivewire.php` | **Create new** — Livewire-style admin screen | 🟡 Recommended |
@@ -97,12 +97,12 @@ and **rename** the two dependency keys per the core 2.1 standard: `requirePackag
 }
 ```
 
-**After (v2 — core 2.1):**
+**After (v2 — example for core 3.1):**
 
 ```json
 {
     "version": "1.0",
-    "requireCore": ["2.1"],
+    "requireCore": ["3.1"],
     "requireUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
@@ -111,7 +111,7 @@ and **rename** the two dependency keys per the core 2.1 standard: `requirePackag
 ```
 
 Meaning of the lines:
-- `requireCore`: the GP247 core version this plugin is valid for. Set it to `["2.1"]` to declare the plugin targets Core 2.1.
+- `requireCore`: the GP247 core version this plugin is valid for. Write the `core` line of `php artisan gp247:info` (e.g. `["3.1"]`). Each `"X.Y"` value is the range "from X.Y within the X.x line" — `"2.1"` is **refused** by a 3.x core.
 - `requireLivewire`: whether the plugin needs Livewire (`true`/`false`). Add it when you introduce a Livewire screen in Step 5 (`false` is a safe default — Livewire ships with core).
 - `requireComposerPackages` / `requireGp247Extensions`: renamed from `requirePackages` / `requireExtensions` to state the dependency source (Composer package vs GP247 extension). Core 2.1 still reads the old keys (backward compatible) but they are deprecated — use the new keys.
 - `requireUpdateFrom`: the **minimum** currently-installed version allowed to 1-click update to
@@ -448,7 +448,7 @@ checkout through `configCode` and `getInfo()`. When upgrading, also:
    several services with delivery estimates, book shipments, print labels, track or collect cash on delivery,
    add a `ShippingProvider` driver following `gp247/shop`'s shipping contract.
 
-Details of each point: [create-plugin.md](create-plugin.md#55-payment-plugins-and-shipping-plugins) Section 5.5.
+Step-by-step guides with complete code: [Creating a payment plugin](create-payment-plugin.md), [Creating a shipping plugin](create-shipping-plugin.md).
 If you work with an AI agent, use the `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` skill from
 the [gp247-skills](https://github.com/gp247net/gp247-skills) repository.
 
@@ -473,7 +473,7 @@ the [gp247-skills](https://github.com/gp247net/gp247-skills) repository.
 
 ## 4. Checklist before calling it "done"
 
-- [ ] `gp247.json`: `requireCore` = `["2.1"]`, `requireUpdateFrom` added, keys renamed to `requireComposerPackages`/`requireGp247Extensions`.
+- [ ] `gp247.json`: `requireCore` from `gp247:info` (e.g. `["3.1"]`), `requireUpdateFrom` added, keys renamed to `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout changed to `gp247-admin::layouts.admin`.
 - [ ] No `$(...)`, pjax, or jQuery widgets (select2/daterangepicker…) left in views/assets.
 - [ ] Displayed text rendered via `gp247_language_render(...)`, not hardcoded.
@@ -547,6 +547,15 @@ php artisan gp247:make-plugin --name=YourPluginName --download=0
 
 This command generates the full v2 standard structure (already including Livewire, Seo, and the
 new layout) so you do not have to create each file by hand.
+
+---
+
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-10-18 | gp247/core 3.1 | **Fixed:** `requireCore` follows the running core (`php artisan gp247:info`) — the old `"2.1"` is refused by a 3.x core; Step 8d points to the payment / shipping plugin guides |
 
 ---
 
