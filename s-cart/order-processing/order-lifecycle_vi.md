@@ -18,10 +18,17 @@ kéo theo nhau**:
 |---|---|---|
 | **Trạng thái đơn** | Mới · Đang xử lý · Tạm giữ · **Đã hủy** · Hoàn thành · Thất bại · Đã hoàn tiền | Bạn chọn tay |
 | **Trạng thái thanh toán** | Chưa thanh toán · Thanh toán 1 phần · Đã thanh toán · Hoàn tiền | **Hệ thống tự suy ra từ tiền** (bạn vẫn sửa tay được) |
-| **Trạng thái giao hàng** | Chưa gửi · Đang gửi · Đã gửi xong · Đã hoàn | Bạn chọn tay |
+| **Trạng thái giao hàng** | Chưa gửi · Đang gửi · Đã gửi xong · Đã hoàn | Bạn chọn tay — hoặc **tự đổi theo vận đơn** khi đơn có vận đơn với hãng vận chuyển |
 
 > ⚠️ **Đổi trạng thái đơn KHÔNG tự đổi trạng thái thanh toán hay giao hàng.** Đánh dấu đơn "Hoàn thành" không
 > làm nó thành "Đã thanh toán"; đánh dấu "Đã hủy" không tự hoàn tiền cho khách. Ba trục là ba việc riêng.
+
+> 🚚 **Đơn có vận đơn:** trạng thái giao hàng **tự đổi** theo trạng thái hãng vận chuyển báo về — Chờ lấy hàng / Đã huỷ →
+> *Chưa gửi*; mọi trạng thái đang trên đường (đã lấy, đang vận chuyển, đang giao, giao thất bại, đang hoàn, ngoại lệ) →
+> *Đang gửi*; Đã giao → *Đã gửi xong*; Đã hoàn hàng → *Đã hoàn*. Đơn
+> không có vận đơn thì bạn vẫn chọn tay. Xem [Vận chuyển trong GP247](../shipping/shipping_vi.md), mục A5.
+>
+> ℹ️ **Có từ:** gp247/shop 3.1.4
 
 **Chỉ đúng một trạng thái có tác dụng phụ lên tồn kho: "Đã hủy".** Mọi giá trị khác chỉ là nhãn.
 
@@ -29,7 +36,7 @@ kéo theo nhau**:
 flowchart LR
     A["Trạng thái ĐƠN<br/>(bạn chọn tay)"] -->|"chỉ khi vào/rời<br/>Đã hủy"| S["📦 TỒN KHO"]
     B["Trạng thái THANH TOÁN<br/>(suy ra từ tiền)"] -.->|"không đụng"| S
-    C["Trạng thái GIAO HÀNG<br/>(bạn chọn tay)"] -.->|"không đụng"| S
+    C["Trạng thái GIAO HÀNG<br/>(chọn tay / theo vận đơn)"] -.->|"không đụng"| S
     M["💰 Sổ thanh toán<br/>(mỗi lần thu/hoàn)"] -->|"tính lại"| B
 ```
 
@@ -164,7 +171,7 @@ Xóa đơn cũng xóa luôn dòng hàng, dòng tổng tiền và toàn bộ lị
 | **Hủy đơn** | **Hoàn** | — | Có | Có (mở lại, nếu đủ tồn) |
 | **Mở lại đơn hủy** | **Giảm** | — | Có | Có (hủy lại) |
 | Đổi trạng thái khác | — | — | Có | Có |
-| Đổi trạng thái giao hàng | — | — | Có | Có |
+| Đổi trạng thái giao hàng (tay, hoặc tự theo vận đơn) | — | — | Có | Có |
 | **Xóa đơn** | **Hoàn** (nếu chưa hoàn) | Bị chặn nếu có tiền | **Mất hết** | **KHÔNG** |
 | Xóa đơn **đã gửi hàng** | Bị chặn | Bị chặn | — | — |
 
@@ -247,8 +254,9 @@ suy ra từ dòng đổi trạng thái, chưa có dòng riêng.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-18 | gp247/shop 3.1.4 | Trạng thái giao hàng **tự đổi theo vận đơn** khi đơn có vận đơn với hãng vận chuyển; đơn không có vận đơn vẫn chọn tay |
 | 2026-08-29 | v3.0 | Tài liệu mới. Phản ánh vòng đời sau v3.0: **hủy đơn hoàn kho**; **xóa đơn cũng hoàn kho** (chỉ khi hàng chưa về) nhưng **bị chặn nếu đã gửi hàng**; **mở lại đơn hủy** có kiểm tra tồn và bị từ chối toàn bộ nếu thiếu; tiền của đơn là **sổ thanh toán** từng lần thu/hoàn; đơn đã phát sinh tiền **không xóa được** |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>

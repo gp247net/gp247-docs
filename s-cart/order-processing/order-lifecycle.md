@@ -18,10 +18,16 @@ This is the most common source of confusion. An order does not have "a status" �
 |---|---|---|
 | **Order status** | New · Processing · Hold · **Cancelled** · Done · Failed · Refunded | You, by hand |
 | **Payment status** | Unpaid · Partial payment · Paid · Refund | **Derived by the system from the money** (you can still override) |
-| **Shipping status** | Not sent · Sending · Shipping done · Refunded | You, by hand |
+| **Shipping status** | Not sent · Sending · Shipping done · Refunded | You, by hand — or **follows the shipment** when the order has one booked with a carrier |
 
 > ⚠️ **Changing the order status does NOT change the payment or shipping status.** Marking an order "Done" does
 > not make it "Paid"; marking it "Cancelled" does not refund the customer. Three axes, three separate jobs.
+
+> 🚚 **Orders with a shipment:** the shipping status **changes by itself** with what the carrier reports — Awaiting
+> pick-up / Cancelled → *Not sent*; every on-the-way state (picked up, in transit, out for delivery, delivery failed,
+> returning, exception) → *Sending*; Delivered → *Shipping done*; Returned → *Refunded*. Orders without a shipment are still set by hand. See [Shipping in GP247](../shipping/shipping.md), section A5.
+>
+> ℹ️ **Available since:** gp247/shop 3.1.4
 
 **Exactly one status has a side effect on stock: "Cancelled".** Every other value is just a label.
 
@@ -29,7 +35,7 @@ This is the most common source of confusion. An order does not have "a status" �
 flowchart LR
     A["ORDER status<br/>(set by hand)"] -->|"only when entering<br/>or leaving Cancelled"| S["📦 STOCK"]
     B["PAYMENT status<br/>(derived from money)"] -.->|"no effect"| S
-    C["SHIPPING status<br/>(set by hand)"] -.->|"no effect"| S
+    C["SHIPPING status<br/>(by hand / follows the shipment)"] -.->|"no effect"| S
     M["💰 Payment ledger<br/>(each receipt / refund)"] -->|"recalculates"| B
 ```
 
@@ -168,7 +174,7 @@ undo.**
 | **Cancel the order** | **Returned** | — | Yes | Yes (re-open, if stock allows) |
 | **Re-open a cancelled order** | **Down** | — | Yes | Yes (cancel again) |
 | Any other status change | — | — | Yes | Yes |
-| Change shipping status | — | — | Yes | Yes |
+| Change shipping status (by hand, or by the shipment) | — | — | Yes | Yes |
 | **Delete the order** | **Returned** (if not already) | Blocked if it holds money | **All lost** | **NO** |
 | Delete a **shipped** order | Blocked | Blocked | — | — |
 
@@ -257,8 +263,9 @@ is cancelled or re-opened** is currently only implied by the status-change line,
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-18 | gp247/shop 3.1.4 | The shipping status **follows the shipment** when the order has one booked with a carrier; orders without a shipment are still set by hand |
 | 2026-08-29 | v3.0 | New document. Reflects the lifecycle after v3.0: **cancelling returns stock**; **deleting also returns it** (only when the goods have not already come back) but is **blocked once the order has shipped**; **re-opening a cancelled order** checks stock and is refused outright when short; an order's money is a **payment ledger** of individual receipts and refunds; an order that has handled money **cannot be deleted** |
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
