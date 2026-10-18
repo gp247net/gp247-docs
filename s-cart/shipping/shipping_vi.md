@@ -129,10 +129,10 @@ sequenceDiagram
     S->>H: Gửi vận đơn kèm số tiền thu hộ
     H->>K: Giao hàng, thu tiền mặt
     H-->>S: Báo đã đối soát tiền thu hộ (webhook)
-    alt Bật "Tự ghi tiền thu hộ"
+    alt Bật ô Tự ghi tiền thu hộ
         S->>S: Ghi khoản thu vào sổ thanh toán của đơn (một lần)
     else Tắt
-        S->>S: Chỉ lưu sự kiện; bạn tự ghi tiền khi đối chiếu xong
+        S->>S: Chỉ lưu sự kiện, bạn tự ghi tiền khi đối chiếu xong
     end
 ```
 

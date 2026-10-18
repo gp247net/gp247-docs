@@ -131,10 +131,10 @@ sequenceDiagram
     S->>H: Sends the shipment with the COD amount
     H->>K: Delivers, collects cash
     H-->>S: Reports the COD cash reconciled (webhook)
-    alt "Record COD cash" is on
+    alt Record COD cash is on
         S->>S: Records a payment in the order's ledger (once)
     else Off
-        S->>S: Keeps the event only; you record the money after checking
+        S->>S: Keeps the event only, you record the money after checking
     end
 ```
 
