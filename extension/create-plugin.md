@@ -34,6 +34,11 @@ Before you start you need:
 > [convert-plugin-v1-to-v2.md](convert-plugin-v1-to-v2.md) step 8c and the `ShopDiscount` plugin for the
 > reference implementation.
 
+> ⭐ **Payment plugins and shipping plugins** (`configCode: "Payment"` / `"Shipping"`) touch real money and
+> real orders, so besides the general part they have a contract of their own with `gp247/shop` — see
+> [Section 5.5](#55-payment-plugins-and-shipping-plugins). If you work with an AI agent, use the
+> `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` skill.
+
 > Quick glossary:
 > - **Plugin (extension)**: a feature package plugged into GP247 that can be enabled/disabled/removed in admin.
 > - **`configKey`**: the plugin's unique identifier, which **must match the plugin folder name**. For a plugin `MyBanner`, `configKey` is `MyBanner`.
@@ -249,6 +254,59 @@ The new UI standard for GP247 2.0 is **Livewire + TailAdmin**. The scaffold gene
 - `Route.php`: the scaffold already registers the legacy admin route **and** the Livewire route
   (guarded with `class_exists`, so it is safe). Only add your own routes when needed.
 - `Lang/vi/lang.php` and `Lang/en/lang.php`: add your plugin's display strings here.
+
+### 5.5. Payment plugins and shipping plugins
+
+> ℹ️ **Available since:** gp247/shop 3.1.4 (the standard shipping contract)
+
+Payment plugins (`configCode: "Payment"`) and shipping plugins (`configCode: "Shipping"`) work directly with
+real money and real orders. Besides the general rules of this document, they follow a contract of their own
+with `gp247/shop`. The mandatory points:
+
+**Payment plugins**
+
+- **Checkout hand-off:** the shop creates the order first, then calls the plugin's
+  `Controllers\FrontController::processOrder()` if it has one — usually to send the shopper to the gateway's
+  page. Without `processOrder()` the order completes at once (cash on delivery, bank transfer style).
+- **Record money only through the order's payment ledger:** `$order->recordPayment()` / `recordRefund()`,
+  keyed by the gateway's transaction id — a webhook delivered twice is still recorded once. Change the status
+  only through `$order->changeStatus()`. Never write the order's `status`, `payment_status` or `received`
+  yourself.
+- **Record only what the gateway confirmed** (a webhook whose signature was verified, or the payment read
+  back from the gateway's API — never the parameters of the return URL), and check amount and currency
+  against the order before recording.
+- **Webhook** goes **outside** the storefront middleware group, throttled, with the signature verified
+  **before** anything touches the database.
+- **Optional:** join the shop's [payment links and refunds](../s-cart/order-processing/payment-request.md) by
+  implementing `GP247\Shop\Payment\Contracts\PaymentGateway` and registering it in
+  `gp247-config.payment.gateways`.
+- Public reference plugins: `CashPayment` (no gateway call), `StripePayment`, `PaypalExpress` (gateway +
+  webhook).
+
+**Shipping plugins**
+
+- Write a driver implementing `GP247\Shop\Shipping\Contracts\ShippingProvider` (`rates()` is required) and
+  register it in `gp247-config.shop.shipping_providers.<Key>` from `Provider.php`. Each service of the
+  carrier (road, express…) becomes its own choice at checkout, with its price and delivery estimate.
+- Return prices in the **carrier's currency** — the shop converts them once. Ordinary failures (incomplete
+  address, not configured, carrier refused) are returned as an error result and never break the checkout page.
+- Declare only the capabilities the carrier really offers: book a shipment, cancel, print a label, track,
+  webhook, cash on delivery (COD) — each capability is its own interface.
+- The shop handles the shared parts: keeping the rate the shopper chose on the order, the shipment table, the
+  shared webhook route `/shipping/webhook/<Key>`, event de-duplication, the order's shipping status, the COD
+  amount. A plugin does **not** rewrite them.
+- On an older `gp247/shop` without this contract, the plugin runs the old way: `getInfo()` returns the fee in
+  `value` (display currency). One plugin can support both, like the reference plugin `ShippingStandard`.
+
+> 💡 **Working with an AI agent?** Use the dedicated skill instead of letting the agent guess the contract:
+> - `gp247-payment-plugin-create` — build a payment plugin.
+> - `gp247-shipping-plugin-create` — build a shipping plugin.
+> - `gp247-plugin-create` — every other kind of plugin.
+>
+> The skills live in the [gp247-skills](https://github.com/gp247net/gp247-skills) repository; copy the skill
+> folder into your agent's skills folder (for example `.claude/skills/` for Claude Code). Each skill probes
+> the site's version and capabilities before writing code, and is updated together with `gp247/shop`
+> whenever the payment / shipping contract changes.
 
 ---
 
@@ -484,6 +542,8 @@ nothing changes.
 - [ ] No user-uploaded files are stored inside the plugin folder.
 - [ ] `install()` / `uninstall()` create and clean up data symmetrically (no leftovers after uninstall).
 - [ ] If you provision tables with **Laravel migration files**, `uninstall()` also cleans the plugin's rows from the `migrations` ledger (and install/update reconcile before `migrate`); every migration `up()` is `Schema::hasTable()`-guarded — so uninstall → reinstall actually recreates the table (§5.2 callout).
+- [ ] (Payment plugin) Money recorded through `recordPayment()` / `recordRefund()`, status through `changeStatus()`, webhook signature verified before touching the database (§5.5).
+- [ ] (Shipping plugin) The `ShippingProvider` driver returns prices in the carrier's currency and declares only the capabilities it really has (§5.5).
 - [ ] Ran `php artisan optimize:clear` and successfully tested install/uninstall.
 
 ---
@@ -493,7 +553,8 @@ nothing changes.
 **Q1: Do I have to hand-write every plugin file?**
 
 → No. Run `php artisan gp247:make-plugin --name=YourPlugin --download=0` to scaffold the full v2-standard
-skeleton, then just add your own logic.
+skeleton, then just add your own logic. If you work with an AI agent, use the `gp247-plugin-create` skill
+(or the payment / shipping skill of Section 5.5): it runs this command and edits the files to the standard.
 
 **Q2: What is `configKey` and must it match the folder name?**
 
@@ -553,4 +614,4 @@ most common issue, caused by Laravel keeping the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>

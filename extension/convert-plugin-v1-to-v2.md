@@ -435,6 +435,25 @@ HTTP endpoint if you genuinely expose a headless/API entry of your own; it is no
 
 ---
 
+### Step 8d — (Optional) Payment / shipping plugins
+
+v1 payment (`configCode: "Payment"`) and shipping (`configCode: "Shipping"`) plugins are still found by the 2.0
+checkout through `configCode` and `getInfo()`. When upgrading, also:
+
+1. **Payment plugins:** remove every place that writes the order's status / received amount directly and use
+   `$order->recordPayment()` / `recordRefund()` (money recorded exactly once) and `$order->changeStatus()`;
+   move the webhook route **outside** the storefront middleware group and verify the signature before
+   touching the database.
+2. **Shipping plugins:** the old `getInfo()` keeps working (one service, fee in the display currency). To show
+   several services with delivery estimates, book shipments, print labels, track or collect cash on delivery,
+   add a `ShippingProvider` driver following `gp247/shop`'s shipping contract.
+
+Details of each point: [create-plugin.md](create-plugin.md#55-payment-plugins-and-shipping-plugins) Section 5.5.
+If you work with an AI agent, use the `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` skill from
+the [gp247-skills](https://github.com/gp247net/gp247-skills) repository.
+
+---
+
 ### Step 9 — Verify
 
 1. Clear Laravel's cache so the new routes/views/config are reloaded:
@@ -463,6 +482,7 @@ HTTP endpoint if you genuinely expose a headless/API entry of your own; it is no
 - [ ] (If it has public pages) `Seo.php` + registration block in `Provider.php` exist.
 - [ ] (If it has its own public page needing LayoutBlock) Registered the page-type (`token => lang-key`) into `config('gp247-config.front.layout_page')` in `Provider.php`, with the token matching the `$layout_page` the controller emits.
 - [ ] (If it is a total-method plugin — coupon/point) `AppConfig` implements `CheckoutTotalMethod` and a `checkoutView()` fragment exists, using only the template's existing UI tokens.
+- [ ] (If it is a payment / shipping plugin) Went through Step 8d: money through the payment ledger + `changeStatus()`, webhook outside the storefront group; for shipping, considered a `ShippingProvider` driver.
 - [ ] Ran `php artisan optimize:clear` and opened the admin screen successfully.
 - [ ] The UI displays correctly in both light mode and dark mode.
 
@@ -530,4 +550,4 @@ new layout) so you do not have to create each file by hand.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-23 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>

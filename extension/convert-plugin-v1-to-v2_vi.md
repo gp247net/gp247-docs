@@ -430,6 +430,24 @@ không thuộc UI checkout.
 
 ---
 
+### Bước 8d — (Tùy chọn) Plugin thanh toán / vận chuyển
+
+Plugin thanh toán (`configCode: "Payment"`) và vận chuyển (`configCode: "Shipping"`) bản v1 vẫn được checkout
+2.0 tìm thấy qua `configCode` và `getInfo()`. Khi nâng cấp, nên làm thêm:
+
+1. **Plugin thanh toán:** bỏ mọi chỗ tự ghi trạng thái / số tiền đã nhận của đơn, chuyển sang
+   `$order->recordPayment()` / `recordRefund()` (ghi tiền đúng một lần) và `$order->changeStatus()`; đưa route
+   webhook ra **ngoài** nhóm middleware storefront và xác minh chữ ký trước khi chạm database.
+2. **Plugin vận chuyển:** `getInfo()` cũ vẫn chạy (một dịch vụ, phí theo tiền hiển thị). Muốn hiện nhiều dịch
+   vụ kèm thời gian giao, tạo vận đơn, in nhãn, theo dõi hay thu hộ thì thêm driver `ShippingProvider` theo hợp
+   đồng vận chuyển của `gp247/shop`.
+
+Chi tiết từng điểm ở [create-plugin_vi.md](create-plugin_vi.md#55-plugin-thanh-toán-và-plugin-vận-chuyển) Phần 5.5.
+Nếu làm cùng AI agent, dùng skill `gp247-payment-plugin-create` / `gp247-shipping-plugin-create` của repo
+[gp247-skills](https://github.com/gp247net/gp247-skills).
+
+---
+
 ### Bước 9 — Kiểm tra lại
 
 1. Xóa cache của Laravel để nạp lại route/view/config mới:
@@ -458,6 +476,7 @@ không thuộc UI checkout.
 - [ ] (Nếu có trang public) Có `Seo.php` + khối đăng ký trong `Provider.php`.
 - [ ] (Nếu có trang public riêng cần cắm LayoutBlock) Đã đăng ký page-type (`token => lang-key`) vào `config('gp247-config.front.layout_page')` trong `Provider.php`, token trùng `$layout_page` controller phát.
 - [ ] (Nếu là plugin total-method — coupon/point) `AppConfig` implements `CheckoutTotalMethod` và có fragment `checkoutView()`, chỉ dùng UI token template đã có sẵn.
+- [ ] (Nếu là plugin thanh toán / vận chuyển) Đã rà Bước 8d: tiền qua sổ thanh toán + `changeStatus()`, webhook ngoài nhóm storefront; vận chuyển cân nhắc driver `ShippingProvider`.
 - [ ] Đã chạy `php artisan optimize:clear` và mở thử màn admin thành công.
 - [ ] Giao diện hiển thị đúng ở cả nền sáng và nền tối (dark-mode).
 
@@ -522,4 +541,4 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-23 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>

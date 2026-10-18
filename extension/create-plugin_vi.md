@@ -33,6 +33,10 @@ Trước khi bắt đầu, bạn cần:
 > để checkout Livewire hiển thị được ô nhập trên **mọi** template. Xem
 > [convert-plugin-v1-to-v2.md](convert-plugin-v1-to-v2.md) bước 8c và plugin `ShopDiscount` làm mẫu.
 
+> ⭐ **Plugin thanh toán và plugin vận chuyển** (`configCode: "Payment"` / `"Shipping"`) chạm tới tiền và đơn
+> hàng thật, nên ngoài phần chung còn có hợp đồng riêng với `gp247/shop` — xem [Phần 5.5](#55-plugin-thanh-toán-và-plugin-vận-chuyển).
+> Nếu làm cùng AI agent, hãy dùng skill `gp247-payment-plugin-create` / `gp247-shipping-plugin-create`.
+
 > Thuật ngữ nhanh:
 > - **Plugin (extension)**: một gói tính năng cắm thêm vào GP247, có thể bật/tắt/gỡ trong admin.
 > - **`configKey`**: mã định danh duy nhất của plugin, **trùng đúng với tên thư mục** plugin. Ví dụ plugin `MyBanner` thì `configKey` là `MyBanner`.
@@ -248,6 +252,54 @@ Chuẩn giao diện mới của GP247 2.0 là **Livewire + TailAdmin**. Khung si
 - `Route.php`: khung đã đăng ký sẵn route admin cũ **và** route Livewire (có bảo vệ `class_exists`
   nên an toàn). Bạn chỉ thêm route riêng khi cần.
 - `Lang/vi/lang.php` và `Lang/en/lang.php`: thêm các chuỗi hiển thị của plugin vào đây.
+
+### 5.5. Plugin thanh toán và plugin vận chuyển
+
+> ℹ️ **Có từ:** gp247/shop 3.1.4 (hợp đồng vận chuyển chuẩn)
+
+Plugin thanh toán (`configCode: "Payment"`) và plugin vận chuyển (`configCode: "Shipping"`) làm việc trực
+tiếp với tiền và đơn hàng thật. Ngoài các quy tắc chung của tài liệu này, chúng phải theo hợp đồng riêng
+của `gp247/shop`. Các điểm bắt buộc:
+
+**Plugin thanh toán**
+
+- **Chuyển giao từ checkout:** cửa hàng tạo đơn trước, rồi gọi `Controllers\FrontController::processOrder()`
+  của plugin nếu có — thường là chuyển khách sang trang của cổng thanh toán. Không có `processOrder()` thì
+  đơn hoàn tất ngay (kiểu thu tiền khi giao, chuyển khoản).
+- **Ghi tiền chỉ qua sổ thanh toán của đơn:** `$order->recordPayment()` / `recordRefund()`, khoá theo mã
+  giao dịch của cổng — webhook gửi hai lần vẫn chỉ ghi một lần. Đổi trạng thái chỉ qua `$order->changeStatus()`.
+  Không bao giờ tự ghi `status`, `payment_status` hay `received` của đơn.
+- **Chỉ ghi số tiền cổng đã xác nhận** (webhook đã xác minh chữ ký, hoặc đọc lại từ API của cổng — không tin
+  tham số trên URL trả về), và đối chiếu số tiền + tiền tệ với đơn trước khi ghi.
+- **Webhook** đặt **ngoài** nhóm middleware storefront, có throttle, xác minh chữ ký **trước** khi chạm database.
+- **Tuỳ chọn:** tham gia [link thanh toán và hoàn tiền](../s-cart/order-processing/payment-request_vi.md) của
+  cửa hàng bằng cách implement `GP247\Shop\Payment\Contracts\PaymentGateway` và đăng ký vào
+  `gp247-config.payment.gateways`.
+- Plugin mẫu công khai: `CashPayment` (không gọi cổng), `StripePayment`, `PaypalExpress` (cổng + webhook).
+
+**Plugin vận chuyển**
+
+- Viết một driver implement `GP247\Shop\Shipping\Contracts\ShippingProvider` (bắt buộc có `rates()`) và đăng
+  ký vào `gp247-config.shop.shipping_providers.<Key>` trong `Provider.php`. Mỗi dịch vụ của hãng (đường bộ,
+  hoả tốc…) hiện thành một lựa chọn riêng ở checkout, kèm giá và thời gian giao dự kiến.
+- Giá trả về theo **tiền tệ của hãng** — cửa hàng tự quy đổi một lần. Lỗi thông thường (thiếu địa chỉ, chưa
+  cấu hình, hãng từ chối) trả về dưới dạng kết quả lỗi, không làm hỏng trang checkout.
+- Chỉ khai báo những năng lực hãng thật sự có: tạo vận đơn, huỷ, in nhãn, tra cứu, webhook, thu hộ (COD) —
+  mỗi năng lực là một interface riêng.
+- Cửa hàng lo phần dùng chung: lưu mức phí khách đã chọn vào đơn, bảng vận đơn, route webhook chung
+  `/shipping/webhook/<Key>`, chống trùng sự kiện, trạng thái giao hàng của đơn, số tiền thu hộ. Plugin
+  **không** viết lại các phần này.
+- Trên `gp247/shop` cũ chưa có hợp đồng này, plugin chạy theo cách cũ: `getInfo()` trả phí trong `value`
+  (theo tiền hiển thị). Một plugin có thể hỗ trợ cả hai cách, như plugin mẫu `ShippingStandard`.
+
+> 💡 **Làm việc với AI agent?** Hãy dùng skill chuyên trách thay vì để agent tự đoán hợp đồng:
+> - `gp247-payment-plugin-create` — tạo plugin thanh toán.
+> - `gp247-shipping-plugin-create` — tạo plugin vận chuyển.
+> - `gp247-plugin-create` — các loại plugin còn lại.
+>
+> Các skill nằm ở repo [gp247-skills](https://github.com/gp247net/gp247-skills); chép thư mục skill vào thư
+> mục skill của agent (ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản và khả năng của site
+> trước khi viết code, và được cập nhật cùng `gp247/shop` mỗi khi hợp đồng thanh toán / vận chuyển thay đổi.
 
 ---
 
@@ -479,6 +531,8 @@ thì không có gì đổi.
 - [ ] Không lưu file người dùng tải lên bên trong thư mục plugin.
 - [ ] `install()` / `uninstall()` tạo và dọn dữ liệu cân xứng (gỡ xong không để rác).
 - [ ] Nếu tạo bảng bằng **file migration Laravel**, `uninstall()` có dọn dòng của plugin khỏi bảng `migrations` (và install/update reconcile trước `migrate`); mọi `up()` đều guard `Schema::hasTable()` — để gỡ → cài lại thực sự tạo lại bảng (callout ở §5.2).
+- [ ] (Nếu là plugin thanh toán) Tiền ghi qua `recordPayment()` / `recordRefund()`, trạng thái qua `changeStatus()`, webhook xác minh chữ ký trước khi chạm database (§5.5).
+- [ ] (Nếu là plugin vận chuyển) Driver `ShippingProvider` trả giá theo tiền tệ của hãng, chỉ khai báo năng lực thật sự có (§5.5).
 - [ ] Đã `php artisan optimize:clear` và cài/gỡ thử thành công.
 
 ---
@@ -488,7 +542,8 @@ thì không có gì đổi.
 **Câu 1: Tôi phải viết tay từng file plugin à?**
 
 → Không. Chạy `php artisan gp247:make-plugin --name=TenPlugin --download=0` để sinh sẵn toàn bộ khung
-chuẩn v2, rồi chỉ bổ sung logic riêng của bạn.
+chuẩn v2, rồi chỉ bổ sung logic riêng của bạn. Nếu làm cùng AI agent, dùng skill `gp247-plugin-create`
+(hoặc skill thanh toán / vận chuyển ở Phần 5.5): skill chạy đúng lệnh này rồi sửa file theo chuẩn.
 
 **Câu 2: `configKey` là gì và có bắt buộc trùng tên thư mục không?**
 
@@ -547,4 +602,4 @@ gặp nhất do Laravel còn giữ cache cũ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
