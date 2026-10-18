@@ -42,6 +42,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | --- | --- | --- |
 | [Vòng đời đơn hàng](./s-cart/order-processing/order-lifecycle_vi.md) | Từng chặng của đơn — đặt, sửa, thu tiền, hoàn tiền, hủy, mở lại, xóa — kèm tồn kho/tiền/lịch sử ở mỗi chặng và sơ đồ luồng | 2026-08-29 |
 | [Yêu cầu thanh toán (Payment Request)](./s-cart/order-processing/payment-request_vi.md) | Thu/chi tiền ngoài giỏ hàng: link thanh toán online, ghi nhận tay, hoàn tiền; 4 luồng tiền, mục đích đơn hàng/InOut/MultiVendor, phân quyền chi tiền, sơ đồ luồng | 2026-10-02 |
+| [Thanh toán trong GP247](./s-cart/payment/payment_vi.md) | Quản trị: cài cổng thanh toán (thử → thật, webhook), sổ thanh toán của đơn, COD; developer: điểm nối có sẵn, hợp đồng tiền, skill `gp247-payment-plugin-create` | 2026-10-18 |
+| [Vận chuyển trong GP247](./s-cart/shipping/shipping_vi.md) | Quản trị: tab Vận chuyển, kho lấy hàng, vận đơn, theo dõi, thu hộ; developer: hợp đồng hãng vận chuyển theo năng lực, skill `gp247-shipping-plugin-create` (từ shop 3.1.4) | 2026-10-18 |
 | [Tiền tệ (Currency)](./s-cart/tax-and-currency/currency_vi.md) | Đồng tiền gốc tường minh, đổi gốc bảo toàn giá trị, ghi chú ô nhập tiền (từ shop 2.1) | 2026-08-22 |
 | [Thuế trong GP247](./s-cart/tax-and-currency/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-08-04 |
 | [Sản phẩm gói (Bundle/Combo)](./s-cart/product/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-08-04 |
