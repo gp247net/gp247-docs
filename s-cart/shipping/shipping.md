@@ -31,27 +31,26 @@ developer knows exactly which parts only need to be "plugged in" and which must 
 ### A2. The big picture: how the system runs
 
 ```mermaid
-flowchart TD
-    subgraph KH["🛒 Customer places an order"]
-        A1["Enters the delivery address<br/>(Province/City, Ward…)"] --> A2["Shipping step:<br/>the system asks every enabled carrier for prices"]
-        A2 --> A3["Customer picks one service<br/>(price + estimated days)"]
-        A3 --> A4["Picks payment, places the order<br/>→ the chosen fee is stored on the order"]
+flowchart LR
+    subgraph KH["🛒 Customer"]
+        direction TB
+        A1["Enters address"] --> A2["Sees carrier prices"] --> A3["Picks a service<br/>places the order"]
     end
-    subgraph AD["🧑‍💼 You process the order"]
-        B1["Open the order detail → Shipping block"] --> B2["Create shipment<br/>(adjust weight, parcel size, COD if needed)"]
-        B2 --> B3["Download the label, stick it on the parcel"]
+    subgraph CH["🧑‍💼 Store"]
+        direction TB
+        B1["Creates shipment"] --> B2["Prints label<br/>packs"]
     end
-    subgraph H["🚚 Carrier"]
-        C1["Picks up at the warehouse"] --> C2["Transports → delivers to the customer"]
-        C2 --> C3["Collects COD (if any) → reconciles the cash to you"]
+    subgraph HG["🚚 Carrier"]
+        direction TB
+        C1["Picks up"] --> C2["Delivers"] --> C3["Reconciles<br/>COD"]
     end
-    A4 --> B1
-    B3 --> C1
-    C2 -- "webhook / Sync" --> D1["Shipment status updates<br/>→ the order's shipping status changes by itself"]
-    C3 -- "if COD auto-record is on" --> D2["COD cash recorded in the order's payment ledger"]
+    KH -- "order + chosen fee" --> CH
+    CH -- "shipment" --> HG
+    HG -. "webhook / Sync" .-> KQ["✅ Shipping status updates itself<br/>💰 COD into the ledger (if on)"]
 ```
 
-Key point: **the price the customer sees is the price the carrier quotes for that exact address and cart**. When the
+Each stage is detailed in A3 (setup), A5 (shipments) and A6 (COD). Key point: **the price the customer sees is the
+price the carrier quotes for that exact address and cart**. When the
 customer changes the address or the cart, the system asks again; the order always keeps exactly the fee the customer
 chose.
 

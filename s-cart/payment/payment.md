@@ -30,16 +30,21 @@ money is never recorded wrongly or twice.
 ### A2. The big picture: one customer payment
 
 ```mermaid
-flowchart TD
-    A["Customer picks a payment method<br/>and clicks Place order"] --> B["The store CREATES THE ORDER first<br/>(status New, Unpaid)"]
-    B --> C{"Does the method go<br/>through an online gateway?"}
-    C -- "No (on delivery / bank transfer)" --> D["Order completes at once<br/>Money recorded later: by you, or by the carrier's COD reconciliation"]
-    C -- "Yes" --> E["Customer goes to the gateway page and pays"]
-    E --> F["Gateway confirms the money<br/>(customer returns and/or webhook)"]
-    F --> G["One PAYMENT line written to the order's ledger<br/>(the same transaction reported many times is recorded once)"]
-    G --> H["Payment status recomputed<br/>Order moves to the status you chose (usually Processing)"]
-    E -- "Customer cancels on the gateway page" --> I["Order cancelled the plugin's way<br/>(goods back to stock)"]
+flowchart LR
+    A["🛒 Customer picks a method<br/>clicks Place order"] --> B["Store creates the order<br/>New · Unpaid"]
+    B --> C{"Online<br/>gateway?"}
+    C -- "No" --> D["Order done at once<br/>money recorded later"]
+    C -- "Yes" --> E["Customer pays on<br/>the gateway page"]
+    E -- "success" --> G["💰 One payment line in the ledger<br/>Order → Processing"]
+    E -- "customer cancels" --> I["Order cancelled<br/>goods back to stock"]
 ```
+
+- **Without a gateway** (on delivery, bank transfer): the money is recorded later — by you when it arrives, or by the
+  carrier's COD reconciliation.
+- **Through a gateway**: the money is recorded when the gateway confirms it (the customer returns **and/or** the
+  webhook); the same transaction reported many times is recorded **once**. The payment status is recomputed; the order
+  moves to the status you chose (usually *Processing*).
+- **Customer cancels on the gateway page**: the standard plugins cancel the order and return the goods to stock.
 
 Afterwards every **refund** (made in the gateway's dashboard or from the store) is also written as one line in the
 ledger. See money and stock at each stage in [Order lifecycle](../order-processing/order-lifecycle.md).

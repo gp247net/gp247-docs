@@ -31,27 +31,26 @@ cho đúng; lập trình viên biết chính xác phần nào chỉ cần "cắm
 ### A2. Toàn cảnh: hệ thống chạy thế nào
 
 ```mermaid
-flowchart TD
-    subgraph KH["🛒 Khách đặt hàng"]
-        A1["Nhập địa chỉ giao<br/>(Tỉnh/Thành, Phường/Xã…)"] --> A2["Bước Vận chuyển:<br/>hệ thống hỏi giá các hãng đang bật"]
-        A2 --> A3["Khách chọn một dịch vụ<br/>(giá + số ngày dự kiến)"]
-        A3 --> A4["Chọn thanh toán, đặt đơn<br/>→ phí đã chọn được lưu vào đơn"]
+flowchart LR
+    subgraph KH["🛒 Khách"]
+        direction TB
+        A1["Nhập địa chỉ"] --> A2["Xem giá các hãng"] --> A3["Chọn dịch vụ<br/>đặt đơn"]
     end
-    subgraph AD["🧑‍💼 Bạn xử lý đơn"]
-        B1["Mở chi tiết đơn → khối Vận chuyển"] --> B2["Tạo vận đơn<br/>(sửa khối lượng, kích thước kiện, COD nếu cần)"]
-        B2 --> B3["Tải nhãn, dán lên kiện hàng"]
+    subgraph CH["🧑‍💼 Cửa hàng"]
+        direction TB
+        B1["Tạo vận đơn"] --> B2["In nhãn<br/>đóng gói"]
     end
-    subgraph H["🚚 Hãng vận chuyển"]
-        C1["Lấy hàng tại kho"] --> C2["Vận chuyển → giao cho khách"]
-        C2 --> C3["Thu hộ (nếu có) → đối soát tiền về bạn"]
+    subgraph HG["🚚 Hãng vận chuyển"]
+        direction TB
+        C1["Lấy hàng"] --> C2["Giao cho khách"] --> C3["Đối soát<br/>thu hộ"]
     end
-    A4 --> B1
-    B3 --> C1
-    C2 -- "webhook / Đồng bộ" --> D1["Trạng thái vận đơn cập nhật<br/>→ Trạng thái giao hàng của đơn tự đổi"]
-    C3 -- "nếu bật tự ghi COD" --> D2["Tiền thu hộ ghi vào sổ thanh toán của đơn"]
+    KH -- "đơn + phí đã chọn" --> CH
+    CH -- "vận đơn" --> HG
+    HG -. "webhook / Đồng bộ" .-> KQ["✅ Trạng thái giao hàng tự đổi<br/>💰 Thu hộ vào sổ (nếu bật)"]
 ```
 
-Điểm đáng nhớ: **giá khách thấy là giá hãng báo cho đúng địa chỉ và giỏ hàng đó**. Khách đổi địa chỉ hay giỏ
+Chi tiết từng chặng ở A3 (cài đặt), A5 (vận đơn) và A6 (thu hộ). Điểm đáng nhớ: **giá khách thấy là giá hãng báo
+cho đúng địa chỉ và giỏ hàng đó**. Khách đổi địa chỉ hay giỏ
 hàng thì hệ thống hỏi giá lại; đơn luôn lưu đúng mức phí khách đã chọn.
 
 ### A3. Cài đặt từng bước

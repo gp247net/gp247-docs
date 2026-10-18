@@ -30,16 +30,20 @@ ghi hai lần.
 ### A2. Toàn cảnh: một lần khách thanh toán
 
 ```mermaid
-flowchart TD
-    A["Khách chọn phương thức thanh toán<br/>và bấm Đặt hàng"] --> B["Cửa hàng TẠO ĐƠN trước<br/>(trạng thái Mới, Chưa thanh toán)"]
-    B --> C{"Phương thức có<br/>đi qua cổng online?"}
-    C -- "Không (khi nhận hàng / chuyển khoản)" --> D["Đơn hoàn tất ngay<br/>Tiền ghi sau: bạn ghi tay, hoặc hãng vận chuyển đối soát thu hộ"]
-    C -- "Có" --> E["Khách sang trang của cổng, thanh toán"]
-    E --> F["Cổng xác nhận tiền<br/>(khách quay về và/hoặc webhook)"]
-    F --> G["Ghi một dòng THU vào sổ của đơn<br/>(cùng giao dịch báo nhiều lần vẫn ghi một lần)"]
-    G --> H["Trạng thái thanh toán tự tính lại<br/>Đơn chuyển sang trạng thái bạn chọn (thường Đang xử lý)"]
-    E -- "Khách huỷ trên trang cổng" --> I["Đơn được huỷ theo cách của plugin<br/>(hàng về kho)"]
+flowchart LR
+    A["🛒 Khách chọn phương thức<br/>bấm Đặt hàng"] --> B["Cửa hàng tạo đơn<br/>Mới · Chưa thanh toán"]
+    B --> C{"Qua cổng<br/>online?"}
+    C -- "Không" --> D["Đơn xong ngay<br/>tiền ghi sau"]
+    C -- "Có" --> E["Khách trả trên<br/>trang của cổng"]
+    E -- "thành công" --> G["💰 Ghi 1 dòng thu vào sổ<br/>Đơn → Đang xử lý"]
+    E -- "khách huỷ" --> I["Huỷ đơn<br/>hàng về kho"]
 ```
+
+- **Không qua cổng** (khi nhận hàng, chuyển khoản): tiền ghi sau — bạn ghi tay khi nhận, hoặc hãng vận chuyển đối
+  soát tiền thu hộ.
+- **Qua cổng**: tiền được ghi khi cổng xác nhận (khách quay về **và/hoặc** webhook); cùng một giao dịch báo về nhiều
+  lần vẫn chỉ ghi **một lần**. Trạng thái thanh toán tự tính lại; đơn chuyển sang trạng thái bạn chọn (thường *Đang xử lý*).
+- **Khách huỷ trên trang cổng**: các plugin chuẩn huỷ đơn và trả hàng về kho.
 
 Sau đó, mọi khoản **hoàn tiền** (làm trên trang quản trị của cổng hoặc từ cửa hàng) cũng được ghi thành một dòng
 trong sổ. Xem chi tiết tiền và tồn kho ở từng chặng tại [Vòng đời đơn hàng](../order-processing/order-lifecycle_vi.md).
