@@ -72,10 +72,16 @@ ledger. See money and stock at each stage in [Order lifecycle](../order-processi
 > How to get the keys and each gateway's own fields are in that plugin's README (e.g. `StripePayment`, `PaypalExpress`).
 > Gateways only accept certain currencies — check that the store's currency is supported.
 
-**Payment without a gateway** (e.g. `CashPayment`): just install and enable it. The default template's checkout only shows
-the method's **name**; for customers to see instructions (account number, transfer reference) the plugin needs its own
-instructions page — see the [bank transfer plugin](../../extension/create-payment-plugin.md) example. The order is placed
-unpaid; the money is recorded when you receive it.
+**Payment without a gateway** (e.g. `CashPayment`): just install and enable it. The message you type on the plugin's
+settings screen (for `CashPayment` the **Note shown to customer at checkout** field, which can differ per store) appears
+right under the method when the customer picks it, and again on the **Confirm** step before placing the order. It is plain
+text (no formatting, no links) — right for short instructions such as "Pay cash on delivery" or an account number. To
+show the **amount and order number** so the customer transfers exactly, the plugin builds its own instructions page after
+the order is placed — see the [bank transfer plugin](../../extension/create-payment-plugin.md) example. The order is
+placed unpaid; the money is recorded when you receive it.
+
+> ℹ️ **Available since:** gp247/shop 3.1.4 (older versions only show the method's name). A custom theme that overrides
+> the payment step must be updated before it shows the message.
 
 ### A4. Watching and recording money on the order
 
@@ -119,7 +125,7 @@ customisation goes through a plugin.
 
 | Task | The right way | Why |
 |---|---|---|
-| Show at checkout | `configCode: "Payment"` in `gp247.json`; `AppConfig::getInfo()` (add a `note` key for instructions) | Checkout lists enabled plugins by `configCode` |
+| Show at checkout | `configCode: "Payment"` in `gp247.json`; `AppConfig::getInfo()` returns `title` and, when instructions are needed, `note` (a plain-text string, read per store) | Checkout lists enabled plugins by `configCode`; a non-empty `note` shows under the selected method and on the confirm step, always escaped |
 | Send the customer to the gateway | `Controllers\FrontController::processOrder()`: read `session('orderID')`, create the payment session **with an idempotency key per order**, redirect | Sent twice still gives one session |
 | Record money | `$order->recordPayment($amount, '<Key>', $providerTxnId, …)` — amount in the **order's currency**, only what the gateway **confirmed** | A repeated webhook records once; *Received* is always right |
 | Refunds | `$order->recordRefund(…)` keyed by the gateway's refund id; when fully refunded, move the order to *Refunded* yourself with `changeStatus()` | The order status does not follow the money by itself |
@@ -174,8 +180,9 @@ sequenceDiagram
 payment ledger and `changeStatus()`; move the webhook outside the storefront group. See
 [Converting a plugin from v1 to v2](../../extension/convert-plugin-v1-to-v2.md), Step 8d.
 
-**Writing your own theme**: if you override the checkout step, keep the method list (`$paymentPlugins`) and the
-method-selection call as in the original at `vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
+**Writing your own theme**: if you override the checkout step, keep the method list (`$paymentPlugins`), the
+method-selection call and the `note` output (read `$info['note'] ?? ''`, print with `{{ }}`) as in the original at
+`vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
 
 **Public reference code**: `CashPayment` (no gateway call), `StripePayment` and `PaypalExpress` (gateway + webhook +
 pay links).
@@ -272,7 +279,7 @@ settings.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-18 | gp247/shop 3.1.4 | Payment without a gateway: the default template only shows the method name, transfer instructions need the plugin's own page; links to the payment plugin guide |
+| 2026-10-18 | gp247/shop 3.1.4 | Payment without a gateway: the plugin's `note` (e.g. `CashPayment`) shows under the method the customer picks and on the confirm step; instructions needing the amount/order number still use the plugin's own page; links to the payment plugin guide |
 
 ---
 

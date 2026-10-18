@@ -69,10 +69,16 @@ trong sổ. Xem chi tiết tiền và tồn kho ở từng chặng tại [Vòng 
 > Cách lấy khoá và các ô riêng của từng cổng nằm trong README của plugin đó (ví dụ `StripePayment`, `PaypalExpress`).
 > Cổng chỉ nhận một số đồng tiền nhất định — kiểm tra đồng tiền của cửa hàng có được cổng hỗ trợ.
 
-**Thanh toán không qua cổng** (ví dụ `CashPayment`): chỉ cần cài và bật. Trang thanh toán của template mặc định chỉ
-hiện **tên** phương thức; muốn khách thấy hướng dẫn (số tài khoản, nội dung chuyển khoản) thì plugin cần trang hướng dẫn
-riêng — xem ví dụ [plugin chuyển khoản](../../extension/create-payment-plugin_vi.md). Đơn đặt xong ở trạng thái chưa
-thanh toán; tiền được ghi khi bạn nhận.
+**Thanh toán không qua cổng** (ví dụ `CashPayment`): chỉ cần cài và bật. Lời nhắn bạn nhập ở màn cấu hình của plugin
+(với `CashPayment` là ô **Ghi chú hiển thị cho khách khi thanh toán**, nhập riêng được cho từng cửa hàng) hiện ngay dưới
+phương thức khi khách chọn nó, và được nhắc lại ở bước **Xác nhận** trước khi đặt. Lời nhắn là chữ thường (không định
+dạng, không link) — hợp với hướng dẫn ngắn như "Trả tiền mặt khi nhận hàng" hay số tài khoản. Cần hiện **số tiền và mã
+đơn** để khách chuyển khoản đúng thì plugin dựng trang hướng dẫn riêng sau khi đặt — xem ví dụ
+[plugin chuyển khoản](../../extension/create-payment-plugin_vi.md). Đơn đặt xong ở trạng thái chưa thanh toán; tiền
+được ghi khi bạn nhận.
+
+> ℹ️ **Có từ:** gp247/shop 3.1.4 (bản cũ hơn chỉ hiện tên phương thức). Template tuỳ biến có override bước thanh toán
+> phải được cập nhật theo thì mới hiện lời nhắn.
 
 ### A4. Theo dõi và ghi nhận tiền trên đơn
 
@@ -115,7 +121,7 @@ biến đi qua plugin.
 
 | Việc | Cách làm đúng | Vì sao |
 |---|---|---|
-| Hiện ở checkout | `configCode: "Payment"` trong `gp247.json`; `AppConfig::getInfo()` (thêm khoá `note` nếu cần hướng dẫn) | Checkout liệt kê plugin đang bật theo `configCode` |
+| Hiện ở checkout | `configCode: "Payment"` trong `gp247.json`; `AppConfig::getInfo()` trả `title` và, nếu cần hướng dẫn, `note` (chuỗi chữ thường, đọc theo cửa hàng) | Checkout liệt kê plugin đang bật theo `configCode`; `note` không rỗng hiện dưới phương thức đang chọn và ở bước xác nhận, luôn được escape |
 | Chuyển khách sang cổng | `Controllers\FrontController::processOrder()`: đọc `session('orderID')`, tạo phiên thanh toán **có khoá chống trùng theo đơn**, chuyển hướng | Gửi hai lần vẫn chỉ một phiên |
 | Ghi tiền | `$order->recordPayment($amount, '<Key>', $providerTxnId, …)` — tiền theo **đồng tiền của đơn**, chỉ số cổng **đã xác nhận** | Webhook lặp chỉ ghi một lần; *Đã nhận* luôn đúng |
 | Hoàn tiền | `$order->recordRefund(…)` theo mã hoàn của cổng; hoàn hết thì tự chuyển đơn sang *Đã hoàn tiền* qua `changeStatus()` | Trạng thái đơn không tự đổi theo tiền |
@@ -167,8 +173,9 @@ sequenceDiagram
 `changeStatus()`; đưa webhook ra ngoài nhóm storefront. Xem
 [Chuyển đổi plugin v1 lên v2](../../extension/convert-plugin-v1-to-v2_vi.md), Bước 8d.
 
-**Tự viết template giao diện**: nếu override bước thanh toán, giữ danh sách phương thức (`$paymentPlugins`) và lời
-gọi chọn phương thức như bản gốc trong `vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
+**Tự viết template giao diện**: nếu override bước thanh toán, giữ danh sách phương thức (`$paymentPlugins`), lời
+gọi chọn phương thức và phần in `note` (đọc `$info['note'] ?? ''`, in bằng `{{ }}`) như bản gốc trong
+`vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
 
 **Mã tham khảo công khai**: `CashPayment` (không gọi cổng), `StripePayment` và `PaypalExpress` (cổng + webhook + link
 thanh toán).
@@ -262,7 +269,7 @@ thử cả trường hợp đóng trình duyệt giữa chừng.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-18 | gp247/shop 3.1.4 | Thanh toán không qua cổng: template mặc định chỉ hiện tên phương thức, hướng dẫn chuyển khoản cần trang riêng của plugin; thêm liên kết hướng dẫn tạo plugin thanh toán |
+| 2026-10-18 | gp247/shop 3.1.4 | Thanh toán không qua cổng: lời nhắn `note` của plugin (vd `CashPayment`) hiện dưới phương thức khách chọn và ở bước xác nhận; hướng dẫn cần số tiền/mã đơn vẫn dùng trang riêng của plugin; thêm liên kết hướng dẫn tạo plugin thanh toán |
 
 ---
 

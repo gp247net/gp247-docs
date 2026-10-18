@@ -285,6 +285,9 @@ Points to note:
   when `$fromVersion` is `null`.
 - `clickApp()` — the ⚙ **Config** button on the Plugins list only appears when this returns a redirect.
 - `setting()` reads a value for a store, falling back to the shared value.
+- To show the customer a short message **right on the checkout page** (under the method when selected, and on the
+  confirm step), add `'note' => $this->setting('note')` to the array `getInfo()` returns (gp247/shop 3.1.4 or later). The
+  message is plain text with no amount or order number — which is why this plugin still needs the page in Step 5.
 
 ### Step 4 — Settings screen (`Livewire/AdminLivewire.php`)
 
@@ -1019,7 +1022,7 @@ save keeps the old secret.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-18 | gp247/shop 3.1.4 | New document: a bank transfer plugin that works right away + a skeleton for connecting an online payment gateway |
+| 2026-10-18 | gp247/shop 3.1.4 | New document: a bank transfer plugin that works right away + a skeleton for connecting an online payment gateway; `getInfo()['note']` shows on the checkout page |
 
 ---
 

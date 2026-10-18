@@ -285,6 +285,9 @@ class AppConfig extends ExtensionConfigDefault
   và chạy được khi `$fromVersion` là `null`.
 - `clickApp()` — nút ⚙ **Cấu hình** trên danh sách Plugins chỉ hiện khi hàm này trả về một chuyển hướng.
 - `setting()` đọc giá trị theo cửa hàng, không có thì lấy giá trị chung.
+- Muốn khách thấy một lời nhắn ngắn **ngay ở trang thanh toán** (dưới phương thức khi được chọn, và ở bước xác nhận),
+  thêm `'note' => $this->setting('note')` vào mảng của `getInfo()` (gp247/shop 3.1.4 trở lên). Lời nhắn là chữ thường,
+  không có số tiền hay mã đơn — vì thế plugin này vẫn cần trang hướng dẫn ở Bước 5.
 
 ### Bước 4 — Màn cấu hình (`Livewire/AdminLivewire.php`)
 
@@ -1014,7 +1017,7 @@ hàng của **đơn** (`$order->store_id`).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-18 | gp247/shop 3.1.4 | Tài liệu mới: plugin chuyển khoản chạy được ngay + khung nối cổng thanh toán online |
+| 2026-10-18 | gp247/shop 3.1.4 | Tài liệu mới: plugin chuyển khoản chạy được ngay + khung nối cổng thanh toán online; `getInfo()['note']` hiện ở trang thanh toán |
 
 ---
 
