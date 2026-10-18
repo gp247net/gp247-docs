@@ -948,6 +948,32 @@ class MyGatewayWebhookTest extends TestCase
 
 ---
 
+## 5. Tra cứu nhanh — `gp247/shop` có sẵn gì, nằm ở đâu
+
+Phần thanh toán nằm trong `vendor/gp247/shop/src/`. **Không sửa trong `vendor/`** — mọi tuỳ biến đi qua plugin.
+
+| Thành phần | Vị trí | Việc nó làm (bạn không phải viết lại) |
+|---|---|---|
+| Chuyển giao từ checkout | `Controllers/ShopCartController.php` (sau khi tạo đơn) | Tạo đơn, đặt `session('orderID')`, gọi `processOrder()` của plugin nếu có, không có thì hoàn tất đơn; `completeOrder()` / `cancelOrder()` cho trang quay về |
+| Hiện ở trang thanh toán | `Front/Livewire/CheckoutWizard.php` + view `GP247Front/livewire/shop_checkout-wizard.blade.php` | Liệt kê plugin `configCode: "Payment"` đang bật, in `getInfo()['title']` và `note` (chữ thường, dưới phương thức đang chọn + bước xác nhận — gp247/shop 3.1.4+) |
+| Sổ thanh toán | `Models/ShopOrder.php` → `recordPayment()`, `recordRefund()`; bảng `shop_order_transaction` | Ghi một dòng thu/hoàn, chống trùng theo mã giao dịch, tính lại *Đã nhận*, *Còn lại*, trạng thái thanh toán |
+| Đổi trạng thái đơn | `ShopOrder::changeStatus()` | Hoàn kho khi huỷ, ghi lịch sử, phát sự kiện; từ chối chuyển trạng thái không hợp lệ |
+| Yêu cầu thanh toán | `Payment/` — `PaymentRequestService.php`, `GatewayRegistry.php`, `Contracts/PaymentGateway.php` | Link thanh toán và hoàn tiền ngoài giỏ hàng; cổng tham gia bằng cách đăng ký driver (mục 3.6) |
+| Danh sách cổng | khoá config `gp247-config.payment.gateways` | Nơi plugin khai báo driver và năng lực `collect` / `refund` / `payout` |
+| Thu hộ | khoá config `gp247-config.shop.cod_payment_methods` | Phương thức nào là "thanh toán khi nhận hàng" để vận đơn mang tiền thu hộ — thêm khoá plugin của bạn nếu là COD |
+| Mã hoá bí mật | ô `password` của `ConfigForm` (core), cờ `security = 1` | Khoá cổng mã hoá khi lưu, không gửi lại trình duyệt |
+
+**Tình huống khác**
+
+- **Nâng cấp plugin thanh toán cũ**: bỏ mọi chỗ tự ghi trạng thái/số tiền của đơn, chuyển sang sổ thanh toán và
+  `changeStatus()`; đưa webhook ra ngoài nhóm storefront — [Chuyển đổi plugin v1 lên v2](./convert-plugin-v1-to-v2_vi.md), Bước 8d.
+- **Tự viết template giao diện có override bước thanh toán**: giữ danh sách phương thức (`$paymentPlugins`), lời gọi chọn
+  phương thức và phần in `note` (đọc `$info['note'] ?? ''`, in bằng `{{ }}`) như bản gốc trong
+  `vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`. Xem thêm [Tạo template](./create-template_vi.md).
+- **Mã tham khảo công khai**: `CashPayment` (không gọi cổng), `StripePayment` và `PaypalExpress` (cổng + webhook + link thanh toán).
+
+---
+
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 
 **Khai báo plugin**

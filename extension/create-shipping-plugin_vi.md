@@ -819,6 +819,61 @@ class MyCarrierProviderTest extends TestCase
 
 ---
 
+## 5. Tra cứu nhanh — `gp247/shop` có sẵn gì, nằm ở đâu
+
+Toàn bộ lớp vận chuyển nằm trong `vendor/gp247/shop/src/Shipping/` (namespace `GP247\Shop\Shipping`). **Không sửa trong
+`vendor/`** — mọi tuỳ biến đi qua plugin.
+
+| Thành phần | Vị trí | Việc nó làm (bạn không phải viết lại) |
+|---|---|---|
+| Hợp đồng hãng | `Contracts/ShippingProvider.php` + 5 interface năng lực | Định nghĩa thứ một plugin phải cung cấp (bảng mục 3.1) |
+| Sổ đăng ký hãng | `ShippingProviderRegistry.php`, khoá config `gp247-config.shop.shipping_providers` | Tìm driver của từng plugin, kiểm năng lực khai báo có thật không |
+| Báo giá | `RateService.php`, `RateRequestFactory.php` | Hỏi giá mọi hãng, cache 10 phút theo địa chỉ + giỏ, tạm dừng hãng lỗi 1 phút, quy đổi tiền tệ hãng → gốc → hiển thị |
+| Giữ giá đã chọn | `ShippingCheckout.php`, `Data/RateSnapshot.php` | Phí do server quyết, lưu vào `shop_order.shipping_service` / `shipping_rate`; giá không còn hợp lệ thì từ chối đặt đơn thay vì giao miễn phí |
+| Dữ liệu hàng | `ShippingItemFactory.php`, `Data/ShippingItem.php`, `WeightConverter.php`, `LengthConverter.php` | Khối lượng (gram), kích thước (cm), mã vạch, thương hiệu… từ sản phẩm; bỏ hàng kỹ thuật số; combo tính theo thành phần |
+| Vận đơn | `ShipmentService.php`, `Models/ShopShipment.php`, `Models/ShopShipmentEvent.php` | Tạo/huỷ/nhãn/đồng bộ, lưu sự kiện chống trùng, quy ra trạng thái giao hàng, tự hỏi lại hãng khi mở đơn |
+| Webhook chung | `Routes/Webhook/shipping.php`, `Http/ShippingWebhookController.php` | Route `POST /shipping/webhook/<PluginKey>` ngoài middleware storefront, có throttle; URL: `route('shop.shipping.webhook', ['pluginKey' => 'MyCarrier'])` |
+| Thu hộ | `CodResolver.php`, khoá config `gp247-config.shop.cod_payment_methods` | Số tiền thu hộ = số còn phải trả với phương thức COD; ghi tiền một lần khi hãng đối soát |
+| Màn admin | `Admin/Livewire/OrderShipmentPanel.php`, tab Vận chuyển của `ShopConfigForm` | Khối Vận chuyển ở chi tiết đơn, tab cấu hình (link tới `settings_route` của plugin) |
+| Hợp đồng cũ | `LegacyGetInfoAdapter.php` | Plugin viết theo `getInfo()` cũ vẫn hiện ở checkout (một dịch vụ) |
+
+Dữ liệu chạy qua các thành phần đó như sau:
+
+```mermaid
+sequenceDiagram
+    participant W as CheckoutWizard
+    participant R as RateService
+    participant P as Driver của plugin
+    participant O as Đơn hàng
+    participant SS as ShipmentService
+    participant C as API hãng
+    W->>R: quote(RateRequest từ địa chỉ + giỏ)
+    R->>P: rates(RateRequest)
+    P->>C: hỏi giá (timeout ngắn)
+    C-->>P: các dịch vụ + giá
+    P-->>R: RateResult (tiền của hãng)
+    R-->>W: RateSnapshot đã quy đổi (cache 10 phút)
+    W->>O: đặt đơn — phí lấy lại từ snapshot trên server
+    Note over SS,C: Admin bấm Tạo vận đơn
+    SS->>P: createShipment(ShipmentRequest)
+    P->>C: tạo vận đơn
+    C-->>SS: mã vận đơn, trạng thái
+    C->>SS: webhook → handleWebhook() xác minh → TrackingEvent
+    SS->>O: trạng thái giao hàng, tiền COD (nếu bật)
+```
+
+**Tình huống khác**
+
+- **Bổ sung dữ liệu hàng cho hãng** (mã HS, hàng dễ vỡ…): đăng ký một callable dạng mảng vào
+  `gp247-config.shop.shipping_item_resolvers` — không dùng closure (vỡ `config:cache`).
+- **Tự viết template giao diện có override bước thanh toán** (`livewire/shop_checkout-wizard.blade.php`): giữ cách hiển thị
+  của bản gốc trong `vendor/gp247/shop/src/Views/templates/GP247Front/` — mỗi dịch vụ một lựa chọn (khoá là mã dịch vụ),
+  giá đã định dạng, số ngày dự kiến, thông báo khi không có dịch vụ, và ô Phường/Xã. Xem thêm [Tạo template](./create-template_vi.md).
+- **Plugin vận chuyển cũ viết theo `getInfo()`**: vẫn chạy (một dịch vụ, phí theo tiền hiển thị). Muốn nhiều dịch vụ, vận
+  đơn, theo dõi, thu hộ thì thêm driver như Phần 1–2 — plugin mẫu `ShippingStandard` hỗ trợ cả hai cách.
+
+---
+
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 
 **Khai báo plugin**

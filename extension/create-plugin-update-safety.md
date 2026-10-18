@@ -9,6 +9,11 @@ lost settings, no broken data, and uninstall → reinstall still rebuilds every 
 rules to keep, how to create your own data tables and how to write the `update()` hook. Read it after
 [Creating a plugin](./create-plugin.md).
 
+> 💡 **Working with an AI agent?** The extension skills in the [gp247-skills](https://github.com/gp247net/gp247-skills) repository — `gp247-plugin-create`,
+> `gp247-payment-plugin-create`, `gp247-shipping-plugin-create`, `gp247-template-create` — all build plugins/templates
+> following the update-safety rules below. To install / update / remove extensions from the command line: the
+> `gp247-extension-lifecycle` skill.
+
 ---
 
 ## How updates run

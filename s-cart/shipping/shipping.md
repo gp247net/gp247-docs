@@ -1,14 +1,14 @@
 > 🌐 **Language:** [🇻🇳 Tiếng Việt](./shipping_vi.md) · 🇬🇧 English (current)
 
-# Shipping in GP247 — store setup and developer guide
+# Shipping in GP247 — store setup and day-to-day use
 
 ## Introduction
 
 This document explains how GP247 prices delivery, books shipments with carriers and tracks parcels to the
 customer. **Part A** is for store managers: installation, every setting, day-to-day shipment handling, with
-diagrams of the whole flow. **Part B** is for developers: what GP247 already provides, where it lives, and what to
-do when integrating a new carrier or customising. After reading, a store owner can switch shipping on correctly; a
-developer knows exactly which parts only need to be "plugged in" and which must not be rewritten.
+diagrams of the whole flow. After reading, you can switch shipping on correctly and handle shipments day to day.
+Developers who want to integrate a new carrier: see **Part B** — it points to the technical guide in the
+[Extension](../../extension/create-shipping-plugin.md) section.
 
 > ℹ️ **Available since:** gp247/shop 3.1.4 (the standard shipping layer: several services per carrier, shipments,
 > tracking, cash on delivery). On older versions each shipping plugin returns a single fee.
@@ -143,112 +143,16 @@ COD only applies to orders paid with a **pay-on-delivery** method (by default th
 
 ## Part B — For developers
 
-### B1. What GP247 already provides, and where
+This document only covers day-to-day use. The technical side — the shipping layer `gp247/shop` already provides, the
+capability-based carrier contract, sample code — is in:
 
-The whole shipping layer lives in the `gp247/shop` package, folder `vendor/gp247/shop/src/Shipping/`
-(namespace `GP247\Shop\Shipping`). **Do not edit inside `vendor/`** — every customisation goes through a plugin.
+- [Creating a shipping plugin](../../extension/create-shipping-plugin.md) — step by step with code (weight-based fee,
+  carrier with an API: shipments, tracking, webhook, COD); section 5 is a quick reference of what `gp247/shop` provides
+  and where.
 
-| Component | Location | What it does (you do not rewrite it) |
-|---|---|---|
-| Carrier contract | `Contracts/ShippingProvider.php` + 5 capability interfaces | Defines what a plugin must provide |
-| Carrier registry | `ShippingProviderRegistry.php`, config key `gp247-config.shop.shipping_providers` | Finds each plugin's driver, checks declared capabilities are real |
-| Quoting | `RateService.php`, `RateRequestFactory.php` | Asks every carrier, caches 10 minutes per address + cart, pauses a failing carrier for 1 minute, converts carrier → base → display currency |
-| Keeping the chosen rate | `ShippingCheckout.php`, `Data/RateSnapshot.php` | The fee is decided on the server, stored in `shop_order.shipping_service` / `shipping_rate`; a rate no longer valid refuses the order instead of shipping free |
-| Parcel data | `ShippingItemFactory.php`, `Data/ShippingItem.php`, `WeightConverter.php`, `LengthConverter.php` | Weight (grams), size (cm), barcode, brand… from the product; digital goods excluded; bundles weighed from their parts |
-| Shipments | `ShipmentService.php`, `Models/ShopShipment.php`, `Models/ShopShipmentEvent.php` | Book/cancel/label/sync, de-duplicated events, order shipping status, asks the carrier again when an order is opened |
-| Shared webhook | `Routes/Webhook/shipping.php`, `Http/ShippingWebhookController.php` | Route `POST /shipping/webhook/<PluginKey>` outside the storefront middleware, throttled |
-| Cash on delivery | `CodResolver.php`, config key `gp247-config.shop.cod_payment_methods` | COD amount = outstanding balance for COD methods; recorded once when the carrier reconciles |
-| Admin screens | `Admin/Livewire/OrderShipmentPanel.php`, Shipping tab of `ShopConfigForm` | Shipping block of the order detail, settings tab |
-| Old contract | `LegacyGetInfoAdapter.php` | Plugins written for the old `getInfo()` still show at checkout (one service) |
-
-### B2. The contract a shipping plugin provides
-
-One method is required; the other capabilities are **declared only when the carrier really has them**:
-
-| Capability (declared) | Interface | Method |
-|---|---|---|
-| `rates` (required) | `ShippingProvider` | `rates(RateRequest): RateResult` — one `ShippingRate` per service, priced in the **carrier's currency** |
-| `shipments` | `CreatesShipments` | `createShipment(ShipmentRequest): ShipmentResult`, `shipmentFormFields()` |
-| `cancel` | `CancelsShipments` | `cancelShipment($tracking, $storeId)` |
-| `documents` | `ProvidesShippingDocuments` | `document($tracking, $storeId, $options)` — printable label |
-| `tracking` | `TracksShipments` | `track($tracking, $storeId)` — a list of `TrackingEvent` |
-| `webhook` | `HandlesShippingWebhooks` | `handleWebhook(Request, Closure $storeOf): WebhookResult` |
-| `cod` | `CreatesShipments` | Sends `ShipmentRequest::$codAmount` (in the **order's** currency — convert it to the carrier's) |
-
-Registration in the plugin's `Provider.php`:
-
-```php
-if (interface_exists(\GP247\Shop\Shipping\Contracts\ShippingProvider::class)) {
-    config(['gp247-config.shop.shipping_providers.MyCarrier' => [
-        'driver' => \App\GP247\Plugins\MyCarrier\Services\MyCarrierProvider::class,
-        'capabilities' => ['rates', 'shipments', 'cancel', 'documents', 'tracking', 'webhook', 'cod'],
-        'settings_route' => 'admin_my-carrier.index', // the Shipping tab links to this settings screen
-    ]]);
-}
-```
-
-The plugin still has `configCode: "Shipping"` in `gp247.json` — that is how checkout knows it is a carrier and how the
-store owner enables or disables it per store.
-
-### B3. The data flow in code
-
-```mermaid
-sequenceDiagram
-    participant W as CheckoutWizard
-    participant R as RateService
-    participant P as Plugin driver
-    participant O as Order
-    participant SS as ShipmentService
-    participant C as Carrier API
-    W->>R: quote(RateRequest from address + cart)
-    R->>P: rates(RateRequest)
-    P->>C: ask for prices (short timeout)
-    C-->>P: services + prices
-    P-->>R: RateResult (carrier currency)
-    R-->>W: converted RateSnapshot (cached 10 minutes)
-    W->>O: place the order — fee re-read from the server-side snapshot
-    Note over SS,C: Admin clicks Create shipment
-    SS->>P: createShipment(ShipmentRequest)
-    P->>C: book the shipment
-    C-->>SS: tracking number, status
-    C->>SS: webhook → handleWebhook() verifies → TrackingEvent
-    SS->>O: shipping status, COD money (if on)
-```
-
-### B4. Your job, case by case
-
-**Integrating a new carrier** — step-by-step guide with code: [Creating a shipping plugin](../../extension/create-shipping-plugin.md)
-
-1. Create the plugin with `php artisan gp247:make-plugin --name=MyCarrier --download=0`, set `configCode: "Shipping"`,
-   `requireComposerPackages: ["gp247/shop"]`.
-2. Keep the carrier account in `admin_config` (a `ConfigForm` settings screen), secrets as `password` fields
-   (encrypted). Read them for the request's store: `gp247_config('MyCarrier_token', $request->storeId)` — never from the session.
-3. Write the `rates()` driver: ordinary failures (incomplete address, not configured, carrier refused) return
-   `RateResult::error()`; a carrier outage (timeout, 5xx) throws, so the system pauses that carrier.
-4. Add the capabilities the carrier has; map the carrier's status codes onto `ShipmentStatus` in **one** place.
-5. Webhook: verify the signature/secret **before** trusting any data; use the carrier's event time for
-   de-duplication; show the URL `route('shop.shipping.webhook', ['pluginKey' => 'MyCarrier'])` on the settings screen.
-6. Test without calling the real carrier: use `Http::fake()`.
-
-**Adding parcel data for a carrier** (HS code, fragile goods…): register an array callable into
-`gp247-config.shop.shipping_item_resolvers` — not a closure (it breaks `config:cache`).
-
-**Writing your own theme**: if you override the checkout step (`livewire/shop_checkout-wizard.blade.php`), keep the
-behaviour of the original in `vendor/gp247/shop/src/Views/templates/GP247Front/`: one choice per service (keyed by the
-service code), the formatted price, estimated days, a message when no service is available, and the Ward field.
-
-**Old shipping plugins written for `getInfo()`**: they still work (one service, fee in the display currency). For
-several services, shipments, tracking or COD, add a driver as above — the reference plugin `ShippingStandard` supports
-both ways.
-
-### B5. Working with an AI agent
-
-> 💡 Use the **`gp247-shipping-plugin-create`** skill from the [gp247-skills](https://github.com/gp247net/gp247-skills)
-> repository (copy the skill folder into your agent's skills folder, for example `.claude/skills/` for Claude Code). The
-> skill probes the site's version and capabilities before writing code, builds the plugin on the contract above, and is
-> updated together with `gp247/shop` whenever the shipping contract changes. For a non-shipping plugin use
-> `gp247-plugin-create`; for a payment plugin, `gp247-payment-plugin-create`. Step-by-step guide:
-> [Creating a shipping plugin](../../extension/create-shipping-plugin.md).
+> 💡 Working with an AI agent: use the **`gp247-shipping-plugin-create`** skill from the
+> [gp247-skills](https://github.com/gp247net/gp247-skills) repository — it probes the site's version and capabilities and builds the plugin on
+> `gp247/shop`'s contract.
 
 ---
 
@@ -319,13 +223,14 @@ Canceled / Refunded), or it already has an active shipment.
 
 **Q8: I want to write a plugin for another delivery company?**
 
-→ See Part B. If you work with an AI agent, use the `gp247-shipping-plugin-create` skill — it builds the plugin on
+→ See [Creating a shipping plugin](../../extension/create-shipping-plugin.md). If you work with an AI agent, use the
+`gp247-shipping-plugin-create` skill — it builds the plugin on
 `gp247/shop`'s contract instead of letting the agent guess.
 
 **Q9: Will my old shipping plugin still work after upgrading?**
 
 → Yes. A plugin that returns its fee through `getInfo()` still shows at checkout as a single service. For several
-services or shipments, upgrade the plugin following Part B.
+services or shipments, upgrade the plugin following [Creating a shipping plugin](../../extension/create-shipping-plugin.md).
 
 **Q10: With several stores, can each store use its own carrier account?**
 

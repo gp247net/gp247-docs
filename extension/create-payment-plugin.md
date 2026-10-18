@@ -951,6 +951,34 @@ class MyGatewayWebhookTest extends TestCase
 
 ---
 
+## 5. Quick reference — what `gp247/shop` provides, and where
+
+Payments live in `vendor/gp247/shop/src/`. **Do not edit inside `vendor/`** — every customisation goes through a plugin.
+
+| Component | Location | What it does (you do not rewrite it) |
+|---|---|---|
+| Checkout hand-off | `Controllers/ShopCartController.php` (after the order is created) | Creates the order, sets `session('orderID')`, calls the plugin's `processOrder()` if any, otherwise completes the order; `completeOrder()` / `cancelOrder()` for return pages |
+| Shown at checkout | `Front/Livewire/CheckoutWizard.php` + view `GP247Front/livewire/shop_checkout-wizard.blade.php` | Lists enabled `configCode: "Payment"` plugins, prints `getInfo()['title']` and `note` (plain text, under the selected method + confirm step — gp247/shop 3.1.4+) |
+| Payment ledger | `Models/ShopOrder.php` → `recordPayment()`, `recordRefund()`; table `shop_order_transaction` | Writes one payment/refund line, de-duplicated by transaction id, recomputes *Received*, *Balance*, payment status |
+| Status change | `ShopOrder::changeStatus()` | Returns stock on cancel, writes history, fires events; refuses an invalid transition |
+| Payment requests | `Payment/` — `PaymentRequestService.php`, `GatewayRegistry.php`, `Contracts/PaymentGateway.php` | Pay links and refunds outside the cart; gateways join by registering a driver (section 3.6) |
+| Gateway list | config key `gp247-config.payment.gateways` | Where plugins declare their driver and `collect` / `refund` / `payout` capabilities |
+| Cash on delivery | config key `gp247-config.shop.cod_payment_methods` | Which methods mean "pay on delivery" so the shipment carries the COD amount — add your plugin key if it is COD |
+| Secret encryption | `password` fields of the core `ConfigForm`, flag `security = 1` | Gateway keys encrypted at rest, never sent back to the browser |
+
+**Other cases**
+
+- **Upgrading an old payment plugin**: remove every place that writes the order's status/amount directly, move to the
+  payment ledger and `changeStatus()`; move the webhook outside the storefront group — [Converting a plugin from v1 to
+  v2](./convert-plugin-v1-to-v2.md), Step 8d.
+- **Writing your own theme that overrides the payment step**: keep the method list (`$paymentPlugins`), the
+  method-selection call and the `note` output (read `$info['note'] ?? ''`, print with `{{ }}`) as in the original at
+  `vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`. See also [Creating a
+  template](./create-template.md).
+- **Public reference code**: `CashPayment` (no gateway call), `StripePayment` and `PaypalExpress` (gateway + webhook + pay links).
+
+---
+
 ## Conditions & Rules (know before you act)
 
 **Declaring the plugin**

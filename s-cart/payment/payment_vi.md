@@ -1,15 +1,14 @@
 > 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./payment.md)
 
-# Thanh toán trong GP247 — thiết lập cho cửa hàng và hướng dẫn cho lập trình viên
+# Thanh toán trong GP247 — thiết lập và vận hành cho cửa hàng
 
 ## Giới thiệu
 
 Tài liệu này giải thích cách GP247 nhận tiền của khách: từ lúc khách chọn phương thức ở trang thanh toán, qua cổng
 thanh toán, tới khi tiền được ghi vào đơn. **Phần A** dành cho người quản lý cửa hàng: cài đặt, thiết lập cổng thanh
-toán, theo dõi và ghi nhận tiền trên đơn, có sơ đồ để hình dung toàn bộ luồng. **Phần B** dành cho lập trình viên:
-GP247 đã có sẵn những gì, nằm ở đâu, và cần làm gì khi tích hợp một cổng mới hay chỉnh sửa. Đọc xong, chủ cửa hàng tự
-bật được thanh toán online an toàn; lập trình viên biết chính xác điểm nối nào phải dùng để tiền không bị ghi sai hay
-ghi hai lần.
+toán, theo dõi và ghi nhận tiền trên đơn, có sơ đồ để hình dung toàn bộ luồng. Đọc xong, bạn tự bật được thanh toán
+online an toàn và biết tiền của mỗi đơn được ghi lúc nào. Lập trình viên muốn viết hay sửa plugin thanh toán: xem
+**Phần B** — trỏ sang tài liệu kỹ thuật ở mục [Extension](../../extension/create-payment-plugin_vi.md).
 
 ---
 
@@ -102,91 +101,16 @@ thu hộ, số tiền thu hộ tự lấy bằng **số còn phải trả** củ
 
 ## Phần B — Dành cho lập trình viên
 
-### B1. GP247 đã có sẵn những gì, nằm ở đâu
+Tài liệu này chỉ nói về cách dùng. Phần kỹ thuật — điểm nối có sẵn trong `gp247/shop`, hợp đồng tiền mà plugin phải tuân
+theo, code mẫu — nằm ở:
 
-Phần thanh toán nằm trong package `gp247/shop` (`vendor/gp247/shop/src/`). **Không sửa trong `vendor/`** — mọi tuỳ
-biến đi qua plugin.
+- [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md) — từng bước có code (plugin chuyển khoản, cổng
+  online có webhook); mục 5 tra cứu nhanh `gp247/shop` có sẵn gì, nằm ở đâu.
+- [Chuyển đổi plugin v1 lên v2](../../extension/convert-plugin-v1-to-v2_vi.md), Bước 8d — nâng cấp plugin thanh toán cũ.
 
-| Thành phần | Vị trí | Việc nó làm (bạn không phải viết lại) |
-|---|---|---|
-| Chuyển giao từ checkout | `Controllers/ShopCartController.php` (sau khi tạo đơn) | Tạo đơn, đặt `session('orderID')`, gọi `processOrder()` của plugin nếu có, không có thì hoàn tất đơn; `completeOrder()` / `cancelOrder()` cho trang quay về |
-| Sổ thanh toán | `Models/ShopOrder.php` → `recordPayment()`, `recordRefund()`; bảng `shop_order_transaction` | Ghi một dòng thu/hoàn, chống trùng theo mã giao dịch, tính lại *Đã nhận*, *Còn lại*, trạng thái thanh toán |
-| Đổi trạng thái đơn | `ShopOrder::changeStatus()` | Hoàn kho khi huỷ, ghi lịch sử, phát sự kiện; từ chối chuyển trạng thái không hợp lệ |
-| Yêu cầu thanh toán | `Payment/` — `PaymentRequestService.php`, `GatewayRegistry.php`, `Contracts/PaymentGateway.php` | Link thanh toán và hoàn tiền ngoài giỏ hàng; cổng tham gia bằng cách đăng ký driver |
-| Danh sách cổng | khoá config `gp247-config.payment.gateways` | Nơi plugin khai báo driver và năng lực `collect` / `refund` / `payout` |
-| Thu hộ | khoá config `gp247-config.shop.cod_payment_methods` | Phương thức nào là "thanh toán khi nhận hàng" để vận đơn mang tiền thu hộ |
-| Mã hoá bí mật | ô `password` của `ConfigForm` (core), cờ `security = 1` | Khoá cổng mã hoá khi lưu, không gửi lại trình duyệt |
-
-### B2. Hợp đồng mà một plugin thanh toán tuân theo
-
-| Việc | Cách làm đúng | Vì sao |
-|---|---|---|
-| Hiện ở checkout | `configCode: "Payment"` trong `gp247.json`; `AppConfig::getInfo()` trả `title` và, nếu cần hướng dẫn, `note` (chuỗi chữ thường, đọc theo cửa hàng) | Checkout liệt kê plugin đang bật theo `configCode`; `note` không rỗng hiện dưới phương thức đang chọn và ở bước xác nhận, luôn được escape |
-| Chuyển khách sang cổng | `Controllers\FrontController::processOrder()`: đọc `session('orderID')`, tạo phiên thanh toán **có khoá chống trùng theo đơn**, chuyển hướng | Gửi hai lần vẫn chỉ một phiên |
-| Ghi tiền | `$order->recordPayment($amount, '<Key>', $providerTxnId, …)` — tiền theo **đồng tiền của đơn**, chỉ số cổng **đã xác nhận** | Webhook lặp chỉ ghi một lần; *Đã nhận* luôn đúng |
-| Hoàn tiền | `$order->recordRefund(…)` theo mã hoàn của cổng; hoàn hết thì tự chuyển đơn sang *Đã hoàn tiền* qua `changeStatus()` | Trạng thái đơn không tự đổi theo tiền |
-| Đổi trạng thái | `$order->changeStatus($statusId, $history)` và kiểm tra kết quả; chỉ chuyển đơn còn *Mới* | Không bỏ qua hoàn kho / lịch sử; webhook muộn không ghi đè việc admin đã làm |
-| Webhook | Route **ngoài** nhóm middleware storefront, throttle rộng, **xác minh chữ ký trên body thô trước khi chạm database** | Middleware storefront có thể trả trang chuyển hướng mà cổng coi là "đã nhận" |
-| Link thanh toán (tuỳ chọn) | Implement `PaymentGateway` (`key`, `capabilities`, `availableFor`, `collect`, `refund`), đăng ký vào `gp247-config.payment.gateways`; tiền ghi bằng `PaymentRequestService::recordMovement()` | Dùng chung màn Yêu cầu thanh toán của cửa hàng |
-| Thu hộ (tuỳ chọn) | Thêm khoá plugin vào `gp247-config.shop.cod_payment_methods` | Vận đơn biết phải thu tiền mặt |
-
-**Không bao giờ** tự ghi `status`, `payment_status` hay `received` của đơn bằng `update()`.
-
-### B3. Luồng dữ liệu trong code
-
-```mermaid
-sequenceDiagram
-    participant K as Trình duyệt khách
-    participant SC as ShopCartController
-    participant FC as FrontController của plugin
-    participant G as Cổng thanh toán
-    participant O as ShopOrder
-    K->>SC: Đặt hàng
-    SC->>O: tạo đơn (Mới), session('orderID')
-    SC->>FC: processOrder()
-    FC->>G: tạo phiên (khoá chống trùng theo đơn)
-    FC-->>K: chuyển hướng sang trang cổng
-    K->>G: thanh toán
-    G-->>K: quay về URL thành công
-    K->>FC: success — đọc lại phiên từ API cổng
-    FC->>O: recordPayment(số cổng thu, mã giao dịch)
-    FC->>O: changeStatus(Đang xử lý) nếu đơn còn Mới
-    G->>FC: webhook (có thể tới trước, sau, hoặc lặp lại)
-    FC->>FC: xác minh chữ ký
-    FC->>O: recordPayment(...) — trùng mã ⇒ không ghi thêm
-```
-
-### B4. Việc của bạn theo từng tình huống
-
-**Tích hợp một cổng thanh toán mới** — hướng dẫn từng bước có code: [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md)
-
-1. Tạo plugin: `php artisan gp247:make-plugin --name=MyGateway --download=0`, đặt `configCode: "Payment"`,
-   `requireComposerPackages: ["gp247/shop"]`.
-2. Màn cấu hình `ConfigForm`: khoá thử và khoá thật là hai ô `password` riêng (mã hoá), công tắc chế độ thử, trạng thái
-   đơn sau thanh toán. Đọc theo cửa hàng của **đơn** (`$order->store_id`) khi xử lý webhook.
-3. Viết `processOrder()`, route quay về / huỷ (trong nhóm storefront, có throttle) và webhook (ngoài nhóm storefront).
-4. Ghi tiền và đổi trạng thái đúng bảng B2; bắt lỗi trùng khoá khi hai lần báo về cùng lúc và coi là "đã ghi".
-5. Nếu cổng có API hoàn tiền và bạn muốn dùng màn Yêu cầu thanh toán: implement `PaymentGateway`.
-6. Test không gọi cổng thật: `Http::fake()` và webhook mẫu có chữ ký — gồm trường hợp lặp, sai chữ ký, sai số tiền.
-
-**Nâng cấp plugin thanh toán cũ**: bỏ mọi chỗ tự ghi trạng thái/số tiền của đơn, chuyển sang sổ thanh toán và
-`changeStatus()`; đưa webhook ra ngoài nhóm storefront. Xem
-[Chuyển đổi plugin v1 lên v2](../../extension/convert-plugin-v1-to-v2_vi.md), Bước 8d.
-
-**Tự viết template giao diện**: nếu override bước thanh toán, giữ danh sách phương thức (`$paymentPlugins`), lời
-gọi chọn phương thức và phần in `note` (đọc `$info['note'] ?? ''`, in bằng `{{ }}`) như bản gốc trong
-`vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
-
-**Mã tham khảo công khai**: `CashPayment` (không gọi cổng), `StripePayment` và `PaypalExpress` (cổng + webhook + link
-thanh toán).
-
-### B5. Làm việc cùng AI agent
-
-> 💡 Dùng skill **`gp247-payment-plugin-create`** từ repo [gp247-skills](https://github.com/gp247net/gp247-skills)
-> (chép thư mục skill vào thư mục skill của agent, ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản và
-> năng lực của site trước khi viết code, dựng plugin đúng hợp đồng tiền ở trên, và được cập nhật cùng `gp247/shop`
-> mỗi khi hợp đồng thanh toán thay đổi. Plugin vận chuyển: dùng `gp247-shipping-plugin-create`; các plugin khác:
-> `gp247-plugin-create`. Hướng dẫn từng bước: [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md).
+> 💡 Làm cùng AI agent: dùng skill **`gp247-payment-plugin-create`** trong repo
+> [gp247-skills](https://github.com/gp247net/gp247-skills) — skill dựng plugin đúng hợp đồng của `gp247/shop` thay vì để
+> agent tự đoán.
 
 ---
 
@@ -250,8 +174,8 @@ thử cả trường hợp đóng trình duyệt giữa chừng.
 
 **Câu 8: Tôi muốn tự viết plugin cho một cổng thanh toán khác?**
 
-→ Xem Phần B. Nếu làm cùng AI agent, dùng skill `gp247-payment-plugin-create` — skill dựng plugin đúng hợp đồng tiền của
-`gp247/shop` thay vì để agent tự đoán.
+→ Xem [Tạo plugin thanh toán](../../extension/create-payment-plugin_vi.md). Nếu làm cùng AI agent, dùng skill
+`gp247-payment-plugin-create` — skill dựng plugin đúng hợp đồng tiền của `gp247/shop` thay vì để agent tự đoán.
 
 **Câu 9: Thanh toán khi nhận hàng thì tiền được ghi lúc nào?**
 

@@ -20,6 +20,10 @@ biết khi nào cần và khi nào không cần tự viết lại các trang bá
 >    mặc định trong gói của nó** theo cơ chế fallback (Phần 6). Bạn chỉ cần tự viết các trang này khi
 >    muốn tùy chỉnh — và khi đó nên **publish view của `gp247/shop` ra ngoài** để chỉnh cho template mới.
 
+> 💡 **Làm cùng AI agent?** Dùng skill **`gp247-template-create`** trong repo [gp247-skills](https://github.com/gp247net/gp247-skills) (chép thư mục skill vào thư mục skill
+> của agent, ví dụ `.claude/skills/` với Claude Code): skill tự dò phiên bản site, sinh khung bằng `gp247:make-template` và dựng
+> đủ các file template phải có, theo cách cập nhật an toàn.
+
 ---
 
 ## 1. Chuẩn bị

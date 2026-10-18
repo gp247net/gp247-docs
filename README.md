@@ -23,7 +23,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Update-safe plugins](./extension/create-plugin-update-safety.md) | How updates run, 6 rules, the `update()` hook, own data tables | 2026-10-18 |
 | [Advanced plugins](./extension/create-plugin-advanced.md) | Per-store settings, secret keys, storefront pages / blocks / hooks, coupons, menus | 2026-10-18 |
 | [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-10-18 |
-| [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-09-29 |
+| [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-10-18 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-10-18 |
 
 ### System
@@ -46,8 +46,8 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | --- | --- | --- |
 | [Order lifecycle](./s-cart/order-processing/order-lifecycle.md) | Every stage of an order — placing, editing, receiving money, refunding, cancelling, re-opening, deleting — with stock/money/history at each, plus flow diagrams | 2026-10-18 |
 | [Payment requests](./s-cart/order-processing/payment-request.md) | Money in/out outside the cart: online payment links, hand entries, refunds; 4 money flows, order/InOut/MultiVendor purposes, pay-out rights, flow diagrams | 2026-10-02 |
-| [Payments in GP247](./s-cart/payment/payment.md) | Store setup: payment gateways (test → live, webhook), the order payment ledger, COD; developers: built-in seams, the money contract, the `gp247-payment-plugin-create` skill | 2026-10-18 |
-| [Shipping in GP247](./s-cart/shipping/shipping.md) | Store setup: Shipping tab, pick-up warehouse, shipments, tracking, cash on delivery; developers: capability-based carrier contract, the `gp247-shipping-plugin-create` skill (since shop 3.1.4) | 2026-10-18 |
+| [Payments in GP247](./s-cart/payment/payment.md) | Store setup and day-to-day use: payment gateways (test → live, webhook), the order payment ledger, COD, the instructions customers see; developers are pointed to [Creating a payment plugin](./extension/create-payment-plugin.md) | 2026-10-18 |
+| [Shipping in GP247](./s-cart/shipping/shipping.md) | Store setup and day-to-day use: Shipping tab, pick-up warehouse, shipments, tracking, cash on delivery (since shop 3.1.4); developers are pointed to [Creating a shipping plugin](./extension/create-shipping-plugin.md) | 2026-10-18 |
 | [Currency](./s-cart/tax-and-currency/currency.md) | Explicit base currency, value-preserving rebase, money-input hint (from shop 2.1) | 2026-08-22 |
 | [Tax in GP247](./s-cart/tax-and-currency/tax.md) | How per-product tax works and how to configure it | 2026-08-04 |
 | [Product Bundle (Combo)](./s-cart/product/product-bundle.md) | Create a combo product of several child products; price & stock | 2026-08-04 |

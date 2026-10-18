@@ -165,6 +165,10 @@ After copying, open the **Plugins** (or **Templates**) list again: the extension
 
 ## 5. Method 4 — Command line (`gp247:ext-*`)
 
+> 💡 **Working with an AI agent?** Use the **`gp247-extension-lifecycle`** skill from the [gp247-skills](https://github.com/gp247net/gp247-skills) repository: it probes the
+> site's version, uses only the commands and options the site really has, and reports each install / enable / disable /
+> update / remove step.
+
 For developers, CI/CD, Docker or shared hosts with terminal access, the whole extension lifecycle is
 available from the command line — the **same engine** the admin UI uses (so compatibility checks,
 `GP247_PROTECTED_*` and the in-use/default-template guard all apply identically). Plugins and templates
@@ -393,4 +397,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>

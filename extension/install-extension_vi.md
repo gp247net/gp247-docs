@@ -161,6 +161,9 @@ nó, hoặc chạy `php artisan gp247:update`. Chi tiết:
 
 ## 5. Cách 4 — Dòng lệnh (`gp247:ext-*`)
 
+> 💡 **Làm cùng AI agent?** Dùng skill **`gp247-extension-lifecycle`** trong repo [gp247-skills](https://github.com/gp247net/gp247-skills): skill dò phiên bản site, chỉ
+> dùng lệnh và tuỳ chọn site thật sự có, rồi báo kết quả từng bước cài / bật / tắt / cập nhật / gỡ.
+
 Dành cho lập trình viên, CI/CD, Docker hoặc shared host có terminal: toàn bộ vòng đời extension làm
 được từ dòng lệnh — **cùng engine** với admin UI (nên kiểm tra tương thích, `GP247_PROTECTED_*` và
 guard template đang-dùng/mặc-định đều áp dụng y hệt). Plugin và template dùng chung một họ lệnh; chọn
@@ -381,4 +384,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>

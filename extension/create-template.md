@@ -22,6 +22,10 @@ mechanism), so you know when you do and do not need to rewrite the shopping page
 >    yourself when you want to customize them — and in that case you should **publish the `gp247/shop`
 >    views out** so you can adapt them for your new template.
 
+> 💡 **Working with an AI agent?** Use the **`gp247-template-create`** skill from the [gp247-skills](https://github.com/gp247net/gp247-skills) repository (copy the skill folder
+> into your agent's skills folder, for example `.claude/skills/` for Claude Code): it probes the site's version, scaffolds with
+> `gp247:make-template` and builds every file a template must provide, the update-safe way.
+
 ---
 
 ## 1. Prerequisites

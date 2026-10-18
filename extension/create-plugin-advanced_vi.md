@@ -9,6 +9,10 @@ bí mật, hiện nội dung trên trang cửa hàng (trang riêng, khối layou
 phẩm và thêm menu quản trị. Nên đọc sau [Hướng dẫn tạo plugin](./create-plugin_vi.md). Plugin thanh toán và vận chuyển có
 hướng dẫn riêng: [thanh toán](./create-payment-plugin_vi.md), [vận chuyển](./create-shipping-plugin_vi.md).
 
+> 💡 **Làm cùng AI agent?** Dùng skill **`gp247-plugin-create`** trong repo [gp247-skills](https://github.com/gp247net/gp247-skills) (chép thư mục skill vào thư mục skill
+> của agent, ví dụ `.claude/skills/` với Claude Code): skill tự dò phiên bản site và áp các mục dưới đây (theo cửa hàng, khoá
+> bí mật, điểm cắm storefront…). Plugin thanh toán / vận chuyển: `gp247-payment-plugin-create` / `gp247-shipping-plugin-create`.
+
 ---
 
 ## 1. Thiết lập theo từng cửa hàng

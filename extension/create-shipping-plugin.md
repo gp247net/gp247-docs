@@ -823,6 +823,62 @@ class MyCarrierProviderTest extends TestCase
 
 ---
 
+## 5. Quick reference — what `gp247/shop` provides, and where
+
+The whole shipping layer lives in `vendor/gp247/shop/src/Shipping/` (namespace `GP247\Shop\Shipping`). **Do not edit
+inside `vendor/`** — every customisation goes through a plugin.
+
+| Component | Location | What it does (you do not rewrite it) |
+|---|---|---|
+| Carrier contract | `Contracts/ShippingProvider.php` + 5 capability interfaces | Defines what a plugin must provide (table in section 3.1) |
+| Carrier registry | `ShippingProviderRegistry.php`, config key `gp247-config.shop.shipping_providers` | Finds each plugin's driver, checks declared capabilities are real |
+| Quoting | `RateService.php`, `RateRequestFactory.php` | Asks every carrier, caches 10 minutes per address + cart, pauses a failing carrier for 1 minute, converts carrier → base → display currency |
+| Keeping the chosen rate | `ShippingCheckout.php`, `Data/RateSnapshot.php` | The fee is decided on the server, stored in `shop_order.shipping_service` / `shipping_rate`; a rate no longer valid refuses the order instead of shipping free |
+| Parcel data | `ShippingItemFactory.php`, `Data/ShippingItem.php`, `WeightConverter.php`, `LengthConverter.php` | Weight (grams), size (cm), barcode, brand… from the product; digital goods excluded; bundles weighed from their parts |
+| Shipments | `ShipmentService.php`, `Models/ShopShipment.php`, `Models/ShopShipmentEvent.php` | Book/cancel/label/sync, de-duplicated events, order shipping status, asks the carrier again when an order is opened |
+| Shared webhook | `Routes/Webhook/shipping.php`, `Http/ShippingWebhookController.php` | Route `POST /shipping/webhook/<PluginKey>` outside the storefront middleware, throttled |
+| Cash on delivery | `CodResolver.php`, config key `gp247-config.shop.cod_payment_methods` | COD amount = outstanding balance for COD methods; recorded once when the carrier reconciles |
+| Admin screens | `Admin/Livewire/OrderShipmentPanel.php`, Shipping tab of `ShopConfigForm` | Shipping block of the order detail, settings tab |
+| Old contract | `LegacyGetInfoAdapter.php` | Plugins written for the old `getInfo()` still show at checkout (one service) |
+
+Data flows through those components like this:
+
+```mermaid
+sequenceDiagram
+    participant W as CheckoutWizard
+    participant R as RateService
+    participant P as Plugin driver
+    participant O as Order
+    participant SS as ShipmentService
+    participant C as Carrier API
+    W->>R: quote(RateRequest from address + cart)
+    R->>P: rates(RateRequest)
+    P->>C: ask for prices (short timeout)
+    C-->>P: services + prices
+    P-->>R: RateResult (carrier currency)
+    R-->>W: converted RateSnapshot (cached 10 minutes)
+    W->>O: place the order — fee re-read from the server-side snapshot
+    Note over SS,C: Admin clicks Create shipment
+    SS->>P: createShipment(ShipmentRequest)
+    P->>C: book the shipment
+    C-->>SS: tracking number, status
+    C->>SS: webhook → handleWebhook() verifies → TrackingEvent
+    SS->>O: shipping status, COD money (if on)
+```
+
+**Other cases**
+
+- **Adding parcel data for a carrier** (HS code, fragile goods…): register an array callable into
+  `gp247-config.shop.shipping_item_resolvers` — not a closure (it breaks `config:cache`).
+- **Writing your own theme that overrides the checkout step** (`livewire/shop_checkout-wizard.blade.php`): keep the
+  behaviour of the original in `vendor/gp247/shop/src/Views/templates/GP247Front/` — one choice per service (keyed by the
+  service code), the formatted price, estimated days, a message when no service is available, and the Ward field. See
+  also [Creating a template](./create-template.md).
+- **Old shipping plugins written for `getInfo()`**: they still work (one service, fee in the display currency). For several
+  services, shipments, tracking or COD, add a driver as in Parts 1–2 — the reference plugin `ShippingStandard` supports both ways.
+
+---
+
 ## Conditions & Rules (know before you act)
 
 **Declaring the plugin**

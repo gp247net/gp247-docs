@@ -9,6 +9,11 @@ storing secrets, showing content on the storefront (own page, layout blocks, hoo
 changing product prices and adding an admin menu. Read it after [Creating a plugin](./create-plugin.md). Payment and shipping
 plugins have their own guides: [payment](./create-payment-plugin.md), [shipping](./create-shipping-plugin.md).
 
+> 💡 **Working with an AI agent?** Use the **`gp247-plugin-create`** skill from the [gp247-skills](https://github.com/gp247net/gp247-skills) repository (copy the skill folder
+> into your agent's skills folder, for example `.claude/skills/` for Claude Code): it probes the site's version and applies the
+> topics below (per store, secret keys, storefront hooks…). Payment / shipping plugins: `gp247-payment-plugin-create` /
+> `gp247-shipping-plugin-create`.
+
 ---
 
 ## 1. Per-store settings

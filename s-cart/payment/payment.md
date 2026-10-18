@@ -1,15 +1,15 @@
 > 🌐 **Language:** [🇻🇳 Tiếng Việt](./payment_vi.md) · 🇬🇧 English (current)
 
-# Payments in GP247 — store setup and developer guide
+# Payments in GP247 — store setup and day-to-day use
 
 ## Introduction
 
 This document explains how GP247 takes the customer's money: from the moment the customer picks a method at checkout,
 through the payment gateway, until the money is recorded on the order. **Part A** is for store managers: installation,
-gateway settings, watching and recording money on orders, with a diagram of the whole flow. **Part B** is for
-developers: what GP247 already provides, where it lives, and what to do when integrating a new gateway or customising.
-After reading, a store owner can switch online payments on safely; a developer knows exactly which seams to use so
-money is never recorded wrongly or twice.
+gateway settings, watching and recording money on orders, with a diagram of the whole flow. After reading, you can
+switch online payments on safely and know when each order's money is recorded. Developers who want to write or change
+a payment plugin: see **Part B** — it points to the technical guide in the [Extension](../../extension/create-payment-plugin.md)
+section.
 
 ---
 
@@ -106,95 +106,16 @@ reconciled, the money can be recorded in the order's ledger automatically — de
 
 ## Part B — For developers
 
-### B1. What GP247 already provides, and where
+This document only covers day-to-day use. The technical side — the seams `gp247/shop` already provides, the money
+contract a plugin must follow, sample code — is in:
 
-Payments live in the `gp247/shop` package (`vendor/gp247/shop/src/`). **Do not edit inside `vendor/`** — every
-customisation goes through a plugin.
+- [Creating a payment plugin](../../extension/create-payment-plugin.md) — step by step with code (bank transfer plugin,
+  online gateway with webhook); section 5 is a quick reference of what `gp247/shop` provides and where.
+- [Converting a plugin from v1 to v2](../../extension/convert-plugin-v1-to-v2.md), Step 8d — upgrading an old payment plugin.
 
-| Component | Location | What it does (you do not rewrite it) |
-|---|---|---|
-| Checkout hand-off | `Controllers/ShopCartController.php` (after the order is created) | Creates the order, sets `session('orderID')`, calls the plugin's `processOrder()` if any, otherwise completes the order; `completeOrder()` / `cancelOrder()` for return pages |
-| Payment ledger | `Models/ShopOrder.php` → `recordPayment()`, `recordRefund()`; table `shop_order_transaction` | Writes one payment/refund line, de-duplicated by transaction id, recomputes *Received*, *Balance*, payment status |
-| Status change | `ShopOrder::changeStatus()` | Returns stock on cancel, writes history, fires events; refuses an invalid transition |
-| Payment requests | `Payment/` — `PaymentRequestService.php`, `GatewayRegistry.php`, `Contracts/PaymentGateway.php` | Pay links and refunds outside the cart; gateways join by registering a driver |
-| Gateway list | config key `gp247-config.payment.gateways` | Where plugins declare their driver and `collect` / `refund` / `payout` capabilities |
-| Cash on delivery | config key `gp247-config.shop.cod_payment_methods` | Which methods mean "pay on delivery" so the shipment carries the COD amount |
-| Secret encryption | `password` fields of the core `ConfigForm`, flag `security = 1` | Gateway keys encrypted at rest, never sent back to the browser |
-
-### B2. The contract a payment plugin follows
-
-| Task | The right way | Why |
-|---|---|---|
-| Show at checkout | `configCode: "Payment"` in `gp247.json`; `AppConfig::getInfo()` returns `title` and, when instructions are needed, `note` (a plain-text string, read per store) | Checkout lists enabled plugins by `configCode`; a non-empty `note` shows under the selected method and on the confirm step, always escaped |
-| Send the customer to the gateway | `Controllers\FrontController::processOrder()`: read `session('orderID')`, create the payment session **with an idempotency key per order**, redirect | Sent twice still gives one session |
-| Record money | `$order->recordPayment($amount, '<Key>', $providerTxnId, …)` — amount in the **order's currency**, only what the gateway **confirmed** | A repeated webhook records once; *Received* is always right |
-| Refunds | `$order->recordRefund(…)` keyed by the gateway's refund id; when fully refunded, move the order to *Refunded* yourself with `changeStatus()` | The order status does not follow the money by itself |
-| Change status | `$order->changeStatus($statusId, $history)` and check its result; only move an order still *New* | Stock and history are never skipped; a late webhook does not overwrite what the admin did |
-| Webhook | Route **outside** the storefront middleware group, generous throttle, **verify the signature on the raw body before touching the database** | Storefront middleware may answer with a redirect page the gateway counts as "delivered" |
-| Pay links (optional) | Implement `PaymentGateway` (`key`, `capabilities`, `availableFor`, `collect`, `refund`), register in `gp247-config.payment.gateways`; record money with `PaymentRequestService::recordMovement()` | Shares the store's Payment Request screen |
-| Cash on delivery (optional) | Add the plugin key to `gp247-config.shop.cod_payment_methods` | Shipments know to collect cash |
-
-**Never** write the order's `status`, `payment_status` or `received` yourself with `update()`.
-
-### B3. The data flow in code
-
-```mermaid
-sequenceDiagram
-    participant K as Customer browser
-    participant SC as ShopCartController
-    participant FC as Plugin FrontController
-    participant G as Payment gateway
-    participant O as ShopOrder
-    K->>SC: Place order
-    SC->>O: create order (New), session('orderID')
-    SC->>FC: processOrder()
-    FC->>G: create session (idempotency key per order)
-    FC-->>K: redirect to the gateway page
-    K->>G: pay
-    G-->>K: back to the success URL
-    K->>FC: success — read the session back from the gateway API
-    FC->>O: recordPayment(amount taken, transaction id)
-    FC->>O: changeStatus(Processing) if the order is still New
-    G->>FC: webhook (may arrive before, after, or repeatedly)
-    FC->>FC: verify the signature
-    FC->>O: recordPayment(...) — same id ⇒ nothing added
-```
-
-### B4. Your job, case by case
-
-**Integrating a new gateway** — step-by-step guide with code: [Creating a payment plugin](../../extension/create-payment-plugin.md)
-
-1. Create the plugin: `php artisan gp247:make-plugin --name=MyGateway --download=0`, set `configCode: "Payment"`,
-   `requireComposerPackages: ["gp247/shop"]`.
-2. A `ConfigForm` settings screen: test and live keys as two separate `password` fields (encrypted), a test-mode switch,
-   the order status after payment. When handling a webhook, read settings for the **order's** store (`$order->store_id`).
-3. Write `processOrder()`, the return / cancel routes (inside the storefront group, throttled) and the webhook (outside
-   the storefront group).
-4. Record money and change status as in table B2; catch the duplicate-key error when two reports arrive at once and treat
-   it as "already recorded".
-5. If the gateway has a refund API and you want the Payment Request screen: implement `PaymentGateway`.
-6. Test without calling the real gateway: `Http::fake()` and signed sample webhooks — including a repeat, a bad
-   signature and a wrong amount.
-
-**Upgrading an old payment plugin**: remove every place that writes the order's status/amount directly, move to the
-payment ledger and `changeStatus()`; move the webhook outside the storefront group. See
-[Converting a plugin from v1 to v2](../../extension/convert-plugin-v1-to-v2.md), Step 8d.
-
-**Writing your own theme**: if you override the checkout step, keep the method list (`$paymentPlugins`), the
-method-selection call and the `note` output (read `$info['note'] ?? ''`, print with `{{ }}`) as in the original at
-`vendor/gp247/shop/src/Views/templates/GP247Front/livewire/shop_checkout-wizard.blade.php`.
-
-**Public reference code**: `CashPayment` (no gateway call), `StripePayment` and `PaypalExpress` (gateway + webhook +
-pay links).
-
-### B5. Working with an AI agent
-
-> 💡 Use the **`gp247-payment-plugin-create`** skill from the [gp247-skills](https://github.com/gp247net/gp247-skills)
-> repository (copy the skill folder into your agent's skills folder, for example `.claude/skills/` for Claude Code). The
-> skill probes the site's version and capabilities before writing code, builds the plugin on the money contract above,
-> and is updated together with `gp247/shop` whenever the payment contract changes. For a shipping plugin use
-> `gp247-shipping-plugin-create`; for other plugins, `gp247-plugin-create`. Step-by-step guide:
-> [Creating a payment plugin](../../extension/create-payment-plugin.md).
+> 💡 Working with an AI agent: use the **`gp247-payment-plugin-create`** skill from the
+> [gp247-skills](https://github.com/gp247net/gp247-skills) repository — it builds the plugin on `gp247/shop`'s contract instead of letting the
+> agent guess.
 
 ---
 
@@ -259,7 +180,8 @@ after also testing a browser closed halfway.
 
 **Q8: I want to write a plugin for another payment gateway?**
 
-→ See Part B. If you work with an AI agent, use the `gp247-payment-plugin-create` skill — it builds the plugin on
+→ See [Creating a payment plugin](../../extension/create-payment-plugin.md). If you work with an AI agent, use the
+`gp247-payment-plugin-create` skill — it builds the plugin on
 `gp247/shop`'s money contract instead of letting the agent guess.
 
 **Q9: With pay on delivery, when is the money recorded?**

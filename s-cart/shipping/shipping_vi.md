@@ -1,14 +1,14 @@
 > 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./shipping.md)
 
-# Vận chuyển trong GP247 — thiết lập cho cửa hàng và hướng dẫn cho lập trình viên
+# Vận chuyển trong GP247 — thiết lập và vận hành cho cửa hàng
 
 ## Giới thiệu
 
 Tài liệu này giải thích cách GP247 tính phí giao hàng, tạo vận đơn với hãng vận chuyển và theo dõi đơn tới
 tay khách. **Phần A** dành cho người quản lý cửa hàng: cài đặt, thiết lập từng ô, xử lý vận đơn hằng ngày,
-có sơ đồ để hình dung toàn bộ luồng. **Phần B** dành cho lập trình viên: GP247 đã có sẵn những gì, nằm ở
-đâu, và cần làm gì khi tích hợp một hãng mới hay chỉnh sửa. Đọc xong, chủ cửa hàng tự bật được vận chuyển
-cho đúng; lập trình viên biết chính xác phần nào chỉ cần "cắm vào", phần nào không được viết lại.
+có sơ đồ để hình dung toàn bộ luồng. Đọc xong, bạn tự bật được vận chuyển cho đúng và xử lý được vận đơn hằng
+ngày. Lập trình viên muốn tích hợp một hãng mới: xem **Phần B** — trỏ sang tài liệu kỹ thuật ở mục
+[Extension](../../extension/create-shipping-plugin_vi.md).
 
 > ℹ️ **Có từ:** gp247/shop 3.1.4 (lớp vận chuyển chuẩn: nhiều dịch vụ mỗi hãng, vận đơn, theo dõi, thu hộ).
 > Trên phiên bản cũ hơn, mỗi plugin vận chuyển chỉ trả về một mức phí.
@@ -141,110 +141,15 @@ Tiền thu hộ chỉ áp dụng cho đơn chọn phương thức **thanh toán 
 
 ## Phần B — Dành cho lập trình viên
 
-### B1. GP247 đã có sẵn những gì, nằm ở đâu
+Tài liệu này chỉ nói về cách dùng. Phần kỹ thuật — lớp vận chuyển có sẵn trong `gp247/shop`, hợp đồng hãng theo năng lực,
+code mẫu — nằm ở:
 
-Toàn bộ lớp vận chuyển nằm trong package `gp247/shop`, thư mục `vendor/gp247/shop/src/Shipping/`
-(namespace `GP247\Shop\Shipping`). **Không sửa trong `vendor/`** — mọi tuỳ biến đi qua plugin.
+- [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md) — từng bước có code (phí theo khối lượng, hãng có
+  API: vận đơn, theo dõi, webhook, thu hộ); mục 5 tra cứu nhanh `gp247/shop` có sẵn gì, nằm ở đâu.
 
-| Thành phần | Vị trí | Việc nó làm (bạn không phải viết lại) |
-|---|---|---|
-| Hợp đồng hãng | `Contracts/ShippingProvider.php` + 5 interface năng lực | Định nghĩa thứ một plugin phải cung cấp |
-| Sổ đăng ký hãng | `ShippingProviderRegistry.php`, khoá config `gp247-config.shop.shipping_providers` | Tìm driver của từng plugin, kiểm năng lực khai báo có thật không |
-| Báo giá | `RateService.php`, `RateRequestFactory.php` | Hỏi giá mọi hãng, cache 10 phút theo địa chỉ + giỏ, tạm dừng hãng lỗi 1 phút, quy đổi tiền tệ hãng → gốc → hiển thị |
-| Giữ giá đã chọn | `ShippingCheckout.php`, `Data/RateSnapshot.php` | Phí do server quyết, lưu vào `shop_order.shipping_service` / `shipping_rate`; giá không còn hợp lệ thì từ chối đặt đơn thay vì giao miễn phí |
-| Dữ liệu hàng | `ShippingItemFactory.php`, `Data/ShippingItem.php`, `WeightConverter.php`, `LengthConverter.php` | Khối lượng (gram), kích thước (cm), mã vạch, thương hiệu… từ sản phẩm; bỏ hàng kỹ thuật số; combo tính theo thành phần |
-| Vận đơn | `ShipmentService.php`, `Models/ShopShipment.php`, `Models/ShopShipmentEvent.php` | Tạo/huỷ/nhãn/đồng bộ, lưu sự kiện chống trùng, quy ra trạng thái giao hàng, tự hỏi lại hãng khi mở đơn |
-| Webhook chung | `Routes/Webhook/shipping.php`, `Http/ShippingWebhookController.php` | Route `POST /shipping/webhook/<PluginKey>` ngoài middleware storefront, có throttle |
-| Thu hộ | `CodResolver.php`, khoá config `gp247-config.shop.cod_payment_methods` | Số tiền thu hộ = số còn phải trả với phương thức COD; ghi tiền một lần khi hãng đối soát |
-| Màn admin | `Admin/Livewire/OrderShipmentPanel.php`, tab Vận chuyển của `ShopConfigForm` | Khối Vận chuyển ở chi tiết đơn, tab cấu hình |
-| Hợp đồng cũ | `LegacyGetInfoAdapter.php` | Plugin viết theo `getInfo()` cũ vẫn hiện ở checkout (một dịch vụ) |
-
-### B2. Hợp đồng mà một plugin vận chuyển cung cấp
-
-Bắt buộc một method; các năng lực khác **chỉ khai báo khi hãng thật sự có**:
-
-| Năng lực (khai báo) | Interface | Method |
-|---|---|---|
-| `rates` (bắt buộc) | `ShippingProvider` | `rates(RateRequest): RateResult` — mỗi dịch vụ một `ShippingRate`, giá theo **tiền tệ của hãng** |
-| `shipments` | `CreatesShipments` | `createShipment(ShipmentRequest): ShipmentResult`, `shipmentFormFields()` |
-| `cancel` | `CancelsShipments` | `cancelShipment($tracking, $storeId)` |
-| `documents` | `ProvidesShippingDocuments` | `document($tracking, $storeId, $options)` — nhãn in |
-| `tracking` | `TracksShipments` | `track($tracking, $storeId)` — danh sách `TrackingEvent` |
-| `webhook` | `HandlesShippingWebhooks` | `handleWebhook(Request, Closure $storeOf): WebhookResult` |
-| `cod` | `CreatesShipments` | Gửi `ShipmentRequest::$codAmount` (tiền theo **đơn hàng** — quy đổi sang tiền hãng) |
-
-Đăng ký trong `Provider.php` của plugin:
-
-```php
-if (interface_exists(\GP247\Shop\Shipping\Contracts\ShippingProvider::class)) {
-    config(['gp247-config.shop.shipping_providers.MyCarrier' => [
-        'driver' => \App\GP247\Plugins\MyCarrier\Services\MyCarrierProvider::class,
-        'capabilities' => ['rates', 'shipments', 'cancel', 'documents', 'tracking', 'webhook', 'cod'],
-        'settings_route' => 'admin_my-carrier.index', // tab Vận chuyển sẽ link tới màn cấu hình này
-    ]]);
-}
-```
-
-Plugin vẫn có `configCode: "Shipping"` trong `gp247.json` — đó là cách checkout biết plugin là hãng vận chuyển
-và cách chủ cửa hàng bật/tắt nó theo từng cửa hàng.
-
-### B3. Luồng dữ liệu trong code
-
-```mermaid
-sequenceDiagram
-    participant W as CheckoutWizard
-    participant R as RateService
-    participant P as Driver của plugin
-    participant O as Đơn hàng
-    participant SS as ShipmentService
-    participant C as API hãng
-    W->>R: quote(RateRequest từ địa chỉ + giỏ)
-    R->>P: rates(RateRequest)
-    P->>C: hỏi giá (timeout ngắn)
-    C-->>P: các dịch vụ + giá
-    P-->>R: RateResult (tiền của hãng)
-    R-->>W: RateSnapshot đã quy đổi (cache 10 phút)
-    W->>O: đặt đơn — phí lấy lại từ snapshot trên server
-    Note over SS,C: Admin bấm Tạo vận đơn
-    SS->>P: createShipment(ShipmentRequest)
-    P->>C: tạo vận đơn
-    C-->>SS: mã vận đơn, trạng thái
-    C->>SS: webhook → handleWebhook() xác minh → TrackingEvent
-    SS->>O: trạng thái giao hàng, tiền COD (nếu bật)
-```
-
-### B4. Việc của bạn theo từng tình huống
-
-**Tích hợp một hãng vận chuyển mới** — hướng dẫn từng bước có code: [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md)
-
-1. Tạo plugin bằng `php artisan gp247:make-plugin --name=MyCarrier --download=0`, đặt `configCode: "Shipping"`,
-   `requireComposerPackages: ["gp247/shop"]`.
-2. Lưu thông tin tài khoản hãng trong `admin_config` (màn cấu hình `ConfigForm`), mã bí mật dạng `password`
-   (được mã hoá). Đọc theo cửa hàng của yêu cầu: `gp247_config('MyCarrier_token', $request->storeId)` — không đọc từ session.
-3. Viết driver `rates()`: lỗi thường gặp (thiếu địa chỉ, chưa cấu hình, hãng từ chối) trả `RateResult::error()`;
-   hãng sập (timeout, lỗi 5xx) thì ném exception để hệ thống tạm dừng hãng đó.
-4. Thêm các năng lực hãng có; ánh xạ mã trạng thái của hãng về `ShipmentStatus` ở **một** chỗ.
-5. Webhook: xác minh chữ ký/mã bí mật **trước** khi tin dữ liệu; dùng thời gian sự kiện của hãng để chống trùng;
-   hiển thị URL `route('shop.shipping.webhook', ['pluginKey' => 'MyCarrier'])` trên màn cấu hình.
-6. Test không gọi hãng thật: dùng `Http::fake()`.
-
-**Bổ sung dữ liệu hàng cho hãng** (mã HS, hàng dễ vỡ…): đăng ký một callable dạng mảng vào
-`gp247-config.shop.shipping_item_resolvers` — không dùng closure (vỡ `config:cache`).
-
-**Tự viết template giao diện**: nếu override bước thanh toán (`livewire/shop_checkout-wizard.blade.php`), giữ
-cách hiển thị của bản gốc trong `vendor/gp247/shop/src/Views/templates/GP247Front/`: mỗi dịch vụ một lựa chọn
-(khoá là mã dịch vụ), giá đã định dạng, số ngày dự kiến, thông báo khi không có dịch vụ, và ô Phường/Xã.
-
-**Plugin vận chuyển cũ viết theo `getInfo()`**: vẫn chạy (một dịch vụ, phí theo tiền hiển thị). Muốn nhiều dịch
-vụ, vận đơn, theo dõi, thu hộ thì thêm driver như trên — plugin mẫu `ShippingStandard` hỗ trợ cả hai cách.
-
-### B5. Làm việc cùng AI agent
-
-> 💡 Dùng skill **`gp247-shipping-plugin-create`** từ repo [gp247-skills](https://github.com/gp247net/gp247-skills)
-> (chép thư mục skill vào thư mục skill của agent, ví dụ `.claude/skills/` với Claude Code). Skill tự dò phiên bản
-> và năng lực của site trước khi viết code, dựng plugin đúng hợp đồng ở trên, và được cập nhật cùng `gp247/shop`
-> mỗi khi hợp đồng vận chuyển thay đổi. Plugin không phải vận chuyển: dùng `gp247-plugin-create`; plugin thanh
-> toán: `gp247-payment-plugin-create`. Hướng dẫn từng bước: [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md).
+> 💡 Làm cùng AI agent: dùng skill **`gp247-shipping-plugin-create`** trong repo
+> [gp247-skills](https://github.com/gp247net/gp247-skills) — skill tự dò phiên bản và năng lực của site, dựng plugin đúng
+> hợp đồng của `gp247/shop`.
 
 ---
 
@@ -311,13 +216,13 @@ phẩm; khi tạo vận đơn, sửa khối lượng và nhập kích thước k
 
 **Câu 8: Tôi muốn tự viết plugin cho một hãng giao hàng khác?**
 
-→ Xem Phần B. Nếu làm cùng AI agent, dùng skill `gp247-shipping-plugin-create` — skill dựng plugin đúng hợp đồng
-của `gp247/shop` thay vì để agent tự đoán.
+→ Xem [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md). Nếu làm cùng AI agent, dùng skill
+`gp247-shipping-plugin-create` — skill dựng plugin đúng hợp đồng của `gp247/shop` thay vì để agent tự đoán.
 
 **Câu 9: Plugin vận chuyển cũ của tôi còn chạy sau khi nâng cấp không?**
 
 → Còn. Plugin trả phí qua `getInfo()` vẫn hiện ở trang thanh toán như một dịch vụ duy nhất. Muốn nhiều dịch vụ hay
-tạo vận đơn thì nâng cấp plugin theo Phần B.
+tạo vận đơn thì nâng cấp plugin theo [Tạo plugin vận chuyển](../../extension/create-shipping-plugin_vi.md).
 
 **Câu 10: Nhiều cửa hàng thì mỗi cửa hàng dùng tài khoản hãng riêng được không?**
 

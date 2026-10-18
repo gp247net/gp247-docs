@@ -8,6 +8,10 @@ Tài liệu này dành cho lập trình viên plugin GP247 muốn mỗi bản ph
 khác: không mất thiết lập, không hỏng dữ liệu, gỡ rồi cài lại vẫn đủ bảng. Nó giải thích cập nhật chạy thế nào, 6 quy tắc
 cần giữ, cách tạo bảng dữ liệu riêng và cách viết hook `update()`. Nên đọc sau [Hướng dẫn tạo plugin](./create-plugin_vi.md).
 
+> 💡 **Làm cùng AI agent?** Các skill tạo extension trong repo [gp247-skills](https://github.com/gp247net/gp247-skills) — `gp247-plugin-create`, `gp247-payment-plugin-create`,
+> `gp247-shipping-plugin-create`, `gp247-template-create` — đều dựng plugin/template theo đúng các quy tắc cập nhật an toàn
+> dưới đây. Cài / cập nhật / gỡ extension bằng dòng lệnh: skill `gp247-extension-lifecycle`.
+
 ---
 
 ## Cập nhật chạy thế nào
