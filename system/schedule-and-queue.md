@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./schedule-and-queue_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./schedule-and-queue_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./schedule-and-queue_ja.md)
 
 # Scheduler & Queue (schedule:run and queue:work)
 
@@ -117,4 +117,4 @@ GP247 **auto-registers** the `queue:work` task in its scheduler. Thanks to this,
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-05 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

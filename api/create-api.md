@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-api_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-api_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-api_ja.md)
 
 # How to build an API correctly on GP247
 
@@ -418,4 +418,4 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

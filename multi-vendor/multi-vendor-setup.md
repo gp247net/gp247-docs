@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor-setup_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor-setup_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-vendor-setup_ja.md)
 
 # Multi-Vendor — Part 1: Setup
 
@@ -259,4 +259,4 @@ To change on-screen text, email content, shop page design or staff permissions, 
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

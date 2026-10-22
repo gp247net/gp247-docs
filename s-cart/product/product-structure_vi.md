@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-structure.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-structure.md) · [🇯🇵 日本語](./product-structure_ja.md)
 
 # Tổ chức sản phẩm trong GP247: Đơn lẻ · Gói · Nhóm
 
@@ -129,4 +129,4 @@ sản phẩm trong nhóm) và biến thể. Kiểm tra lại sau khi đổi.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

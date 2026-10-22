@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./payment_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./payment_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./payment_ja.md)
 
 # Payments in GP247 — store setup and day-to-day use
 
@@ -205,4 +205,4 @@ settings.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

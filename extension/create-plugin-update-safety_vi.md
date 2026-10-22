@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-plugin-update-safety.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-plugin-update-safety.md) · [🇯🇵 日本語](./create-plugin-update-safety_ja.md)
 
 # Plugin an toàn khi cập nhật — quy tắc, bảng dữ liệu riêng và hook `update()`
 
@@ -245,4 +245,4 @@ Gọi `(new ExtensionModel)->installExtension()` trong `install()` và `uninstal
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

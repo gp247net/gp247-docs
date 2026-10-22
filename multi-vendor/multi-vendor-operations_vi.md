@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-operations.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-operations.md) · [🇯🇵 日本語](./multi-vendor-operations_ja.md)
 
 # Multi-Vendor — Phần 2: Vận hành sàn
 
@@ -346,4 +346,4 @@ Màn **Tạo đơn hàng** trong khu người bán: chọn khách, thêm sản p
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

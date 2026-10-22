@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-purchase-order.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-purchase-order.md) · [🇯🇵 日本語](./in-out-purchase-order_ja.md)
 
 # InOut — Phần 1: Đơn nhập hàng (nhập kho từ nhà cung cấp)
 
@@ -130,4 +130,4 @@ Mỗi ràng buộc đều có lý do nghiệp vụ:
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

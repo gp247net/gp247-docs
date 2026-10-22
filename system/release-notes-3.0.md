@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./release-notes-3.0_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./release-notes-3.0_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./release-notes-3.0_ja.md)
 
 # GP247 v3.0 release notes — order money
 
@@ -306,4 +306,4 @@ with the right amount and date, and the "Balance" must be 0.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

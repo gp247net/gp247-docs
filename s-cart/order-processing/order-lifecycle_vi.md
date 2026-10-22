@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./order-lifecycle.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./order-lifecycle.md) · [🇯🇵 日本語](./order-lifecycle_ja.md)
 
 # Vòng đời đơn hàng GP247 — tồn kho, tiền và lịch sử ở từng chặng
 
@@ -259,4 +259,4 @@ suy ra từ dòng đổi trạng thái, chưa có dòng riêng.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

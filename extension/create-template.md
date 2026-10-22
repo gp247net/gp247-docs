@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-template_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-template_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-template_ja.md)
 
 # Creating a Template (storefront theme) for GP247
 
@@ -407,4 +407,4 @@ most common issue, caused by Laravel still holding the old cache.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

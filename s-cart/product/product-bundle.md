@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-bundle_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-bundle_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./product-bundle_ja.md)
 
 # Product Bundle (Combo) in GP247
 
@@ -196,4 +196,4 @@ only the kind option is no longer shown on the form.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

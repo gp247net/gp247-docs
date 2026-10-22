@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./currency_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./currency_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./currency_ja.md)
 
 # Currency in GP247
 
@@ -381,4 +381,4 @@ update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

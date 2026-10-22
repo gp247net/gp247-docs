@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./release-notes-3.0.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./release-notes-3.0.md) · [🇯🇵 日本語](./release-notes-3.0_ja.md)
 
 # Ghi chú phát hành GP247 v3.0 — tiền của đơn hàng
 
@@ -294,4 +294,4 @@ dòng thu với số tiền và ngày đúng, và ô "Còn lại" bằng 0.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

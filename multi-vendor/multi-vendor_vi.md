@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor.md) · [🇯🇵 日本語](./multi-vendor_ja.md)
 
 # Multi-Vendor — Sàn thương mại nhiều người bán cho S-Cart
 
@@ -173,4 +173,4 @@ Nói ngắn gọn: **Multi-Vendor = một cái chợ cho nhiều người bán; 
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

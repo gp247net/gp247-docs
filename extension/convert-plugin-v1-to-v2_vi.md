@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./convert-plugin-v1-to-v2.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./convert-plugin-v1-to-v2.md) · [🇯🇵 日本語](./convert-plugin-v1-to-v2_ja.md)
 
 # Hướng dẫn chuyển đổi Plugin GP247 từ v1 (Core 1.x) lên v2 (Core 2.0)
 
@@ -554,4 +554,4 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

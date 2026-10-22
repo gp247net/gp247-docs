@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-api.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-api.md) · [🇯🇵 日本語](./create-api_ja.md)
 
 # Hướng dẫn tạo API đúng chuẩn trên GP247
 
@@ -411,4 +411,4 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

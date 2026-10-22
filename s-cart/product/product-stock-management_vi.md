@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-stock-management.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-stock-management.md) · [🇯🇵 日本語](./product-stock-management_ja.md)
 
 # Quản lý tồn kho sản phẩm trong GP247
 
@@ -191,4 +191,4 @@ Khi bật **Quản lý tồn kho** (`product_stock`) và **tắt** "Cho phép mu
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

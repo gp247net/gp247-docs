@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./permission-and-role_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./permission-and-role_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./permission-and-role_ja.md)
 
 # Admin permissions in GP247 (Permission · Role · User)
 
@@ -245,4 +245,4 @@ hasn't updated, ask them to reload the page (or log in again) to be sure.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-16 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

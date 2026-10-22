@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./schedule-and-queue.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./schedule-and-queue.md) · [🇯🇵 日本語](./schedule-and-queue_ja.md)
 
 # Lịch chạy & Hàng đợi (schedule:run và queue:work)
 
@@ -117,4 +117,4 @@ GP247 **tự đăng ký sẵn** tác vụ `queue:work` vào bộ lịch. Nhờ �
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-05 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

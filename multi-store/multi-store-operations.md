@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-operations_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-operations_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-store-operations_ja.md)
 
 # Multi-Store — Part 2: Running several stores
 
@@ -221,4 +221,4 @@ The error message states how many records of each kind remain. You must move or 
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

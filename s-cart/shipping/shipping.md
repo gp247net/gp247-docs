@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./shipping_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./shipping_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./shipping_ja.md)
 
 # Shipping in GP247 — store setup and day-to-day use
 
@@ -239,4 +239,4 @@ settings) are all set per store; an empty field uses the shared value.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./install-extension.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./install-extension.md) · [🇯🇵 日本語](./install-extension_ja.md)
 
 # Hướng dẫn cài đặt Plugin & Template cho GP247
 
@@ -384,4 +384,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

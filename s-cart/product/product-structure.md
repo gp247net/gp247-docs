@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-structure_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-structure_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./product-structure_ja.md)
 
 # Product Structure in GP247: Single · Bundle · Group
 
@@ -132,4 +132,4 @@ grouped products) and variants. Re-check after changing.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

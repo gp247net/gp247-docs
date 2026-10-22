@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./custom-fields.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./custom-fields.md) · [🇯🇵 日本語](./custom-fields_ja.md)
 
 # Trường tùy chỉnh (Custom Field) trong GP247
 
@@ -292,4 +292,4 @@ có gọi `gp247_custom_field_update(...)` khi lưu, và (nếu cần hiển th�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-14 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

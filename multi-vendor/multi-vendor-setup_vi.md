@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-setup.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-setup.md) · [🇯🇵 日本語](./multi-vendor-setup_ja.md)
 
 # Multi-Vendor — Phần 1: Cài đặt
 
@@ -258,4 +258,4 @@ Muốn đổi chữ hiển thị, nội dung email, giao diện trang gian hàng
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

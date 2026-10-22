@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-shipping-plugin_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-shipping-plugin_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-shipping-plugin_ja.md)
 
 # Creating a shipping plugin for GP247 — step by step, with complete code
 
@@ -954,4 +954,4 @@ product and returns the item with extra `meta`. Never a closure — it makes `ph
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

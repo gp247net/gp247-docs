@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./cache-system.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./cache-system.md) · [🇯🇵 日本語](./cache-system_ja.md)
 
 # Xử lý Cache trong GP247
 
@@ -172,4 +172,4 @@ Không gây lỗi — chỉ là mọi danh sách sẽ đọc thẳng từ DB (th
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-12 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

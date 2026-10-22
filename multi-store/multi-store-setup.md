@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-setup_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-setup_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-store-setup_ja.md)
 
 # Multi-Store — Part 1: Setup
 
@@ -174,4 +174,4 @@ Nothing is reinstalled and no data is migrated: stores, products, orders and set
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

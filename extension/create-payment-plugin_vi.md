@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-payment-plugin.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-payment-plugin.md) · [🇯🇵 日本語](./create-payment-plugin_ja.md)
 
 # Tạo plugin thanh toán cho GP247 — từng bước, có code đầy đủ
 
@@ -1047,4 +1047,4 @@ hàng của **đơn** (`$order->store_id`).
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

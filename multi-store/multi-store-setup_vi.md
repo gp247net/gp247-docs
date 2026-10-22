@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-store-setup.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-store-setup.md) · [🇯🇵 日本語](./multi-store-setup_ja.md)
 
 # Multi-Store — Phần 1: Cài đặt
 
@@ -174,4 +174,4 @@ Không phải cài lại gì và không phải chuyển dữ liệu: cửa hàng
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

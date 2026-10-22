@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./language-system_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./language-system_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./language-system_ja.md)
 
 # Using languages (multi-language / i18n) in the GP247 system
 
@@ -260,4 +260,4 @@ time. That is why `shop` needs no on-disk lang files.
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

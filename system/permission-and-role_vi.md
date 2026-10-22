@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./permission-and-role.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./permission-and-role.md) · [🇯🇵 日本語](./permission-and-role_ja.md)
 
 # Phân quyền quản trị trong GP247 (Quyền · Vai trò · Người dùng)
 
@@ -246,4 +246,4 @@ Nếu menu chưa cập nhật, bảo họ tải lại trang (hoặc đăng nhậ
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-16 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

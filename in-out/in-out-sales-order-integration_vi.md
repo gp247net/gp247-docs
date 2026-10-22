@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-sales-order-integration.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-sales-order-integration.md) · [🇯🇵 日本語](./in-out-sales-order-integration_ja.md)
 
 # InOut — Phần 4: Đơn hàng bán (doanh thu & công nợ khách)
 
@@ -76,4 +76,4 @@ Tồn kho khi **bán ra** do **S-Cart xử lý tự động** (xem [Quản lý t
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

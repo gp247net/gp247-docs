@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./layout-block-system_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./layout-block-system_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./layout-block-system_ja.md)
 
 # Layout Blocks: how they render, how to customise them, and the fallback
 
@@ -248,4 +248,4 @@ Check these four, in this order — they cover almost every case:
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

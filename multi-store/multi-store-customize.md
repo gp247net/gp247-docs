@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-customize_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store-customize_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-store-customize_ja.md)
 
 # Multi-Store — Part 3: Customization
 
@@ -132,4 +132,4 @@ See also: [Creating a Plugin (v2 standard)](../extension/create-plugin.md) and [
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

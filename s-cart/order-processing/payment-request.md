@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./payment-request_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./payment-request_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./payment-request_ja.md)
 
 # Payment requests — money flows outside the shopping cart
 
@@ -475,4 +475,4 @@ longer takes payments. Without a deadline, the link works until the amount is pa
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-02 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

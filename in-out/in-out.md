@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out_ja.md)
 
 # InOut — purchases, returns, cash flow & debts in one admin
 
@@ -140,4 +140,4 @@ The **Create collect / pay-out request** button on the debt screens additionally
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

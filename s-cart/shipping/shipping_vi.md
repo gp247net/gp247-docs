@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./shipping.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./shipping.md) · [🇯🇵 日本語](./shipping_ja.md)
 
 # Vận chuyển trong GP247 — thiết lập và vận hành cho cửa hàng
 
@@ -231,4 +231,4 @@ cho từng cửa hàng; ô nào để trống thì dùng giá trị chung.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

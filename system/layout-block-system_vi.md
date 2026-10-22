@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./layout-block-system.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./layout-block-system.md) · [🇯🇵 日本語](./layout-block-system_ja.md)
 
 # Khối bố cục (Layout Block): cách hiển thị, cách tùy chỉnh và cơ chế dự phòng
 
@@ -248,4 +248,4 @@ Kiểm tra theo thứ tự này, đây là bốn nguyên nhân thường gặp n
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

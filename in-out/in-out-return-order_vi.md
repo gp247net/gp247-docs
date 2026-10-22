@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-return-order.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-return-order.md) · [🇯🇵 日本語](./in-out-return-order_ja.md)
 
 # InOut — Phần 2: Đơn trả hàng (trả hàng cho nhà cung cấp)
 
@@ -110,4 +110,4 @@ Mỗi ràng buộc dưới đây đều nhằm giữ tồn kho và công nợ ch
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

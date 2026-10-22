@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-bundle.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-bundle.md) · [🇯🇵 日本語](./product-bundle_ja.md)
 
 # Sản phẩm gói (Bundle / Combo) trong GP247
 
@@ -189,4 +189,4 @@ là không còn hiển thị lựa chọn loại trên form.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

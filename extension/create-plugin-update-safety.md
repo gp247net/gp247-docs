@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin-update-safety_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin-update-safety_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-plugin-update-safety_ja.md)
 
 # Update-safe plugins — rules, own data tables and the `update()` hook
 
@@ -248,4 +248,4 @@ Call `(new ExtensionModel)->installExtension()` in `install()` and `uninstallExt
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

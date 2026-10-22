@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-attribute.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-attribute.md) · [🇯🇵 日本語](./product-attribute_ja.md)
 
 # Thuộc tính sản phẩm (Product Attribute) trong GP247
 
@@ -162,4 +162,4 @@ Từ bản cập nhật gần đây, GP247 củng cố 2 điểm để đảm b�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-13 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-vendor_ja.md)
 
 # Multi-Vendor — A multi-seller marketplace for S-Cart
 
@@ -173,4 +173,4 @@ In short: **Multi-Vendor is a marketplace for many sellers; Multi-Store is many 
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

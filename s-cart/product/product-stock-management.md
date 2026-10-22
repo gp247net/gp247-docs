@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-stock-management_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-stock-management_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./product-stock-management_ja.md)
 
 # Product stock management in GP247
 
@@ -191,4 +191,4 @@ When **Stock management** (`product_stock`) is on and **Allow buy out of stock**
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

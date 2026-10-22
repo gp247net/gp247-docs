@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-plugin-advanced.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-plugin-advanced.md) · [🇯🇵 日本語](./create-plugin-advanced_ja.md)
 
 # Plugin nâng cao — nhiều cửa hàng, khoá bí mật, storefront, mã giảm giá
 
@@ -233,4 +233,4 @@ AdminMenu::where('uri', self::MENU_URI)->delete();
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

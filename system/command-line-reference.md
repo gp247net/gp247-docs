@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./command-line-reference_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./command-line-reference_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./command-line-reference_ja.md)
 
 # GP247 System Command-Line (CLI) Reference
 
@@ -908,4 +908,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

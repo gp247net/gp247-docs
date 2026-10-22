@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./update-gp247.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./update-gp247.md) · [🇯🇵 日本語](./update-gp247_ja.md)
 
 # Hướng dẫn cập nhật GP247
 
@@ -269,4 +269,4 @@ cả lệnh artisan của GP247 kèm tùy chọn và ví dụ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

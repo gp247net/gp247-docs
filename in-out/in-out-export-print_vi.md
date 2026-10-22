@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-export-print.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-export-print.md) · [🇯🇵 日本語](./in-out-export-print_ja.md)
 
 # InOut — Phần 5: Xuất file, in ấn, tồn kho tự động & lịch sử
 
@@ -105,4 +105,4 @@ Mọi thao tác nghiệp vụ đều được ghi lại: ai tạo đơn, ai nh�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
