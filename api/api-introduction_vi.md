@@ -166,10 +166,49 @@ endpoint công khai.
 
 ## 5. Luồng làm việc API Core (Admin)
 
-Sơ đồ dưới đây mô tả trình tự một ứng dụng quản trị gọi API Core: kiểm tra kết nối (nếu bật) →
-đăng nhập lấy token → gọi các endpoint quản trị kèm token.
+Sơ đồ dưới đây mô tả trình tự một ứng dụng quản trị đăng nhập rồi đọc dữ liệu qua API Core. Mỗi yêu cầu đi
+qua các lớp kiểm tra theo đúng thứ tự trong sơ đồ; lớp nào từ chối thì trả lỗi ngay, không đi tiếp.
 
-![Luồng làm việc API Core](https://static.gp247.net/file/api/gp247-api-sequence-core.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Ứng dụng quản trị
+    participant M as API GP247<br/>(lớp kiểm tra chung)
+    participant S as Sanctum<br/>(token)
+    participant Q as Phân quyền<br/>(màn admin + cửa hàng)
+    participant D as Cơ sở dữ liệu
+    Note over A,M: Mọi yêu cầu, kể cả login: ép JSON → API Connection<br/>(nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
+    A->>M: POST /api/core/login {username, password, remember_me?}
+    alt Vượt giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP)
+        M-->>A: 429 too_many_attempts + Retry-After
+    else Sai mật khẩu hoặc tài khoản admin bị tắt
+        M-->>A: 401 unauthenticated
+    else Hợp lệ
+        M->>S: Tạo token (scope admin / admin-supper, hạn 7 hoặc 30 ngày)
+        S-->>M: access_token
+        M-->>A: 200 {access_token, token_type, scopes, expires_at}
+    end
+    A->>M: GET /api/core/order/list<br/>Authorization: Bearer access_token
+    M->>S: Kiểm token: còn hạn, đúng loại token admin
+    alt Thiếu, sai, hết hạn token hoặc admin đã bị tắt
+        M-->>A: 401 unauthenticated
+    else Token hợp lệ
+        M->>Q: Có quyền màn "Danh sách đơn hàng"? Đúng tên miền cửa hàng?
+        alt Không có quyền hoặc sai tên miền cửa hàng
+            M-->>A: 403 forbidden
+        else Được phép
+            Q-->>M: Cửa hàng của tài khoản
+            M->>D: Truy vấn chỉ trong cửa hàng đó
+            D-->>M: Dữ liệu
+            M-->>A: 200 (JSON) — chi tiết không thấy thì 404 not_found
+        end
+    end
+    A->>M: POST /api/core/logout
+    M-->>A: 200 — token bị thu hồi
+```
+
+Điểm rút ra: có token **chưa đủ** để đọc dữ liệu — tài khoản còn phải có quyền mở màn hình quản trị tương ứng, và
+chỉ thấy dữ liệu của cửa hàng mình (mục 3).
 
 **Endpoint đăng nhập & tài khoản** (tiền tố `api/core`):
 
@@ -234,7 +273,44 @@ curl -X GET "https://shop.example.com/api/core/order/list" \
 API Front phục vụ hai loại dữ liệu: **dữ liệu công khai** (không cần đăng nhập — danh sách sản
 phẩm, danh mục…) và **dữ liệu riêng của khách** (cần đăng nhập — đơn hàng, thông tin cá nhân).
 
-![Luồng làm việc API Front](https://static.gp247.net/file/api/gp247-api-sequence-front.png)
+Sơ đồ dưới đây mô tả hai cách dùng API Front: đọc dữ liệu công khai không cần đăng nhập, và khách đăng nhập để
+xem đơn hàng của mình.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K as Ứng dụng của khách
+    participant M as API GP247<br/>(lớp kiểm tra chung)
+    participant S as Sanctum<br/>(token)
+    participant D as Cơ sở dữ liệu
+    Note over K,M: Mọi yêu cầu: ép JSON → API Connection (nếu bật) → giới hạn tần suất
+    K->>M: GET /api/front/product/list (không cần token)
+    M->>D: Chỉ những gì cửa hàng của tên miền này đang hiển thị<br/>(đang bán, đã duyệt, cửa hàng hoạt động)
+    D-->>M: Dữ liệu
+    M-->>K: 200 — chỉ trường công khai (không giá vốn, tồn kho, nhà cung cấp)
+    K->>M: POST /api/front/login {email, password, remember_me?}
+    alt Vượt giới hạn đăng nhập
+        M-->>K: 429 too_many_attempts + Retry-After
+    else Sai mật khẩu hoặc tài khoản khách bị khoá
+        M-->>K: 401 unauthenticated
+    else Hợp lệ
+        M->>S: Tạo token (scope user, hạn 7 hoặc 30 ngày)
+        S-->>M: access_token
+        M-->>K: 200 {access_token, token_type, scopes, expires_at}
+    end
+    K->>M: GET /api/front/member/order/list<br/>Authorization: Bearer access_token
+    M->>S: Kiểm token: còn hạn, scope user, tài khoản chưa bị khoá
+    alt Token không hợp lệ hoặc tài khoản đã bị khoá
+        M-->>K: 401 unauthenticated (token sai loại: 403 forbidden)
+    else Hợp lệ
+        M->>D: Chỉ đơn hàng của chính khách này
+        D-->>M: Dữ liệu
+        M-->>K: 200 — không kèm IP, user agent… (đơn của người khác: 404 not_found)
+    end
+```
+
+Điểm rút ra: dữ liệu công khai trên API **khớp với những gì khách thấy trên cửa hàng**, còn dữ liệu riêng chỉ trả về
+cho đúng chủ tài khoản. API v2 (mục 8) đi qua cùng các bước kiểm tra này, chỉ khác dạng phản hồi.
 
 **Các endpoint công khai** (tiền tố `api/front`, không cần token):
 
@@ -487,4 +563,4 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-26 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-27 · ✍️ **Tác giả (Author):** GP247</sub>

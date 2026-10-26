@@ -169,10 +169,49 @@ Core API は**管理画面で見られる以上のデータを見せません**�
 
 ## 5. Core API（管理）の処理の流れ
 
-下の図は、管理アプリが Core API を呼ぶ順序を示しています。
-接続を確認（オンの場合）→ ログインしてトークンを取得 → トークンを付けて管理用エンドポイントを呼び出します。
+下の図は、管理アプリがログインしてから Core API でデータを読む順序を示しています。すべてのリクエストは図の順に
+チェックを通り、どこかで拒否されるとその場でエラーを返し、先へは進みません。
 
-![Core API の処理の流れ](https://static.gp247.net/file/api/gp247-api-sequence-core.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 管理アプリ
+    participant M as GP247 API<br/>(共通チェック)
+    participant S as Sanctum<br/>(トークン)
+    participant Q as 権限<br/>(管理画面 + ストア)
+    participant D as データベース
+    Note over A,M: ログインを含むすべてのリクエスト: JSON を強制 → API Connection<br/>(オンの場合: apiconnection + apikey ヘッダー、誤りは 401) → 回数制限
+    A->>M: POST /api/core/login {username, password, remember_me?}
+    alt ログイン回数の上限 (アカウントごと 5 回/分、IP ごと 20 回/分)
+        M-->>A: 429 too_many_attempts + Retry-After
+    else パスワード誤り、または管理者アカウントが無効
+        M-->>A: 401 unauthenticated
+    else 正しい
+        M->>S: トークン作成 (スコープ admin / admin-supper、有効期限 7 日または 30 日)
+        S-->>M: access_token
+        M-->>A: 200 {access_token, token_type, scopes, expires_at}
+    end
+    A->>M: GET /api/core/order/list<br/>Authorization: Bearer access_token
+    M->>S: トークン確認: 期限内、管理者用トークン
+    alt トークンなし・誤り・期限切れ、または管理者が無効
+        M-->>A: 401 unauthenticated
+    else トークンは有効
+        M->>Q: 「注文一覧」画面を開く権限は? 正しいストアのドメインか?
+        alt 権限なし、またはストアのドメインが違う
+            M-->>A: 403 forbidden
+        else 許可
+            Q-->>M: アカウントのストア
+            M->>D: そのストアの中だけを検索
+            D-->>M: データ
+            M-->>A: 200 (JSON) — 見られないレコードは 404 not_found
+        end
+    end
+    A->>M: POST /api/core/logout
+    M-->>A: 200 — トークンを失効
+```
+
+ポイント: トークンがあるだけではデータを読めません。対応する管理画面を開く権限が必要で、見えるのは自分のストアの
+データだけです（3 章）。
 
 **ログインとアカウントのエンドポイント**（接頭辞 `api/core`）：
 
@@ -237,7 +276,44 @@ curl -X GET "https://shop.example.com/api/core/order/list" \
 Front API は 2 種類のデータを扱います。**公開データ**（ログイン不要 — 商品一覧、カテゴリーなど）と、
 **顧客個人のデータ**（ログイン必要 — 注文、個人情報）です。
 
-![Front API の処理の流れ](https://static.gp247.net/file/api/gp247-api-sequence-front.png)
+下の図は Front API の 2 つの使い方を示しています。ログインなしで公開データを読む方法と、顧客がログインして自分の
+注文を見る方法です。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K as 顧客向けアプリ
+    participant M as GP247 API<br/>(共通チェック)
+    participant S as Sanctum<br/>(トークン)
+    participant D as データベース
+    Note over K,M: すべてのリクエスト: JSON を強制 → API Connection (オンの場合) → 回数制限
+    K->>M: GET /api/front/product/list (トークン不要)
+    M->>D: このドメインのストアが表示しているものだけ<br/>(販売中、承認済み、ストアが有効)
+    D-->>M: データ
+    M-->>K: 200 — 公開項目のみ (原価・在庫・仕入先なし)
+    K->>M: POST /api/front/login {email, password, remember_me?}
+    alt ログイン回数の上限
+        M-->>K: 429 too_many_attempts + Retry-After
+    else パスワード誤り、または顧客アカウントがロック中
+        M-->>K: 401 unauthenticated
+    else 正しい
+        M->>S: トークン作成 (スコープ user、有効期限 7 日または 30 日)
+        S-->>M: access_token
+        M-->>K: 200 {access_token, token_type, scopes, expires_at}
+    end
+    K->>M: GET /api/front/member/order/list<br/>Authorization: Bearer access_token
+    M->>S: トークン確認: 期限内、スコープ user、アカウントがロックされていない
+    alt トークンが無効、またはアカウントがロック中
+        M-->>K: 401 unauthenticated (種類の違うトークン: 403 forbidden)
+    else 有効
+        M->>D: この顧客自身の注文だけ
+        D-->>M: データ
+        M-->>K: 200 — IP やユーザーエージェントなし (他人の注文: 404 not_found)
+    end
+```
+
+ポイント: API の公開データは**ストアで顧客が見ている内容と一致**し、個人のデータは本人にだけ返されます。API v2
+（8 章）も同じチェックを通り、違うのはレスポンスの形だけです。
 
 **公開エンドポイント**（接頭辞 `api/front`、トークン不要）：
 
@@ -489,4 +565,4 @@ API Connection の管理項目で新しいキーを生成してください。
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-26 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-10-27 · ✍️ **作成者 (Author):** GP247</sub>

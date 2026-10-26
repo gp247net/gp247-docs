@@ -176,10 +176,49 @@ API — even the public endpoints.
 
 ## 5. Core API workflow (Admin)
 
-The diagram below shows the sequence of a management app calling the Core API: check the connection
-(if enabled) → log in to get a token → call admin endpoints with the token attached.
+The diagram below shows a management app signing in and then reading data through the Core API. Every request
+goes through the checks in the order shown; the first check that refuses answers with an error straight away.
 
-![Core API workflow](https://static.gp247.net/file/api/gp247-api-sequence-core.png)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Management app
+    participant M as GP247 API<br/>(shared checks)
+    participant S as Sanctum<br/>(tokens)
+    participant Q as Permissions<br/>(admin screen + store)
+    participant D as Database
+    Note over A,M: Every request, login included: force JSON → API Connection<br/>(if enabled: apiconnection + apikey headers, wrong = 401) → rate limit
+    A->>M: POST /api/core/login {username, password, remember_me?}
+    alt Login limit reached (5/min per account, 20/min per IP)
+        M-->>A: 429 too_many_attempts + Retry-After
+    else Wrong password or admin account disabled
+        M-->>A: 401 unauthenticated
+    else Valid
+        M->>S: Create token (scope admin / admin-supper, valid 7 or 30 days)
+        S-->>M: access_token
+        M-->>A: 200 {access_token, token_type, scopes, expires_at}
+    end
+    A->>M: GET /api/core/order/list<br/>Authorization: Bearer access_token
+    M->>S: Check token: not expired, admin token type
+    alt Missing, wrong or expired token, or admin disabled
+        M-->>A: 401 unauthenticated
+    else Valid token
+        M->>Q: Allowed to open the "Order list" screen? Right store domain?
+        alt No permission or wrong store domain
+            M-->>A: 403 forbidden
+        else Allowed
+            Q-->>M: Store of the account
+            M->>D: Query only inside that store
+            D-->>M: Data
+            M-->>A: 200 (JSON) — a record you cannot see answers 404 not_found
+        end
+    end
+    A->>M: POST /api/core/logout
+    M-->>A: 200 — token revoked
+```
+
+Takeaway: a token is **not enough** to read data — the account also needs permission to open the matching admin
+screen, and it only sees the data of its own store (section 3).
 
 **Login & account endpoints** (prefix `api/core`):
 
@@ -244,7 +283,44 @@ curl -X GET "https://shop.example.com/api/core/order/list" \
 The Front API serves two kinds of data: **public data** (no login needed — product lists,
 categories…) and **customer-private data** (login required — orders, personal info).
 
-![Front API workflow](https://static.gp247.net/file/api/gp247-api-sequence-front.png)
+The diagram below shows the two ways to use the Front API: reading public data without signing in, and a customer
+signing in to see their own orders.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K as Customer app
+    participant M as GP247 API<br/>(shared checks)
+    participant S as Sanctum<br/>(tokens)
+    participant D as Database
+    Note over K,M: Every request: force JSON → API Connection (if enabled) → rate limit
+    K->>M: GET /api/front/product/list (no token needed)
+    M->>D: Only what the store of this domain shows<br/>(on sale, approved, store active)
+    D-->>M: Data
+    M-->>K: 200 — public fields only (no cost price, stock or supplier)
+    K->>M: POST /api/front/login {email, password, remember_me?}
+    alt Login limit reached
+        M-->>K: 429 too_many_attempts + Retry-After
+    else Wrong password or customer account locked
+        M-->>K: 401 unauthenticated
+    else Valid
+        M->>S: Create token (scope user, valid 7 or 30 days)
+        S-->>M: access_token
+        M-->>K: 200 {access_token, token_type, scopes, expires_at}
+    end
+    K->>M: GET /api/front/member/order/list<br/>Authorization: Bearer access_token
+    M->>S: Check token: not expired, scope user, account not locked
+    alt Invalid token or account locked
+        M-->>K: 401 unauthenticated (wrong token type: 403 forbidden)
+    else Valid
+        M->>D: Only this customer's own orders
+        D-->>M: Data
+        M-->>K: 200 — without IP, user agent… (someone else's order: 404 not_found)
+    end
+```
+
+Takeaway: public data on the API **matches what shoppers see in the store**, and private data goes only to its
+owner. API v2 (section 8) goes through the same checks; only the response shape differs.
 
 **Public endpoints** (prefix `api/front`, no token needed):
 
@@ -504,4 +580,4 @@ code. See [How to create an API the right way](./create-api.md).
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-26 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-27 · ✍️ **Author:** GP247</sub>
