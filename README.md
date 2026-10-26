@@ -11,8 +11,8 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### API
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 API Introduction](./api/api-introduction.md) | Overview of the API system, authentication and how to call it | 2026-10-22 |
-| [How to build an API correctly](./api/create-api.md) | How to write a new API endpoint the GP247 way | 2026-10-22 |
+| [GP247 API Introduction](./api/api-introduction.md) | Overview of the API system, authentication and how to call it | 2026-10-26 |
+| [How to build an API correctly](./api/create-api.md) | How to write a new API endpoint the GP247 way | 2026-10-26 |
 
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
@@ -71,4 +71,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-26 · ✍️ **Author:** GP247</sub>

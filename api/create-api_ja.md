@@ -57,13 +57,17 @@ GP247_API_MODE=true
 | --- | --- | --- |
 | 1 | `json.response` | すべてのレスポンスを **JSON** にする（ヘッダー `Accept: application/json` を設定） |
 | 2 | `api.connection` | 任意のアプリケーション用の鍵（`apiconnection`／`apikey`）— 設定でオン／オフ |
-| 3 | `throttle: 1000` | 1 サイクルあたり **1000 回の呼び出し**に制限（不正利用の防止） |
+| 3 | `throttle:gp247-api` | 呼び出し頻度の制限。既定は IP ごとに **1 分あたり 1000 回**（`GP247_API_THROTTLE`） |
 
 > ⚠️ **注意:** **この順序は固定です。変更しないでください。** config に明記された規約です。
 >
 > 👉 **プラグインにとって重要な結果：** core／shop／front の `Routes/Api/` に置いたルートには、上の 3 つのレイヤーが
 > **自動で**付きます。しかし**プラグイン**から追加したルートは別の場所（セクション 4）で読み込まれるため、
-> **自動では付きません**。自分で包む必要があります。
+> **自動では付きません**。自分で包むか、（3.3.0 以降は）`ApiRouteRegistrar` で登録する必要があります（セクション 4.1）。
+
+> ℹ️ **対応バージョン:** gp247/core, gp247/front, gp247/shop 3.3.0 — 各パッケージは自分の API ルート（`Routes/Api/v2/`
+> フォルダーを含む）を `GP247\Core\Api\Support\ApiRouteRegistrar` で登録します。パッケージのルートは、そのパッケージが
+> データベースにインストールされている場合にだけ存在します。パスとルート名は変わりません。
 
 ### 1.4. Laravel Sanctum による認証
 
@@ -119,15 +123,23 @@ Route::get('list', $productController.'@getProductList');
   （例：`getProductList`、`getProductDetail`）。
 - **必ず JSON を返す**：`response()->json(...)` を使います。
 - **成功時**：データをそのまま返します（オブジェクトまたはページ分割された一覧）。
-- **失敗時／見つからない場合**：共通の形式でエラーオブジェクトを返します。
+- **失敗時／見つからない場合**：`ApiErrorResponder` を使い、**意味の正しい HTTP ステータスコード**と共通のエラー本文
+  `{"error": 1, "msg": "…", "code": "…"}` を返します（コード一覧は [API 入門](./api-introduction_ja.md) の 7 章）。
 
   ```php
-  return response()->json([
-      'error' => 1,
-      'msg'   => 'Not found',
-      'detail'=> 'Product not found or no permission!',
-  ], 200);
+  use GP247\Core\Api\Support\ApiErrorResponder;
+
+  if (!$product) {
+      return ApiErrorResponder::notFound();          // 404, code: not_found
+  }
   ```
+
+  > ℹ️ **対応バージョン:** gp247/core 3.2.3 — `api/*` 配下の認証、権限、バリデーション、レート制限のエラーは自動でこの形式に
+  > 変換されます。コントローラー自身が判断する場合だけ `notFound()`／`forbidden()` を自分で返してください。エラーに
+  > `response()->json([...], 200)` を使う旧来の書き方は**もう使いません**。
+- **必要なフィールドだけを返す**：公開データでは、モデルをそのまま返さず
+  `GP247\Core\Api\Support\ApiFieldAllowlist::one()`／`::page()` でフィールドを絞り込みます。テーブルに新しく追加した列が
+  API に自動で漏れ出すことはありません。
 
 - **ページ分割**：一覧を返すときは `->get()` の代わりにマクロ `->jsonPaginate()`
   （導入済みのパッケージ `spatie/laravel-json-api-paginate`）を使います。標準のページ分割構造
@@ -303,6 +315,34 @@ Route::get('list', $productController.'@getProductList');
 
 ---
 
+### 4.1. もっと簡単な方法：`ApiRouteRegistrar` で登録する
+
+> ℹ️ **対応バージョン:** gp247/core 3.3.0
+
+`Route.php` でミドルウェアグループを自分で包む代わりに、API ルートをプラグイン内の別ファイルに置き、
+プラグインの `Provider.php` から登録します。
+
+```php
+// app/GP247/Plugins/MyApi/Provider.php
+\GP247\Core\Api\Support\ApiRouteRegistrar::register(__DIR__ . '/Routes/api.php');
+```
+
+```php
+// app/GP247/Plugins/MyApi/Routes/api.php — 接頭辞とルートだけを宣言する
+use Illuminate\Support\Facades\Route;
+
+Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+    $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
+    Route::get('myapi/status', $statusController.'@getStatus');
+});
+```
+
+`ApiRouteRegistrar` は `GP247_API_MIDDLEWARE`（JSON、API Connection、レート制限）で自動的に包みます。
+`GP247_API_MODE` がオフのときは何も登録せず、サイトで `route:cache` 済みの場合は再登録しません。
+エラーの取り決め `{error, msg, code}` は、`api/core`、`api/front`、`api/v2/core`、`api/v2/front` 配下のすべてのパスに適用されます。
+
+---
+
 ## 5. ログインが必要なエンドポイントを作る（トークンで保護）
 
 API が非公開のデータ（顧客の注文、管理データなど）を返す場合は、対応する Sanctum のガードで包む必要があります。
@@ -334,6 +374,40 @@ Authorization: Bearer <access_token>
 > 用意されています。トークンの取得には `api/core/login`／`api/front/login` エンドポイントを**再利用**するだけで十分です。
 > 特別な要件がない限り、ログイン部分を自作する必要はありません。
 
+### 5.1. 管理用エンドポイント：管理画面の宣言とストアによる絞り込み
+
+> ℹ️ **対応バージョン:** gp247/core 3.2.3
+
+管理者トークンがあるだけで、すべてのデータを閲覧できるわけでは**ありません**。`GP247_API_CORE_PREFIX` 配下の各ルートは、
+ミドルウェア `api.admin:<管理ルート名>` で対応する**管理画面**を宣言する必要があります。GP247 は、アカウントがその画面を
+開く権限を持っている場合（管理画面と同じ権限設定）にだけ呼び出しを許可し、マルチストア系プラグインの制限を適用して、
+アカウントのストアを特定します。
+
+```php
+Route::group([
+    'prefix'     => GP247_API_CORE_PREFIX,
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // 3.3.0 以降。それより古い版では 'ability:admin,admin-supper'
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
+    Route::get('report/sales', $ctrl.'@getSalesReport')
+        ->middleware('api.admin:admin_report.sales');   // 対応する管理画面のルート名
+});
+```
+
+コントローラーでは、必ずアカウントのストアでクエリを絞り込みます。
+
+```php
+use GP247\Core\Api\Support\ApiStoreScope;
+
+$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+```
+
+`api.admin` のないルートで `ApiStoreScope` を呼ぶとエラーになります（デフォルトで安全側）。これは、権限の宣言を忘れていることを
+GP247 が知らせる仕組みです。
+
 ---
 
 ## 6. 「完了」とする前のチェックリスト
@@ -344,6 +418,8 @@ Authorization: Bearer <access_token>
 - [ ] すべての入力に `$request->validate([...])` がある。SQL を文字列連結で組み立て**ない**（Eloquent を使う）。
 - [ ] 一覧は `->jsonPaginate()` を使い、すべてのレスポンスは `response()->json(...)` を通している。
 - [ ] 非公開エンドポイントには `auth:admin-api`／`auth:customer-api` ＋ 正しいスコープの `ability:...` がある。
+- [ ] 管理用エンドポイントに `api.admin:<管理ルート名>` があり、`ApiStoreScope::apply()` でデータを絞り込んでいる（セクション 5.1）。
+- [ ] エラーは `ApiErrorResponder` で返している（意味の正しい HTTP ステータスコード）。公開データは `ApiFieldAllowlist` でフィールドを絞り込んでいる。
 - [ ] `vendor/gp247/*` を**変更していない**（そのパッケージのメンテナーである場合を除く）。
 - [ ] 各メソッドに英語の PHPDoc と `@aidlc-unit`／`@aidlc-story` タグがある（coding-style に従う）。
 - [ ] `php artisan route:clear` を実行し、`php artisan route:list` にルートが表示されることを確認した。
@@ -376,14 +452,15 @@ Authorization: Bearer <access_token>
 
 **Q5: 標準に沿ってエラーを返すには？**
 
-→ `response()->json(...)` でオブジェクト `{'error': 1, 'msg': '...', 'detail': '...'}` を返します。
-認証エラーは Sanctum が自動で `401` を返すのに任せます。HTML や素の文字列は返さないでください。
+→ `ApiErrorResponder`（`notFound()`、`forbidden()`、`respond($status, $code, $msg)`）を使います。
+意味の正しい HTTP ステータスコードとともに、エラー本文 `{error, msg, code}` を返します。認証、バリデーション、
+レート制限のエラーは GP247 が自動でこの形式に変換します。HTML や素の文字列は返さないでください。
 
 **Q6: 自分の API 用に独自のスコープ／権限が必要ですか？**
 
-→ 既存のスコープ（`admin`、`admin-supper`、`user`、`user-guest`）を再利用できます。新しいスコープが必要な場合は、
-トークン作成時に付与し、ミドルウェア `ability:<your-scope>` で確認します。
-Sanctum と並行する独自の権限の仕組みを作るのは避けてください。
+→ スコープはアカウントの種類（`admin`、`admin-supper`、`user`）を区別するだけです。管理用エンドポイントでデータを閲覧する権限は、
+`api.admin:<管理ルート名>`（セクション 5.1）を通じて管理画面の権限設定から取得されます。管理者は一度権限を付与するだけで、
+管理画面と API の両方に適用されます。並行する独自の権限の仕組みを作るのは避けてください。
 
 **Q7: `apiconnection`／`apikey` レイヤーは新しい API に必須ですか？**
 
@@ -408,4 +485,13 @@ Sanctum と並行する独自の権限の仕組みを作るのは避けてくだ
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+## 変更履歴
+<!-- ロジック/動作が変わった場合のみ記載。最新の行を一番上に。1 日 1 行：同じ日の変更は既存の行にまとめ、同じ日付の行を追加しない。 -->
+
+| 日付 | GP247 バージョン | 変更内容 |
+| --- | --- | --- |
+| 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
+
+---
+
+<sub>📅 **最終更新:** 2026-10-26 · ✍️ **作成者 (Author):** GP247</sub>

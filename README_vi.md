@@ -11,8 +11,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### API
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Giới thiệu API GP247](./api/api-introduction_vi.md) | Tổng quan hệ thống API, xác thực và cách gọi thử | 2026-10-22 |
-| [Hướng dẫn tạo API đúng chuẩn](./api/create-api_vi.md) | Cách tự viết endpoint API mới theo chuẩn GP247 | 2026-10-22 |
+| [Giới thiệu API GP247](./api/api-introduction_vi.md) | Tổng quan hệ thống API, xác thực và cách gọi thử | 2026-10-26 |
+| [Hướng dẫn tạo API đúng chuẩn](./api/create-api_vi.md) | Cách tự viết endpoint API mới theo chuẩn GP247 | 2026-10-26 |
 
 ### Mở rộng (Plugin)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -71,4 +71,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-26 · ✍️ **Tác giả (Author):** GP247</sub>

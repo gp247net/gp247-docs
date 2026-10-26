@@ -6,16 +6,21 @@
 
 This document introduces the **GP247 API (Application Programming Interface) system** — how external
 applications (mobile apps, other websites, management software, third-party integrations…) can "talk"
-to your GP247 site to fetch data and perform actions. It is written for **integration developers** and
-**site administrators** who want a big-picture view of what the API offers, how it is grouped, how
-authentication (login) works, and how to try it out. After reading, you will know **which API does
-what, at which address, and what key it needs**, with copy-and-run examples.
+to your GP247 site to fetch data. It is written for **integration developers** and **site
+administrators** who want a big-picture view of what the API offers, how it is grouped, how
+authentication (login) and permissions work, how errors are returned, and how to try it out. After
+reading, you will know **which API does what, at which address, what key it needs, and which data it
+lets you see**, with copy-and-run examples.
 
 > ℹ️ **What is an API (in plain terms):** think of the API as a "service counter" for your site.
 > External apps don't reach straight into the data store; they send a request to the counter
 > (a URL address), the counter checks the credentials (token/key), then returns the result as
 > **JSON** (a text-based data format that computers can read). The whole exchange happens over
 > the ordinary web protocol (HTTP).
+
+> 📄 **Machine-readable specification:** every endpoint, parameter and error sample is in the file
+> [`openapi.json`](./openapi.json) (OpenAPI 3.1) — load it into Postman, Insomnia or Swagger UI to try
+> calls or generate client code.
 
 ---
 
@@ -28,10 +33,14 @@ The GP247 system splits its API into **two groups**, serving two different audie
 | **Core API (Admin)** | `api/core` | Remote system administration (management apps, custom dashboards) | **Administrator** accounts |
 | **Front API (Storefront)** | `api/front` | Displaying store data, customer accounts | Guests/members, or **no login needed** for public data |
 
-- **`api/core`** is provided by the `gp247/core` package — "back-end" operations such as admin login
-  and fetching administrator information.
+- **`api/core`**: the `gp247/core` package provides the admin login/info part; `gp247/shop` and
+  `gp247/front` add endpoints that read admin data (customers, orders, products, banners…).
 - **`api/front`** is provided by the `gp247/front` and `gp247/shop` packages — "storefront" data such
-  as product, category and brand lists, content pages, banners, and customer accounts/orders.
+  as product lists, categories, brands, content pages, banners, and customer accounts/orders.
+
+> ℹ️ **Available since:** gp247/core, gp247/front, gp247/shop 3.3.0 — there is also an **API v2** with the
+> prefixes `api/v2/core` and `api/v2/front` (section 8). The `api/core` and `api/front` prefixes above are
+> **v1** and keep working as before.
 
 > The **full address** = your site domain + prefix + path. For example, if your site is
 > `https://shop.example.com`, the endpoint for the product list is:
@@ -52,35 +61,95 @@ The mechanism is the same for both groups:
    Authorization: Bearer <access_token>
    ```
 
-4. To sign out, call the `logout` endpoint to **revoke the token** (the old token becomes invalid
+4. To sign out, call **`POST logout`** to **revoke the token** (the old token becomes invalid
    immediately).
 
 ### Scopes (abilities)
 
-Each token is issued with a **scope** that limits what it can do:
+Each token is issued with a **scope** that tells whose token it is:
 
 | Scope | Meaning |
 | --- | --- |
-| `admin` | Regular administrator (Core API) |
-| `admin-supper` | High-level administrator — the `administrator` role (Core API) |
-| `user` | Activated member (Front API) |
-| `user-guest` | Not-yet-activated member / guest (Front API) |
+| `admin` | Administrator token (Core API) |
+| `admin-supper` | Token of an administrator with the `administrator` role (Core API) |
+| `user` | Member token (Front API) |
 
-### Remember me (`remember_me`)
+> ℹ️ **Available since:** gp247/core 3.2.3 — the scope only tells the **account type**. **Which data
+> you can see** is decided by the account's own permissions (section 3). The `user-guest` scope is no
+> longer issued: a customer account that is locked cannot log in.
 
-When calling `login`, if you send `remember_me = true`, the token lasts longer (default 30 days,
-configured via the `GP247_API_RECOMMEMBER` environment variable). Otherwise, the token expires per
-the default (7 days, via `GP247_API_TOKEN_EXPIRE_DEFAULT`).
+### Token lifetime
+
+> ℹ️ **Available since:** gp247/core 3.2.3
+
+Every token has an expiry (`expires_at`):
+
+| Token type | Without `remember_me` | With `remember_me = true` |
+| --- | --- | --- |
+| Administrator | 7 days (`GP247_API_TOKEN_EXPIRE_ADMIN_DEFAULT`) | 30 days (`GP247_API_RECOMMEMBER_ADMIN`) |
+| Member | 7 days (`GP247_API_TOKEN_EXPIRE_DEFAULT`) | 30 days (`GP247_API_RECOMMEMBER`) |
+
+> ℹ️ **Available since:** gp247/core 3.3.0 — the environment variables have correctly spelled names:
+> `GP247_API_REMEMBER`, `GP247_API_REMEMBER_ADMIN`, `GP247_API_SCOPE_ADMIN_SUPER`. The old names
+> (`GP247_API_RECOMMEMBER`…) still work; if both are set, the new name wins. `php artisan gp247:doctor` reports
+> old names that are still in use (check `api_config_legacy_names`). Tokens carrying the `admin-super` scope are
+> also accepted alongside `admin-supper`.
+
+An expired token returns `401`; when that happens, call `login` to get a new token. Tokens that expired
+long ago (more than 7 days) are cleaned up automatically the next time the same account logs in — no
+cron needed.
+
+### Login attempt limits
+
+> ℹ️ **Available since:** gp247/core 3.2.3
+
+To block password guessing, `api/core/login` and `api/front/login` limit the number of attempts:
+
+| Limit | Default | Change with environment variable |
+| --- | --- | --- |
+| Per account (from the same IP) | 5 attempts / minute | `GP247_API_LOGIN_THROTTLE` (format `attempts,minutes`) |
+| Per IP, across all accounts | 20 attempts / minute | `GP247_API_LOGIN_IP_THROTTLE` |
+
+Over the limit → HTTP `429` with a `Retry-After` header (the number of seconds to wait). A successful
+login clears the counter for that account. In addition, every API endpoint has a general limit of 1000
+requests/minute per IP (`GP247_API_THROTTLE`).
 
 ---
 
-## 3. The API Connection protection layer — optional
+## 3. Permissions and data scope of the Core API
+
+> ℹ️ **Available since:** gp247/core 3.2.3, gp247/shop 3.2.3, gp247/front 3.2.3
+
+The Core API **never shows more than the admin screens do**. Each data-reading endpoint is tied to an
+admin screen; an administrator can only call the endpoint if the account is allowed to open that screen
+(permissions are set under **Admin → Roles / Permissions**). No permission → HTTP `403`.
+
+| Endpoint | Permission required (admin screen) |
+| --- | --- |
+| `customer/list`, `customer/detail/{id}` | Customer list |
+| `order/list` | Order list |
+| `order/detail/{id}` | Order details |
+| `product/*` | Product list |
+| `category/*`, `brand/*`, `supplier/*` | Category / brand / supplier list |
+| `banner/*`, `page/*` | Banner / content page list |
+| `login`, `logout`, `info` | Only a valid token |
+
+- The `administrator` role can call every endpoint; the `view.all` role is read-only.
+- **Per-store data:** on a multi-store site, an administrator assigned to one store only sees that
+  store's data and can only call the API on **their own store's domain** (just like logging in to the
+  admin area). Records of other stores return `404`.
+- If an administrator account is disabled (`status = 0`), its old tokens no longer work (`401`).
+
+---
+
+## 4. The API Connection protection layer — optional
 
 Beyond the token, GP247 also has **an extra lock** standing in front of all APIs, called the
 **API Connection**. It is a second "gatekeeper" ensuring only authorized applications can call the
 API — even the public endpoints.
 
-- This layer **can be turned off/on** via the `api_connection_required` setting in the admin area.
+- This layer is **off by default**; turn it on/off with the `api_connection_required` setting in the
+  admin area.
 - **When enabled:** every request must additionally carry **two headers**:
 
   ```
@@ -91,34 +160,63 @@ API — even the public endpoints.
 - The `apiconnection`/`apikey` pair is created and managed in the **GP247 admin area** (the API
   Connection management section); each pair can have an expiry date (`expire`) and an on/off status
   (`status`).
-- If missing or wrong, the API returns `{"error": 1, "msg": "Connection not correct"}`.
+- If it is missing, wrong, expired or disabled, the API returns HTTP `401` with
+  `"code": "api_connection_invalid"`.
 
-> The order of the checking layers (middleware) is: **return JSON → check API Connection → rate-limit
-> 1000 requests**. This order is fixed and should not be changed.
+> ℹ️ **Available since:** gp247/core 3.2.3 — keys are **stored hashed**: the admin screen shows a key
+> **only once**, right after it is created/regenerated, so copy it immediately. When editing a
+> connection, leave the key field empty to keep the old key. Keys already in use keep working after the
+> upgrade (`php artisan gp247:update`); **regenerate** older keys when convenient to remove the plain copy still
+> stored. A key you type yourself must be at least 32 characters long.
+
+> The order of the checking layers (middleware) is: **return JSON → check API Connection → rate
+> limit**. This order is fixed and should not be changed.
 
 ---
 
-## 4. Core API workflow (Admin)
+## 5. Core API workflow (Admin)
 
 The diagram below shows the sequence of a management app calling the Core API: check the connection
 (if enabled) → log in to get a token → call admin endpoints with the token attached.
 
 ![Core API workflow](https://static.gp247.net/file/api/gp247-api-sequence-core.png)
 
-**Core API endpoints** (prefix `api/core`):
+**Login & account endpoints** (prefix `api/core`):
 
 | Method | Path | Login required | Function |
 | --- | --- | --- | --- |
 | `POST` | `api/core/login` | No | Admin login, returns `access_token` |
-| `GET` | `api/core/logout` | Yes (Bearer) | Log out, revoke the current token |
+| `POST` | `api/core/logout` | Yes (Bearer) | Log out, revoke the current token |
+| `GET` | `api/core/logout` | Yes (Bearer) | Same as above — **deprecated**, the response carries a `Deprecation` header; switch to `POST` |
 | `GET` | `api/core/info` | Yes (Bearer) | Get the currently logged-in administrator's info |
+
+**Admin data endpoints** (prefix `api/core`, token + permission from section 3 required):
+
+| Method | Path | Function |
+| --- | --- | --- |
+| `GET` | `api/core/customer/list` | Customer list |
+| `GET` | `api/core/customer/detail/{id}` | A customer's details |
+| `GET` | `api/core/order/list` | Order list (with order lines and totals) |
+| `GET` | `api/core/order/detail/{id}` | An order's details |
+| `GET` | `api/core/product/list` | Product list |
+| `GET` | `api/core/product/detail/{id}` | A product's details |
+| `GET` | `api/core/category/list` | Category list |
+| `GET` | `api/core/category/detail/{id}` | A category's details |
+| `GET` | `api/core/brand/list` | Brand list |
+| `GET` | `api/core/brand/detail/{id}` | A brand's details |
+| `GET` | `api/core/supplier/list` | Supplier list |
+| `GET` | `api/core/supplier/detail/{id}` | A supplier's details |
+| `GET` | `api/core/banner/list` | Banner list |
+| `GET` | `api/core/banner/detail/{id}` | A banner's details |
+| `GET` | `api/core/page/list` | Content page list |
+| `GET` | `api/core/page/detail/{id}` | A content page's details |
 
 Example admin login (using `curl` in a Terminal):
 
 ```bash
 curl -X POST "https://shop.example.com/api/core/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin@example.com","password":"your-password","remember_me":true}'
+  -d '{"username":"admin","password":"your-password","remember_me":true}'
 ```
 
 On success, you receive JSON like:
@@ -128,20 +226,20 @@ On success, you receive JSON like:
   "access_token": "1|aBcD...very-long...XyZ",
   "token_type": "Bearer",
   "scopes": ["admin-supper"],
-  "expires_at": "2026-08-29 10:00:00"
+  "expires_at": "2026-11-25 10:00:00"
 }
 ```
 
-Then fetch the admin info using the token you just received:
+Then fetch the order list using the token you just received:
 
 ```bash
-curl -X GET "https://shop.example.com/api/core/info" \
+curl -X GET "https://shop.example.com/api/core/order/list" \
   -H "Authorization: Bearer 1|aBcD...very-long...XyZ"
 ```
 
 ---
 
-## 5. Front API workflow (Storefront)
+## 6. Front API workflow (Storefront)
 
 The Front API serves two kinds of data: **public data** (no login needed — product lists,
 categories…) and **customer-private data** (login required — orders, personal info).
@@ -163,12 +261,19 @@ categories…) and **customer-private data** (login required — orders, persona
 | `GET` | `api/front/page/list` | Content page list |
 | `GET` | `api/front/page/detail/{id}` | A content page's details |
 
+> ℹ️ **Available since:** gp247/shop 3.2.3, gp247/front 3.2.3 — public data is **exactly what the
+> store is showing** on the domain you call: hidden products, products not yet approved, or products
+> belonging to another store do not appear. Responses contain only public fields — no cost price,
+> supplier, or stock/sold counts. If you need those figures, use the Core API with an account that has
+> permission.
+
 **Customer account endpoints** (prefix `api/front`, customer token required):
 
 | Method | Path | Login required | Function |
 | --- | --- | --- | --- |
 | `POST` | `api/front/login` | No | Log in with customer email/password, returns a token |
-| `GET` | `api/front/logout` | Yes (Bearer) | Log out the customer |
+| `POST` | `api/front/logout` | Yes (Bearer) | Log out the customer |
+| `GET` | `api/front/logout` | Yes (Bearer) | Same as above — **deprecated**, switch to `POST` |
 | `GET` | `api/front/info` | Yes (Bearer) | Customer account info |
 | `GET` | `api/front/member/order/list` | Yes (Bearer) | The customer's order list |
 | `GET` | `api/front/member/order/detail/{id}` | Yes (Bearer) | An order's details |
@@ -195,19 +300,137 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 ---
 
-## 6. Response format & error codes
+## 7. Response format & error codes
 
-- **Every response is JSON** (thanks to the `json.response` middleware).
-- Paginated endpoints (such as the product list) return Laravel's standard pagination shape
-  (with `data`, `current_page`, `total`…).
-- Common errors:
+- **Every response is JSON.**
+- List endpoints return Laravel's standard pagination shape (with `data`, `current_page`, `total`…);
+  pick a page with `page[number]` and `page[size]`.
+- Success: the data is returned directly (an object, or a page of data).
 
-| Case | Response |
-| --- | --- |
-| Wrong username/password | HTTP `401` — `{"error": 1, "msg": "Unauthorized"}` |
-| Missing/invalid API Connection | `{"error": 1, "msg": "apiconnection or apikey not found"}` or `"Connection not correct"` |
-| Data not found (detail) | HTTP `404` with an empty body |
-| Too many requests | HTTP `429` (rate limit exceeded) |
+> ℹ️ **Available since:** gp247/core 3.2.3 — **every error** has the same shape and a **meaningful
+> HTTP code**:
+>
+> ```json
+> { "error": 1, "msg": "Not found", "code": "not_found" }
+> ```
+
+| HTTP | `code` | When |
+| --- | --- | --- |
+| `401` | `unauthenticated` | Missing/invalid token, expired token, account disabled/locked, wrong password on `login` |
+| `401` | `api_connection_invalid` | API Connection is enabled but the `apiconnection`/`apikey` pair is missing/wrong |
+| `403` | `forbidden` | Logged in but without permission (section 3), or the wrong type of token |
+| `404` | `not_found` | The record does not exist or you are not allowed to see it; the API path does not exist |
+| `422` | `validation_failed` | The submitted data is invalid — see the `errors` key for each field |
+| `429` | `too_many_attempts` | Too many calls — wait as indicated by the `Retry-After` header |
+| `405` | `method_not_allowed` | Wrong HTTP method for the path (for example `GET` instead of `POST`) |
+| other | `http_error` | Any other HTTP error — read `msg` |
+| `500` | `server_error` | Server error — details are only shown when the site has debug mode on |
+
+> Older apps that read the `error`/`msg` keys keep working as before; check the **HTTP code** first,
+> then read `code` to handle each case.
+
+---
+
+## 8. API v2
+
+> ℹ️ **Available since:** gp247/core, gp247/front, gp247/shop 3.3.0
+
+API v2 serves **the same data with the same permissions** as v1 (sections 2–4 and 7: tokens, admin-screen
+permissions, per-store data, login limits, error codes), but its responses have a **fixed structure** and it
+supports filtering, sorting and searching. v1 is kept unchanged so existing apps don't break — new apps should
+use v2.
+
+| Difference | v1 | v2 |
+| --- | --- | --- |
+| Prefix | `api/core`, `api/front` | `api/v2/core`, `api/v2/front` |
+| Success (single record) | The object directly | `{"data": {...}}` |
+| Success (list) | Laravel pagination (`data`, `current_page`, `total`… at the same level) | `{"data": [...], "meta": {...}, "links": {...}}` |
+| Product/category/page name and description | A `descriptions` array with every language | `name`, `description`… in the language chosen with `lang` |
+| Price | `price` | `price` and `price_final` (the price the customer pays on the store, promotions applied) |
+| Logout | `POST` (and the deprecated `GET`) | `POST` only |
+
+**Parameters for every list endpoint:**
+
+| Parameter | Meaning | Example |
+| --- | --- | --- |
+| `filter[<name>]` | Filter by a field allowed for that kind of data (see the table below) | `filter[brand_id]=5` |
+| `sort` | Sort ascending; prefix with `-` for descending | `sort=-price` |
+| `q` | Search (name, SKU, email… depending on the kind of data) | `q=ao-thun` |
+| `lang` | Language of names/descriptions; an invalid code → the site's default language | `lang=vi` |
+| `page[number]`, `page[size]` | Page and records per page (default 20, maximum 100) | `page[size]=50` |
+
+A filter name or sort field that is **not in the list** → HTTP `422` (`validation_failed`); the response lists
+the allowed names.
+
+| Data | `filter[...]` | `sort` |
+| --- | --- | --- |
+| Products | `category_id`, `brand_id`, `kind`, `product_type`, `price_min`, `price_max` (+ admin: `status`, `approve`, `supplier_id`) | `price`, `created_at`, `sort`, `sku` |
+| Categories | `parent`, `top` (admin: `parent`, `status`) | `sort`, `created_at` |
+| Brands, suppliers | (admin: `status`) | `sort`, `name` |
+| Customers (admin) | `status`, `group` | `created_at`, `email` |
+| Orders (admin) | `status`, `payment_status`, `shipping_status`, `customer_id` | `created_at`, `total` |
+| Customer's own orders | `status` | `created_at`, `total` |
+| Banners | `type` | `sort`, `created_at` |
+| Content pages | — | `created_at` |
+
+**API v2 endpoints:**
+
+| Method | Path | Login required | Function |
+| --- | --- | --- | --- |
+| `POST` | `api/v2/core/login` | No | Admin login |
+| `POST` | `api/v2/core/logout` | Yes (admin) | Admin logout |
+| `GET` | `api/v2/core/info` | Yes (admin) | Admin info (with roles) |
+| `GET` | `api/v2/core/customer/list` | Yes (admin + permission) | Customer list |
+| `GET` | `api/v2/core/customer/detail/{id}` | Yes (admin + permission) | Customer details |
+| `GET` | `api/v2/core/order/list` | Yes (admin + permission) | Order list |
+| `GET` | `api/v2/core/order/detail/{id}` | Yes (admin + permission) | Order details |
+| `GET` | `api/v2/core/product/list` | Yes (admin + permission) | Product list (with stock and cost price) |
+| `GET` | `api/v2/core/product/detail/{id}` | Yes (admin + permission) | Product details |
+| `GET` | `api/v2/core/category/list` | Yes (admin + permission) | Category list |
+| `GET` | `api/v2/core/category/detail/{id}` | Yes (admin + permission) | Category details |
+| `GET` | `api/v2/core/brand/list` | Yes (admin + permission) | Brand list |
+| `GET` | `api/v2/core/brand/detail/{id}` | Yes (admin + permission) | Brand details |
+| `GET` | `api/v2/core/supplier/list` | Yes (admin + permission) | Supplier list |
+| `GET` | `api/v2/core/supplier/detail/{id}` | Yes (admin + permission) | Supplier details |
+| `GET` | `api/v2/core/banner/list` | Yes (admin + permission) | Banner list |
+| `GET` | `api/v2/core/banner/detail/{id}` | Yes (admin + permission) | Banner details |
+| `GET` | `api/v2/core/page/list` | Yes (admin + permission) | Content page list |
+| `GET` | `api/v2/core/page/detail/{id}` | Yes (admin + permission) | Content page details |
+| `GET` | `api/v2/front/meta` | No | API version, installed packages, languages, stores |
+| `GET` | `api/v2/front/product/list` | No | Product list |
+| `GET` | `api/v2/front/product/detail/{id}` | No | Product details |
+| `GET` | `api/v2/front/category/list` | No | Category list |
+| `GET` | `api/v2/front/category/detail/{id}` | No | Category details |
+| `GET` | `api/v2/front/brand/list` | No | Brand list |
+| `GET` | `api/v2/front/brand/detail/{id}` | No | Brand details |
+| `GET` | `api/v2/front/banner/list` | No | Banner list |
+| `GET` | `api/v2/front/banner/detail/{id}` | No | Banner details |
+| `GET` | `api/v2/front/page/list` | No | Content page list |
+| `GET` | `api/v2/front/page/detail/{id}` | No | Content page details |
+| `POST` | `api/v2/front/login` | No | Customer login |
+| `POST` | `api/v2/front/logout` | Yes (customer) | Customer logout |
+| `GET` | `api/v2/front/info` | Yes (customer) | Customer account info |
+| `GET` | `api/v2/front/member/order/list` | Yes (customer) | The customer's orders |
+| `GET` | `api/v2/front/member/order/detail/{id}` | Yes (customer) | Details of one of the customer's orders |
+
+Example: the 20 most expensive products of brand 5, with names in Vietnamese:
+
+```bash
+curl -X GET "https://shop.example.com/api/v2/front/product/list?filter[brand_id]=5&sort=-price&lang=vi&page[size]=20" \
+  -H "Accept: application/json"
+```
+
+Shortened response:
+
+```json
+{
+  "data": [
+    { "id": "PRD-AbC12", "sku": "TSHIRT-01", "name": "T-shirt", "price": 250000, "price_final": 199000 }
+  ],
+  "meta": { "current_page": 1, "per_page": 20, "total": 1, "last_page": 1 },
+  "links": { "first": "…", "last": "…", "prev": null, "next": null }
+}
+```
 
 ---
 
@@ -215,15 +438,15 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 **Q1: Which API group should I use?**
 
-→ If you're building an app/customer client for the store (browse products, place orders, view orders)
-→ use the **Front API** (`api/front`). If you're building a remote admin tool → use the
+→ If you're building an app/customer client for the store (browse products, view orders) → use the
+**Front API** (`api/front`). If you're building a remote admin tool for administrators → use the
 **Core API** (`api/core`).
 
 **Q2: Where do I get a token and how long does it last?**
 
-→ The token is issued by the `login` endpoint. By default it expires after 7 days; sending
-`remember_me = true` extends it (default 30 days). You can change these via the
-`GP247_API_TOKEN_EXPIRE_DEFAULT` and `GP247_API_RECOMMEMBER` environment variables.
+→ The token is issued by the `login` endpoint. By default it expires after 7 days; with
+`remember_me = true` it lasts 30 days. Change these via the environment variables in section 2. When it
+expires, call `login` again.
 
 **Q3: How is `apiconnection`/`apikey` different from `access_token`?**
 
@@ -233,43 +456,52 @@ authenticates the **application** (which app is allowed to call the API) and is 
 
 **Q4: Do public endpoints need a token?**
 
-→ No. The product/category/brand/banner/content-page list and detail endpoints are public. But if the
-API Connection layer is enabled, you must still send the `apiconnection`/`apikey` headers.
+→ No. The product, category, brand, banner and content-page list/detail endpoints are public. But if
+the API Connection layer is enabled, you must still send the `apiconnection`/`apikey` headers.
 
-**Q5: I get an `Unauthorized` (401) error even with the right password?**
+**Q5: I get a `401` error even with the right password?**
 
-→ For the Core API, the admin account must have `status = 1` (active). For the Front API, check that the
-email is correctly registered. Also make sure you send the right field: Core uses `username`, Front
-uses `email`.
+→ The account must be active: an admin needs `status = 1`, and a locked customer cannot log in. Send
+the right field: Core uses `username`, Front uses `email`. If you just failed many times, you will get
+`429` — wait as indicated by `Retry-After`.
 
-**Q6: Why do I get a `Connection not correct` error?**
+**Q6: I can log in, but calling `api/core/order/list` returns `403`?**
+
+→ The admin account is not yet allowed to open the **Orders** screen. Ask your administrator to grant
+permission for that screen under **Roles / Permissions** — the API uses exactly the same permissions as
+the admin area (section 3).
+
+**Q7: Why do I get an `api_connection_invalid` error?**
 
 → The API Connection layer is enabled and your `apiconnection`/`apikey` pair is wrong, expired
-(`expire`), or disabled (`status`). Go to the GP247 admin area, API Connection management, to check or
-re-create it.
+(`expire`), or disabled (`status`). The key is shown only once when it is created — if you have lost
+it, go to the API Connection management section to generate a new key.
 
-**Q7: Is there a request limit?**
+**Q8: Why doesn't the public API return cost price or stock counts?**
 
-→ Yes. The middleware limits to **1000 requests** per cycle by default. Exceeding it returns HTTP `429`
-— pace your requests or cache the results on the app side.
-
-**Q8: How do I write a full endpoint address?**
-
-→ `https://<site-domain>/<prefix>/<path>`. For example:
-`https://shop.example.com/api/front/product/list`. The prefix is `api/core` or `api/front` depending
-on the group.
+→ That is internal business data. The public API only returns what customers see on the store. Internal
+apps that need these figures should use the Core API (`api/core/product/*`) with an account that has
+permission.
 
 **Q9: How do I log out safely?**
 
-→ Call `logout` (`api/core/logout` or `api/front/logout`) with the current token. The system **deletes**
-that token from the database, so the old token can no longer be reused.
+→ Call `POST api/core/logout` or `POST api/front/logout` with the current token. The system **deletes**
+that token, so the old token can no longer be reused.
 
 **Q10: I need an endpoint that isn't in the list?**
 
-→ The lists above are the built-in endpoints of `core`/`front`/`shop`. If you need more, a developer can
-extend them by declaring routes in a separate plugin — without modifying the core (following GP247's
-"plugins plug into the core" principle).
+→ A developer can extend the API by declaring routes in a separate plugin — without modifying the core
+code. See [How to create an API the right way](./create-api.md).
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
+
+---
+
+<sub>📅 **Last updated:** 2026-10-26 · ✍️ **Author:** GP247</sub>
