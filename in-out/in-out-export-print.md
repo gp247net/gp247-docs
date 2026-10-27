@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-export-print_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-export-print_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out-export-print_ja.md)
 
 # InOut — Part 5: Export, printing, automatic stock & history
 
@@ -105,4 +105,4 @@ Every business action is recorded: who created an order, who received goods and 
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

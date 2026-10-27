@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./data-encryption.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./data-encryption.md) · [🇯🇵 日本語](./data-encryption_ja.md)
 
 # Mã hoá dữ liệu nhạy cảm trong GP247
 
@@ -181,4 +181,4 @@ Ba lưu ý: (1) cột phải kiểu **TEXT** vì bản mã dài; (2) **không t�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-payment-plugin_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-payment-plugin_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-payment-plugin_ja.md)
 
 # Creating a payment plugin for GP247 — step by step, with complete code
 
@@ -1054,4 +1054,4 @@ save keeps the old secret.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

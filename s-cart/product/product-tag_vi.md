@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-tag.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./product-tag.md) · [🇯🇵 日本語](./product-tag_ja.md)
 
 # Thẻ từ khóa sản phẩm (Product Tag) trong GP247
 
@@ -201,4 +201,4 @@ Tính năng có một công tắc bật/tắt riêng. Mặc định là **bật*
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-25 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

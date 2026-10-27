@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./data-encryption_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./data-encryption_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./data-encryption_ja.md)
 
 # Sensitive data encryption in GP247
 
@@ -181,4 +181,4 @@ Three notes: (1) the column must be **TEXT** (ciphertext is long); (2) you **can
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-sales-order-integration_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-sales-order-integration_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out-sales-order-integration_ja.md)
 
 # InOut — Part 4: Sales orders (revenue & customer debts)
 
@@ -76,4 +76,4 @@ Stock on **sales** is handled by **S-Cart automatically** (see [Product stock ma
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

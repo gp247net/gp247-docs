@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-tag_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-tag_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./product-tag_ja.md)
 
 # Product keyword tags (Product Tag) in GP247
 
@@ -206,4 +206,4 @@ This is the most easily confused part. The two actions give **very different** r
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-25 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

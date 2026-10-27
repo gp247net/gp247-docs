@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-store-operations.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-store-operations.md) · [🇯🇵 日本語](./multi-store-operations_ja.md)
 
 # Multi-Store — Phần 2: Vận hành nhiều cửa hàng
 
@@ -221,4 +221,4 @@ Thông báo lỗi nêu rõ còn bao nhiêu bản ghi mỗi loại. Bạn phải 
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

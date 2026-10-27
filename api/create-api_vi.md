@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-api.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-api.md) · [🇯🇵 日本語](./create-api_ja.md)
 
 # Hướng dẫn tạo API đúng chuẩn trên GP247
 
@@ -58,13 +58,17 @@ nghĩa ở `config('gp247-config.api.middleware')`:
 | --- | --- | --- |
 | 1 | `json.response` | Ép mọi phản hồi trả về **JSON** (đặt header `Accept: application/json`) |
 | 2 | `api.connection` | Lớp khóa ứng dụng tùy chọn (`apiconnection`/`apikey`) — bật/tắt qua cấu hình |
-| 3 | `throttle: 1000` | Giới hạn **1000 lần gọi**/chu kỳ (chống lạm dụng) |
+| 3 | `throttle:gp247-api` | Giới hạn tần suất, mặc định **1000 lần/phút** mỗi IP (`GP247_API_THROTTLE`) |
 
 > ⚠️ **Thứ tự này cố định — không đổi.** Đây là quy ước đã ghi rõ trong config.
 >
 > 👉 **Hệ quả quan trọng cho plugin:** route đặt trong `Routes/Api/` của core/shop/front sẽ **tự
 > động** có 3 lớp trên. Nhưng route bạn thêm từ **plugin** lại nạp ở chỗ khác (mục 4) nên **không tự
-> có** — bạn phải tự bọc chúng.
+> có** — bạn phải tự bọc chúng, hoặc (từ 3.3.0) đăng ký qua `ApiRouteRegistrar` (mục 4.1).
+
+> ℹ️ **Có từ:** gp247/core, gp247/front, gp247/shop 3.3.0 — mỗi gói tự đăng ký route API của mình (kể cả
+> thư mục `Routes/Api/v2/`) qua `GP247\Core\Api\Support\ApiRouteRegistrar`; route của gói chỉ có khi gói đã
+> được cài vào cơ sở dữ liệu. Đường dẫn và tên route không đổi.
 
 ### 1.4. Xác thực bằng Laravel Sanctum
 
@@ -120,15 +124,23 @@ Giữ đúng các quy ước sau để API mới đồng bộ với phần còn 
   (ví dụ `getProductList`, `getProductDetail`).
 - **Luôn trả JSON** bằng `response()->json(...)`.
 - **Thành công**: trả thẳng dữ liệu (object hoặc danh sách phân trang).
-- **Thất bại/không tìm thấy**: trả object lỗi theo mẫu chung:
+- **Thất bại/không tìm thấy**: dùng `ApiErrorResponder` để có **mã HTTP đúng nghĩa** và thân lỗi chung
+  `{"error": 1, "msg": "…", "code": "…"}` (bảng mã ở [Giới thiệu API](./api-introduction_vi.md), mục 7):
 
   ```php
-  return response()->json([
-      'error' => 1,
-      'msg'   => 'Not found',
-      'detail'=> 'Product not found or no permission!',
-  ], 200);
+  use GP247\Core\Api\Support\ApiErrorResponder;
+
+  if (!$product) {
+      return ApiErrorResponder::notFound();          // 404, code: not_found
+  }
   ```
+
+  > ℹ️ **Có từ:** gp247/core 3.2.3 — lỗi xác thực, phân quyền, validate và giới hạn tần suất dưới
+  > `api/*` được tự đổi sang dạng này; bạn chỉ cần tự trả `notFound()`/`forbidden()` khi controller
+  > tự quyết định. Mẫu cũ `response()->json([...], 200)` cho lỗi **không còn dùng**.
+- **Chỉ trả trường cần thiết**: với dữ liệu công khai, lọc trường bằng
+  `GP247\Core\Api\Support\ApiFieldAllowlist::one()` / `::page()` thay vì trả nguyên model — cột mới
+  thêm vào bảng sẽ không tự lộ ra API.
 
 - **Phân trang**: dùng macro `->jsonPaginate()` (gói `spatie/laravel-json-api-paginate` đã cài sẵn)
   thay cho `->get()` khi trả danh sách — nó trả về cấu trúc phân trang chuẩn (`data`, `current_page`,
@@ -304,6 +316,34 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
 
 ---
 
+### 4.1. Cách gọn hơn: đăng ký qua `ApiRouteRegistrar`
+
+> ℹ️ **Có từ:** gp247/core 3.3.0
+
+Thay vì tự bọc nhóm middleware trong `Route.php`, đặt route API vào một file riêng của plugin và đăng ký
+nó từ `Provider.php` của plugin:
+
+```php
+// app/GP247/Plugins/MyApi/Provider.php
+\GP247\Core\Api\Support\ApiRouteRegistrar::register(__DIR__ . '/Routes/api.php');
+```
+
+```php
+// app/GP247/Plugins/MyApi/Routes/api.php — chỉ khai báo prefix và route
+use Illuminate\Support\Facades\Route;
+
+Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+    $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
+    Route::get('myapi/status', $statusController.'@getStatus');
+});
+```
+
+`ApiRouteRegistrar` tự bọc `GP247_API_MIDDLEWARE` (JSON, API Connection, giới hạn tần suất), không đăng ký gì
+khi `GP247_API_MODE` tắt, và không đăng ký lại khi site đã `route:cache`. Hợp đồng lỗi `{error, msg, code}` áp
+dụng cho mọi đường dẫn dưới `api/core`, `api/front`, `api/v2/core`, `api/v2/front`.
+
+---
+
 ## 5. Tạo endpoint cần đăng nhập (bảo vệ bằng token)
 
 Nếu API của bạn trả dữ liệu riêng tư (đơn hàng của khách, dữ liệu admin…), phải bọc bằng guard
@@ -335,6 +375,40 @@ Authorization: Bearer <access_token>
 > đăng nhập của core/shop. Bạn chỉ cần **tái dùng** endpoint `api/core/login` / `api/front/login` để
 > lấy token, không cần tự viết lại phần đăng nhập trừ khi có nhu cầu đặc biệt.
 
+### 5.1. Endpoint quản trị: khai báo màn admin và giới hạn theo cửa hàng
+
+> ℹ️ **Có từ:** gp247/core 3.2.3
+
+Token admin **không** tự cho phép xem mọi dữ liệu. Mỗi route dưới `GP247_API_CORE_PREFIX` phải khai
+báo **màn hình admin** tương ứng bằng middleware `api.admin:<tên route admin>`; GP247 chỉ cho gọi
+khi tài khoản có quyền mở màn hình đó (cùng phân quyền với trang quản trị), áp rào chặn của plugin
+đa cửa hàng và xác định cửa hàng của tài khoản:
+
+```php
+Route::group([
+    'prefix'     => GP247_API_CORE_PREFIX,
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // từ 3.3.0; bản cũ hơn: 'ability:admin,admin-supper'
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
+    Route::get('report/sales', $ctrl.'@getSalesReport')
+        ->middleware('api.admin:admin_report.sales');   // tên route của màn admin tương ứng
+});
+```
+
+Trong controller, luôn lọc truy vấn theo cửa hàng của tài khoản:
+
+```php
+use GP247\Core\Api\Support\ApiStoreScope;
+
+$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+```
+
+Gọi `ApiStoreScope` trên route thiếu `api.admin` sẽ báo lỗi (an toàn mặc định) — đây là cách GP247
+nhắc bạn đã quên khai báo quyền.
+
 ---
 
 ## 6. Danh sách kiểm tra trước khi coi là "xong"
@@ -345,6 +419,8 @@ Authorization: Bearer <access_token>
 - [ ] Có `$request->validate([...])` cho mọi input; **không** ghép chuỗi SQL (dùng Eloquent).
 - [ ] Danh sách dùng `->jsonPaginate()`; mọi phản hồi qua `response()->json(...)`.
 - [ ] Endpoint riêng tư có `auth:admin-api`/`auth:customer-api` + `ability:...` đúng scope.
+- [ ] Endpoint quản trị có `api.admin:<tên route admin>` và lọc dữ liệu bằng `ApiStoreScope::apply()` (mục 5.1).
+- [ ] Lỗi trả qua `ApiErrorResponder` (mã HTTP đúng nghĩa); dữ liệu công khai lọc trường bằng `ApiFieldAllowlist`.
 - [ ] **Không sửa** `vendor/gp247/*` (trừ khi bạn là maintainer của gói đó).
 - [ ] Mỗi method có PHPDoc tiếng Anh kèm tag `@aidlc-unit` / `@aidlc-story` (theo coding-style).
 - [ ] Đã `php artisan route:clear` và xác nhận route hiện ra trong `php artisan route:list`.
@@ -378,14 +454,15 @@ danh sách để đồng bộ với các API sẵn có của GP247.
 
 **Câu 5: Làm sao trả về lỗi cho đúng chuẩn?**
 
-→ Dùng object `{'error': 1, 'msg': '...', 'detail': '...'}` với `response()->json(...)`. Với lỗi xác
-thực, để Sanctum tự trả `401`. Không trả HTML hay chuỗi trần.
+→ Dùng `ApiErrorResponder` (`notFound()`, `forbidden()`, `respond($status, $code, $msg)`) — thân lỗi
+`{error, msg, code}` với mã HTTP đúng nghĩa. Lỗi xác thực, validate và giới hạn tần suất GP247 tự đổi
+sang dạng này. Không trả HTML hay chuỗi trần.
 
 **Câu 6: Tôi cần scope/quyền riêng cho API của mình?**
 
-→ Có thể tái dùng các scope sẵn có (`admin`, `admin-supper`, `user`, `user-guest`). Nếu cần scope mới,
-cấp thêm khi tạo token và kiểm tra bằng middleware `ability:<scope-của-bạn>`. Tránh tự phát minh cơ
-chế quyền song song với Sanctum.
+→ Scope chỉ phân biệt loại tài khoản (`admin`, `admin-supper`, `user`). Quyền xem dữ liệu của endpoint
+quản trị lấy từ phân quyền màn admin qua `api.admin:<tên route admin>` (mục 5.1) — người quản trị cấp
+quyền một lần cho cả trang quản trị lẫn API. Tránh tự phát minh cơ chế quyền song song.
 
 **Câu 7: Lớp `apiconnection`/`apikey` có bắt buộc cho API mới của tôi không?**
 
@@ -411,4 +488,13 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
+
+---
+
+<sub>📅 **Cập nhật lần cuối:** 2026-10-26 · ✍️ **Tác giả (Author):** GP247</sub>

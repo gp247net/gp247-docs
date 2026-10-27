@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-plugin_ja.md)
 
 # Creating a plugin for GP247
 
@@ -553,4 +553,4 @@ With an AI agent, use the `gp247-plugin-create` skill.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

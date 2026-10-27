@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-attribute_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./product-attribute_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./product-attribute_ja.md)
 
 # Product Attributes in GP247
 
@@ -164,4 +164,4 @@ A recent update hardened two points for safety and data integrity:
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-13 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

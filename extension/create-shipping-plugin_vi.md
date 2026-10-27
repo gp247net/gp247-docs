@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-shipping-plugin.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./create-shipping-plugin.md) · [🇯🇵 日本語](./create-shipping-plugin_ja.md)
 
 # Tạo plugin vận chuyển cho GP247 — từng bước, có code đầy đủ
 
@@ -949,4 +949,4 @@ phẩm, trả về món hàng đã thêm `meta`. Không dùng closure — sẽ l
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-18 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

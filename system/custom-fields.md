@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./custom-fields_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./custom-fields_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./custom-fields_ja.md)
 
 # Custom Fields in GP247
 
@@ -293,4 +293,4 @@ Grep for any `use HasCustomFields` (or `CustomFieldTrait`) declaring that table'
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-14 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

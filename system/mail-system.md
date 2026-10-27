@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./mail-system_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./mail-system_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./mail-system_ja.md)
 
 # Mail system in GP247
 
@@ -146,4 +146,4 @@ Right above the Email/SMTP screen, GP247 shows a **reminder box** that adapts to
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

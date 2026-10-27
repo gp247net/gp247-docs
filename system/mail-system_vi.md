@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./mail-system.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./mail-system.md) · [🇯🇵 日本語](./mail-system_ja.md)
 
 # Hệ thống gửi mail trong GP247
 
@@ -146,4 +146,4 @@ Ngay trên màn Email/SMTP, GP247 hiện một **khung nhắc nhở** tự đổ
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

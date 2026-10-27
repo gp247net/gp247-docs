@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor-operations_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-vendor-operations_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-vendor-operations_ja.md)
 
 # Multi-Vendor — Part 2: Running the marketplace
 
@@ -346,4 +346,4 @@ The **Create order** screen in the seller area: pick a customer, add products fr
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

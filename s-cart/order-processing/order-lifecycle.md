@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./order-lifecycle_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./order-lifecycle_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./order-lifecycle_ja.md)
 
 # GP247 order lifecycle — stock, money and history at every stage
 
@@ -268,4 +268,4 @@ is cancelled or re-opened** is currently only implied by the status-change line,
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

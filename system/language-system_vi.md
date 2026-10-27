@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./language-system.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./language-system.md) · [🇯🇵 日本語](./language-system_ja.md)
 
 # Cách sử dụng ngôn ngữ (đa ngôn ngữ / i18n) trong hệ thống GP247
 
@@ -248,4 +248,4 @@ nhật. Đây là lý do `shop` không cần file lang trên ổ đĩa.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-07-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

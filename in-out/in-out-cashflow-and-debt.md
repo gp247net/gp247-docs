@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-cashflow-and-debt_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-cashflow-and-debt_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out-cashflow-and-debt_ja.md)
 
 # InOut — Part 3: Cash flow, debts & period closing
 
@@ -184,4 +184,4 @@ Money a **payment gateway already collected** through a payment request is never
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

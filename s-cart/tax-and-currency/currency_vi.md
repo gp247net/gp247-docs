@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./currency.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./currency.md) · [🇯🇵 日本語](./currency_ja.md)
 
 # Tiền tệ (Currency) trong GP247
 
@@ -357,4 +357,4 @@ storefront.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-08-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

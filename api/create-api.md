@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-api_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-api_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-api_ja.md)
 
 # How to build an API correctly on GP247
 
@@ -60,13 +60,18 @@ in `config('gp247-config.api.middleware')`:
 | --- | --- | --- |
 | 1 | `json.response` | Forces every response to be **JSON** (sets header `Accept: application/json`) |
 | 2 | `api.connection` | Optional application-level gate (`apiconnection`/`apikey`) — toggled by config |
-| 3 | `throttle: 1000` | Rate limit of **1000 calls**/window (abuse protection) |
+| 3 | `throttle:gp247-api` | Rate limit, by default **1000 requests/minute** per IP (`GP247_API_THROTTLE`) |
 
 > ⚠️ **This order is fixed — do not change it.** It is a convention stated explicitly in the config.
 >
 > 👉 **Important consequence for plugins:** routes placed in the `Routes/Api/` folder of core/shop/front
 > get these three layers **automatically**. But routes you add from a **plugin** are loaded elsewhere
-> (section 4), so they do **not** get them automatically — you must wrap them yourself.
+> (section 4), so they do **not** get them automatically — you must wrap them yourself, or (since 3.3.0)
+> register them through `ApiRouteRegistrar` (section 4.1).
+
+> ℹ️ **Available since:** gp247/core, gp247/front, gp247/shop 3.3.0 — each package registers its own API routes
+> (including the `Routes/Api/v2/` folder) through `GP247\Core\Api\Support\ApiRouteRegistrar`; a package's routes
+> only exist once the package has been installed into the database. Paths and route names are unchanged.
 
 ### 1.4. Authentication with Laravel Sanctum
 
@@ -122,15 +127,25 @@ Follow these conventions so your new API stays consistent with the rest of the s
   (e.g. `getProductList`, `getProductDetail`).
 - **Always return JSON** via `response()->json(...)`.
 - **On success**: return the data directly (an object or a paginated list).
-- **On failure/not found**: return an error object following the shared shape:
+- **On failure/not found**: use `ApiErrorResponder` so you get a **meaningful HTTP status code** and the
+  shared error body `{"error": 1, "msg": "…", "code": "…"}` (code table in
+  [API Introduction](./api-introduction.md), section 7):
 
   ```php
-  return response()->json([
-      'error' => 1,
-      'msg'   => 'Not found',
-      'detail'=> 'Product not found or no permission!',
-  ], 200);
+  use GP247\Core\Api\Support\ApiErrorResponder;
+
+  if (!$product) {
+      return ApiErrorResponder::notFound();          // 404, code: not_found
+  }
   ```
+
+  > ℹ️ **Available since:** gp247/core 3.2.3 — authentication, authorization, validation and rate-limit
+  > errors under `api/*` are converted to this shape automatically; you only need to return
+  > `notFound()`/`forbidden()` yourself when the controller makes that decision. The old pattern
+  > `response()->json([...], 200)` for errors is **no longer used**.
+- **Return only the fields you need**: for public data, filter fields with
+  `GP247\Core\Api\Support\ApiFieldAllowlist::one()` / `::page()` instead of returning the whole model — new
+  columns added to the table will not leak into the API automatically.
 
 - **Pagination**: use the `->jsonPaginate()` macro (from the pre-installed
   `spatie/laravel-json-api-paginate` package) instead of `->get()` when returning a list — it returns a
@@ -310,6 +325,35 @@ automatically.
 
 ---
 
+### 4.1. A simpler way: register through `ApiRouteRegistrar`
+
+> ℹ️ **Available since:** gp247/core 3.3.0
+
+Instead of wrapping the middleware group yourself in `Route.php`, put the API routes in a separate file of the
+plugin and register it from the plugin's `Provider.php`:
+
+```php
+// app/GP247/Plugins/MyApi/Provider.php
+\GP247\Core\Api\Support\ApiRouteRegistrar::register(__DIR__ . '/Routes/api.php');
+```
+
+```php
+// app/GP247/Plugins/MyApi/Routes/api.php — declare only the prefix and the routes
+use Illuminate\Support\Facades\Route;
+
+Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+    $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
+    Route::get('myapi/status', $statusController.'@getStatus');
+});
+```
+
+`ApiRouteRegistrar` wraps `GP247_API_MIDDLEWARE` for you (JSON, API Connection, rate limit), registers nothing
+when `GP247_API_MODE` is off, and does not register the routes again when the site has run `route:cache`. The
+`{error, msg, code}` error contract applies to every path under `api/core`, `api/front`, `api/v2/core` and
+`api/v2/front`.
+
+---
+
 ## 5. Create an endpoint that requires login (protected by a token)
 
 If your API returns private data (a customer's orders, admin data…), you must wrap it in the matching
@@ -341,6 +385,41 @@ Authorization: Bearer <access_token>
 > core/shop login controllers. You just need to **reuse** the `api/core/login` / `api/front/login`
 > endpoints to obtain a token — no need to rewrite the login part unless you have a special requirement.
 
+### 5.1. Admin endpoints: declare the admin screen and scope by store
+
+> ℹ️ **Available since:** gp247/core 3.2.3
+
+An admin token does **not** automatically allow viewing all data. Every route under
+`GP247_API_CORE_PREFIX` must declare its matching **admin screen** with the
+`api.admin:<admin route name>` middleware; GP247 only allows the call when the account has permission to
+open that screen (the same permissions as the admin panel), applies the guards of the multi-store
+plugins, and resolves the account's store:
+
+```php
+Route::group([
+    'prefix'     => GP247_API_CORE_PREFIX,
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // since 3.3.0; older versions: 'ability:admin,admin-supper'
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
+    Route::get('report/sales', $ctrl.'@getSalesReport')
+        ->middleware('api.admin:admin_report.sales');   // route name of the matching admin screen
+});
+```
+
+In the controller, always filter the query by the account's store:
+
+```php
+use GP247\Core\Api\Support\ApiStoreScope;
+
+$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+```
+
+Calling `ApiStoreScope` on a route without `api.admin` raises an error (safe by default) — this is how
+GP247 reminds you that you forgot to declare the permission.
+
 ---
 
 ## 6. Checklist before calling it "done"
@@ -351,6 +430,8 @@ Authorization: Bearer <access_token>
 - [ ] Every input has `$request->validate([...])`; **no** string-concatenated SQL (use Eloquent).
 - [ ] Lists use `->jsonPaginate()`; every response goes through `response()->json(...)`.
 - [ ] Private endpoints have `auth:admin-api`/`auth:customer-api` + the correct `ability:...` scope.
+- [ ] Admin endpoints have `api.admin:<admin route name>` and filter data with `ApiStoreScope::apply()` (section 5.1).
+- [ ] Errors go through `ApiErrorResponder` (meaningful HTTP status codes); public data filters fields with `ApiFieldAllowlist`.
 - [ ] **Do not modify** `vendor/gp247/*` (unless you are the maintainer of that package).
 - [ ] Every method has an English PHPDoc with the `@aidlc-unit` / `@aidlc-story` tags (per coding-style).
 - [ ] You ran `php artisan route:clear` and confirmed the route appears in `php artisan route:list`.
@@ -385,14 +466,16 @@ consistent with GP247's existing APIs.
 
 **Q5: How do I return errors the standard way?**
 
-→ Use the object `{'error': 1, 'msg': '...', 'detail': '...'}` with `response()->json(...)`. For auth
-errors, let Sanctum return `401` on its own. Never return raw HTML or a plain string.
+→ Use `ApiErrorResponder` (`notFound()`, `forbidden()`, `respond($status, $code, $msg)`) — an
+`{error, msg, code}` error body with a meaningful HTTP status code. GP247 converts authentication,
+validation and rate-limit errors to this shape automatically. Never return raw HTML or a plain string.
 
 **Q6: Do I need a custom scope/ability for my API?**
 
-→ You can reuse the existing scopes (`admin`, `admin-supper`, `user`, `user-guest`). If you need a new
-scope, grant it when creating the token and check it with the `ability:<your-scope>` middleware. Avoid
-inventing a permission mechanism that runs parallel to Sanctum.
+→ Scopes only distinguish account types (`admin`, `admin-supper`, `user`). Permission to view data on an
+admin endpoint comes from the admin screen permissions via `api.admin:<admin route name>` (section 5.1) —
+administrators grant a permission once for both the admin panel and the API. Avoid inventing a parallel
+permission mechanism.
 
 **Q7: Is the `apiconnection`/`apikey` layer mandatory for my new API?**
 
@@ -418,4 +501,13 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 ---
 
-<sub>📅 **Last updated:** 2026-07-30 · ✍️ **Author:** GP247</sub>
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
+
+---
+
+<sub>📅 **Last updated:** 2026-10-26 · ✍️ **Author:** GP247</sub>

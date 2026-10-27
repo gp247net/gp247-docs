@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin-advanced_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./create-plugin-advanced_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./create-plugin-advanced_ja.md)
 
 # Advanced plugins — several stores, secret keys, storefront, coupons
 
@@ -238,4 +238,4 @@ AdminMenu::where('uri', self::MENU_URI)->delete();
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

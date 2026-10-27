@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-cashflow-and-debt.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out-cashflow-and-debt.md) · [🇯🇵 日本語](./in-out-cashflow-and-debt_ja.md)
 
 # InOut — Phần 3: Thu chi, công nợ & khóa sổ
 
@@ -184,4 +184,4 @@ Riêng tiền **cổng thanh toán đã thực thu** qua yêu cầu thanh toán 
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

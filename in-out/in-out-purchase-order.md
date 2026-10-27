@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-purchase-order_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-purchase-order_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out-purchase-order_ja.md)
 
 # InOut — Part 1: Purchase orders (receiving goods from suppliers)
 
@@ -130,4 +130,4 @@ Each rule has a business reason:
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./in-out.md) · [🇯🇵 日本語](./in-out_ja.md)
 
 # InOut — Nhập hàng, trả hàng, thu chi & công nợ trong một trang quản trị
 
@@ -140,4 +140,4 @@ Riêng nút **Tạo yêu cầu thu nợ / trả nợ** ở màn công nợ cần
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

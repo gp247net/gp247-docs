@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-return-order_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./in-out-return-order_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./in-out-return-order_ja.md)
 
 # InOut — Part 2: Return orders (returning goods to suppliers)
 
@@ -110,4 +110,4 @@ Every rule below keeps stock and debts accurate:
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./tax_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./tax_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./tax_ja.md)
 
 # Tax in GP247
 
@@ -206,4 +206,4 @@ line taxes.
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

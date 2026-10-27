@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./convert-plugin-v1-to-v2_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./convert-plugin-v1-to-v2_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./convert-plugin-v1-to-v2_ja.md)
 
 # Guide: Converting a GP247 Plugin from v1 (Core 1.x) to v2 (Core 2.0)
 
@@ -563,4 +563,4 @@ new layout) so you do not have to create each file by hand.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

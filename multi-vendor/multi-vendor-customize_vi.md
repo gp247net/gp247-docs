@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-customize.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./multi-vendor-customize.md) · [🇯🇵 日本語](./multi-vendor-customize_ja.md)
 
 # Multi-Vendor — Phần 3: Tùy chỉnh
 
@@ -126,4 +126,4 @@ Xem thêm: [Hướng dẫn tạo Plugin (chuẩn v2)](../extension/create-plugin
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-09-21 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>

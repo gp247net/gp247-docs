@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./cache-system_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./cache-system_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./cache-system_ja.md)
 
 # Cache Handling in GP247
 
@@ -172,4 +172,4 @@ No errors — lists simply read straight from the DB (a few extra queries). It i
 
 ---
 
-<sub>📅 **Last updated:** 2026-08-12 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

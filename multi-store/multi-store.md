@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./multi-store_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./multi-store_ja.md)
 
 # Multi-Store — One admin, many online stores
 
@@ -140,4 +140,4 @@ In short: **Multi-Store is many stores of your own; Multi-Vendor is a marketplac
 
 ---
 
-<sub>📅 **Last updated:** 2026-09-21 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

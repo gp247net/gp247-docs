@@ -1,4 +1,4 @@
-> 🌐 **Language:** [🇻🇳 Tiếng Việt](./install-extension_vi.md) · 🇬🇧 English (current)
+> 🌐 **Language:** [🇻🇳 Tiếng Việt](./install-extension_vi.md) · 🇬🇧 English (current) · [🇯🇵 日本語](./install-extension_ja.md)
 
 # Installing Plugins & Templates for GP247
 
@@ -397,4 +397,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>

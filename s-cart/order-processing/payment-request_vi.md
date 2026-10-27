@@ -1,4 +1,4 @@
-> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./payment-request.md)
+> 🌐 **Ngôn ngữ:** 🇻🇳 Tiếng Việt (hiện tại) · [🇬🇧 English](./payment-request.md) · [🇯🇵 日本語](./payment-request_ja.md)
 
 # Yêu cầu thanh toán (Payment Request) — các luồng tiền ngoài giỏ hàng
 
@@ -466,4 +466,4 @@ link dùng được cho tới khi trả đủ hoặc bị huỷ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-02 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
