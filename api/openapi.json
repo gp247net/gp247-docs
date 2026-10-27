@@ -2,8 +2,8 @@
     "openapi": "3.1.0",
     "info": {
         "title": "GP247 REST API (v1 + v2)",
-        "version": "3.3.0",
-        "description": "REST API of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. See api-introduction.md."
+        "version": "3.4.0",
+        "description": "REST API of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md."
     },
     "servers": [
         {
@@ -5401,6 +5401,7 @@
                             "api_connection_invalid",
                             "forbidden",
                             "not_found",
+                            "api_disabled",
                             "validation_failed",
                             "too_many_attempts",
                             "method_not_allowed",
