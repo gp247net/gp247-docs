@@ -26,6 +26,11 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-10-18 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-10-18 |
 
+### Security
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [GP247 security releases](./security/security.md) | Minimum safe versions of core/front/shop + timeline of security fixes (date, release, repo, issue); how to update and report a vulnerability | 2026-10-27 |
+
 ### System
 | Document | Summary | Last updated |
 | --- | --- | --- |
@@ -71,4 +76,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-18 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-27 · ✍️ **Author:** GP247</sub>
