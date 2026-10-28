@@ -20,16 +20,7 @@ the "At a glance" table to know whether your site is safe or needs an update.
 > 💡 **Check the versions you run:** `php artisan gp247:info`, or `composer show "gp247/*"`.
 
 ## Timeline
-| Date | Release | Repo | Security issue |
-| --- | --- | --- | --- |
-| 2026-10-28 | 3.5.0 | gp247/core | **Brute force / Request forgery** — the admin login form did not limit login attempts; another website could make the file manager delete, rename or move files while an administrator was signed in |
-| 2026-10-28 | 3.3.1 | gp247/shop | **Price tampering** — customers could order a negative quantity, bringing the order total to zero or below and corrupting stock |
-| 2026-10-28 | 3.4.0 | gp247/core | **Secret exposure** — sites upgraded from before 3.2.3 (sites with the API enabled): API tokens issued before 3.2.3 still never expired and old API keys were still stored in plain text in the database; `gp247:update` now gives old tokens an expiry and removes the plain-text keys |
-| 2026-10-27 | 3.2.3<br>3.2.3 | gp247/core<br>gp247/shop | **Authorization / Data exposure** — REST API (sites with the API enabled): admin API did not apply admin permissions or store scope; API login had no attempt limit; tokens never expired; API keys stored in plain text; public API exposed internal fields (cost, supplier, stock) and unpublished products. Also: locked customers could still sign in |
-| 2026-10-21 | 3.1.2 | gp247/core | **Path traversal / SSRF** — extension install and update trusted untrusted packages and download URLs; the license could be sent to another host through a redirect |
-| 2026-09-29 | 3.0.14 | gp247/core | **Secret exposure** — settings screens sent decrypted secrets (SMTP password, secret keys) to the browser |
-| 2026-09-04 | 3.0.3 | gp247/core | **Secret exposure** — configuration secrets (SMTP password, client secrets, license) stored in plain text in the database; now encrypted |
-| 2026-09-02 | 3.0.1<br>3.0.2 | gp247/front<br>gp247/shop | **Data exposure** — some admin screens (link groups, categories, the order-create product picker) showed other stores' data (multi-store sites) |
+*Updating.*
 
 ## How to update
 1. Back up the database and the site folder.
@@ -46,7 +37,7 @@ the "At a glance" table to know whether your site is safe or needs an update.
 Step-by-step details: [Updating GP247](../system/update-gp247.md).
 
 ## Reporting a vulnerability
-If you find a vulnerability, please email **gp247.net@gmail.com** — **do not** open a public GitHub
+If you find a vulnerability, please email **support@gp247.net** — **do not** open a public GitHub
 issue, so the problem is not exposed before a fix is released.
 
 ## Q&A

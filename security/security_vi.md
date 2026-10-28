@@ -20,16 +20,7 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 > 💡 **Xem phiên bản đang chạy:** `php artisan gp247:info`, hoặc `composer show "gp247/*"`.
 
 ## Dòng thời gian
-| Thời gian | Bản phát hành | Repo | Sự cố bảo mật |
-| --- | --- | --- | --- |
-| 2026-10-28 | 3.5.0 | gp247/core | **Dò mật khẩu / Giả mạo yêu cầu** — form đăng nhập quản trị không giới hạn số lần thử; một trang khác có thể khiến trình quản lý file xoá, đổi tên hoặc di chuyển file khi quản trị viên đang đăng nhập |
-| 2026-10-28 | 3.3.1 | gp247/shop | **Sửa giá** — khách đặt được số lượng âm, khiến tổng đơn bằng 0 hoặc âm và làm sai tồn kho |
-| 2026-10-28 | 3.4.0 | gp247/core | **Lộ bí mật** — site nâng cấp từ trước 3.2.3 (site có bật API): token API cấp trước 3.2.3 vẫn không hết hạn và khoá API cũ còn lưu dạng rõ trong cơ sở dữ liệu; nay `gp247:update` đặt hạn cho token cũ và xoá khoá dạng rõ |
-| 2026-10-27 | 3.2.3<br>3.2.3 | gp247/core<br>gp247/shop | **Phân quyền / Rò dữ liệu** — REST API (site có bật API): API quản trị không áp dụng phân quyền và phạm vi cửa hàng; đăng nhập API không giới hạn số lần thử; token không hết hạn; khoá API lưu dạng rõ; API công khai lộ trường nội bộ (giá vốn, nhà cung cấp, tồn kho) và sản phẩm chưa hiển thị. Ngoài ra: khách hàng bị khoá vẫn đăng nhập được |
-| 2026-10-21 | 3.1.2 | gp247/core | **Path traversal / SSRF** — cài và cập nhật extension tin vào gói và đường dẫn tải không đáng tin; license có thể bị gửi sang máy chủ khác qua chuyển hướng |
-| 2026-09-29 | 3.0.14 | gp247/core | **Lộ bí mật** — màn cấu hình gửi giá trị bí mật đã giải mã (mật khẩu SMTP, secret key) xuống trình duyệt |
-| 2026-09-04 | 3.0.3 | gp247/core | **Lộ bí mật** — bí mật cấu hình (mật khẩu SMTP, client secret, license) lưu dạng rõ trong cơ sở dữ liệu; nay được mã hoá |
-| 2026-09-02 | 3.0.1<br>3.0.2 | gp247/front<br>gp247/shop | **Rò dữ liệu** — một số màn quản trị (nhóm liên kết, danh mục, chọn sản phẩm khi tạo đơn) hiện dữ liệu của cửa hàng khác (site đa cửa hàng) |
+*Đang cập nhật.*
 
 ## Cập nhật thế nào
 1. Sao lưu cơ sở dữ liệu và thư mục site.
@@ -46,7 +37,7 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 Chi tiết từng bước: [Hướng dẫn cập nhật GP247](../system/update-gp247_vi.md).
 
 ## Báo lỗ hổng bảo mật
-Phát hiện lỗ hổng, vui lòng gửi email tới **gp247.net@gmail.com** — **không** mở issue công
+Phát hiện lỗ hổng, vui lòng gửi email tới **support@gp247.net** — **không** mở issue công
 khai trên GitHub để tránh lộ lỗi trước khi có bản vá.
 
 ## Hỏi & Đáp (Q&A)
