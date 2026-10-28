@@ -103,12 +103,16 @@ cron needed.
 
 > ℹ️ **Available since:** gp247/core 3.2.3
 
-To block password guessing, `api/core/login` and `api/front/login` limit the number of attempts:
+To block password guessing, `api/core/login`, `api/front/login` and the admin login form limit the number of attempts.
+The admin login form and `api/core/login` share one counter: failed attempts on one count for the other.
 
 | Limit | Default | Change with environment variable |
 | --- | --- | --- |
-| Per account (from the same IP) | 5 attempts / minute | `GP247_API_LOGIN_THROTTLE` (format `attempts,minutes`) |
-| Per IP, across all accounts | 20 attempts / minute | `GP247_API_LOGIN_IP_THROTTLE` |
+| Per account (from the same IP) | 5 attempts / minute | `GP247_LOGIN_THROTTLE` (format `attempts,minutes`) |
+| Per IP, across all accounts | 20 attempts / minute | `GP247_LOGIN_IP_THROTTLE` |
+
+> ⚠️ **Renamed after gp247/core 3.4.0:** the old names `GP247_API_LOGIN_THROTTLE` and `GP247_API_LOGIN_IP_THROTTLE`
+> are no longer read. If you set them, rename them in your `.env`, otherwise the defaults above apply.
 
 Over the limit → HTTP `429` with a `Retry-After` header (the number of seconds to wait). A successful
 login clears the counter for that account. In addition, every API endpoint has a general limit of 1000
