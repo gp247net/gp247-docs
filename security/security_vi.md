@@ -10,7 +10,7 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 ## Nhìn nhanh — phiên bản tối thiểu an toàn
 | Repo | Bản tối thiểu an toàn | Bản vá gần nhất |
 | --- | --- | --- |
-| gp247/core | **3.2.3** | 2026-10-27 |
+| gp247/core | **3.4.0** | 2026-10-28 |
 | gp247/front | **3.0.1** | 2026-09-02 |
 | gp247/shop | **3.2.3** | 2026-10-27 |
 
@@ -22,6 +22,7 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 ## Dòng thời gian
 | Thời gian | Bản phát hành | Repo | Sự cố bảo mật |
 | --- | --- | --- | --- |
+| 2026-10-28 | 3.4.0 | gp247/core | **Lộ bí mật** — site nâng cấp từ trước 3.2.3 (site có bật API): token API cấp trước 3.2.3 vẫn không hết hạn và khoá API cũ còn lưu dạng rõ trong cơ sở dữ liệu; nay `gp247:update` đặt hạn cho token cũ và xoá khoá dạng rõ |
 | 2026-10-27 | 3.2.3<br>3.2.3 | gp247/core<br>gp247/shop | **Phân quyền / Rò dữ liệu** — REST API (site có bật API): API quản trị không áp dụng phân quyền và phạm vi cửa hàng; đăng nhập API không giới hạn số lần thử; token không hết hạn; khoá API lưu dạng rõ; API công khai lộ trường nội bộ (giá vốn, nhà cung cấp, tồn kho) và sản phẩm chưa hiển thị. Ngoài ra: khách hàng bị khoá vẫn đăng nhập được |
 | 2026-10-21 | 3.1.2 | gp247/core | **Path traversal / SSRF** — cài và cập nhật extension tin vào gói và đường dẫn tải không đáng tin; license có thể bị gửi sang máy chủ khác qua chuyển hướng |
 | 2026-09-29 | 3.0.14 | gp247/core | **Lộ bí mật** — màn cấu hình gửi giá trị bí mật đã giải mã (mật khẩu SMTP, secret key) xuống trình duyệt |
@@ -65,4 +66,4 @@ khai trên GitHub để tránh lộ lỗi trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-27 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -29,7 +29,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Bảo mật
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Phát hành bảo mật GP247](./security/security_vi.md) | Phiên bản tối thiểu an toàn của core/front/shop + dòng thời gian các bản vá bảo mật (ngày, bản, repo, sự cố); cách cập nhật và báo lỗ hổng | 2026-10-27 |
+| [Phát hành bảo mật GP247](./security/security_vi.md) | Phiên bản tối thiểu an toàn của core/front/shop + dòng thời gian các bản vá bảo mật (ngày, bản, repo, sự cố); cách cập nhật và báo lỗ hổng | 2026-10-28 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |

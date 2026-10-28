@@ -29,7 +29,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Security
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 security releases](./security/security.md) | Minimum safe versions of core/front/shop + timeline of security fixes (date, release, repo, issue); how to update and report a vulnerability | 2026-10-27 |
+| [GP247 security releases](./security/security.md) | Minimum safe versions of core/front/shop + timeline of security fixes (date, release, repo, issue); how to update and report a vulnerability | 2026-10-28 |
 
 ### System
 | Document | Summary | Last updated |
