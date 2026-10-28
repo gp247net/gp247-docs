@@ -106,7 +106,9 @@ cron needed.
 
 > ℹ️ **Available since:** gp247/core 3.6.0, gp247/shop 3.4.0 — on API v2, an app that signs in with `with_refresh: true`
 > gets an access token living **60 minutes** plus a *refresh token* to renew it (section 10). Changing or resetting a
-> customer's password (on the website or through the API) ends **every token** of that customer, v1 tokens included.
+> customer's password (on the website or through the API) ends **every token** of that customer, v1 tokens included. The same
+> goes for **administrators**: changing the password on the **Users** screen, in **Account settings** or through "forgot password"
+> ends every API token of that admin.
 
 ### Login attempt limits
 
@@ -658,7 +660,8 @@ curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: a
 
 Each v2 sign-in is a **session**. `GET member/sessions` (customer) and `GET sessions` (admin) list the device name, IP,
 last use and which session is the current one (`current`). `DELETE …/sessions/{id}` signs one device out.
-`POST logout` (v2) signs the current session out, including its refresh token.
+`POST logout` (v2) signs the current session out, including its refresh token. Changing a password (customer or administrator,
+on the website or through the API) signs **every** API session and token of that account out; the website session in use stays.
 
 ### 10.4. Two-factor authentication (MFA) through a plugin
 
@@ -755,9 +758,10 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-28 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-29 · ✍️ **Author:** GP247</sub>

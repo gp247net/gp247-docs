@@ -101,7 +101,8 @@ Token hết hạn trả về `401`; khi đó gọi `login` để lấy token m�
 
 > ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0 — trên API v2, ứng dụng đăng nhập kèm `with_refresh: true` nhận
 > token truy cập sống **60 phút** cùng một *refresh token* để tự gia hạn (mục 10). Đổi hoặc đặt lại mật khẩu của khách
-> (trên website hay qua API) làm **mọi token** của khách đó hết hiệu lực, kể cả token v1.
+> (trên website hay qua API) làm **mọi token** của khách đó hết hiệu lực, kể cả token v1. Với **quản trị viên** cũng vậy: đổi mật khẩu
+> ở màn **Người dùng**, ở **Cài đặt tài khoản** hoặc qua "quên mật khẩu" làm mọi token API của admin đó hết hiệu lực.
 
 ### Giới hạn số lần đăng nhập
 
@@ -642,7 +643,8 @@ curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: a
 
 Mỗi lần đăng nhập v2 là một **phiên**. `GET member/sessions` (khách) và `GET sessions` (admin) liệt kê tên thiết bị,
 IP, lần dùng cuối và phiên nào là phiên hiện tại (`current`). `DELETE …/sessions/{id}` đăng xuất một thiết bị.
-`POST logout` (v2) đăng xuất phiên hiện tại, kể cả refresh token của nó.
+`POST logout` (v2) đăng xuất phiên hiện tại, kể cả refresh token của nó. Đổi mật khẩu (khách hoặc quản trị viên, trên website hay
+qua API) đăng xuất **mọi** phiên và token API của tài khoản đó; phiên đăng nhập website đang dùng vẫn giữ.
 
 ### 10.4. Xác thực hai lớp (MFA) qua plugin
 
@@ -732,9 +734,10 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 và tên biến môi trường mới: 3.3.0 | Thêm API v2 (`api/v2/...`: phản hồi `{data, meta, links}`, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) và tên biến môi trường viết đúng (3.3.0); API Core theo phân quyền màn admin và theo cửa hàng; giới hạn số lần đăng nhập; token luôn có hạn, thêm `POST logout`; khách bị khoá không đăng nhập được; API công khai chỉ trả dữ liệu cửa hàng đang hiển thị, bỏ trường nội bộ; khóa API Connection lưu dạng băm; mọi lỗi có mã HTTP đúng nghĩa và dạng `{error, msg, code}`; thêm `openapi.json` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-29 · ✍️ **Tác giả (Author):** GP247</sub>
