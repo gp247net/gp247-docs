@@ -94,6 +94,11 @@ Mọi token đều có hạn dùng (`expires_at`):
 Token hết hạn trả về `401`; khi đó gọi `login` để lấy token mới. Token đã hết hạn lâu (quá 7 ngày)
 được tự dọn ở lần đăng nhập kế tiếp của cùng tài khoản — không cần cron.
 
+> ℹ️ **Có từ:** gp247/core 3.4.0 — token cấp **trước bản 3.2.3** (lúc đó chưa có hạn) được đặt hạn khi chạy
+> `php artisan gp247:update`: tuổi thật của token cộng thời hạn "remember" (quản trị viên: `GP247_API_REMEMBER_ADMIN`,
+> thành viên: `GP247_API_REMEMBER`), nhưng **không sớm hơn 7 ngày** kể từ lúc nâng cấp. Ứng dụng đang giữ token cũ
+> có ít nhất 7 ngày trước khi phải đăng nhập lại — hãy chắc chắn ứng dụng xử lý `401` bằng cách gọi `login`.
+
 ### Giới hạn số lần đăng nhập
 
 > ℹ️ **Có từ:** gp247/core 3.2.3
@@ -163,8 +168,13 @@ endpoint công khai.
 > Khóa đang dùng từ trước vẫn chạy sau khi nâng cấp (`php artisan gp247:update`); hãy **sinh lại** các khóa cũ
 > khi thuận tiện để xoá bản lưu thường còn sót lại. Khóa tự nhập phải dài ít nhất 32 ký tự.
 
-> Thứ tự các lớp kiểm tra (middleware) là: **trả JSON → kiểm tra API Connection → giới hạn tần suất**.
-> Đây là thứ tự cố định, không nên đổi.
+> ℹ️ **Có từ:** gp247/core 3.4.0 — `php artisan gp247:update` **xoá hẳn** bản lưu khóa dạng thường; khóa đang dùng
+> vẫn chạy bình thường (so khớp qua bản băm). Bản lưu thường không khôi phục được, nên hãy **sao lưu cơ sở dữ liệu**
+> trước khi nâng cấp nếu bạn cần giữ nó.
+
+> Thứ tự các lớp kiểm tra (middleware) là: **gắn mã yêu cầu `X-Request-Id` → kiểm tra công tắc bật/tắt API (mục 9)
+> → trả JSON → kiểm tra API Connection → giới hạn tần suất**, rồi mới đến đăng nhập/phân quyền của từng endpoint.
+> Đây là thứ tự cố định, không nên đổi. *(Hai lớp đầu: từ gp247/core 3.3.1 và 3.4.0.)*
 
 ---
 
@@ -181,7 +191,7 @@ sequenceDiagram
     participant S as Sanctum<br/>(token)
     participant Q as Phân quyền<br/>(màn admin + cửa hàng)
     participant D as Cơ sở dữ liệu
-    Note over A,M: Mọi yêu cầu, kể cả login: ép JSON → API Connection<br/>(nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
+    Note over A,M: Mọi yêu cầu, kể cả login: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON<br/>→ API Connection (nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
     A->>M: POST /api/core/login {username, password, remember_me?}
     alt Vượt giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP)
         M-->>A: 429 too_many_attempts + Retry-After
@@ -287,7 +297,7 @@ sequenceDiagram
     participant M as API GP247<br/>(lớp kiểm tra chung)
     participant S as Sanctum<br/>(token)
     participant D as Cơ sở dữ liệu
-    Note over K,M: Mọi yêu cầu: ép JSON → API Connection (nếu bật) → giới hạn tần suất
+    Note over K,M: Mọi yêu cầu: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON → API Connection (nếu bật) → giới hạn tần suất
     K->>M: GET /api/front/product/list (không cần token)
     M->>D: Chỉ những gì cửa hàng của tên miền này đang hiển thị<br/>(đang bán, đã duyệt, cửa hàng hoạt động)
     D-->>M: Dữ liệu
@@ -388,6 +398,7 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 | `401` | `api_connection_invalid` | API Connection đang bật mà thiếu/sai cặp `apiconnection`/`apikey` |
 | `403` | `forbidden` | Đã đăng nhập nhưng không có quyền (mục 3) hoặc token sai loại |
 | `404` | `not_found` | Bản ghi không tồn tại hoặc bạn không được xem; đường dẫn API không tồn tại |
+| `404` | `api_disabled` | Nhóm API này đang **tắt** trên màn quản lý API của site (mục 9) — từ gp247/core 3.3.1 |
 | `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
 | `429` | `too_many_attempts` | Gọi quá nhiều lần — chờ theo header `Retry-After` |
 | `405` | `method_not_allowed` | Sai phương thức HTTP cho đường dẫn (ví dụ `GET` thay cho `POST`) |
@@ -396,6 +407,18 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 > Ứng dụng cũ đọc khoá `error`/`msg` vẫn chạy bình thường; hãy kiểm tra **mã HTTP** trước rồi mới đọc
 > `code` để xử lý từng trường hợp.
+
+### Mã yêu cầu `X-Request-Id`
+
+> ℹ️ **Có từ:** gp247/core 3.4.0
+
+Mọi phản hồi của API GP247 — kể cả phản hồi lỗi — có header **`X-Request-Id`**. Khi báo lỗi cho quản trị viên site,
+hãy gửi kèm mã này: họ dùng nó để tìm đúng dòng trong nhật ký hệ thống.
+
+- Ứng dụng có thể **tự gửi** `X-Request-Id` (chỉ gồm chữ, số, `.`, `_`, `-`; dài 8–128 ký tự): site dùng lại đúng mã
+  đó, tiện nối nhật ký của ứng dụng với nhật ký của site.
+- Thiếu hoặc sai định dạng → site tự sinh mã mới (UUID).
+- Đường dẫn không khớp endpoint nào (404 trước khi vào API) có thể không có header này.
 
 ---
 
@@ -501,6 +524,35 @@ Phản hồi rút gọn:
 
 ---
 
+## 9. Bật/tắt API
+
+> ℹ️ **Có từ:** gp247/core 3.3.1
+
+Chủ site bật/tắt API ngay trên **màn quản lý API** của trang quản trị (cùng màn với API Connection), không cần sửa
+file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lực ngay ở yêu cầu kế tiếp.
+
+| Công tắc | Áp dụng cho |
+| --- | --- |
+| **REST API (tất cả nhóm)** | Mọi endpoint API (kể cả API do plugin thêm qua cơ chế chuẩn) |
+| **v1 · API quản trị (core)** | `api/core/*` |
+| **v1 · API công khai & khách hàng (front)** | `api/front/*` |
+| **v2 · API quản trị (core)** | `api/v2/core/*` |
+| **v2 · API công khai & khách hàng (front)** | `api/v2/front/*` |
+
+- Mỗi công tắc nhóm nằm ngay trên danh sách endpoint của nhóm đó; nhóm đang tắt hiện chữ "đang tắt".
+- Gọi vào nhóm đang tắt → HTTP `404` với `"code": "api_disabled"` (mục 7) — kể cả khi chưa gửi token *(từ gp247/core
+  3.4.0; bản 3.3.1 trả `401` nếu thiếu token)*.
+- **Cài mới** chỉ bật sẵn **v2**; v1 tắt. Site **nâng cấp** từ bản cũ giữ nguyên mọi nhóm đang bật. Ứng dụng viết theo v1
+  cần quản trị viên bật lại nhóm v1 tương ứng.
+- Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
+  trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
+- API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
+- **Site có cache route** (`php artisan route:cache`): `php artisan gp247:update` tự dựng lại cache sau khi nâng cấp. Nếu bạn chỉ
+  chạy `composer update`, công tắc có thể chưa có hiệu lực — `php artisan gp247:doctor` báo ở mục `api_route_gate`
+  *(từ gp247/core 3.4.0)*; chạy `php artisan gp247:cache-rebuild` để sửa.
+
+---
+
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi nên dùng nhóm API nào?**
@@ -511,7 +563,8 @@ Phản hồi rút gọn:
 **Câu 2: Token lấy ở đâu và tồn tại bao lâu?**
 
 → Token do endpoint `login` cấp. Mặc định hết hạn sau 7 ngày; gửi `remember_me = true` thì 30 ngày.
-Đổi qua biến môi trường ở mục 2. Hết hạn thì gọi `login` lại.
+Đổi qua biến môi trường ở mục 2. Hết hạn thì gọi `login` lại. Muốn thoát an toàn, gọi `POST logout` với token hiện
+tại — token đó bị xoá và không dùng lại được nữa.
 
 **Câu 3: `apiconnection`/`apikey` khác gì với `access_token`?**
 
@@ -546,10 +599,10 @@ khóa mới.
 → Đó là dữ liệu kinh doanh nội bộ. API công khai chỉ trả những gì khách thấy trên cửa hàng. Ứng dụng
 nội bộ cần các số liệu này hãy dùng API Core (`api/core/product/*`) với tài khoản có quyền.
 
-**Câu 9: Làm sao đăng xuất an toàn?**
+**Câu 9: Vì sao gọi API nhận `404` với `"code": "api_disabled"`?**
 
-→ Gọi `POST api/core/logout` hoặc `POST api/front/logout` với token hiện tại. Hệ thống **xóa token**
-đó, nên token cũ không dùng lại được nữa.
+→ Nhóm API bạn gọi đang **tắt** trên màn quản lý API của site (mục 9). Site cài mới chỉ bật sẵn v2 — nếu ứng dụng
+dùng `api/core` hoặc `api/front` (v1), nhờ quản trị viên bật nhóm v1 tương ứng, hoặc chuyển sang v2.
 
 **Câu 10: Tôi cần thêm endpoint không có trong danh sách?**
 
@@ -563,8 +616,9 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 và tên biến môi trường mới: 3.3.0 | Thêm API v2 (`api/v2/...`: phản hồi `{data, meta, links}`, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) và tên biến môi trường viết đúng (3.3.0); API Core theo phân quyền màn admin và theo cửa hàng; giới hạn số lần đăng nhập; token luôn có hạn, thêm `POST logout`; khách bị khoá không đăng nhập được; API công khai chỉ trả dữ liệu cửa hàng đang hiển thị, bỏ trường nội bộ; khóa API Connection lưu dạng băm; mọi lỗi có mã HTTP đúng nghĩa và dạng `{error, msg, code}`; thêm `openapi.json` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-27 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>

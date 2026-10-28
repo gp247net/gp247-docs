@@ -99,6 +99,11 @@ An expired token returns `401`; when that happens, call `login` to get a new tok
 long ago (more than 7 days) are cleaned up automatically the next time the same account logs in — no
 cron needed.
 
+> ℹ️ **Available since:** gp247/core 3.4.0 — tokens issued **before 3.2.3** (they had no expiry then) get one when you
+> run `php artisan gp247:update`: the token's real age plus the "remember" lifetime (admins: `GP247_API_REMEMBER_ADMIN`,
+> members: `GP247_API_REMEMBER`), but **never sooner than 7 days** after the upgrade. Apps holding an old token have at
+> least 7 days before they must log in again — make sure your app answers a `401` by calling `login`.
+
 ### Login attempt limits
 
 > ℹ️ **Available since:** gp247/core 3.2.3
@@ -173,8 +178,13 @@ API — even the public endpoints.
 > upgrade (`php artisan gp247:update`); **regenerate** older keys when convenient to remove the plain copy still
 > stored. A key you type yourself must be at least 32 characters long.
 
-> The order of the checking layers (middleware) is: **return JSON → check API Connection → rate
-> limit**. This order is fixed and should not be changed.
+> ℹ️ **Available since:** gp247/core 3.4.0 — `php artisan gp247:update` **removes** the plain copy of the keys for good;
+> keys in use keep working (they are matched through the hash). The plain copy cannot be recovered, so **back up the
+> database** before upgrading if you need it.
+
+> The order of the checking layers (middleware) is: **attach the request id `X-Request-Id` → check the API on/off switch
+> (section 9) → return JSON → check API Connection → rate limit**, then the login/permission checks of each endpoint.
+> This order is fixed and should not be changed. *(The first two layers: since gp247/core 3.3.1 and 3.4.0.)*
 
 ---
 
@@ -191,7 +201,7 @@ sequenceDiagram
     participant S as Sanctum<br/>(tokens)
     participant Q as Permissions<br/>(admin screen + store)
     participant D as Database
-    Note over A,M: Every request, login included: force JSON → API Connection<br/>(if enabled: apiconnection + apikey headers, wrong = 401) → rate limit
+    Note over A,M: Every request, login included: API switch (group turned off: 404 api_disabled) → force JSON<br/>→ API Connection (if enabled: apiconnection + apikey headers, wrong = 401) → rate limit
     A->>M: POST /api/core/login {username, password, remember_me?}
     alt Login limit reached (5/min per account, 20/min per IP)
         M-->>A: 429 too_many_attempts + Retry-After
@@ -297,7 +307,7 @@ sequenceDiagram
     participant M as GP247 API<br/>(shared checks)
     participant S as Sanctum<br/>(tokens)
     participant D as Database
-    Note over K,M: Every request: force JSON → API Connection (if enabled) → rate limit
+    Note over K,M: Every request: API switch (group turned off: 404 api_disabled) → force JSON → API Connection (if enabled) → rate limit
     K->>M: GET /api/front/product/list (no token needed)
     M->>D: Only what the store of this domain shows<br/>(on sale, approved, store active)
     D-->>M: Data
@@ -400,6 +410,7 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 | `401` | `api_connection_invalid` | API Connection is enabled but the `apiconnection`/`apikey` pair is missing/wrong |
 | `403` | `forbidden` | Logged in but without permission (section 3), or the wrong type of token |
 | `404` | `not_found` | The record does not exist or you are not allowed to see it; the API path does not exist |
+| `404` | `api_disabled` | This API group is **turned off** on the site's API management screen (section 9) — since gp247/core 3.3.1 |
 | `422` | `validation_failed` | The submitted data is invalid — see the `errors` key for each field |
 | `429` | `too_many_attempts` | Too many calls — wait as indicated by the `Retry-After` header |
 | `405` | `method_not_allowed` | Wrong HTTP method for the path (for example `GET` instead of `POST`) |
@@ -408,6 +419,18 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 > Older apps that read the `error`/`msg` keys keep working as before; check the **HTTP code** first,
 > then read `code` to handle each case.
+
+### Request id `X-Request-Id`
+
+> ℹ️ **Available since:** gp247/core 3.4.0
+
+Every GP247 API response — error responses included — carries an **`X-Request-Id`** header. When you report a problem to
+the site's administrator, include this id: they use it to find the matching lines in the system log.
+
+- Your app may **send its own** `X-Request-Id` (letters, digits, `.`, `_`, `-` only; 8–128 characters): the site reuses
+  that exact id, which makes it easy to join your app's logs with the site's.
+- Missing or malformed → the site generates a new id (UUID).
+- A path that matches no endpoint (404 before reaching the API) may not carry this header.
 
 ---
 
@@ -514,6 +537,37 @@ Shortened response:
 
 ---
 
+## 9. Turning the API on and off
+
+> ℹ️ **Available since:** gp247/core 3.3.1
+
+The site owner turns the API on and off right on the **API management screen** of the admin (the same screen as API
+Connection), with no configuration file to edit and no command to run on the server. A change takes effect on the next
+request.
+
+| Switch | Applies to |
+| --- | --- |
+| **REST API (all groups)** | Every API endpoint (including APIs added by plugins through the standard mechanism) |
+| **v1 · Admin API (core)** | `api/core/*` |
+| **v1 · Public & customer API (front)** | `api/front/*` |
+| **v2 · Admin API (core)** | `api/v2/core/*` |
+| **v2 · Public & customer API (front)** | `api/v2/front/*` |
+
+- Each group switch sits right on top of that group's endpoint list; a group that is off is marked "off".
+- Calling a group that is off → HTTP `404` with `"code": "api_disabled"` (section 7) — even without a token *(since
+  gp247/core 3.4.0; 3.3.1 answers `401` when the token is missing)*.
+- A **fresh install** turns on **v2** only; v1 is off. A site **upgraded** from an older version keeps every group that was
+  on. Apps written for v1 need the administrator to turn the matching v1 group back on.
+- The environment variable `GP247_API_MODE=0` is still the **server-level switch**: then no API endpoint exists and the
+  switches on the screen are locked — meant for hosting/technical staff who want the API off for good.
+- Plugin APIs that use their own mechanism (for example the MCP server) are **not** covered by these switches and have
+  their own switch on the plugin's screen.
+- **Sites with a route cache** (`php artisan route:cache`): `php artisan gp247:update` rebuilds the cache after upgrading.
+  If you only run `composer update`, the switches may not take effect yet — `php artisan gp247:doctor` reports it under
+  `api_route_gate` *(since gp247/core 3.4.0)*; run `php artisan gp247:cache-rebuild` to fix it.
+
+---
+
 ## Q&A
 
 **Q1: Which API group should I use?**
@@ -526,7 +580,8 @@ Shortened response:
 
 → The token is issued by the `login` endpoint. By default it expires after 7 days; with
 `remember_me = true` it lasts 30 days. Change these via the environment variables in section 2. When it
-expires, call `login` again.
+expires, call `login` again. To log out safely, call `POST logout` with the current token — that token is
+deleted and can no longer be reused.
 
 **Q3: How is `apiconnection`/`apikey` different from `access_token`?**
 
@@ -563,10 +618,11 @@ it, go to the API Connection management section to generate a new key.
 apps that need these figures should use the Core API (`api/core/product/*`) with an account that has
 permission.
 
-**Q9: How do I log out safely?**
+**Q9: Why does my API call answer `404` with `"code": "api_disabled"`?**
 
-→ Call `POST api/core/logout` or `POST api/front/logout` with the current token. The system **deletes**
-that token, so the old token can no longer be reused.
+→ The API group you call is **turned off** on the site's API management screen (section 9). A fresh install turns on
+v2 only — if your app uses `api/core` or `api/front` (v1), ask the administrator to turn the matching v1 group on, or
+move to v2.
 
 **Q10: I need an endpoint that isn't in the list?**
 
@@ -580,8 +636,9 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-27 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-28 · ✍️ **Author:** GP247</sub>
