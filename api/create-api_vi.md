@@ -424,6 +424,62 @@ nhắc bạn đã quên khai báo quyền.
 - [ ] **Không sửa** `vendor/gp247/*` (trừ khi bạn là maintainer của gói đó).
 - [ ] Mỗi method có PHPDoc tiếng Anh kèm tag `@aidlc-unit` / `@aidlc-story` (theo coding-style).
 - [ ] Đã `php artisan route:clear` và xác nhận route hiện ra trong `php artisan route:list`.
+- [ ] Plugin thêm bước xác thực đăng nhập: cài `LoginChallenge`, không trả bí mật trong `describe()` (mục 7).
+
+---
+
+## 7. Thêm bước xác thực đăng nhập (MFA) từ plugin
+
+> ℹ️ **Có từ:** gp247/core 3.6.0
+
+Core không tự làm OTP; plugin của bạn gắn bước xác thực thứ hai vào đăng nhập API (v2 khách và quản trị) bằng interface
+`GP247\Core\Api\Contracts\LoginChallenge`:
+
+| Method | Khi nào được gọi | Bạn trả về |
+| --- | --- | --- |
+| `required($owner, $request)` | Ngay sau khi mật khẩu đúng (cả ở v1) | `true` nếu tài khoản này phải qua bước xác thực — **không** gửi mã ở đây |
+| `describe($owner)` | Một lần, khi cấp vé (v2) | Gửi mã SMS/email ở đây nếu cần; trả gợi ý **công khai**: `method`, `meta` — không chứa bí mật |
+| `verify($owner, $request)` | Khi ứng dụng gọi `POST login/challenge` | `true` nếu câu trả lời (trường do bạn đặt, ví dụ `code`) đúng |
+
+```php
+<?php
+
+namespace App\GP247\Plugins\MyOtp;
+
+use GP247\Core\Api\Contracts\LoginChallenge;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
+
+class OtpChallenge implements LoginChallenge
+{
+    public function required(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtpSettings::enabledFor($owner);   // e.g. the user turned 2FA on
+    }
+
+    public function describe(Authenticatable $owner): array
+    {
+        return ['method' => 'totp', 'meta' => ['digits' => 6]];   // public hints only
+    }
+
+    public function verify(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtp::check($owner, (string) $request->input('code'));
+    }
+}
+```
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.login_challenge.customer' => array_merge(
+    config('gp247-config.api.login_challenge.customer', []), [OtpChallenge::class]
+)]);
+```
+
+Core lo phần còn lại: vé dùng một lần (5 phút, lưu dạng băm trong cache mặc định — chạy được trên shared host), giới hạn số lần
+thử (dùng chung bộ đếm đăng nhập; mỗi vé bị huỷ sau 5 lần sai, từ bất kỳ IP nào), cấp token/phiên khi `verify()` trả `true`. Plugin ném lỗi hoặc khai báo sai class → đăng nhập
+bị **từ chối** (không bao giờ bỏ qua bước xác thực). Đăng ký cho quản trị viên: khoá `gp247-config.api.login_challenge.admin`.
+Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 10.4](./api-introduction_vi.md).
 
 ---
 
@@ -493,8 +549,9 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
 | 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-26 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>

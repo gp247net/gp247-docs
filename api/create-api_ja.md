@@ -423,6 +423,62 @@ GP247 が知らせる仕組みです。
 - [ ] `vendor/gp247/*` を**変更していない**（そのパッケージのメンテナーである場合を除く）。
 - [ ] 各メソッドに英語の PHPDoc と `@aidlc-unit`／`@aidlc-story` タグがある（coding-style に従う）。
 - [ ] `php artisan route:clear` を実行し、`php artisan route:list` にルートが表示されることを確認した。
+- [ ] サインインのステップを追加するプラグインは `LoginChallenge` を実装し、`describe()` で秘密を返さない（セクション 7）。
+
+---
+
+## 7. プラグインからサインインの確認ステップ（MFA）を追加する
+
+> ℹ️ **対応バージョン:** gp247/core 3.6.0
+
+core 自体は OTP を行いません。プラグインは `GP247\Core\Api\Contracts\LoginChallenge` インターフェースで、API サインイン
+（v2 の顧客と管理者）に 2 つ目のステップを追加します：
+
+| メソッド | 呼ばれるタイミング | 返す値 |
+| --- | --- | --- |
+| `required($owner, $request)` | パスワードが正しかった直後（v1 でも呼ばれる） | このアカウントが確認ステップを通る必要があれば `true` — ここではコードを**送らない** |
+| `describe($owner)` | チケット発行時に 1 回（v2） | 必要ならここで SMS／メールのコードを送る。**公開**ヒント `method`、`meta` を返す — 秘密情報は含めない |
+| `verify($owner, $request)` | アプリが `POST login/challenge` を呼んだとき | 回答（`code` など、プラグインが決める項目）が正しければ `true` |
+
+```php
+<?php
+
+namespace App\GP247\Plugins\MyOtp;
+
+use GP247\Core\Api\Contracts\LoginChallenge;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
+
+class OtpChallenge implements LoginChallenge
+{
+    public function required(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtpSettings::enabledFor($owner);   // e.g. the user turned 2FA on
+    }
+
+    public function describe(Authenticatable $owner): array
+    {
+        return ['method' => 'totp', 'meta' => ['digits' => 6]];   // public hints only
+    }
+
+    public function verify(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtp::check($owner, (string) $request->input('code'));
+    }
+}
+```
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.login_challenge.customer' => array_merge(
+    config('gp247-config.api.login_challenge.customer', []), [OtpChallenge::class]
+)]);
+```
+
+残りは core が行います：1 回限りのチケット（5 分、既定のキャッシュにハッシュで保存 — 共有ホスティングでも動作）、試行回数の
+制限（ログインのカウンターと共通。チケットはどの IP からでも 5 回誤ると破棄）、`verify()` が `true` を返したときのトークン／セッションの発行。プラグインが例外を投げたり、
+クラスの登録が誤っていたりすると、サインインは**拒否**されます（確認ステップが飛ばされることはありません）。管理者向けには
+`gp247-config.api.login_challenge.admin` に登録します。アプリ側の呼び方：[API の紹介 — セクション 10.4](./api-introduction_ja.md)。
 
 ---
 
@@ -490,8 +546,9 @@ GP247 が知らせる仕組みです。
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
 | 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-26 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-10-28 · ✍️ **作成者 (Author):** GP247</sub>

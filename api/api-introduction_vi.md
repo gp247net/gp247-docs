@@ -99,6 +99,10 @@ Token hết hạn trả về `401`; khi đó gọi `login` để lấy token m�
 > thành viên: `GP247_API_REMEMBER`), nhưng **không sớm hơn 7 ngày** kể từ lúc nâng cấp. Ứng dụng đang giữ token cũ
 > có ít nhất 7 ngày trước khi phải đăng nhập lại — hãy chắc chắn ứng dụng xử lý `401` bằng cách gọi `login`.
 
+> ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0 — trên API v2, ứng dụng đăng nhập kèm `with_refresh: true` nhận
+> token truy cập sống **60 phút** cùng một *refresh token* để tự gia hạn (mục 10). Đổi hoặc đặt lại mật khẩu của khách
+> (trên website hay qua API) làm **mọi token** của khách đó hết hiệu lực, kể cả token v1.
+
 ### Giới hạn số lần đăng nhập
 
 > ℹ️ **Có từ:** gp247/core 3.2.3
@@ -399,6 +403,11 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 | `403` | `forbidden` | Đã đăng nhập nhưng không có quyền (mục 3) hoặc token sai loại |
 | `404` | `not_found` | Bản ghi không tồn tại hoặc bạn không được xem; đường dẫn API không tồn tại |
 | `404` | `api_disabled` | Nhóm API này đang **tắt** trên màn quản lý API của site (mục 9) — từ gp247/core 3.3.1 |
+| `401` | `refresh_token_invalid` | Refresh token sai, hết hạn hoặc phiên đã bị đăng xuất (mục 10) — từ gp247/core 3.6.0 |
+| `401` | `refresh_token_reused` | Refresh token đã dùng rồi bị gửi lại: phiên bị đăng xuất để an toàn — đăng nhập lại (mục 10) |
+| `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 10) |
+| `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 10) |
+| `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 10) |
 | `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
 | `429` | `too_many_attempts` | Gọi quá nhiều lần — chờ theo header `Retry-After` |
 | `405` | `method_not_allowed` | Sai phương thức HTTP cho đường dẫn (ví dụ `GET` thay cho `POST`) |
@@ -467,9 +476,13 @@ tên được phép.
 
 | Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
 | --- | --- | --- | --- |
-| `POST` | `api/v2/core/login` | Không | Đăng nhập admin |
-| `POST` | `api/v2/core/logout` | Có (admin) | Đăng xuất admin |
+| `POST` | `api/v2/core/login` | Không | Đăng nhập admin (`with_refresh` tuỳ chọn — mục 10) |
+| `POST` | `api/v2/core/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm (mục 10) |
+| `POST` | `api/v2/core/refresh` | Không (gửi refresh token) | Đổi refresh token lấy cặp token mới |
+| `POST` | `api/v2/core/logout` | Có (admin) | Đăng xuất phiên hiện tại (cả refresh token) |
 | `GET` | `api/v2/core/info` | Có (admin) | Thông tin admin (kèm vai trò) |
+| `GET` | `api/v2/core/sessions` | Có (admin) | Các phiên đăng nhập API (thiết bị) của admin |
+| `DELETE` | `api/v2/core/sessions/{id}` | Có (admin) | Đăng xuất một phiên |
 | `GET` | `api/v2/core/customer/list` | Có (admin + quyền) | Danh sách khách hàng |
 | `GET` | `api/v2/core/customer/detail/{id}` | Có (admin + quyền) | Chi tiết khách hàng |
 | `GET` | `api/v2/core/order/list` | Có (admin + quyền) | Danh sách đơn hàng |
@@ -497,9 +510,24 @@ tên được phép.
 | `GET` | `api/v2/front/banner/detail/{id}` | Không | Chi tiết banner |
 | `GET` | `api/v2/front/page/list` | Không | Danh sách trang nội dung |
 | `GET` | `api/v2/front/page/detail/{id}` | Không | Chi tiết trang nội dung |
-| `POST` | `api/v2/front/login` | Không | Đăng nhập khách |
-| `POST` | `api/v2/front/logout` | Có (khách) | Đăng xuất khách |
+| `POST` | `api/v2/front/register` | Không | Đăng ký tài khoản khách và đăng nhập luôn (mục 10) |
+| `POST` | `api/v2/front/password/forgot` | Không | Gửi email đặt lại mật khẩu |
+| `POST` | `api/v2/front/password/reset` | Không | Đặt mật khẩu mới bằng mã trong email |
+| `POST` | `api/v2/front/login` | Không | Đăng nhập khách (`with_refresh` tuỳ chọn — mục 10) |
+| `POST` | `api/v2/front/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm |
+| `POST` | `api/v2/front/refresh` | Không (gửi refresh token) | Đổi refresh token lấy cặp token mới |
+| `POST` | `api/v2/front/logout` | Có (khách) | Đăng xuất phiên hiện tại (cả refresh token) |
 | `GET` | `api/v2/front/info` | Có (khách) | Thông tin tài khoản khách |
+| `GET` | `api/v2/front/member/profile` | Có (khách) | Hồ sơ đầy đủ: trạng thái xác minh email, địa chỉ mặc định |
+| `PUT` | `api/v2/front/member/profile` | Có (khách) | Sửa hồ sơ |
+| `PUT` | `api/v2/front/member/password` | Có (khách) | Đổi mật khẩu (đăng xuất mọi thiết bị khác) |
+| `POST` | `api/v2/front/member/email/verify` | Có (khách) | Gửi lại email xác minh |
+| `GET` | `api/v2/front/member/address/list` | Có (khách) | Sổ địa chỉ |
+| `POST` | `api/v2/front/member/address` | Có (khách) | Thêm địa chỉ |
+| `PUT` | `api/v2/front/member/address/{id}` | Có (khách) | Sửa địa chỉ |
+| `DELETE` | `api/v2/front/member/address/{id}` | Có (khách) | Xoá địa chỉ (không xoá được địa chỉ mặc định) |
+| `GET` | `api/v2/front/member/sessions` | Có (khách) | Các phiên đăng nhập API (thiết bị) của khách |
+| `DELETE` | `api/v2/front/member/sessions/{id}` | Có (khách) | Đăng xuất một phiên |
 | `GET` | `api/v2/front/member/order/list` | Có (khách) | Đơn hàng của khách |
 | `GET` | `api/v2/front/member/order/detail/{id}` | Có (khách) | Chi tiết một đơn hàng của khách |
 
@@ -553,6 +581,93 @@ file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lự
 
 ---
 
+## 10. Tài khoản khách & phiên đăng nhập (API v2)
+
+> ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0
+
+Ứng dụng mua sắm làm được trọn vòng tài khoản khách qua `api/v2/front`, với **đúng luật của form trên website**:
+trường bắt buộc, trường tuỳ chỉnh, độ mạnh mật khẩu và captcha đều theo cấu hình của cửa hàng. Các endpoint này chỉ có
+ở v2.
+
+### 10.1. Đăng ký, quên mật khẩu, hồ sơ, sổ địa chỉ
+
+- **`POST register`** — gửi các trường như form đăng ký (`first_name`, `email`, `password`, `password_confirmation`,
+  cùng các trường cửa hàng bật như `address1`, `phone`…). Thành công → HTTP `201`, thân gồm `customer` và token như
+  `login`. Không đặt được `status` của chính mình.
+- **`POST password/forgot`** — gửi email đặt lại mật khẩu. Luôn trả `{"data": {"sent": true}}`, dù email có tài khoản
+  hay không, để không ai dò được email nào đã đăng ký.
+- **`POST password/reset`** — gửi `email`, `token` (trong email), `password`, `password_confirmation`. Thành công thì
+  **mọi token API** của khách bị huỷ; ứng dụng gọi `login` với mật khẩu mới.
+- **`GET` / `PUT member/profile`** — hồ sơ kèm `email_verified`, `email_verification_required` và địa chỉ mặc định.
+  Mật khẩu không đổi được ở đây.
+- **`PUT member/password`** — gửi `password_old`, `password`, `password_confirmation`. Phiên đang gọi được giữ, **mọi
+  thiết bị khác** bị đăng xuất. Mật khẩu cũ sai được tính vào giới hạn đăng nhập của tài khoản.
+- **`member/address`** — thêm/sửa/xoá địa chỉ; gửi `"default": true` để đặt làm mặc định. Không xoá được địa chỉ
+  mặc định (HTTP `422`) — hãy đặt địa chỉ khác làm mặc định trước.
+- **`POST member/email/verify`** — gửi lại email xác minh khi cửa hàng bật *Cần xác thực email*. Khách bấm link trong
+  email ở bất kỳ trình duyệt nào là xong, **không cần** đăng nhập website.
+
+`register`, `password/*` và `member/email/verify` có giới hạn riêng: **5 lần/phút mỗi IP** (`GP247_API_ACCOUNT_THROTTLE`,
+dạng `số_lần,phút`).
+
+> ⚠️ Nếu cửa hàng bật captcha cho trang *Đăng ký* hoặc *Quên mật khẩu* (tab **Captcha**), API cũng đòi trường captcha
+> của plugin captcha đang dùng — thiếu/sai → `422` (`errors.captcha_field`). Ứng dụng cần lấy mã captcha bằng SDK
+> của nhà cung cấp captcha, hoặc quản trị viên bỏ chọn trang đó.
+
+### 10.2. Refresh token — giữ đăng nhập mà token ngắn hạn
+
+Gửi `with_refresh: true` (và tuỳ chọn `device_name`) khi `login`, `register` hoặc `login/challenge`:
+
+| | Không `with_refresh` | Có `with_refresh` |
+| --- | --- | --- |
+| Token truy cập | 7 ngày (30 với `remember_me`) | **60 phút** (`GP247_API_ACCESS_MINUTES`) |
+| Refresh token | — | Khách 30 ngày (`GP247_API_REFRESH_DAYS`), admin 7 ngày (`GP247_API_REFRESH_ADMIN_DAYS`), tính từ lúc đăng nhập |
+
+Khi token truy cập hết hạn (`401`), gọi `POST refresh` với `{"refresh_token": "…"}` → nhận **cặp token mới**. Mỗi
+refresh token chỉ dùng được **một lần**:
+
+- Gửi lại refresh token đã dùng → `401 refresh_token_reused` và **cả phiên bị đăng xuất** (dấu hiệu token bị đánh cắp).
+- Ngoại lệ: gửi lại trong vòng 10 giây (mạng chập chờn, ứng dụng gửi trùng) → `409 refresh_in_progress`, phiên vẫn còn.
+  Hãy cho ứng dụng gọi `refresh` **lần lượt**, không song song.
+- Hạn của phiên không kéo dài khi refresh; hết hạn thì đăng nhập lại.
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/front/login" -H "Content-Type: application/json" \
+  -d '{"email":"khach@example.com","password":"MatKhau#123","with_refresh":true,"device_name":"iPhone của Lan"}'
+curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: application/json" \
+  -d '{"refresh_token":"<refresh_token nhận được>"}'
+```
+
+### 10.3. Quản lý phiên đăng nhập
+
+Mỗi lần đăng nhập v2 là một **phiên**. `GET member/sessions` (khách) và `GET sessions` (admin) liệt kê tên thiết bị,
+IP, lần dùng cuối và phiên nào là phiên hiện tại (`current`). `DELETE …/sessions/{id}` đăng xuất một thiết bị.
+`POST logout` (v2) đăng xuất phiên hiện tại, kể cả refresh token của nó.
+
+### 10.4. Xác thực hai lớp (MFA) qua plugin
+
+Core không tự gửi mã OTP; plugin bảo mật có thể gắn thêm bước xác thực. Khi đó `login` đúng mật khẩu trả:
+
+```json
+{ "error": 1, "code": "challenge_required", "msg": "…",
+  "challenge": { "ticket": "…", "method": "totp", "meta": {}, "expires_in": 300 } }
+```
+
+Ứng dụng hỏi mã của người dùng rồi gọi `POST login/challenge` với `ticket` và các trường plugin yêu cầu (ví dụ `code`).
+Vé dùng một lần, hết hạn sau 5 phút; mã sai được tính vào giới hạn đăng nhập. API v1 không hỗ trợ bước này: tài khoản cần
+MFA đăng nhập v1 nhận `401 challenge_required` — hãy dùng v2. Plugin **MFA** miễn phí của GP247 (từ bản 2.3.0) dùng sẵn cơ
+chế này cho khách và quản trị viên đã bật xác thực hai lớp (mã TOTP hoặc mã khôi phục). Lập trình viên plugin xem
+[Hướng dẫn tạo API — mục 7](./create-api_vi.md).
+
+### 10.5. Nhật ký truy cập API quản trị
+
+Mỗi lần gọi API Core (v1 và v2, trừ `login`) được ghi vào **Nhật ký thao tác** của trang quản trị — như khi thao tác trên
+màn admin: người dùng, đường dẫn, IP, thiết bị; mật khẩu/khoá bị che, nội dung phản hồi không được lưu. Lần gọi bị từ chối
+quyền (`403`) cũng được ghi. Tắt cùng nhật ký của trang quản trị (`GP247_ADMIN_LOG=0`). Công cụ đồng bộ gọi API liên tục sẽ
+làm nhật ký tăng nhanh — dọn định kỳ ở màn **Nhật ký thao tác**.
+
+---
+
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi nên dùng nhóm API nào?**
@@ -563,7 +678,8 @@ file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lự
 **Câu 2: Token lấy ở đâu và tồn tại bao lâu?**
 
 → Token do endpoint `login` cấp. Mặc định hết hạn sau 7 ngày; gửi `remember_me = true` thì 30 ngày.
-Đổi qua biến môi trường ở mục 2. Hết hạn thì gọi `login` lại. Muốn thoát an toàn, gọi `POST logout` với token hiện
+Đổi qua biến môi trường ở mục 2. Hết hạn thì gọi `login` lại. Ứng dụng v2 nên đăng nhập kèm `with_refresh: true`
+để dùng token 60 phút và tự gia hạn bằng refresh token (mục 10). Muốn thoát an toàn, gọi `POST logout` với token hiện
 tại — token đó bị xoá và không dùng lại được nữa.
 
 **Câu 3: `apiconnection`/`apikey` khác gì với `access_token`?**
@@ -616,7 +732,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0) |
+| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 và tên biến môi trường mới: 3.3.0 | Thêm API v2 (`api/v2/...`: phản hồi `{data, meta, links}`, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) và tên biến môi trường viết đúng (3.3.0); API Core theo phân quyền màn admin và theo cửa hàng; giới hạn số lần đăng nhập; token luôn có hạn, thêm `POST logout`; khách bị khoá không đăng nhập được; API công khai chỉ trả dữ liệu cửa hàng đang hiển thị, bỏ trường nội bộ; khóa API Connection lưu dạng băm; mọi lỗi có mã HTTP đúng nghĩa và dạng `{error, msg, code}`; thêm `openapi.json` |
 
 ---
