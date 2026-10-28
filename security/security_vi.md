@@ -34,7 +34,7 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
    ```
 4. Kiểm tra lại phiên bản bằng `php artisan gp247:info`.
 
-Chi tiết từng bước: [Hướng dẫn cập nhật GP247](../system/update-gp247_vi.md).
+Chi tiết từng bước: [Hướng dẫn cập nhật GP247](https://gp247.net/vi/docs/system/how-to-update-gp247.html).
 
 ## Báo lỗ hổng bảo mật
 Phát hiện lỗ hổng, vui lòng gửi email tới **support@gp247.net** — **không** mở issue công

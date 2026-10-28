@@ -34,7 +34,7 @@ the "At a glance" table to know whether your site is safe or needs an update.
    ```
 4. Check the versions again with `php artisan gp247:info`.
 
-Step-by-step details: [Updating GP247](../system/update-gp247.md).
+Step-by-step details: [Updating GP247](https://gp247.net/en/docs/system/how-to-update-gp247.html).
 
 ## Reporting a vulnerability
 If you find a vulnerability, please email **support@gp247.net** — **do not** open a public GitHub

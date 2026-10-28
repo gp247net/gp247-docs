@@ -33,7 +33,7 @@
    ```
 4. `php artisan gp247:info` でバージョンを再確認します。
 
-詳しい手順は [GP247 の更新](../system/update-gp247.md)（英語版）をご覧ください。
+詳しい手順は [GP247 の更新](https://gp247.net/ja/docs/system/how-to-update-gp247.html)をご覧ください。
 
 ## 脆弱性の報告
 脆弱性を見つけた場合は、**support@gp247.net** へメールでお知らせください。修正版の公開前に問題が広まらないよう、GitHub の公開 Issue は**使わないで**ください。
