@@ -10,18 +10,20 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 ## Nhìn nhanh — phiên bản tối thiểu an toàn
 | Repo | Bản tối thiểu an toàn | Bản vá gần nhất |
 | --- | --- | --- |
-| gp247/core | **3.4.0** | 2026-10-28 |
+| gp247/core | **3.5.0** | 2026-10-28 |
 | gp247/front | **3.0.1** | 2026-09-02 |
-| gp247/shop | **3.2.3** | 2026-10-27 |
+| gp247/shop | **3.3.1** | 2026-10-28 |
 
 > ⚠️ **Lưu ý:** chỉ dòng **3.x** còn nhận bản vá bảo mật. Site còn chạy 2.x cần nâng lên 3.x.
-> `gp247/shop` 3.2.3 yêu cầu `gp247/core` 3.2.3 trở lên — hãy cập nhật cả hai cùng lúc.
+> `gp247/shop` 3.3.1 yêu cầu `gp247/core` 3.3 trở lên — hãy cập nhật cả hai cùng lúc.
 
 > 💡 **Xem phiên bản đang chạy:** `php artisan gp247:info`, hoặc `composer show "gp247/*"`.
 
 ## Dòng thời gian
 | Thời gian | Bản phát hành | Repo | Sự cố bảo mật |
 | --- | --- | --- | --- |
+| 2026-10-28 | 3.5.0 | gp247/core | **Dò mật khẩu / Giả mạo yêu cầu** — form đăng nhập quản trị không giới hạn số lần thử; một trang khác có thể khiến trình quản lý file xoá, đổi tên hoặc di chuyển file khi quản trị viên đang đăng nhập |
+| 2026-10-28 | 3.3.1 | gp247/shop | **Sửa giá** — khách đặt được số lượng âm, khiến tổng đơn bằng 0 hoặc âm và làm sai tồn kho |
 | 2026-10-28 | 3.4.0 | gp247/core | **Lộ bí mật** — site nâng cấp từ trước 3.2.3 (site có bật API): token API cấp trước 3.2.3 vẫn không hết hạn và khoá API cũ còn lưu dạng rõ trong cơ sở dữ liệu; nay `gp247:update` đặt hạn cho token cũ và xoá khoá dạng rõ |
 | 2026-10-27 | 3.2.3<br>3.2.3 | gp247/core<br>gp247/shop | **Phân quyền / Rò dữ liệu** — REST API (site có bật API): API quản trị không áp dụng phân quyền và phạm vi cửa hàng; đăng nhập API không giới hạn số lần thử; token không hết hạn; khoá API lưu dạng rõ; API công khai lộ trường nội bộ (giá vốn, nhà cung cấp, tồn kho) và sản phẩm chưa hiển thị. Ngoài ra: khách hàng bị khoá vẫn đăng nhập được |
 | 2026-10-21 | 3.1.2 | gp247/core | **Path traversal / SSRF** — cài và cập nhật extension tin vào gói và đường dẫn tải không đáng tin; license có thể bị gửi sang máy chủ khác qua chuyển hướng |

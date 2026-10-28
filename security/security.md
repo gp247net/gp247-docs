@@ -10,18 +10,20 @@ the "At a glance" table to know whether your site is safe or needs an update.
 ## At a glance — minimum safe versions
 | Repo | Minimum safe version | Latest security fix |
 | --- | --- | --- |
-| gp247/core | **3.4.0** | 2026-10-28 |
+| gp247/core | **3.5.0** | 2026-10-28 |
 | gp247/front | **3.0.1** | 2026-09-02 |
-| gp247/shop | **3.2.3** | 2026-10-27 |
+| gp247/shop | **3.3.1** | 2026-10-28 |
 
 > ⚠️ **Note:** only the **3.x** line still receives security fixes. Sites still on 2.x need to move to 3.x.
-> `gp247/shop` 3.2.3 requires `gp247/core` 3.2.3 or later — update both together.
+> `gp247/shop` 3.3.1 requires `gp247/core` 3.3 or later — update both together.
 
 > 💡 **Check the versions you run:** `php artisan gp247:info`, or `composer show "gp247/*"`.
 
 ## Timeline
 | Date | Release | Repo | Security issue |
 | --- | --- | --- | --- |
+| 2026-10-28 | 3.5.0 | gp247/core | **Brute force / Request forgery** — the admin login form did not limit login attempts; another website could make the file manager delete, rename or move files while an administrator was signed in |
+| 2026-10-28 | 3.3.1 | gp247/shop | **Price tampering** — customers could order a negative quantity, bringing the order total to zero or below and corrupting stock |
 | 2026-10-28 | 3.4.0 | gp247/core | **Secret exposure** — sites upgraded from before 3.2.3 (sites with the API enabled): API tokens issued before 3.2.3 still never expired and old API keys were still stored in plain text in the database; `gp247:update` now gives old tokens an expiry and removes the plain-text keys |
 | 2026-10-27 | 3.2.3<br>3.2.3 | gp247/core<br>gp247/shop | **Authorization / Data exposure** — REST API (sites with the API enabled): admin API did not apply admin permissions or store scope; API login had no attempt limit; tokens never expired; API keys stored in plain text; public API exposed internal fields (cost, supplier, stock) and unpublished products. Also: locked customers could still sign in |
 | 2026-10-21 | 3.1.2 | gp247/core | **Path traversal / SSRF** — extension install and update trusted untrusted packages and download URLs; the license could be sent to another host through a redirect |

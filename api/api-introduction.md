@@ -116,7 +116,7 @@ The admin login form and `api/core/login` share one counter: failed attempts on 
 | Per account (from the same IP) | 5 attempts / minute | `GP247_LOGIN_THROTTLE` (format `attempts,minutes`) |
 | Per IP, across all accounts | 20 attempts / minute | `GP247_LOGIN_IP_THROTTLE` |
 
-> ⚠️ **Renamed after gp247/core 3.4.0:** the old names `GP247_API_LOGIN_THROTTLE` and `GP247_API_LOGIN_IP_THROTTLE`
+> ⚠️ **Renamed in gp247/core 3.5.0:** the old names `GP247_API_LOGIN_THROTTLE` and `GP247_API_LOGIN_IP_THROTTLE`
 > are no longer read. If you set them, rename them in your `.env`, otherwise the defaults above apply.
 
 Over the limit → HTTP `429` with a `Retry-After` header (the number of seconds to wait). A successful
