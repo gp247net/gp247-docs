@@ -2,8 +2,8 @@
     "openapi": "3.1.0",
     "info": {
         "title": "GP247 REST API (v1 + v2)",
-        "version": "3.4.0",
-        "description": "REST API of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md."
+        "version": "3.6.0",
+        "description": "REST API of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required."
     },
     "servers": [
         {
@@ -3183,17 +3183,17 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token issued",
+                        "description": "Signed in",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Token"
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
                                 }
                             }
                         }
                     },
                     "401": {
-                        "description": "Wrong credentials or inactive/locked account",
+                        "description": "Wrong credentials, inactive/locked account, or challenge_required (plugin MFA)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3229,7 +3229,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/AdminLogin"
+                                "$ref": "#/components/schemas/AdminLoginV2"
                             }
                         }
                     }
@@ -3273,7 +3273,7 @@
                         }
                     }
                 },
-                "summary": "Revoke the current token",
+                "summary": "Sign the current session out (access and refresh token)",
                 "security": [
                     {
                         "bearerAuth": [],
@@ -4679,17 +4679,17 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token issued",
+                        "description": "Signed in",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Token"
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
                                 }
                             }
                         }
                     },
                     "401": {
-                        "description": "Wrong credentials or inactive/locked account",
+                        "description": "Wrong credentials, inactive/locked account, or challenge_required (plugin MFA)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4725,7 +4725,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CustomerLogin"
+                                "$ref": "#/components/schemas/CustomerLoginV2"
                             }
                         }
                     }
@@ -4769,7 +4769,7 @@
                         }
                     }
                 },
-                "summary": "Revoke the current token",
+                "summary": "Sign the current session out (access and refresh token)",
                 "security": [
                     {
                         "bearerAuth": [],
@@ -5356,6 +5356,996 @@
                     }
                 ]
             }
+        },
+        "/api/v2/front/login/challenge": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Finish a sign-in that requires a plugin challenge (MFA) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "Signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "challenge_invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginChallengeAnswer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/refresh": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Exchange a refresh token for a new access + refresh pair (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "Signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "refresh_token_invalid, refresh_token_reused (session signed out) or unauthenticated (account inactive)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Sessions not installed yet (run php artisan gp247:update)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "refresh_in_progress: the token was used seconds ago; retry with the new one",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefreshRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/sessions": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "API sessions (devices) of the signed-in owner (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/front/member/sessions/{id}": {
+            "delete": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Sign one session out (its access and refresh token) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"revoked\": true}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found (or not yours)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/core/login/challenge": {
+            "post": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Finish a sign-in that requires a plugin challenge (MFA) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "Signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "challenge_invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginChallengeAnswer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/core/refresh": {
+            "post": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Exchange a refresh token for a new access + refresh pair (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "Signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SessionTokenEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "refresh_token_invalid, refresh_token_reused (session signed out) or unauthenticated (account inactive)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Sessions not installed yet (run php artisan gp247:update)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "refresh_in_progress: the token was used seconds ago; retry with the new one",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefreshRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/core/sessions": {
+            "get": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "API sessions (devices) of the signed-in owner (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/core/sessions/{id}": {
+            "delete": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Sign one session out (its access and refresh token) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"revoked\": true}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found (or not yours)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/front/register": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Create a customer account and sign it in (store rules, captcha when enabled) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "201": {
+                        "description": "{\"data\": {customer, access_token, token_type, expires_at, expires_in, session_id[, refresh_token, refresh_expires_at]}}"
+                    },
+                    "401": {
+                        "description": "challenge_required (body has \"challenge\": {ticket, method, meta, expires_in}) or challenge_invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Register"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/password/forgot": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Send the password-reset mail; same answer whether the e-mail has an account or not (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"sent\": true}}"
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ForgotPassword"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/password/reset": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Set a new password with the mailed token; signs every API client out (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"reset\": true}}"
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPassword"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/profile": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Profile of the signed-in customer (incl. e-mail verification state, default address) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {...customer, email_verified, email_verification_required, default_address_id, default_address}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Update the profile (fields configured for the store) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {...profile}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Profile"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/password": {
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Change the password; this session stays, every other one is signed out (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"changed\": true}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePassword"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/email/verify": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Send the e-mail verification link again (when the store requires verification) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"sent\": true|false}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/front/member/address/list": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Address book of the signed-in customer (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": [{id, first_name, …, is_default}]}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/front/member/address": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Add an address (\"default\": true makes it the default one) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "201": {
+                        "description": "{\"data\": {...address}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Address"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/address/{id}": {
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Update an address of the signed-in customer (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {...address}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found (or not yours)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Address"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Delete an address (the default address cannot be deleted: 422) (since core 3.6.0 / shop 3.4.0)",
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"deleted\": true}}"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found (or not yours)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -5363,7 +6353,7 @@
             "bearerAuth": {
                 "type": "http",
                 "scheme": "bearer",
-                "description": "Token from POST login; expires (7 days by default, 30 with remember_me)."
+                "description": "Token from POST login; expires (7 days by default, 30 with remember_me; 60 minutes when signed in with with_refresh on v2)."
             },
             "apiConnection": {
                 "type": "apiKey",
@@ -5406,7 +6396,12 @@
                             "too_many_attempts",
                             "method_not_allowed",
                             "http_error",
-                            "server_error"
+                            "server_error",
+                            "refresh_token_invalid",
+                            "refresh_token_reused",
+                            "refresh_in_progress",
+                            "challenge_required",
+                            "challenge_invalid"
                         ]
                     },
                     "errors": {
@@ -5477,6 +6472,248 @@
                     "expires_at": {
                         "type": "string",
                         "description": "Y-m-d H:i:s"
+                    }
+                }
+            },
+            "CustomerLoginV2": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "remember_me": {
+                        "type": "boolean"
+                    },
+                    "with_refresh": {
+                        "type": "boolean",
+                        "description": "Also issue a rotating refresh token; the access token then lives 60 minutes"
+                    },
+                    "device_name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "description": "Shown in the sessions list"
+                    }
+                }
+            },
+            "AdminLoginV2": {
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "remember_me": {
+                        "type": "boolean"
+                    },
+                    "with_refresh": {
+                        "type": "boolean",
+                        "description": "Also issue a rotating refresh token; the access token then lives 60 minutes"
+                    },
+                    "device_name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "description": "Shown in the sessions list"
+                    }
+                }
+            },
+            "SessionTokenEnvelope": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "access_token": {
+                                "type": "string"
+                            },
+                            "token_type": {
+                                "type": "string",
+                                "const": "Bearer"
+                            },
+                            "scopes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "expires_at": {
+                                "type": "string",
+                                "description": "Y-m-d H:i:s"
+                            },
+                            "expires_in": {
+                                "type": "integer",
+                                "description": "Seconds"
+                            },
+                            "session_id": {
+                                "type": "string"
+                            },
+                            "refresh_token": {
+                                "type": "string",
+                                "description": "Only with with_refresh; shown once"
+                            },
+                            "refresh_expires_at": {
+                                "type": "string",
+                                "description": "End of the session (does not move on rotation)"
+                            }
+                        }
+                    }
+                }
+            },
+            "RefreshRequest": {
+                "type": "object",
+                "required": [
+                    "refresh_token"
+                ],
+                "properties": {
+                    "refresh_token": {
+                        "type": "string"
+                    }
+                }
+            },
+            "LoginChallengeAnswer": {
+                "type": "object",
+                "required": [
+                    "ticket"
+                ],
+                "properties": {
+                    "ticket": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": true,
+                "description": "Plus the fields defined by the challenge plugin (e.g. code)"
+            },
+            "Register": {
+                "type": "object",
+                "required": [
+                    "first_name",
+                    "password",
+                    "password_confirmation"
+                ],
+                "additionalProperties": true,
+                "description": "Other customer fields as configured for the store (last_name, phone, address1…, custom fields, captcha field when enabled); with_refresh, device_name as for login",
+                "properties": {
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    },
+                    "with_refresh": {
+                        "type": "boolean"
+                    },
+                    "device_name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ForgotPassword": {
+                "type": "object",
+                "required": [
+                    "email"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    }
+                },
+                "additionalProperties": true
+            },
+            "ResetPassword": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "token",
+                    "password",
+                    "password_confirmation"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "token": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Profile": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Customer fields configured for the store; status and password are ignored",
+                "properties": {
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    }
+                }
+            },
+            "ChangePassword": {
+                "type": "object",
+                "required": [
+                    "password_old",
+                    "password",
+                    "password_confirmation"
+                ],
+                "properties": {
+                    "password_old": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Address": {
+                "type": "object",
+                "required": [
+                    "first_name",
+                    "address1"
+                ],
+                "additionalProperties": true,
+                "description": "Other address fields as configured for the store; \"default\": true makes it the default address",
+                "properties": {
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "address1": {
+                        "type": "string"
+                    },
+                    "default": {
+                        "type": "boolean"
                     }
                 }
             }

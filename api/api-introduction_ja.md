@@ -101,6 +101,10 @@ GP247 は **Laravel Sanctum** を使って**トークン**（「入場券」の�
 > **7 日より早くはなりません**。古いトークンを持つアプリには、再ログインが必要になるまで少なくとも 7 日あります。
 > アプリが `401` を受けたら `login` を呼ぶようにしておいてください。
 
+> ℹ️ **対応バージョン:** gp247/core 3.6.0、gp247/shop 3.4.0 — API v2 で `with_refresh: true` を付けてサインインしたアプリは、
+> **60 分**有効なアクセストークンと、更新用の*リフレッシュトークン*を受け取ります（セクション 10）。顧客のパスワードを変更または
+> 再設定すると（ウェブサイトでも API でも）、その顧客の**すべてのトークン**が v1 トークンも含めて無効になります。
+
 ### ログイン試行回数の制限
 
 > ℹ️ **対応バージョン:** gp247/core 3.2.3
@@ -403,6 +407,11 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 | `403` | `forbidden` | ログイン済みだが権限がない（セクション 3）、またはトークンの種類が違う |
 | `404` | `not_found` | レコードが存在しない、または閲覧を許可されていない。API のパスが存在しない |
 | `404` | `api_disabled` | この API グループがサイトの API 管理画面で**オフ**になっている（セクション 9）— gp247/core 3.3.1 から |
+| `401` | `refresh_token_invalid` | リフレッシュトークンが誤り／期限切れ、またはセッションがサインアウト済み（セクション 10）— gp247/core 3.6.0 から |
+| `401` | `refresh_token_reused` | 使用済みのリフレッシュトークンが再送された：安全のためセッションをサインアウト — 再度サインイン（セクション 10） |
+| `409` | `refresh_in_progress` | リフレッシュトークンが数秒前に使われた — 受け取った新しい組を使う（セクション 10） |
+| `401` | `challenge_required` | プラグインによる追加の確認ステップ（OTP など）が必要。本文に `challenge` キーがある（セクション 10） |
+| `401` | `challenge_invalid` | 確認チケットが誤り／期限切れ、または確認コードが誤り（セクション 10） |
 | `422` | `validation_failed` | 送信したデータが不正 — 項目ごとの `errors` キーも確認してください |
 | `429` | `too_many_attempts` | 呼び出し回数が多すぎる — `Retry-After` ヘッダーに従って待ってください |
 | `405` | `method_not_allowed` | パスに対して HTTP メソッドが違う（例: `POST` の代わりに `GET`） |
@@ -470,9 +479,13 @@ API v2 は v1 と**同じデータを同じ権限で**提供します（セク�
 
 | メソッド | パス | ログイン必要 | 機能 |
 | --- | --- | --- | --- |
-| `POST` | `api/v2/core/login` | 不要 | 管理者ログイン |
-| `POST` | `api/v2/core/logout` | 必要（管理者） | 管理者ログアウト |
+| `POST` | `api/v2/core/login` | 不要 | 管理者ログイン（`with_refresh` は任意 — セクション 10） |
+| `POST` | `api/v2/core/login/challenge` | 不要 | 追加の確認ステップが必要なサインインを完了（セクション 10） |
+| `POST` | `api/v2/core/refresh` | 不要（リフレッシュトークンを送る） | リフレッシュトークンを新しいトークンの組と交換 |
+| `POST` | `api/v2/core/logout` | 必要（管理者） | 現在のセッションをサインアウト（リフレッシュトークンを含む） |
 | `GET` | `api/v2/core/info` | 必要（管理者） | 管理者情報（ロールを含む） |
+| `GET` | `api/v2/core/sessions` | 必要（管理者） | 管理者の API サインインセッション（端末） |
+| `DELETE` | `api/v2/core/sessions/{id}` | 必要（管理者） | 1 つのセッションをサインアウト |
 | `GET` | `api/v2/core/customer/list` | 必要（管理者 ＋ 権限） | 顧客一覧 |
 | `GET` | `api/v2/core/customer/detail/{id}` | 必要（管理者 ＋ 権限） | 顧客の詳細 |
 | `GET` | `api/v2/core/order/list` | 必要（管理者 ＋ 権限） | 注文一覧 |
@@ -500,9 +513,24 @@ API v2 は v1 と**同じデータを同じ権限で**提供します（セク�
 | `GET` | `api/v2/front/banner/detail/{id}` | 不要 | バナーの詳細 |
 | `GET` | `api/v2/front/page/list` | 不要 | コンテンツページ一覧 |
 | `GET` | `api/v2/front/page/detail/{id}` | 不要 | コンテンツページの詳細 |
-| `POST` | `api/v2/front/login` | 不要 | 顧客ログイン |
-| `POST` | `api/v2/front/logout` | 必要（顧客） | 顧客ログアウト |
+| `POST` | `api/v2/front/register` | 不要 | 顧客アカウントを作成してサインイン（セクション 10） |
+| `POST` | `api/v2/front/password/forgot` | 不要 | パスワード再設定メールを送信 |
+| `POST` | `api/v2/front/password/reset` | 不要 | メールのコードで新しいパスワードを設定 |
+| `POST` | `api/v2/front/login` | 不要 | 顧客ログイン（`with_refresh` は任意 — セクション 10） |
+| `POST` | `api/v2/front/login/challenge` | 不要 | 追加の確認ステップが必要なサインインを完了 |
+| `POST` | `api/v2/front/refresh` | 不要（リフレッシュトークンを送る） | リフレッシュトークンを新しいトークンの組と交換 |
+| `POST` | `api/v2/front/logout` | 必要（顧客） | 現在のセッションをサインアウト（リフレッシュトークンを含む） |
 | `GET` | `api/v2/front/info` | 必要（顧客） | 顧客アカウントの情報 |
+| `GET` | `api/v2/front/member/profile` | 必要（顧客） | プロフィール全体：メール確認の状態、既定の住所 |
+| `PUT` | `api/v2/front/member/profile` | 必要（顧客） | プロフィールを編集 |
+| `PUT` | `api/v2/front/member/password` | 必要（顧客） | パスワードを変更（ほかの端末はすべてサインアウト） |
+| `POST` | `api/v2/front/member/email/verify` | 必要（顧客） | 確認メールを再送 |
+| `GET` | `api/v2/front/member/address/list` | 必要（顧客） | 住所録 |
+| `POST` | `api/v2/front/member/address` | 必要（顧客） | 住所を追加 |
+| `PUT` | `api/v2/front/member/address/{id}` | 必要（顧客） | 住所を編集 |
+| `DELETE` | `api/v2/front/member/address/{id}` | 必要（顧客） | 住所を削除（既定の住所は不可） |
+| `GET` | `api/v2/front/member/sessions` | 必要（顧客） | 顧客の API サインインセッション（端末） |
+| `DELETE` | `api/v2/front/member/sessions/{id}` | 必要（顧客） | 1 つのセッションをサインアウト |
 | `GET` | `api/v2/front/member/order/list` | 必要（顧客） | 顧客の注文 |
 | `GET` | `api/v2/front/member/order/detail/{id}` | 必要（顧客） | 顧客の注文 1 件の詳細 |
 
@@ -557,6 +585,95 @@ curl -X GET "https://shop.example.com/api/v2/front/product/list?filter[brand_id]
 
 ---
 
+## 10. 顧客アカウントとサインインセッション（API v2）
+
+> ℹ️ **対応バージョン:** gp247/core 3.6.0、gp247/shop 3.4.0
+
+ショッピングアプリは `api/v2/front` で顧客アカウントの一連の操作をすべて行えます。ルールは**ウェブサイトのフォームと同じ**
+です：必須項目、カスタム項目、パスワードの強度、captcha はすべてストアの設定に従います。これらのエンドポイントは v2 にのみ
+あります。
+
+### 10.1. 会員登録、パスワードを忘れた場合、プロフィール、住所録
+
+- **`POST register`** — 登録フォームと同じ項目（`first_name`、`email`、`password`、`password_confirmation`、
+  およびストアで有効にした `address1`、`phone` などの項目）を送ります。成功すると HTTP `201` で、`customer` と `login` と
+  同じトークンを返します。顧客は自分の `status` を設定できません。
+- **`POST password/forgot`** — パスワード再設定メールを送ります。メールアドレスにアカウントがあってもなくても常に
+  `{"data": {"sent": true}}` を返すため、どのメールアドレスが登録済みかを調べることはできません。
+- **`POST password/reset`** — `email`、`token`（メールに記載）、`password`、`password_confirmation` を送ります。成功すると
+  顧客の**すべての API トークン**が無効になります。アプリは新しいパスワードで `login` を呼びます。
+- **`GET` / `PUT member/profile`** — `email_verified`、`email_verification_required`、既定の住所を含むプロフィール。
+  ここではパスワードを変更できません。
+- **`PUT member/password`** — `password_old`、`password`、`password_confirmation` を送ります。呼び出したセッションは
+  サインインしたまま、**ほかのすべての端末**はサインアウトされます。古いパスワードの誤りはアカウントのログイン制限に数えられます。
+- **`member/address`** — 住所の追加／編集／削除。`"default": true` を送ると既定の住所になります。既定の住所は削除できません
+  （HTTP `422`）— 先に別の住所を既定にしてください。
+- **`POST member/email/verify`** — ストアで *メールアドレスの確認を必須にする* がオンのとき、確認メールを再送します。顧客は
+  どのブラウザーでもメールのリンクをクリックすれば完了します。ウェブサイトへのサインインは**不要**です。
+
+`register`、`password/*`、`member/email/verify` には専用の制限があります：**IP ごとに 1 分あたり 5 回**
+（`GP247_API_ACCOUNT_THROTTLE`、形式は `回数,分`）。
+
+> ⚠️ ストアが *会員登録* または *パスワードを忘れた場合* のページで captcha をオンにしている場合（**Captcha** タブ）、API でも
+> 使用中の captcha プラグインの項目が必要です — ない／誤り → `422`（`errors.captcha_field`）。アプリは captcha 提供元の
+> SDK で回答を取得するか、管理者がそのページの選択を外します。
+
+### 10.2. リフレッシュトークン — 短命なトークンでサインイン状態を保つ
+
+`login`、`register`、`login/challenge` に `with_refresh: true`（任意で `device_name`）を送ります：
+
+| | `with_refresh` なし | `with_refresh` あり |
+| --- | --- | --- |
+| アクセストークン | 7 日（`remember_me` で 30 日） | **60 分**（`GP247_API_ACCESS_MINUTES`） |
+| リフレッシュトークン | — | 顧客 30 日（`GP247_API_REFRESH_DAYS`）、管理者 7 日（`GP247_API_REFRESH_ADMIN_DAYS`）、サインイン時から |
+
+アクセストークンが期限切れ（`401`）になったら、`{"refresh_token": "…"}` で `POST refresh` を呼ぶと**新しいトークンの組**を
+受け取れます。リフレッシュトークンは**1 回だけ**使えます：
+
+- 使用済みのリフレッシュトークンを再送 → `401 refresh_token_reused` となり、**セッション全体がサインアウト**されます
+  （トークンが盗まれた兆候）。
+- 例外：10 秒以内の再送（不安定な通信、重複リクエスト）→ `409 refresh_in_progress`、セッションは残ります。アプリでは
+  `refresh` を並行ではなく**1 つずつ**呼んでください。
+- リフレッシュしてもセッションの期限は延びません。期限が切れたら再度サインインしてください。
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/front/login" -H "Content-Type: application/json" \
+  -d '{"email":"customer@example.com","password":"Secret#123","with_refresh":true,"device_name":"Hanako の iPhone"}'
+curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: application/json" \
+  -d '{"refresh_token":"<受け取った refresh_token>"}'
+```
+
+### 10.3. サインインセッションの管理
+
+v2 のサインインはそれぞれ 1 つの**セッション**です。`GET member/sessions`（顧客）と `GET sessions`（管理者）は、端末名、IP、
+最終利用日時、どれが現在のセッションか（`current`）を一覧表示します。`DELETE …/sessions/{id}` で 1 台の端末をサインアウト
+します。`POST logout`（v2）は現在のセッションをリフレッシュトークンも含めてサインアウトします。
+
+### 10.4. プラグインによる二要素認証（MFA）
+
+core 自体は OTP コードを送りません。セキュリティプラグインが確認ステップを追加できます。その場合、正しいパスワードでの
+`login` は次のように応答します：
+
+```json
+{ "error": 1, "code": "challenge_required", "msg": "…",
+  "challenge": { "ticket": "…", "method": "totp", "meta": {}, "expires_in": 300 } }
+```
+
+アプリはユーザーにコードを尋ね、`ticket` とプラグインが求める項目（例：`code`）を付けて `POST login/challenge` を呼びます。
+チケットは 1 回限りで 5 分で失効し、誤ったコードはログイン制限に数えられます。API v1 はこのステップに対応していません：MFA が
+必要なアカウントは v1 で `401 challenge_required` になります — v2 を使ってください。GP247 の無料 **MFA** プラグイン
+（2.3.0 から）は、二要素認証を有効にした顧客と管理者に対してこの仕組みを使います（TOTP またはリカバリーコード）。プラグイン開発者は
+[API の作り方 — セクション 7](./create-api_ja.md) を参照してください。
+
+### 10.5. 管理 API のアクセスログ
+
+Core API の呼び出し（v1 と v2、`login` を除く）はすべて管理画面の**操作ログ**に記録されます — 管理画面での操作と同じく、
+ユーザー、パス、IP、端末を記録し、パスワード／キーは伏せられ、レスポンス本文は保存されません。権限不足で拒否された呼び出し
+（`403`）も記録されます。管理画面のログと一緒にオフにできます（`GP247_ADMIN_LOG=0`）。API を頻繁に呼ぶ同期ツールではログが
+早く増えます — **操作ログ**画面で定期的に削除してください。
+
+---
+
 ## よくある質問（Q&A）
 
 **Q1: どちらの API グループを使えばよいですか？**
@@ -567,7 +684,8 @@ curl -X GET "https://shop.example.com/api/v2/front/product/list?filter[brand_id]
 **Q2: トークンはどこで取得し、どのくらい有効ですか？**
 
 → トークンは `login` エンドポイントが発行します。既定では 7 日後に失効し、`remember_me = true` を送ると 30 日になります。
-セクション 2 の環境変数で変更できます。期限が切れたら、もう一度 `login` を呼んでください。安全にログアウトするには、
+セクション 2 の環境変数で変更できます。期限が切れたら、もう一度 `login` を呼んでください。v2 のアプリは
+`with_refresh: true` でサインインし、60 分のトークンをリフレッシュトークンで更新することをおすすめします（セクション 10）。安全にログアウトするには、
 現在のトークンで `POST logout` を呼びます。そのトークンは削除され、再利用できなくなります。
 
 **Q3: `apiconnection`／`apikey` と `access_token` の違いは何ですか？**
@@ -621,7 +739,7 @@ API Connection の管理項目で新しいキーを生成してください。
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
-| 2026-10-28 | gp247/core 3.3.1。`X-Request-Id`、古いトークンの有効期限、平文キーの削除、`api_route_gate`：3.4.0 | API 管理画面で API をオン／オフ（全体 + v1/v2 × core/front）、新規インストールは v2 のみオン、オフのグループは `404 api_disabled` を返す（3.3.1）。オフのグループはトークンがなくても `api_disabled` を返す。すべてのレスポンスに `X-Request-Id` ヘッダー。3.2.3 より前に発行されたトークンに `gp247:update` で有効期限を設定（最低 7 日）。`gp247:update` が API Connection キーの平文のコピーを削除。`gp247:doctor` がルートキャッシュを確認（3.4.0） |
+| 2026-10-28 | gp247/core 3.3.1。`X-Request-Id`、古いトークンの有効期限、平文キーの削除、`api_route_gate`：3.4.0。顧客アカウントとセッション：core 3.6.0、shop 3.4.0 | API 管理画面で API をオン／オフ（全体 + v1/v2 × core/front）、新規インストールは v2 のみオン、オフのグループは `404 api_disabled` を返す（3.3.1）。オフのグループはトークンがなくても `api_disabled` を返す。すべてのレスポンスに `X-Request-Id` ヘッダー。3.2.3 より前に発行されたトークンに `gp247:update` で有効期限を設定（最低 7 日）。`gp247:update` が API Connection キーの平文のコピーを削除。`gp247:doctor` がルートキャッシュを確認（3.4.0）。API v2 による顧客アカウント（会員登録、パスワードの再設定、プロフィール、パスワード変更、住所録、確認メールの再送）、任意のローテーション式リフレッシュトークン（60 分のトークン）、セッション管理、v2 の `logout` でセッション全体を終了、プラグインによる追加の確認ステップ（`challenge_required`）、パスワードの変更／再設定ですべての API トークンを無効化、メール確認リンクはウェブサイトへのサインイン不要、管理 API のアクセスログ（core 3.6.0、shop 3.4.0） |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3。API v2 と新しい環境変数名：3.3.0 | API v2 を追加（`api/v2/...`：`{data, meta, links}` 形式のレスポンス、`filter`／`sort`／`q`／`lang`、`price_final`、`meta`）、正しい綴りの環境変数名を追加（3.3.0）。Core API が管理画面の権限とストアの範囲に従うように変更。ログイン試行回数の制限を追加。トークンは常に有効期限付きになり、`POST logout` を追加。ロックされた顧客はログイン不可に。公開 API はストアが表示中のデータだけを返し、社内向けの項目を削除。API Connection のキーをハッシュ化して保存。すべてのエラーが意味の正しい HTTP コードと `{error, msg, code}` 形式を持つように変更。`openapi.json` を追加 |
 
 ---

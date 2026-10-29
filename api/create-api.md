@@ -435,6 +435,62 @@ GP247 reminds you that you forgot to declare the permission.
 - [ ] **Do not modify** `vendor/gp247/*` (unless you are the maintainer of that package).
 - [ ] Every method has an English PHPDoc with the `@aidlc-unit` / `@aidlc-story` tags (per coding-style).
 - [ ] You ran `php artisan route:clear` and confirmed the route appears in `php artisan route:list`.
+- [ ] A plugin adding a sign-in step implements `LoginChallenge` and returns no secret from `describe()` (section 7).
+
+---
+
+## 7. Adding a sign-in verification step (MFA) from a plugin
+
+> ℹ️ **Available since:** gp247/core 3.6.0
+
+Core does not do OTP itself; your plugin adds a second step to API sign-in (v2 customer and admin) through the interface
+`GP247\Core\Api\Contracts\LoginChallenge`:
+
+| Method | When it is called | You return |
+| --- | --- | --- |
+| `required($owner, $request)` | Right after the password is correct (on v1 too) | `true` when this account must pass the step — do **not** send the code here |
+| `describe($owner)` | Once, when the ticket is issued (v2) | Send the SMS/e-mail code here if needed; return **public** hints: `method`, `meta` — no secrets |
+| `verify($owner, $request)` | When the app calls `POST login/challenge` | `true` when the answer (fields you define, e.g. `code`) is correct |
+
+```php
+<?php
+
+namespace App\GP247\Plugins\MyOtp;
+
+use GP247\Core\Api\Contracts\LoginChallenge;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
+
+class OtpChallenge implements LoginChallenge
+{
+    public function required(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtpSettings::enabledFor($owner);   // e.g. the user turned 2FA on
+    }
+
+    public function describe(Authenticatable $owner): array
+    {
+        return ['method' => 'totp', 'meta' => ['digits' => 6]];   // public hints only
+    }
+
+    public function verify(Authenticatable $owner, Request $request): bool
+    {
+        return MyOtp::check($owner, (string) $request->input('code'));
+    }
+}
+```
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.login_challenge.customer' => array_merge(
+    config('gp247-config.api.login_challenge.customer', []), [OtpChallenge::class]
+)]);
+```
+
+Core does the rest: a single-use ticket (5 minutes, stored hashed in the default cache — works on shared hosting), the attempt
+limit (shared with the login counter; a ticket is destroyed after 5 wrong answers, from any IP), and the token/session once `verify()` returns `true`. A plugin that throws, or a wrong
+class registration, **denies** the sign-in (the step is never skipped). For administrators register under
+`gp247-config.api.login_challenge.admin`. How an app calls it: [API introduction — section 10.4](./api-introduction.md).
 
 ---
 
@@ -506,8 +562,9 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
 | 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-26 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-28 · ✍️ **Author:** GP247</sub>

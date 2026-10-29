@@ -104,6 +104,10 @@ cron needed.
 > members: `GP247_API_REMEMBER`), but **never sooner than 7 days** after the upgrade. Apps holding an old token have at
 > least 7 days before they must log in again — make sure your app answers a `401` by calling `login`.
 
+> ℹ️ **Available since:** gp247/core 3.6.0, gp247/shop 3.4.0 — on API v2, an app that signs in with `with_refresh: true`
+> gets an access token living **60 minutes** plus a *refresh token* to renew it (section 10). Changing or resetting a
+> customer's password (on the website or through the API) ends **every token** of that customer, v1 tokens included.
+
 ### Login attempt limits
 
 > ℹ️ **Available since:** gp247/core 3.2.3
@@ -411,6 +415,11 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 | `403` | `forbidden` | Logged in but without permission (section 3), or the wrong type of token |
 | `404` | `not_found` | The record does not exist or you are not allowed to see it; the API path does not exist |
 | `404` | `api_disabled` | This API group is **turned off** on the site's API management screen (section 9) — since gp247/core 3.3.1 |
+| `401` | `refresh_token_invalid` | Refresh token wrong, expired, or its session was signed out (section 10) — since gp247/core 3.6.0 |
+| `401` | `refresh_token_reused` | A used refresh token was sent again: the session was signed out for safety — sign in again (section 10) |
+| `409` | `refresh_in_progress` | The refresh token was used seconds ago — use the new pair you received (section 10) |
+| `401` | `challenge_required` | The account needs an extra verification step (OTP…) provided by a plugin; the body has a `challenge` key (section 10) |
+| `401` | `challenge_invalid` | Verification ticket wrong/expired or wrong verification code (section 10) |
 | `422` | `validation_failed` | The submitted data is invalid — see the `errors` key for each field |
 | `429` | `too_many_attempts` | Too many calls — wait as indicated by the `Retry-After` header |
 | `405` | `method_not_allowed` | Wrong HTTP method for the path (for example `GET` instead of `POST`) |
@@ -480,9 +489,13 @@ the allowed names.
 
 | Method | Path | Login required | Function |
 | --- | --- | --- | --- |
-| `POST` | `api/v2/core/login` | No | Admin login |
-| `POST` | `api/v2/core/logout` | Yes (admin) | Admin logout |
+| `POST` | `api/v2/core/login` | No | Admin login (optional `with_refresh` — section 10) |
+| `POST` | `api/v2/core/login/challenge` | No | Finish a sign-in that needs an extra verification step (section 10) |
+| `POST` | `api/v2/core/refresh` | No (send the refresh token) | Exchange a refresh token for a new token pair |
+| `POST` | `api/v2/core/logout` | Yes (admin) | Sign the current session out (refresh token included) |
 | `GET` | `api/v2/core/info` | Yes (admin) | Admin info (with roles) |
+| `GET` | `api/v2/core/sessions` | Yes (admin) | The admin's API sign-in sessions (devices) |
+| `DELETE` | `api/v2/core/sessions/{id}` | Yes (admin) | Sign one session out |
 | `GET` | `api/v2/core/customer/list` | Yes (admin + permission) | Customer list |
 | `GET` | `api/v2/core/customer/detail/{id}` | Yes (admin + permission) | Customer details |
 | `GET` | `api/v2/core/order/list` | Yes (admin + permission) | Order list |
@@ -510,9 +523,24 @@ the allowed names.
 | `GET` | `api/v2/front/banner/detail/{id}` | No | Banner details |
 | `GET` | `api/v2/front/page/list` | No | Content page list |
 | `GET` | `api/v2/front/page/detail/{id}` | No | Content page details |
-| `POST` | `api/v2/front/login` | No | Customer login |
-| `POST` | `api/v2/front/logout` | Yes (customer) | Customer logout |
+| `POST` | `api/v2/front/register` | No | Create a customer account and sign it in (section 10) |
+| `POST` | `api/v2/front/password/forgot` | No | Send the password-reset e-mail |
+| `POST` | `api/v2/front/password/reset` | No | Set a new password with the code from the e-mail |
+| `POST` | `api/v2/front/login` | No | Customer login (optional `with_refresh` — section 10) |
+| `POST` | `api/v2/front/login/challenge` | No | Finish a sign-in that needs an extra verification step |
+| `POST` | `api/v2/front/refresh` | No (send the refresh token) | Exchange a refresh token for a new token pair |
+| `POST` | `api/v2/front/logout` | Yes (customer) | Sign the current session out (refresh token included) |
 | `GET` | `api/v2/front/info` | Yes (customer) | Customer account info |
+| `GET` | `api/v2/front/member/profile` | Yes (customer) | Full profile: e-mail verification state, default address |
+| `PUT` | `api/v2/front/member/profile` | Yes (customer) | Edit the profile |
+| `PUT` | `api/v2/front/member/password` | Yes (customer) | Change the password (signs every other device out) |
+| `POST` | `api/v2/front/member/email/verify` | Yes (customer) | Send the verification e-mail again |
+| `GET` | `api/v2/front/member/address/list` | Yes (customer) | Address book |
+| `POST` | `api/v2/front/member/address` | Yes (customer) | Add an address |
+| `PUT` | `api/v2/front/member/address/{id}` | Yes (customer) | Edit an address |
+| `DELETE` | `api/v2/front/member/address/{id}` | Yes (customer) | Delete an address (not the default one) |
+| `GET` | `api/v2/front/member/sessions` | Yes (customer) | The customer's API sign-in sessions (devices) |
+| `DELETE` | `api/v2/front/member/sessions/{id}` | Yes (customer) | Sign one session out |
 | `GET` | `api/v2/front/member/order/list` | Yes (customer) | The customer's orders |
 | `GET` | `api/v2/front/member/order/detail/{id}` | Yes (customer) | Details of one of the customer's orders |
 
@@ -568,6 +596,96 @@ request.
 
 ---
 
+## 10. Customer accounts & sign-in sessions (API v2)
+
+> ℹ️ **Available since:** gp247/core 3.6.0, gp247/shop 3.4.0
+
+A shopping app can run the whole customer-account cycle through `api/v2/front`, with **the same rules as the forms on the
+website**: required fields, custom fields, password strength and captcha all follow the store's settings. These endpoints
+exist in v2 only.
+
+### 10.1. Register, forgotten password, profile, address book
+
+- **`POST register`** — send the fields of the registration form (`first_name`, `email`, `password`,
+  `password_confirmation`, plus the fields the store turned on, such as `address1`, `phone`…). Success → HTTP `201` with
+  `customer` and the same tokens as `login`. A customer cannot set their own `status`.
+- **`POST password/forgot`** — sends the password-reset e-mail. Always answers `{"data": {"sent": true}}`, whether the
+  e-mail has an account or not, so nobody can find out which e-mails are registered.
+- **`POST password/reset`** — send `email`, `token` (from the e-mail), `password`, `password_confirmation`. On success
+  **every API token** of the customer is revoked; the app calls `login` with the new password.
+- **`GET` / `PUT member/profile`** — the profile with `email_verified`, `email_verification_required` and the default
+  address. The password cannot be changed here.
+- **`PUT member/password`** — send `password_old`, `password`, `password_confirmation`. The calling session stays signed in,
+  **every other device** is signed out. A wrong old password counts against the account's login limit.
+- **`member/address`** — add/edit/delete addresses; send `"default": true` to make one the default. The default address
+  cannot be deleted (HTTP `422`) — make another address the default first.
+- **`POST member/email/verify`** — sends the verification e-mail again when the store turned on *Need verify email*. The
+  customer clicks the link in any browser and is done — **no** website sign-in needed.
+
+`register`, `password/*` and `member/email/verify` have their own limit: **5 requests/minute per IP**
+(`GP247_API_ACCOUNT_THROTTLE`, format `attempts,minutes`).
+
+> ⚠️ If the store turned captcha on for the *Register* or *Forgot password* page (**Captcha** tab), the API also requires
+> the field of the active captcha plugin — missing/wrong → `422` (`errors.captcha_field`). The app gets the captcha
+> answer from the captcha provider's SDK, or the administrator unticks that page.
+
+### 10.2. Refresh tokens — stay signed in with short-lived tokens
+
+Send `with_refresh: true` (and optionally `device_name`) to `login`, `register` or `login/challenge`:
+
+| | Without `with_refresh` | With `with_refresh` |
+| --- | --- | --- |
+| Access token | 7 days (30 with `remember_me`) | **60 minutes** (`GP247_API_ACCESS_MINUTES`) |
+| Refresh token | — | Customer 30 days (`GP247_API_REFRESH_DAYS`), admin 7 days (`GP247_API_REFRESH_ADMIN_DAYS`), from sign-in |
+
+When the access token expires (`401`), call `POST refresh` with `{"refresh_token": "…"}` → you get a **new pair**. Each
+refresh token works **once**:
+
+- Sending a used refresh token again → `401 refresh_token_reused` and **the whole session is signed out** (a sign that the
+  token was stolen).
+- Exception: sent again within 10 seconds (flaky network, duplicate request) → `409 refresh_in_progress`, the session
+  stays. Make the app call `refresh` **one at a time**, not in parallel.
+- Refreshing does not extend the session; when it ends, sign in again.
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/front/login" -H "Content-Type: application/json" \
+  -d '{"email":"customer@example.com","password":"Secret#123","with_refresh":true,"device_name":"Anna iPhone"}'
+curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: application/json" \
+  -d '{"refresh_token":"<refresh_token you received>"}'
+```
+
+### 10.3. Managing sign-in sessions
+
+Each v2 sign-in is a **session**. `GET member/sessions` (customer) and `GET sessions` (admin) list the device name, IP,
+last use and which session is the current one (`current`). `DELETE …/sessions/{id}` signs one device out.
+`POST logout` (v2) signs the current session out, including its refresh token.
+
+### 10.4. Two-factor authentication (MFA) through a plugin
+
+Core does not send OTP codes itself; a security plugin can add a verification step. Then `login` with the right password
+answers:
+
+```json
+{ "error": 1, "code": "challenge_required", "msg": "…",
+  "challenge": { "ticket": "…", "method": "totp", "meta": {}, "expires_in": 300 } }
+```
+
+The app asks the user for the code, then calls `POST login/challenge` with the `ticket` and the fields the plugin needs
+(for example `code`). A ticket works once and expires after 5 minutes; wrong codes count against the login limit. API v1
+does not support this step: an account that needs MFA gets `401 challenge_required` on v1 — use v2. GP247's free **MFA**
+plugin (from version 2.3.0) uses this mechanism for customers and admins who turned two-factor authentication on (TOTP
+or recovery code). Plugin developers:
+see [How to create an API — section 7](./create-api.md).
+
+### 10.5. Admin API access log
+
+Every Core API call (v1 and v2, except `login`) is written to the admin **Operation log** — as for actions on the admin
+screens: user, path, IP, device; passwords/keys are masked and response bodies are not stored. Calls refused for missing
+permission (`403`) are logged too. It is switched off together with the admin log (`GP247_ADMIN_LOG=0`). Sync tools that
+call the API constantly make the log grow quickly — clean it regularly on the **Operation log** screen.
+
+---
+
 ## Q&A
 
 **Q1: Which API group should I use?**
@@ -580,7 +698,8 @@ request.
 
 → The token is issued by the `login` endpoint. By default it expires after 7 days; with
 `remember_me = true` it lasts 30 days. Change these via the environment variables in section 2. When it
-expires, call `login` again. To log out safely, call `POST logout` with the current token — that token is
+expires, call `login` again. A v2 app should sign in with `with_refresh: true` to use 60-minute tokens renewed
+by a refresh token (section 10). To log out safely, call `POST logout` with the current token — that token is
 deleted and can no longer be reused.
 
 **Q3: How is `apiconnection`/`apikey` different from `access_token`?**
@@ -636,7 +755,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0) |
+| 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
 
 ---
