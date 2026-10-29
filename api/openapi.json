@@ -6346,6 +6346,285 @@
                     }
                 ]
             }
+        },
+        "/api/v2/front/cart": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Cart of the customer (Bearer) or guest (X-Cart-Token) (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many cart calls",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/cart/items": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Add a product; a guest without a cart gets X-Cart-Token (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    },
+                    {}
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "product_id",
+                                    "qty"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "string"
+                                    },
+                                    "qty": {
+                                        "type": "number"
+                                    },
+                                    "options": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        },
+                                        "description": "attribute group id => option name"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}",
+                        "headers": {
+                            "X-Cart-Token": {
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "description": "Only on the first add of a guest"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "login_required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed, product_not_for_sale, insufficient_stock, cart_line_limit",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many cart calls",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/cart/items/{rowId}": {
+            "patch": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Set a line quantity; 0 or less removes the line (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    },
+                    {}
+                ],
+                "parameters": [
+                    {
+                        "name": "rowId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "qty"
+                                ],
+                                "properties": {
+                                    "qty": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}"
+                    },
+                    "404": {
+                        "description": "Not a line of your cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed, insufficient_stock",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Remove a line (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    },
+                    {}
+                ],
+                "parameters": [
+                    {
+                        "name": "rowId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}"
+                    },
+                    "404": {
+                        "description": "Not a line of your cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -6366,6 +6645,12 @@
                 "in": "header",
                 "name": "apikey",
                 "description": "Only when the site enables api_connection_required."
+            },
+            "cartToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Cart-Token",
+                "description": "Guest cart token, returned once in the X-Cart-Token response header of the first add (since shop 3.5.0)"
             }
         },
         "schemas": {

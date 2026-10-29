@@ -531,6 +531,10 @@ tên được phép.
 | `DELETE` | `api/v2/front/member/sessions/{id}` | Có (khách) | Đăng xuất một phiên |
 | `GET` | `api/v2/front/member/order/list` | Có (khách) | Đơn hàng của khách |
 | `GET` | `api/v2/front/member/order/detail/{id}` | Có (khách) | Chi tiết một đơn hàng của khách |
+| `GET` | `api/v2/front/cart` | Có (khách) hoặc `X-Cart-Token` | Xem giỏ hàng (mục 11) |
+| `POST` | `api/v2/front/cart/items` | Có (khách) hoặc khách vãng lai | Thêm sản phẩm vào giỏ |
+| `PATCH` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Đổi số lượng một dòng (≤ 0 = xoá dòng) |
+| `DELETE` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Xoá một dòng |
 
 Ví dụ: 20 sản phẩm đắt nhất của thương hiệu số 5, tên bằng tiếng Việt:
 
@@ -668,6 +672,48 @@ màn admin: người dùng, đường dẫn, IP, thiết bị; mật khẩu/kho�
 quyền (`403`) cũng được ghi. Tắt cùng nhật ký của trang quản trị (`GP247_ADMIN_LOG=0`). Công cụ đồng bộ gọi API liên tục sẽ
 làm nhật ký tăng nhanh — dọn định kỳ ở màn **Nhật ký thao tác**.
 
+## 11. Giỏ hàng qua API (API v2)
+
+> ℹ️ **Có từ:** gp247/shop 3.5.0
+
+Ứng dụng di động hoặc website headless của chính cửa hàng giữ **giỏ hàng** qua API, với đúng luật của website: giá và
+phụ phí thuộc tính do máy chủ tính, luật số lượng (số dương, số lẻ theo cấu hình), mỗi biến thể một dòng.
+
+```mermaid
+flowchart LR
+  A[App thêm sản phẩm] --> B{Khách đã đăng nhập?}
+  B -- Có: Bearer token --> C[Giỏ của tài khoản — dùng chung với website]
+  B -- Không --> D{Cửa hàng cho khách vãng lai?}
+  D -- Không --> E[401 login_required]
+  D -- Có --> F[Lần đầu: nhận X-Cart-Token]
+  F --> G[Gửi lại X-Cart-Token ở các lần sau]
+  G --> H[Đăng nhập kèm X-Cart-Token: gộp vào giỏ tài khoản]
+```
+
+- **Khách đã đăng nhập** gửi token như mọi API khách. Giỏ là **giỏ của tài khoản** — thêm trên app, mở website đăng nhập
+  là thấy, và ngược lại.
+- **Khách vãng lai** (chỉ khi cửa hàng bật *cho phép khách vãng lai*): lần thêm sản phẩm đầu tiên, phản hồi có header
+  **`X-Cart-Token`** — lưu lại và gửi kèm ở mọi lần gọi giỏ sau. Mã chỉ trao **một lần**; mã sai hoặc giỏ quá **30 ngày**
+  không thay đổi thì coi như chưa có giỏ.
+- **Đăng nhập / đăng ký kèm `X-Cart-Token`**: giỏ khách vãng lai được **gộp** vào giỏ tài khoản (cùng sản phẩm + biến thể thì
+  cộng số lượng), mã giỏ cũ hết hiệu lực; phản hồi có `cart_merge: {merged, dropped}`.
+- **Thêm sản phẩm** (`POST cart/items`): `product_id`, `qty`, và `options` = `{"<mã nhóm thuộc tính>": "<tên lựa chọn>"}`
+  khi sản phẩm có thuộc tính — phải chọn **đủ mọi nhóm**; phụ phí luôn lấy từ sản phẩm, giá app gửi bị bỏ qua.
+- **Phản hồi giỏ**: các dòng **nhóm theo cửa hàng** (`stores[].lines[]`) với `unit_price`, `line_total`, `subtotal`;
+  dòng không còn mua được có `purchasable: false` và `reason` (`not_for_sale`, `missing_options`) và không tính vào `subtotal`.
+
+| Mã lỗi | HTTP | Ý nghĩa |
+| --- | --- | --- |
+| `login_required` | 401 | Cửa hàng không bán cho khách vãng lai — đăng nhập trước |
+| `validation_failed` | 422 | Thiếu / sai `qty`, chưa chọn đủ thuộc tính (`errors.options`) |
+| `product_not_for_sale` | 422 | Sản phẩm không bán được (ngừng bán, chưa mở bán…) |
+| `insufficient_stock` | 422 | Vượt tồn kho khi cửa hàng không bán vượt tồn |
+| `cart_line_limit` | 422 | Giỏ đã đủ **100 dòng** |
+| `cart_conflict` | 409 | Giỏ vừa bị đổi ở nơi khác — đọc lại rồi thử lại |
+| `not_found` | 404 | Dòng không thuộc giỏ của bạn |
+
+Giới hạn: **60 lần/phút** cho mỗi khách hoặc mỗi mã giỏ (`gp247-config.api.throttle.cart`).
+
 ---
 
 ## Hỏi & Đáp (Q&A)
@@ -734,10 +780,11 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 và tên biến môi trường mới: 3.3.0 | Thêm API v2 (`api/v2/...`: phản hồi `{data, meta, links}`, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) và tên biến môi trường viết đúng (3.3.0); API Core theo phân quyền màn admin và theo cửa hàng; giới hạn số lần đăng nhập; token luôn có hạn, thêm `POST logout`; khách bị khoá không đăng nhập được; API công khai chỉ trả dữ liệu cửa hàng đang hiển thị, bỏ trường nội bộ; khóa API Connection lưu dạng băm; mọi lỗi có mã HTTP đúng nghĩa và dạng `{error, msg, code}`; thêm `openapi.json` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-29 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-30 · ✍️ **Tác giả (Author):** GP247</sub>

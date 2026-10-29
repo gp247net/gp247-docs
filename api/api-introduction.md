@@ -545,6 +545,10 @@ the allowed names.
 | `DELETE` | `api/v2/front/member/sessions/{id}` | Yes (customer) | Sign one session out |
 | `GET` | `api/v2/front/member/order/list` | Yes (customer) | The customer's orders |
 | `GET` | `api/v2/front/member/order/detail/{id}` | Yes (customer) | Details of one of the customer's orders |
+| `GET` | `api/v2/front/cart` | Yes (customer) or `X-Cart-Token` | Read the cart (section 11) |
+| `POST` | `api/v2/front/cart/items` | Yes (customer) or guest | Add a product to the cart |
+| `PATCH` | `api/v2/front/cart/items/{rowId}` | Yes (customer) or `X-Cart-Token` | Change a line quantity (≤ 0 removes the line) |
+| `DELETE` | `api/v2/front/cart/items/{rowId}` | Yes (customer) or `X-Cart-Token` | Remove a line |
 
 Example: the 20 most expensive products of brand 5, with names in Vietnamese:
 
@@ -687,6 +691,50 @@ screens: user, path, IP, device; passwords/keys are masked and response bodies a
 permission (`403`) are logged too. It is switched off together with the admin log (`GP247_ADMIN_LOG=0`). Sync tools that
 call the API constantly make the log grow quickly — clean it regularly on the **Operation log** screen.
 
+## 11. Cart through the API (API v2)
+
+> ℹ️ **Available since:** gp247/shop 3.5.0
+
+The store's own mobile app or headless website keeps a **cart** through the API with the website's rules: prices and
+attribute surcharges computed by the server, the quantity rules (positive, decimals as configured), one line per variant.
+
+```mermaid
+flowchart LR
+  A[App adds a product] --> B{Customer signed in?}
+  B -- Yes: Bearer token --> C[Account cart — shared with the website]
+  B -- No --> D{Store sells to guests?}
+  D -- No --> E[401 login_required]
+  D -- Yes --> F[First time: receive X-Cart-Token]
+  F --> G[Send X-Cart-Token on later calls]
+  G --> H[Sign in with X-Cart-Token: merged into the account cart]
+```
+
+- **Signed-in customers** send their token as for any customer API. The cart is the **account cart** — add in the app,
+  sign in on the website and it is there, and the other way round.
+- **Guests** (only when the store allows guest checkout): the first time a product is added, the response carries an
+  **`X-Cart-Token`** header — keep it and send it with every later cart call. It is given **once**; a wrong token, or a
+  cart unchanged for **30 days**, reads as no cart.
+- **Signing in / registering with `X-Cart-Token`**: the guest cart is **merged** into the account cart (same product +
+  variant adds up), the old cart token stops working; the response has `cart_merge: {merged, dropped}`.
+- **Adding a product** (`POST cart/items`): `product_id`, `qty`, and `options` = `{"<attribute group id>": "<option name>"}`
+  when the product has attributes — **every group** must be chosen; surcharges always come from the product, a price
+  sent by the app is ignored.
+- **Cart answer**: lines **grouped by store** (`stores[].lines[]`) with `unit_price`, `line_total`, `subtotal`; a line
+  that can no longer be bought has `purchasable: false` and a `reason` (`not_for_sale`, `missing_options`) and is left
+  out of `subtotal`.
+
+| Error code | HTTP | Meaning |
+| --- | --- | --- |
+| `login_required` | 401 | The store does not sell to guests — sign in first |
+| `validation_failed` | 422 | Missing / wrong `qty`, not every attribute chosen (`errors.options`) |
+| `product_not_for_sale` | 422 | The product cannot be bought (not on sale, not available yet…) |
+| `insufficient_stock` | 422 | More than the stock while the store does not sell beyond stock |
+| `cart_line_limit` | 422 | The cart already holds **100 lines** |
+| `cart_conflict` | 409 | The cart was changed elsewhere meanwhile — read it again and retry |
+| `not_found` | 404 | The line is not in your cart |
+
+Limit: **60 calls per minute** per customer or per cart token (`gp247-config.api.throttle.cart`).
+
 ---
 
 ## Q&A
@@ -758,10 +806,11 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-29 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-30 · ✍️ **Author:** GP247</sub>
