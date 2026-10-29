@@ -22,6 +22,25 @@ bản đang chạy với bảng "Nhìn nhanh" là biết site đã an toàn hay 
 ## Dòng thời gian
 *Đang cập nhật.*
 
+## Phần mềm máy chủ (PHP, web server)
+GP247 chạy trên PHP và web server do bạn hoặc nhà cung cấp hosting cài đặt. Lỗi của chúng được chính nhà phát hành vá, không
+nằm trong bản phát hành GP247 — hãy cập nhật cả chúng.
+
+| Ngày | Phần mềm | Sự cố | Đã vá ở (bản phát hành chính thức của PHP) |
+| --- | --- | --- | --- |
+| 2026-10-21 | PHP | **PHP2Shell** — thực thi mã từ xa, mức nghiêm trọng (CVE-2026-109618, CVE-2026-109619) | 8.3.36 · 8.4.27 · 8.5.12 |
+
+**Cần làm gì**
+1. Xem phiên bản PHP đang chạy: `php -v`, hoặc **Admin → Thông tin server**.
+2. PHP lấy từ bản phát hành chính thức (php.net, Docker image chính thức, đa số bảng điều khiển cho chọn phiên bản PHP):
+   nâng lên bản đã vá của nhánh đang dùng, hoặc mới hơn.
+3. PHP do bản phân phối Linux (Ubuntu, Debian, RHEL…) cài hoặc do nhà cung cấp hosting quản lý: các bên này thường vá trên một
+   số phiên bản cũ, nên **chỉ nhìn số phiên bản không biết được đã an toàn hay chưa**. Hãy cài bản cập nhật mới nhất của hệ điều
+   hành, hoặc hỏi nhà cung cấp đã vá CVE-2026-109618 và CVE-2026-109619 chưa.
+4. Chưa cập nhật được ngay: đặt `session.upload_progress.enabled = Off` trong `php.ini` (GP247 không dùng tính năng này) rồi khởi
+   động lại PHP. Cách này giảm rủi ro, không thay được việc cập nhật.
+5. Chạy S-Cart bằng Docker: làm theo mục **Cập nhật bản vá bảo mật** trong [DOCKER_vi.md](https://github.com/gp247net/s-cart/blob/master/DOCKER_vi.md).
+
 ## Cập nhật thế nào
 1. Sao lưu cơ sở dữ liệu và thư mục site.
 2. Cập nhật code:
@@ -59,4 +78,4 @@ khai trên GitHub để tránh lộ lỗi trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-29 · ✍️ **Tác giả (Author):** GP247</sub>

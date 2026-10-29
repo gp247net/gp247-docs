@@ -22,6 +22,25 @@ the "At a glance" table to know whether your site is safe or needs an update.
 ## Timeline
 *Updating.*
 
+## Server software (PHP, web server)
+GP247 runs on PHP and a web server that you or your hosting provider install. Flaws in them are fixed by their own
+vendors, not by a GP247 release — keep them up to date as well.
+
+| Date | Software | Issue | Fixed in (official PHP releases) |
+| --- | --- | --- | --- |
+| 2026-10-21 | PHP | **PHP2Shell** — remote code execution, critical (CVE-2026-109618, CVE-2026-109619) | 8.3.36 · 8.4.27 · 8.5.12 |
+
+**What to do**
+1. Check the PHP version you run: `php -v`, or **Admin → Server info**.
+2. PHP built from the official releases (php.net, the official Docker images, most control panels that let you pick a version):
+   move to the fixed version of your branch, or later.
+3. PHP installed by your Linux distribution (Ubuntu, Debian, RHEL…) or managed by your hosting provider: these vendors often patch
+   an older version number, so **the number alone does not tell you whether you are safe**. Install the latest operating system
+   updates, or ask your provider whether CVE-2026-109618 and CVE-2026-109619 are patched.
+4. Cannot update yet: set `session.upload_progress.enabled = Off` in `php.ini` (GP247 does not use this feature) and restart PHP.
+   It lowers the risk; it does not replace the update.
+5. Running S-Cart with Docker: follow **Security updates** in [DOCKER.md](https://github.com/gp247net/s-cart/blob/master/DOCKER.md).
+
 ## How to update
 1. Back up the database and the site folder.
 2. Update the code:
@@ -59,4 +78,4 @@ issue, so the problem is not exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-28 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-29 · ✍️ **Author:** GP247</sub>
