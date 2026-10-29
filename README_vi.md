@@ -4,7 +4,7 @@
 
 ## Giới thiệu
 Đây là repo tài liệu chung của GP247. Trang này là **mục lục** liệt kê toàn bộ tài liệu trong repo và
-link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API, mở rộng/plugin, hệ thống, S-Cart).
+link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API, mở rộng/plugin, phát hành, hệ thống, S-Cart).
 
 ## Danh sách tài liệu
 
@@ -26,10 +26,10 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-10-22 |
 | [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-10-22 |
 
-### Bảo mật
+### Phát hành
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Phát hành bảo mật GP247](./security/security_vi.md) | Phiên bản tối thiểu an toàn của core/front/shop + dòng thời gian các bản vá bảo mật (ngày, bản, repo, sự cố); cách cập nhật và báo lỗ hổng | 2026-10-28 |
+| [Phát hành GP247](./release/release_vi.md) | Các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bản vá bảo mật và phiên bản tối thiểu an toàn; cách cập nhật và báo lỗ hổng | 2026-10-30 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |

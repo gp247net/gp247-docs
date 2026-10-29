@@ -4,7 +4,7 @@
 
 ## Introduction
 This is the shared GP247 documentation repo. This page is the **index** listing all documents in the
-repo with links to each one. Documents are grouped by topic (API, extensions/plugins, system, S-Cart).
+repo with links to each one. Documents are grouped by topic (API, extensions/plugins, releases, system, S-Cart).
 
 ## Document list
 
@@ -26,10 +26,10 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-10-22 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-10-22 |
 
-### Security
+### Releases
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 security releases](./security/security.md) | Minimum safe versions of core/front/shop + timeline of security fixes (date, release, repo, issue); how to update and report a vulnerability | 2026-10-28 |
+| [GP247 releases](./release/release.md) | S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security fixes and minimum safe versions; how to update and report a vulnerability | 2026-10-30 |
 
 ### System
 | Document | Summary | Last updated |
