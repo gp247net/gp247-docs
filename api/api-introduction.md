@@ -398,7 +398,10 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 ## 7. Response format & error codes
 
-- **Every response is JSON.**
+- **Every response is JSON**, even when the app does not send the `Accept: application/json` header.
+
+> ℹ️ **Available since:** gp247/core 3.5.2 — before this release, calling a signed-in endpoint without a token **and**
+> without `Accept: application/json` (the default of curl, Postman and many SDKs) got HTTP `500` instead of `401 unauthenticated`.
 - List endpoints return Laravel's standard pagination shape (with `data`, `current_page`, `total`…);
   pick a page with `page[number]` and `page[size]`.
 - Success: the data is returned directly (an object, or a page of data).
@@ -549,6 +552,18 @@ the allowed names.
 | `POST` | `api/v2/front/cart/items` | Yes (customer) or guest | Add a product to the cart |
 | `PATCH` | `api/v2/front/cart/items/{rowId}` | Yes (customer) or `X-Cart-Token` | Change a line quantity (≤ 0 removes the line) |
 | `DELETE` | `api/v2/front/cart/items/{rowId}` | Yes (customer) or `X-Cart-Token` | Remove a line |
+| `POST` | `api/v2/front/cart/promotions/{pluginKey}` | Yes (customer) or `X-Cart-Token` | Apply a coupon / promotion |
+| `DELETE` | `api/v2/front/cart/promotions/{pluginKey}` | Yes (customer) or `X-Cart-Token` | Remove a promotion |
+| `GET` | `api/v2/front/checkout` | Yes (customer) or `X-Cart-Token` | Checkout state (store, address, chosen methods — section 11.1) |
+| `PUT` | `api/v2/front/checkout/address` | Yes (customer) or `X-Cart-Token` | Set the delivery address |
+| `GET` | `api/v2/front/checkout/shipping-methods` | Yes (customer) or `X-Cart-Token` | Delivery options quoted for the address |
+| `PUT` | `api/v2/front/checkout/shipping-method` | Yes (customer) or `X-Cart-Token` | Choose a delivery option |
+| `GET` | `api/v2/front/checkout/payment-methods` | Yes (customer) or `X-Cart-Token` | Payment methods usable through the API |
+| `PUT` | `api/v2/front/checkout/payment-method` | Yes (customer) or `X-Cart-Token` | Choose a payment method |
+| `GET` | `api/v2/front/checkout/totals` | Yes (customer) or `X-Cart-Token` | Totals that will be charged |
+| `POST` | `api/v2/front/checkout/place` | Yes (customer) or `X-Cart-Token` + `Idempotency-Key` | Place the order (section 11.2) |
+| `GET` | `api/v2/front/member/orders/{id}/payment` | Yes (customer) | Payment status of the customer's order (section 11.3) |
+| `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Payment status of a guest order (section 11.3) |
 
 Example: the 20 most expensive products of brand 5, with names in Vietnamese:
 
@@ -614,7 +629,8 @@ exist in v2 only.
 
 - **`POST register`** — send the fields of the registration form (`first_name`, `email`, `password`,
   `password_confirmation`, plus the fields the store turned on, such as `address1`, `phone`…). Success → HTTP `201` with
-  `customer` and the same tokens as `login`. A customer cannot set their own `status`.
+  `customer` and the same tokens as `login`. A customer cannot set their own `status`. **The password is required**: a
+  missing or empty `password` → `422` (`errors.password`), and no account is created.
 - **`POST password/forgot`** — sends the password-reset e-mail. Always answers `{"data": {"sent": true}}`, whether the
   e-mail has an account or not, so nobody can find out which e-mails are registered.
 - **`POST password/reset`** — send `email`, `token` (from the e-mail), `password`, `password_confirmation`. On success
@@ -622,7 +638,12 @@ exist in v2 only.
 - **`GET` / `PUT member/profile`** — the profile with `email_verified`, `email_verification_required` and the default
   address. The password cannot be changed here.
 - **`PUT member/password`** — send `password_old`, `password`, `password_confirmation`. The calling session stays signed in,
-  **every other device** is signed out. A wrong old password counts against the account's login limit.
+  **every other device** is signed out. A wrong old password counts against the account's login limit. A missing or
+  empty new password → `422` (`errors.password`), and the old password stays.
+
+> ℹ️ **Available since:** gp247/shop 3.5.0 — `register` and `member/password` always require a password (before, a body
+> without the `password` key got HTTP `500`, and an empty password was accepted). A JSON body missing a required field now
+> always gets `422`.
 - **`member/address`** — add/edit/delete addresses; send `"default": true` to make one the default. The default address
   cannot be deleted (HTTP `422`) — make another address the default first.
 - **`POST member/email/verify`** — sends the verification e-mail again when the store turned on *Need verify email*. The
@@ -735,6 +756,191 @@ flowchart LR
 
 Limit: **60 calls per minute** per customer or per cart token (`gp247-config.api.throttle.cart`).
 
+### 11.1. Checkout steps
+
+Once there is a cart, the app walks the checkout steps for **one store** of the cart (send `store_id` when the cart holds several
+stores; choosing another store starts the choices again). Every choice is kept between calls for the cart owner (customer or cart
+token) — **with the website's rules**.
+
+```mermaid
+flowchart LR
+  A[PUT checkout/address] --> B[GET checkout/shipping-methods]
+  B --> C[PUT checkout/shipping-method]
+  C --> D[GET checkout/payment-methods]
+  D --> E[PUT checkout/payment-method]
+  E --> F[GET checkout/totals]
+  P[POST cart/promotions/key] -.-> F
+```
+
+- **Address** (`PUT checkout/address`): the same required fields as the website form (the store's customer settings); or send
+  `address_id` to use an address from the customer's own address book (someone else's address → `404`). A signed-in customer sends
+  `"save_address": true` to keep it as a new address when ordering. Changing the address means choosing delivery again.
+- **Delivery** (`GET checkout/shipping-methods`): prices quoted for that address + cart; one row per service (`id` is `<plugin>` or
+  `<plugin>:<service>`); a carrier that cannot quote is listed in `unquotable`. A store without delivery answers `required: false`.
+- **Payment** (`GET checkout/payment-methods`): only methods usable through the API — `type: none` (no payment step: cash on
+  delivery, bank transfer…) or `type: hosted` (a gateway with a hosted payment page). A method with only a website payment step is
+  not listed.
+- **Promotions** (`POST cart/promotions/{pluginKey}` with `{"payload": {...}}` as the plugin expects, e.g. `{"code": "SUMMER"}`):
+  one way for every promotion plugin of the checkout contract; refused → `422 promotion_refused` with the plugin's message.
+- **Totals** (`GET checkout/totals`): rows `subtotal`, `shipping`, `discount`, `tax`, `total`… the same figures the website computes
+  for the same cart — these are the figures "shown to the customer".
+
+| Error code | HTTP | Meaning |
+| --- | --- | --- |
+| `cart_empty` | 422 | Nothing to order in the cart (of the chosen store) |
+| `store_required` | 422 | The cart holds several stores — send `store_id` |
+| `address_required` | 422 | The delivery address is not set yet |
+| `method_unavailable` | 422 | The method does not exist / cannot be used for this checkout |
+| `promotion_refused` | 422 | The promotion plugin refused (wrong code, expired…) |
+| `invalid_quantity` | 422 | A cart line has a quantity that cannot be ordered |
+
+### 11.2. Placing the order
+
+`POST checkout/place` places the order of the store being checked out. Before calling it:
+
+1. The store owner **turns on "Ordering through the API"** on the **API management** screen (under the v2 public & customer API group). It is
+   **off by default** — on fresh installs and on upgrades; while off, `POST checkout/place` answers `403 api_checkout_disabled`, the other
+   cart / checkout steps keep working.
+2. The app has called `GET checkout/totals` and shown those totals to the customer — the order is only created when the totals computed at
+   ordering time **match** what was shown.
+
+Each time the customer taps *Place order*, the app generates **one** `Idempotency-Key` (8–255 characters, e.g. a UUID) and sends it as a
+header. On a flaky network, resend with the **same key**: you get the order already placed back (HTTP `200`), no second order, no second
+stock movement or charge. A new order needs a new key.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  App->>API: GET checkout/totals
+  API-->>App: totals (shown to the customer)
+  App->>API: POST checkout/place + Idempotency-Key
+  alt price unchanged
+    API-->>App: 201 {order, payment}
+  else price changed
+    API-->>App: 409 price_changed + new totals
+  end
+  App->>API: resend with the same Idempotency-Key (network lost)
+  API-->>App: 200 same order
+```
+
+Success: `201 {"data": {"order": {id, store_id, status, payment_status, total, balance, currency}, "access_token"?, "payment": {"type": "none" | "hosted", "url"?}}}`.
+The order is completed right away: the ordered lines leave the cart and the order confirmation email is sent, as for an order placed on
+the website.
+
+| Error code | HTTP | Meaning |
+| --- | --- | --- |
+| `idempotency_key_required` | 400 | Missing / malformed `Idempotency-Key` header |
+| `api_checkout_disabled` | 403 | The store has not turned on ordering through the API |
+| `idempotency_key_reused` | 409 | This key was used for an order of another store (a different `store_id` was sent) |
+| `price_changed` | 409 | The totals changed since they were shown — the error body has the new `totals`; show them again, then order with a new key |
+| `address_required` · `shipping_method_required` · `payment_method_required` | 422 | A checkout step the store requires is missing |
+| `minimum_not_met` | 422 | A product is below its minimum quantity (`minimums`: product id → minimum) |
+| `shipping_unquotable` · `invalid_quantity` · `cart_empty` | 422 | Cannot be delivered, invalid quantity, empty cart |
+| — | 429 | More than **10 orders per minute** per customer or IP (`gp247-config.api.throttle.checkout_place`) |
+
+### 11.3. Online payment and payment status
+
+A method with `type: "hosted"` (for example Stripe, PayPal) collects through the **gateway's payment page**:
+
+1. When placing the order, the app may send a `return_url` — where the payer goes back to the app after paying (a deep link such as
+   `myshop://checkout/done`, or a web page of the app).
+2. The order result has `payment.url`: open it in a browser / webview for the payer to pay.
+3. After paying (or cancelling), the gateway sends the payer back to the site's pay page; when `return_url` is on the **allowed list**, the
+   site forwards them to it right away.
+4. The app reads the status: `GET member/orders/{id}/payment` (signed-in customer) or `GET orders/{id}/payment` with the
+   `X-Order-Access` header (guest — the `access_token` returned when the order was placed).
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  participant GW as Payment gateway
+  App->>API: POST checkout/place + return_url
+  API-->>App: 201 {order, access_token?, payment: {type: hosted, url}}
+  App->>GW: open payment.url (browser / webview)
+  GW->>API: signed webhook — money recorded
+  GW-->>App: back to the site's pay page ⇒ forwarded to return_url (when allowed)
+  App->>API: GET member/orders/{id}/payment (or orders/{id}/payment + X-Order-Access)
+  API-->>App: {payment: {status: paid}}
+```
+
+The **allowed list** is set in the site's `.env`, comma separated:
+
+```bash
+GP247_PAYMENT_RETURN_URLS="myshop://checkout, https://app.example.com/return"
+```
+
+The site matches the **exact** scheme + host (+ port) and a path starting with the listed path (`https://app.example.com/return/ok`
+matches, `https://app.example.com.evil/return` does not). The list is **empty by default**: the payer stays on the site's pages. An address
+that does not match is ignored and the order is placed as usual. On a site that uses `php artisan config:cache`, run it again after
+editing `.env`.
+
+- **Money is recorded only when the gateway confirms it** (signed webhook or the gateway's return page). Parameters on `return_url` never
+  change the order — always read the status through the API.
+- **Payer cancels at the gateway**: the order stays *awaiting payment*. Resend `POST checkout/place` with the **same** `Idempotency-Key`
+  to get a new `payment.url` for that same order. `payment.url` is `null` when the gateway is temporarily failing — resend the same key to
+  retry.
+- **`access_token`** is only in the order result of a guest; the app keeps it to read the status. It opens only the status and amounts of
+  that one order (no address); another person's order or a wrong token ⇒ `404`.
+- For an order placed through the API, the "order success" event and the confirmation email run **when the order is placed** (not when
+  the payer pays). A plugin that must act *after payment* relies on the order's payment status, not on this event.
+
+Status response: `{"data": {"order": {id, store_id, status, payment_status, total, received, balance, currency}, "payment": {"type": "none" | "hosted", "status": "unpaid" | "partially_paid" | "paid" | "refunded"}}}`.
+
+### 11.4. Product data for buying
+
+The v2 product (`product/list`, `product/detail/{id}`) has three more fields for the app to build the variant picker and the buy button — the
+existing fields stay as they are:
+
+| Field | Meaning |
+| --- | --- |
+| `attributes` | Attribute groups: `group_id`, `name`, `required` (always `true` — one value of every group must be chosen to add to the cart), `options` with `value` (sent back in `options[group_id]` of `POST cart/items`) and `add_price` (surcharge, same unit as `price_final`; the cart charges exactly this) |
+| `image_sizes` | Main image in its sizes: `original`, `thumb` (absolute URLs; no image ⇒ the site's placeholder image) |
+| `stock_status` | `in_stock` or `out_of_stock` — never the stock quantity. A store that does not track stock or sells out of stock ⇒ always `in_stock` |
+
+When the store hides prices, `add_price` is `null` (like `price`).
+
+```json
+{
+  "data": {
+    "id": "PRD-AbC12",
+    "price_final": 199000,
+    "stock_status": "in_stock",
+    "image_sizes": { "original": "https://shop.example.com/data/product/tshirt.jpg", "thumb": "https://shop.example.com/data/product/thumb/tshirt.jpg" },
+    "attributes": [
+      { "group_id": "2", "name": "Color", "required": true,
+        "options": [ { "value": "Red", "add_price": 0 }, { "value": "Blue", "add_price": 20000 } ] }
+    ]
+  }
+}
+```
+
+### 11.5. The whole buying flow
+
+The table below lists every call for one order, in order (prefix `api/v2/front/`). A signed-in customer sends `Authorization: Bearer <token>` at
+every step; a guest sends `X-Cart-Token` instead.
+
+| Step | Call | Extra header | See |
+| --- | --- | --- | --- |
+| 1. Choose products | `GET product/list`, `GET product/detail/{id}` | — | 11.4 |
+| 2. Keep a cart | `POST cart/items`, `GET cart`, `PATCH` / `DELETE cart/items/{rowId}` | `X-Cart-Token` received on the first add (guest) | 11 |
+| 3. Address, delivery, payment | `PUT checkout/address` → `GET` + `PUT checkout/shipping-method(s)` → `GET` + `PUT checkout/payment-method(s)` | — | 11.1 |
+| 4. Promotion (optional) | `POST` / `DELETE cart/promotions/{pluginKey}` | — | 11.1 |
+| 5. Show the total to the customer | `GET checkout/totals` | — | 11.1 |
+| 6. Place the order | `POST checkout/place` (+ `return_url` when paying through a gateway) | `Idempotency-Key` (one key per *Place order* tap) | 11.2 |
+| 7. Pay (when `payment.type = hosted`) | open `payment.url` | — | 11.3 |
+| 8. Payment status | `GET member/orders/{id}/payment` or `GET orders/{id}/payment` | `X-Order-Access` (guest) | 11.3 |
+
+Checklist before the app sells for real:
+
+- The store owner has turned on **Ordering through the API** (section 11.2) and — for online payment — listed the return addresses in
+  `GP247_PAYMENT_RETURN_URLS` (section 11.3).
+- The app keeps `X-Cart-Token` and `access_token` in the device's secure storage and never logs them.
+- The app handles `409 price_changed` (show the new total) and resends the **same** `Idempotency-Key` when the network drops while placing.
+- The site's plugins that handle website orders (splitting orders by vendor, commissions, notifications…) receive app orders through the same
+  hooks — see [How to build an API — section 8](./create-api.md).
+
 ---
 
 ## Q&A
@@ -806,11 +1012,12 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute |
+| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 7, 10.1) |
+| 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 and new environment variable names: 3.3.0 | Added API v2 (`api/v2/...`: `{data, meta, links}` responses, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) and correctly spelled environment variable names (3.3.0); Core API follows admin-screen permissions and store scope; login attempt limits; tokens always expire, added `POST logout`; locked customers cannot log in; public API only returns data the store is currently showing, internal fields removed; API Connection keys stored hashed; every error has a meaningful HTTP code and the `{error, msg, code}` shape; added `openapi.json` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>

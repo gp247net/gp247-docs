@@ -53,16 +53,19 @@ and wraps them all in the `GP247_API_MIDDLEWARE` group:
 - `vendor/gp247/shop/src/Routes/Api/*.php`
 - `vendor/gp247/front/src/Routes/Api/*.php`
 
-`GP247_API_MIDDLEWARE = ['api', 'api.extend']`, where `api.extend` is the GP247 middleware group defined
+`GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']`, where `api.extend` is the GP247 middleware group defined
 in `config('gp247-config.api.middleware')`:
 
 | Order | Middleware | Role |
 | --- | --- | --- |
-| 1 | `json.response` | Forces every response to be **JSON** (sets header `Accept: application/json`) |
+| 1 | `json.response` | Forces every response to be **JSON** (sets header `Accept: application/json`). Also part of `GP247_API_MIDDLEWARE` and runs **before every other middleware** (`auth:*` included), so it stays even when a published config lacks this line |
 | 2 | `api.connection` | Optional application-level gate (`apiconnection`/`apikey`) — toggled by config |
 | 3 | `throttle:gp247-api` | Rate limit, by default **1000 requests/minute** per IP (`GP247_API_THROTTLE`) |
 
 > ⚠️ **This order is fixed — do not change it.** It is a convention stated explicitly in the config.
+>
+> ℹ️ **Available since:** gp247/core 3.5.2 — `json.response` runs before `auth:*`: a missing token without
+> `Accept: application/json` still gets a JSON `401` (before: `500`).
 >
 > 👉 **Important consequence for plugins:** routes placed in the `Routes/Api/` folder of core/shop/front
 > get these three layers **automatically**. But routes you add from a **plugin** are loaded elsewhere
@@ -492,6 +495,46 @@ limit (shared with the login counter; a ticket is destroyed after 5 wrong answer
 class registration, **denies** the sign-in (the step is never skipped). For administrators register under
 `gp247-config.api.login_challenge.admin`. How an app calls it: [API introduction — section 10.4](./api-introduction.md).
 
+## 8. Order-handling plugins: app orders go through the same hooks
+
+> ℹ️ **Available since:** gp247/shop 3.5.0
+
+An order placed through the API (`POST api/v2/front/checkout/place`) runs **the website's own checkout code**. A plugin that already handles
+website orders — splitting orders by vendor, booking commissions, using up promotion quotas, sending notifications… — receives app orders
+**without writing anything for the API**:
+
+| Hook | When it runs | Notes |
+| --- | --- | --- |
+| `ShopOrder::created` model event | When the order is written | The order lines are written after it, in the same transaction — read them in `DB::afterCommit()` |
+| `gp247_listen_order_created($order)` | Right after the order is created | Helper function; a site can define its own |
+| `endApp()` in the `AppConfig` of the payment / shipping / total plugin | When the order is completed | The order id is read from `session('orderID')`, as on the website |
+| `gp247_listen_order_success($order)` | When the order is completed | API orders: runs **as soon as the order is placed**, even when it is paid through a gateway (no money yet) |
+| `gp247_order_process_after_success($orderId)` | After the success event | Sends the order confirmation e-mail |
+
+To replace a helper function in the table, add its name to `config/gp247_functions_except.php` and define the function yourself (same
+signature).
+
+```php
+// In the plugin's service provider (boot)
+\GP247\Shop\Models\ShopOrder::created(function ($order) {
+    \Illuminate\Support\Facades\DB::afterCommit(function () use ($order) {
+        // The order lines exist here, whether the order came from the website or the app.
+        MyCommission::book($order->fresh('details'));
+    });
+});
+```
+
+Three things to keep in mind when a plugin runs inside an API request:
+
+- **Order source**: the order's `channel` column is `api` for app orders and `web` for website orders (orders created in the admin and older
+  orders leave it empty). Use it only when you really need to tell them apart — most plugins do not.
+- **No browser session**: inside an API request, `session()` is a session of that request only (no cookie). Reading / writing the checkout
+  keys works as on the website, but do not redirect, flash messages or read cookies — the app never sees them.
+- **"Order success" does not mean "paid"**: for API orders the event runs as soon as the order is placed. Work that must wait for the money
+  (digital delivery, unlocking a service…) should rely on the order's payment status.
+
+How the app calls it: [API Introduction — section 11](./api-introduction.md).
+
 ---
 
 ## Q&A
@@ -562,9 +605,10 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
 | 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-28 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>

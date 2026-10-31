@@ -51,16 +51,19 @@ trong nhóm middleware `GP247_API_MIDDLEWARE`:
 - `vendor/gp247/shop/src/Routes/Api/*.php`
 - `vendor/gp247/front/src/Routes/Api/*.php`
 
-`GP247_API_MIDDLEWARE = ['api', 'api.extend']`, trong đó `api.extend` là nhóm middleware GP247 định
+`GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']`, trong đó `api.extend` là nhóm middleware GP247 định
 nghĩa ở `config('gp247-config.api.middleware')`:
 
 | Thứ tự | Middleware | Vai trò |
 | --- | --- | --- |
-| 1 | `json.response` | Ép mọi phản hồi trả về **JSON** (đặt header `Accept: application/json`) |
+| 1 | `json.response` | Ép mọi phản hồi trả về **JSON** (đặt header `Accept: application/json`). Cũng có trong `GP247_API_MIDDLEWARE` và chạy **trước mọi middleware khác** (kể cả `auth:*`), nên không mất dù config đã publish thiếu dòng này |
 | 2 | `api.connection` | Lớp khóa ứng dụng tùy chọn (`apiconnection`/`apikey`) — bật/tắt qua cấu hình |
 | 3 | `throttle:gp247-api` | Giới hạn tần suất, mặc định **1000 lần/phút** mỗi IP (`GP247_API_THROTTLE`) |
 
 > ⚠️ **Thứ tự này cố định — không đổi.** Đây là quy ước đã ghi rõ trong config.
+>
+> ℹ️ **Có từ:** gp247/core 3.5.2 — `json.response` chạy trước `auth:*`: thiếu token mà không gửi `Accept: application/json`
+> vẫn nhận `401` JSON (trước đây `500`).
 >
 > 👉 **Hệ quả quan trọng cho plugin:** route đặt trong `Routes/Api/` của core/shop/front sẽ **tự
 > động** có 3 lớp trên. Nhưng route bạn thêm từ **plugin** lại nạp ở chỗ khác (mục 4) nên **không tự
@@ -481,6 +484,44 @@ thử (dùng chung bộ đếm đăng nhập; mỗi vé bị huỷ sau 5 lần s
 bị **từ chối** (không bao giờ bỏ qua bước xác thực). Đăng ký cho quản trị viên: khoá `gp247-config.api.login_challenge.admin`.
 Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 10.4](./api-introduction_vi.md).
 
+## 8. Plugin xử lý đơn hàng: đơn từ ứng dụng đi qua cùng điểm cắm
+
+> ℹ️ **Có từ:** gp247/shop 3.5.0
+
+Đơn đặt qua API (`POST api/v2/front/checkout/place`) chạy **đúng mã checkout của website**. Plugin đang xử lý đơn web — tách đơn theo
+nhà bán, tính hoa hồng, trừ suất khuyến mãi, gửi thông báo… — nhận đơn từ ứng dụng **mà không cần viết thêm gì cho API**:
+
+| Điểm cắm | Khi nào chạy | Ghi chú |
+| --- | --- | --- |
+| Sự kiện model `ShopOrder::created` | Khi ghi đơn | Dòng sản phẩm được ghi sau, trong cùng giao dịch — đọc chúng trong `DB::afterCommit()` |
+| `gp247_listen_order_created($order)` | Ngay sau khi tạo đơn | Hàm helper, site tự định nghĩa lại được |
+| `endApp()` trong `AppConfig` của plugin thanh toán / vận chuyển / tổng tiền | Khi hoàn tất đơn | Mã đơn đọc từ `session('orderID')` như trên website |
+| `gp247_listen_order_success($order)` | Khi hoàn tất đơn | Đơn qua API: chạy **ngay khi đặt**, kể cả đơn trả qua cổng (chưa có tiền) |
+| `gp247_order_process_after_success($orderId)` | Sau sự kiện thành công | Gửi email xác nhận đơn |
+
+Muốn thay một hàm helper ở bảng trên, thêm tên hàm vào `config/gp247_functions_except.php` rồi tự định nghĩa hàm đó (cùng chữ ký).
+
+```php
+// In the plugin's service provider (boot)
+\GP247\Shop\Models\ShopOrder::created(function ($order) {
+    \Illuminate\Support\Facades\DB::afterCommit(function () use ($order) {
+        // The order lines exist here, whether the order came from the website or the app.
+        MyCommission::book($order->fresh('details'));
+    });
+});
+```
+
+Ba điều cần nhớ khi plugin chạy trong request API:
+
+- **Nguồn đơn**: cột `channel` của đơn là `api` cho đơn từ ứng dụng, `web` cho đơn từ website (đơn tạo trong trang quản trị và đơn cũ
+  để trống). Chỉ dùng khi thật sự cần phân biệt — đa số plugin không cần.
+- **Không có phiên trình duyệt**: trong request API, `session()` là phiên riêng của request đó (không cookie). Đọc / ghi khoá checkout
+  như trên website vẫn đúng, nhưng đừng redirect, flash message hay đọc cookie — ứng dụng không thấy chúng.
+- **"Đơn thành công" không có nghĩa "đã trả tiền"**: với đơn qua API, sự kiện chạy ngay khi đặt. Việc chỉ làm *sau khi đã trả tiền*
+  (giao hàng số, mở khoá dịch vụ…) hãy dựa vào trạng thái thanh toán của đơn.
+
+Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 11](./api-introduction_vi.md).
+
 ---
 
 ## Hỏi & Đáp (Q&A)
@@ -549,9 +590,10 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
 | 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-28 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-31 · ✍️ **Tác giả (Author):** GP247</sub>

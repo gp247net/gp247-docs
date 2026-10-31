@@ -3743,7 +3743,7 @@
                     }
                 },
                 "summary": "One product",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock).",
                 "parameters": [
                     {
                         "name": "id",
@@ -3825,7 +3825,7 @@
                     }
                 },
                 "summary": "List of products",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock).",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -5221,7 +5221,7 @@
                     }
                 },
                 "summary": "One product",
-                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock).",
                 "security": [
                     {
                         "apiConnection": [],
@@ -5290,7 +5290,7 @@
                     }
                 },
                 "summary": "List of products",
-                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock).",
                 "security": [
                     {
                         "apiConnection": [],
@@ -6615,6 +6615,928 @@
                     },
                     "409": {
                         "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Checkout state (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "cart_empty, store_required, invalid_quantity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/address": {
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Set the delivery address (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed, cart_empty, store_required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "address_id is not one of yours",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "first_name_kana": {
+                                        "type": "string"
+                                    },
+                                    "last_name_kana": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "district": {
+                                        "type": "string"
+                                    },
+                                    "ward": {
+                                        "type": "string"
+                                    },
+                                    "address1": {
+                                        "type": "string"
+                                    },
+                                    "address2": {
+                                        "type": "string"
+                                    },
+                                    "address3": {
+                                        "type": "string"
+                                    },
+                                    "postcode": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "company": {
+                                        "type": "string"
+                                    },
+                                    "comment": {
+                                        "type": "string"
+                                    },
+                                    "address_id": {
+                                        "type": "string",
+                                        "description": "One of the customer's saved addresses"
+                                    },
+                                    "save_address": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/shipping-methods": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Delivery options quoted for the checkout address (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {required, rates: [{id, plugin_key, service_code, title, amount, currency, eta_min_days, eta_max_days}], unquotable, selected}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "address_required, cart_empty",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/shipping-method": {
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Choose a quoted delivery option (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "method_unavailable, validation_failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "rate_id"
+                                ],
+                                "properties": {
+                                    "rate_id": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/payment-methods": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Payment methods usable through the API (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {required, methods: [{key, title, note, type: none|hosted}], selected}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "cart_empty, store_required, invalid_quantity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/payment-method": {
+            "put": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Choose a payment method (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "method_unavailable, validation_failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "key"
+                                ],
+                                "properties": {
+                                    "key": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/totals": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Totals that will be charged (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {store_id, lines: [{code, title, value, text}], currency}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "cart_empty, store_required, invalid_quantity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/cart/promotions/{pluginKey}": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Apply a promotion through the shared promotion contract (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "pluginKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {result: {msg}, totals}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "promotion_refused, cart_empty",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not an active promotion plugin",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "payload": {
+                                        "type": "object",
+                                        "description": "As the plugin expects, e.g. {\"code\": \"SUMMER\"}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Remove a promotion (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "pluginKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Store to check out when the cart holds several"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {totals}}"
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "cart_empty, store_required, invalid_quantity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not an active promotion plugin",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/checkout/place": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Place the order of the store being checked out, once per Idempotency-Key (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "cartToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "store_id": {
+                                        "type": "string"
+                                    },
+                                    "return_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Where the payer goes back to after the gateway; used only when on the site's allowed list (GP247_PAYMENT_RETURN_URLS)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, balance, currency}, access_token (guest only), payment: {type: none|hosted, url (hosted; null when the gateway failed — resend the same key)}}}"
+                    },
+                    "200": {
+                        "description": "Resend of the same key: the order already placed, with a new payment url while it is unpaid. Same body as 201."
+                    },
+                    "400": {
+                        "description": "idempotency_key_required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "login_required / invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "api_checkout_disabled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "idempotency_key_reused, price_changed (body adds totals), cart_conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "address_required, shipping_method_required, payment_method_required, method_unavailable, minimum_not_met (body adds minimums), shipping_unquotable, invalid_quantity, cart_empty, create_failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "More than 10 orders per minute",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/member/orders/{id}/payment": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Payment status of the signed-in customer's order (since shop 3.5.0)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}"
+                    },
+                    "401": {
+                        "description": "invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found — not an order of this customer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/orders/{id}/payment": {
+            "get": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Payment status of a guest order, opened by its order access token (since shop 3.5.0)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Order-Access",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "access_token returned when the guest placed the order"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}"
+                    },
+                    "404": {
+                        "description": "not_found — unknown order or wrong token",
                         "content": {
                             "application/json": {
                                 "schema": {

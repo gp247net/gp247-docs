@@ -50,16 +50,19 @@ GP247_API_MODE=true
 - `vendor/gp247/shop/src/Routes/Api/*.php`
 - `vendor/gp247/front/src/Routes/Api/*.php`
 
-`GP247_API_MIDDLEWARE = ['api', 'api.extend']` です。`api.extend` は GP247 のミドルウェアグループで、
+`GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']` です。`api.extend` は GP247 のミドルウェアグループで、
 `config('gp247-config.api.middleware')` で定義されています。
 
 | 順序 | ミドルウェア | 役割 |
 | --- | --- | --- |
-| 1 | `json.response` | すべてのレスポンスを **JSON** にする（ヘッダー `Accept: application/json` を設定） |
+| 1 | `json.response` | すべてのレスポンスを **JSON** にする（ヘッダー `Accept: application/json` を設定）。`GP247_API_MIDDLEWARE` にも含まれ、**ほかのすべてのミドルウェアより先に**（`auth:*` を含む）動くため、公開済みの config にこの行がなくても失われません |
 | 2 | `api.connection` | 任意のアプリケーション用の鍵（`apiconnection`／`apikey`）— 設定でオン／オフ |
 | 3 | `throttle:gp247-api` | 呼び出し頻度の制限。既定は IP ごとに **1 分あたり 1000 回**（`GP247_API_THROTTLE`） |
 
 > ⚠️ **注意:** **この順序は固定です。変更しないでください。** config に明記された規約です。
+>
+> ℹ️ **対応バージョン:** gp247/core 3.5.2 — `json.response` は `auth:*` より先に動きます。トークンがなく
+> `Accept: application/json` も送らない場合でも JSON の `401` を返します（以前は `500`）。
 >
 > 👉 **プラグインにとって重要な結果：** core／shop／front の `Routes/Api/` に置いたルートには、上の 3 つのレイヤーが
 > **自動で**付きます。しかし**プラグイン**から追加したルートは別の場所（セクション 4）で読み込まれるため、
@@ -480,6 +483,45 @@ config(['gp247-config.api.login_challenge.customer' => array_merge(
 クラスの登録が誤っていたりすると、サインインは**拒否**されます（確認ステップが飛ばされることはありません）。管理者向けには
 `gp247-config.api.login_challenge.admin` に登録します。アプリ側の呼び方：[API の紹介 — セクション 10.4](./api-introduction_ja.md)。
 
+## 8. 注文を処理するプラグイン: アプリからの注文も同じフックを通る
+
+> ℹ️ **対応バージョン:** gp247/shop 3.5.0
+
+API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサイトと同じチェックアウトのコード**で処理されます。ウェブの注文をすでに
+処理しているプラグイン（出品者ごとの注文分割、手数料の計上、プロモーション枠の消費、通知の送信など）は、**API 用に何も書かずに**
+アプリからの注文も受け取ります:
+
+| フック | 実行されるタイミング | 備考 |
+| --- | --- | --- |
+| モデルイベント `ShopOrder::created` | 注文を書き込むとき | 注文明細は同じトランザクション内で後から書き込まれる — `DB::afterCommit()` の中で読む |
+| `gp247_listen_order_created($order)` | 注文作成の直後 | ヘルパー関数。サイト側で独自に定義し直せる |
+| 決済 / 配送 / 合計プラグインの `AppConfig` の `endApp()` | 注文を完了するとき | 注文 ID はウェブと同じく `session('orderID')` から読む |
+| `gp247_listen_order_success($order)` | 注文を完了するとき | API の注文では **注文した時点で** 実行される（ゲートウェイで支払う注文でも、まだ入金前） |
+| `gp247_order_process_after_success($orderId)` | 成功イベントの後 | 注文確認メールを送る |
+
+表のヘルパー関数を置き換えるには、関数名を `config/gp247_functions_except.php` に追加し、同じシグネチャで自分で定義します。
+
+```php
+// In the plugin's service provider (boot)
+\GP247\Shop\Models\ShopOrder::created(function ($order) {
+    \Illuminate\Support\Facades\DB::afterCommit(function () use ($order) {
+        // The order lines exist here, whether the order came from the website or the app.
+        MyCommission::book($order->fresh('details'));
+    });
+});
+```
+
+プラグインが API リクエストの中で動くときに覚えておくこと:
+
+- **注文の出どころ**: 注文の `channel` 列は、アプリからの注文なら `api`、ウェブサイトからの注文なら `web` です（管理画面で作成した注文と
+  古い注文は空）。本当に区別が必要なときだけ使ってください — ほとんどのプラグインには不要です。
+- **ブラウザーのセッションはない**: API リクエストの中の `session()` は、そのリクエストだけのセッションです（Cookie なし）。ウェブと同じく
+  チェックアウトのキーは読み書きできますが、リダイレクト、フラッシュメッセージ、Cookie の読み取りはしないでください — アプリには届きません。
+- **「注文成功」は「支払い済み」ではない**: API の注文では、このイベントは注文した時点で実行されます。入金を待つべき処理（デジタル商品の
+  配信、サービスの有効化など）は、注文の支払い状況にもとづいて行ってください。
+
+アプリ側の呼び出し方: [API の紹介 — 11 章](./api-introduction_ja.md)。
+
 ---
 
 ## よくある質問（Q&A）
@@ -546,9 +588,10 @@ config(['gp247-config.api.login_challenge.customer' => array_merge(
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
 | 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
 | 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-28 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-10-31 · ✍️ **作成者 (Author):** GP247</sub>

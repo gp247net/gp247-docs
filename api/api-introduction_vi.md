@@ -386,7 +386,10 @@ curl -X GET "https://shop.example.com/api/front/member/order/list" \
 
 ## 7. Định dạng phản hồi & mã lỗi
 
-- **Mọi phản hồi đều là JSON.**
+- **Mọi phản hồi đều là JSON**, kể cả khi ứng dụng không gửi header `Accept: application/json`.
+
+> ℹ️ **Có từ:** gp247/core 3.5.2 — trước bản này, gọi endpoint cần đăng nhập mà thiếu token **và** không gửi
+> `Accept: application/json` (mặc định của curl, Postman, nhiều SDK) nhận HTTP `500` thay cho `401 unauthenticated`.
 - Endpoint danh sách trả về theo chuẩn phân trang của Laravel (có `data`, `current_page`, `total`…);
   chọn trang bằng `page[number]` và `page[size]`.
 - Thành công: trả thẳng dữ liệu (một object, hoặc trang dữ liệu).
@@ -535,6 +538,18 @@ tên được phép.
 | `POST` | `api/v2/front/cart/items` | Có (khách) hoặc khách vãng lai | Thêm sản phẩm vào giỏ |
 | `PATCH` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Đổi số lượng một dòng (≤ 0 = xoá dòng) |
 | `DELETE` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Xoá một dòng |
+| `POST` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Áp mã giảm giá / khuyến mãi |
+| `DELETE` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Gỡ khuyến mãi |
+| `GET` | `api/v2/front/checkout` | Có (khách) hoặc `X-Cart-Token` | Trạng thái checkout (cửa hàng, địa chỉ, phương thức đã chọn — mục 11.1) |
+| `PUT` | `api/v2/front/checkout/address` | Có (khách) hoặc `X-Cart-Token` | Đặt địa chỉ giao hàng |
+| `GET` | `api/v2/front/checkout/shipping-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức giao hàng có báo giá cho địa chỉ |
+| `PUT` | `api/v2/front/checkout/shipping-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức giao hàng |
+| `GET` | `api/v2/front/checkout/payment-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức thanh toán dùng được qua API |
+| `PUT` | `api/v2/front/checkout/payment-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức thanh toán |
+| `GET` | `api/v2/front/checkout/totals` | Có (khách) hoặc `X-Cart-Token` | Tổng tiền sẽ thu |
+| `POST` | `api/v2/front/checkout/place` | Có (khách) hoặc `X-Cart-Token` + `Idempotency-Key` | Đặt đơn (mục 11.2) |
+| `GET` | `api/v2/front/member/orders/{id}/payment` | Có (khách) | Trạng thái thanh toán đơn của khách (mục 11.3) |
+| `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Trạng thái thanh toán đơn của khách vãng lai (mục 11.3) |
 
 Ví dụ: 20 sản phẩm đắt nhất của thương hiệu số 5, tên bằng tiếng Việt:
 
@@ -598,7 +613,8 @@ trường bắt buộc, trường tuỳ chỉnh, độ mạnh mật khẩu và c
 
 - **`POST register`** — gửi các trường như form đăng ký (`first_name`, `email`, `password`, `password_confirmation`,
   cùng các trường cửa hàng bật như `address1`, `phone`…). Thành công → HTTP `201`, thân gồm `customer` và token như
-  `login`. Không đặt được `status` của chính mình.
+  `login`. Không đặt được `status` của chính mình. **Mật khẩu bắt buộc**: thiếu hoặc để trống `password` → `422`
+  (`errors.password`), không tạo tài khoản.
 - **`POST password/forgot`** — gửi email đặt lại mật khẩu. Luôn trả `{"data": {"sent": true}}`, dù email có tài khoản
   hay không, để không ai dò được email nào đã đăng ký.
 - **`POST password/reset`** — gửi `email`, `token` (trong email), `password`, `password_confirmation`. Thành công thì
@@ -606,7 +622,11 @@ trường bắt buộc, trường tuỳ chỉnh, độ mạnh mật khẩu và c
 - **`GET` / `PUT member/profile`** — hồ sơ kèm `email_verified`, `email_verification_required` và địa chỉ mặc định.
   Mật khẩu không đổi được ở đây.
 - **`PUT member/password`** — gửi `password_old`, `password`, `password_confirmation`. Phiên đang gọi được giữ, **mọi
-  thiết bị khác** bị đăng xuất. Mật khẩu cũ sai được tính vào giới hạn đăng nhập của tài khoản.
+  thiết bị khác** bị đăng xuất. Mật khẩu cũ sai được tính vào giới hạn đăng nhập của tài khoản. Thiếu hoặc để trống
+  mật khẩu mới → `422` (`errors.password`), mật khẩu cũ giữ nguyên.
+
+> ℹ️ **Có từ:** gp247/shop 3.5.0 — `register` và `member/password` luôn đòi mật khẩu (trước đây thân thiếu khoá `password`
+> trả HTTP `500`, còn mật khẩu rỗng được chấp nhận). Thân JSON thiếu hẳn một trường bắt buộc nay luôn trả `422`.
 - **`member/address`** — thêm/sửa/xoá địa chỉ; gửi `"default": true` để đặt làm mặc định. Không xoá được địa chỉ
   mặc định (HTTP `422`) — hãy đặt địa chỉ khác làm mặc định trước.
 - **`POST member/email/verify`** — gửi lại email xác minh khi cửa hàng bật *Cần xác thực email*. Khách bấm link trong
@@ -714,6 +734,183 @@ flowchart LR
 
 Giới hạn: **60 lần/phút** cho mỗi khách hoặc mỗi mã giỏ (`gp247-config.api.throttle.cart`).
 
+### 11.1. Các bước checkout
+
+Sau khi có giỏ, ứng dụng đi các bước checkout cho **một cửa hàng** của giỏ (giỏ có hàng của nhiều cửa hàng thì gửi `store_id`;
+đổi cửa hàng thì các lựa chọn bắt đầu lại). Mọi lựa chọn được giữ giữa các lần gọi cho chủ giỏ (khách hoặc mã giỏ) — **cùng luật
+với website**.
+
+```mermaid
+flowchart LR
+  A[PUT checkout/address] --> B[GET checkout/shipping-methods]
+  B --> C[PUT checkout/shipping-method]
+  C --> D[GET checkout/payment-methods]
+  D --> E[PUT checkout/payment-method]
+  E --> F[GET checkout/totals]
+  P[POST cart/promotions/key] -.-> F
+```
+
+- **Địa chỉ** (`PUT checkout/address`): cùng trường bắt buộc như form website (theo cài đặt khách hàng của cửa hàng); hoặc gửi
+  `address_id` để dùng một địa chỉ trong sổ địa chỉ của chính khách (địa chỉ của người khác → `404`). Khách đã đăng nhập gửi
+  `"save_address": true` để lưu thành địa chỉ mới khi đặt đơn. Đổi địa chỉ thì phải chọn lại phương thức giao hàng.
+- **Giao hàng** (`GET checkout/shipping-methods`): giá báo cho đúng địa chỉ + giỏ; mỗi dịch vụ một dòng (`id` dạng `<plugin>` hoặc
+  `<plugin>:<dịch vụ>`); hãng không báo giá được nằm trong `unquotable`. Cửa hàng không dùng giao hàng → `required: false`.
+- **Thanh toán** (`GET checkout/payment-methods`): chỉ phương thức dùng được qua API — `type: none` (không qua cổng: thu tiền khi
+  giao, chuyển khoản…) hoặc `type: hosted` (cổng có trang thanh toán). Phương thức chỉ có bước thanh toán trên website không hiện.
+- **Khuyến mãi** (`POST cart/promotions/{pluginKey}` với `{"payload": {...}}` theo plugin, ví dụ `{"code": "SUMMER"}`): dùng chung
+  cho mọi plugin khuyến mãi theo hợp đồng checkout; bị từ chối → `422 promotion_refused` kèm thông điệp của plugin.
+- **Tổng tiền** (`GET checkout/totals`): các dòng `subtotal`, `shipping`, `discount`, `tax`, `total`… đúng số website tính cho cùng
+  giỏ — đây là số "đã hiển thị cho khách".
+
+| Mã lỗi | HTTP | Ý nghĩa |
+| --- | --- | --- |
+| `cart_empty` | 422 | Giỏ (của cửa hàng đã chọn) không có gì để đặt |
+| `store_required` | 422 | Giỏ có nhiều cửa hàng — gửi `store_id` |
+| `address_required` | 422 | Chưa đặt địa chỉ giao hàng |
+| `method_unavailable` | 422 | Phương thức không có / không dùng được cho checkout này |
+| `promotion_refused` | 422 | Plugin khuyến mãi từ chối (mã sai, hết hạn…) |
+| `invalid_quantity` | 422 | Có dòng giỏ với số lượng không đặt được |
+
+### 11.2. Đặt đơn
+
+`POST checkout/place` đặt đơn cho cửa hàng đang checkout. Trước khi gọi:
+
+1. Chủ cửa hàng **bật "Đặt đơn qua API"** trên màn **Quản lý API** (dưới nhóm API công khai & khách hàng v2). Công tắc này **mặc định tắt** — cả khi
+   cài mới lẫn khi nâng cấp; tắt thì `POST checkout/place` trả `403 api_checkout_disabled`, các bước giỏ / checkout khác vẫn dùng được.
+2. Ứng dụng đã gọi `GET checkout/totals` và hiện tổng đó cho khách — đơn chỉ được tạo khi tổng tính lại lúc đặt **khớp** số đã hiện.
+
+Mỗi lần khách bấm *Đặt hàng*, ứng dụng sinh **một** `Idempotency-Key` (8–255 ký tự, ví dụ UUID) và gửi trong header. Mạng chập chờn thì
+gửi lại **cùng khoá**: nhận lại đúng đơn đã tạo (HTTP `200`), không tạo đơn thứ hai, không trừ kho hay thu tiền lần nữa. Lần đặt mới cần
+khoá mới.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  App->>API: GET checkout/totals
+  API-->>App: tổng (hiện cho khách)
+  App->>API: POST checkout/place + Idempotency-Key
+  alt giá không đổi
+    API-->>App: 201 {order, payment}
+  else giá đã đổi
+    API-->>App: 409 price_changed + totals mới
+  end
+  App->>API: gửi lại cùng Idempotency-Key (mất mạng)
+  API-->>App: 200 cùng đơn
+```
+
+Thành công: `201 {"data": {"order": {id, store_id, status, payment_status, total, balance, currency}, "access_token"?, "payment": {"type": "none" | "hosted", "url"?}}}`.
+Đơn được hoàn tất ngay: dòng đã đặt rời giỏ, email xác nhận đơn được gửi như đơn đặt trên website.
+
+| Mã lỗi | HTTP | Ý nghĩa |
+| --- | --- | --- |
+| `idempotency_key_required` | 400 | Thiếu / sai header `Idempotency-Key` |
+| `api_checkout_disabled` | 403 | Cửa hàng chưa bật đặt đơn qua API |
+| `idempotency_key_reused` | 409 | Khoá này đã dùng cho đơn của cửa hàng khác (`store_id` gửi lên khác) |
+| `price_changed` | 409 | Tổng đã đổi so với số đã hiện — thân lỗi có `totals` mới; hiện lại cho khách rồi đặt với khoá mới |
+| `address_required` · `shipping_method_required` · `payment_method_required` | 422 | Thiếu bước checkout cửa hàng yêu cầu |
+| `minimum_not_met` | 422 | Có sản phẩm chưa đủ số lượng tối thiểu (`minimums`: mã sản phẩm → số tối thiểu) |
+| `shipping_unquotable` · `invalid_quantity` · `cart_empty` | 422 | Không giao được, số lượng không hợp lệ, giỏ trống |
+| — | 429 | Quá **10 lần đặt / phút** cho mỗi khách hoặc IP (`gp247-config.api.throttle.checkout_place`) |
+
+### 11.3. Thanh toán online và trạng thái thanh toán
+
+Phương thức có `type: "hosted"` (ví dụ Stripe, PayPal) thu tiền qua **trang thanh toán của cổng**:
+
+1. Khi đặt đơn, ứng dụng có thể gửi kèm `return_url` — địa chỉ đưa khách về ứng dụng sau khi thanh toán (deep link như
+   `myshop://checkout/done` hoặc trang web của ứng dụng).
+2. Kết quả đặt đơn có `payment.url`: mở trang này trong trình duyệt / webview để khách thanh toán.
+3. Trả tiền xong (hoặc huỷ), cổng đưa khách về trang thanh toán của site; nếu `return_url` nằm trong **danh sách cho phép**, site chuyển
+   tiếp ngay về địa chỉ đó.
+4. Ứng dụng hỏi trạng thái: `GET member/orders/{id}/payment` (khách đã đăng nhập) hoặc `GET orders/{id}/payment` kèm header
+   `X-Order-Access` (khách vãng lai — dùng `access_token` nhận được lúc đặt đơn).
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  participant Cổng as Cổng thanh toán
+  App->>API: POST checkout/place + return_url
+  API-->>App: 201 {order, access_token?, payment: {type: hosted, url}}
+  App->>Cổng: mở payment.url (trình duyệt / webview)
+  Cổng->>API: webhook có chữ ký — ghi nhận tiền
+  Cổng-->>App: về trang thanh toán của site ⇒ chuyển tiếp tới return_url (nếu được phép)
+  App->>API: GET member/orders/{id}/payment (hoặc orders/{id}/payment + X-Order-Access)
+  API-->>App: {payment: {status: paid}}
+```
+
+**Danh sách cho phép** khai trong `.env` của site, cách nhau bằng dấu phẩy:
+
+```bash
+GP247_PAYMENT_RETURN_URLS="myshop://checkout, https://app.example.com/return"
+```
+
+Site so khớp **đúng** scheme + host (+ cổng) và đường dẫn bắt đầu bằng đường dẫn đã khai (`https://app.example.com/return/ok` khớp,
+`https://app.example.com.evil/return` không khớp). Danh sách **mặc định rỗng**: khách ở lại trang của site. Địa chỉ không khớp bị bỏ qua,
+đơn vẫn đặt bình thường. Site dùng `php artisan config:cache` thì chạy lại lệnh đó sau khi sửa `.env`.
+
+- **Tiền chỉ ghi khi cổng xác nhận** (webhook có chữ ký hoặc trang quay về của cổng). Tham số trên `return_url` không bao giờ đổi trạng
+  thái đơn — luôn hỏi lại trạng thái qua API.
+- **Khách huỷ ở cổng**: đơn giữ *chờ thanh toán*. Gửi lại `POST checkout/place` với **cùng** `Idempotency-Key` để nhận `payment.url` mới
+  cho chính đơn đó. `payment.url` là `null` khi cổng tạm lỗi — gửi lại cùng khoá để thử lại.
+- **`access_token`** chỉ có trong kết quả đặt đơn của khách vãng lai; ứng dụng lưu lại để hỏi trạng thái. Mã này chỉ mở trạng thái và số
+  tiền của đúng đơn đó (không có địa chỉ); đơn của người khác hoặc mã sai ⇒ `404`.
+- Với đơn qua API, sự kiện "đơn thành công" và email xác nhận chạy **ngay khi đặt** (không đợi khách trả tiền). Plugin cần làm việc *sau
+  khi đã trả tiền* thì dựa vào trạng thái thanh toán của đơn, không dựa vào sự kiện này.
+
+Phản hồi trạng thái: `{"data": {"order": {id, store_id, status, payment_status, total, received, balance, currency}, "payment": {"type": "none" | "hosted", "status": "unpaid" | "partially_paid" | "paid" | "refunded"}}}`.
+
+### 11.4. Dữ liệu sản phẩm để mua
+
+Sản phẩm v2 (`product/list`, `product/detail/{id}`) có thêm ba trường để ứng dụng dựng màn chọn biến thể và nút mua — các trường cũ giữ nguyên:
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `attributes` | Nhóm thuộc tính: `group_id`, `name`, `required` (luôn `true` — mỗi nhóm phải chọn một giá trị khi thêm vào giỏ), `options` gồm `value` (gửi lại trong `options[group_id]` của `POST cart/items`) và `add_price` (phụ phí, cùng đơn vị với `price_final`; giỏ tính đúng số này) |
+| `image_sizes` | Ảnh chính theo kích thước: `original`, `thumb` (URL đầy đủ; không có ảnh ⇒ ảnh mặc định của site) |
+| `stock_status` | `in_stock` hoặc `out_of_stock` — không bao giờ là số tồn kho. Cửa hàng không quản lý tồn kho hoặc cho bán khi hết hàng ⇒ luôn `in_stock` |
+
+Cửa hàng ẩn giá thì `add_price` là `null` (như `price`).
+
+```json
+{
+  "data": {
+    "id": "PRD-AbC12",
+    "price_final": 199000,
+    "stock_status": "in_stock",
+    "image_sizes": { "original": "https://shop.example.com/data/product/tshirt.jpg", "thumb": "https://shop.example.com/data/product/thumb/tshirt.jpg" },
+    "attributes": [
+      { "group_id": "2", "name": "Color", "required": true,
+        "options": [ { "value": "Red", "add_price": 0 }, { "value": "Blue", "add_price": 20000 } ] }
+    ]
+  }
+}
+```
+
+### 11.5. Luồng mua hàng trọn vẹn
+
+Bảng dưới gom mọi lần gọi theo thứ tự cho một đơn (tiền tố `api/v2/front/`). Khách đã đăng nhập gửi `Authorization: Bearer <token>` ở mọi
+bước; khách vãng lai gửi `X-Cart-Token` thay cho token.
+
+| Bước | Gọi | Header riêng | Xem |
+| --- | --- | --- | --- |
+| 1. Chọn sản phẩm | `GET product/list`, `GET product/detail/{id}` | — | 11.4 |
+| 2. Giữ giỏ | `POST cart/items`, `GET cart`, `PATCH` / `DELETE cart/items/{rowId}` | `X-Cart-Token` nhận ở lần thêm đầu (khách vãng lai) | 11 |
+| 3. Địa chỉ, giao hàng, thanh toán | `PUT checkout/address` → `GET` + `PUT checkout/shipping-method(s)` → `GET` + `PUT checkout/payment-method(s)` | — | 11.1 |
+| 4. Khuyến mãi (tuỳ chọn) | `POST` / `DELETE cart/promotions/{pluginKey}` | — | 11.1 |
+| 5. Hiện tổng cho khách | `GET checkout/totals` | — | 11.1 |
+| 6. Đặt đơn | `POST checkout/place` (+ `return_url` nếu trả qua cổng) | `Idempotency-Key` (một khoá cho mỗi lần bấm *Đặt hàng*) | 11.2 |
+| 7. Trả tiền (nếu `payment.type = hosted`) | mở `payment.url` | — | 11.3 |
+| 8. Trạng thái thanh toán | `GET member/orders/{id}/payment` hoặc `GET orders/{id}/payment` | `X-Order-Access` (khách vãng lai) | 11.3 |
+
+Danh sách kiểm tra trước khi đưa ứng dụng vào bán thật:
+
+- Chủ cửa hàng đã bật **Đặt đơn qua API** (mục 11.2) và — nếu dùng thanh toán online — khai địa chỉ quay về trong `GP247_PAYMENT_RETURN_URLS` (mục 11.3).
+- Ứng dụng lưu `X-Cart-Token` và `access_token` ở nơi an toàn của thiết bị, không ghi vào log.
+- Ứng dụng xử lý `409 price_changed` (hiện tổng mới) và gửi lại **cùng** `Idempotency-Key` khi mất mạng lúc đặt đơn.
+- Plugin của site xử lý đơn web (tách đơn theo nhà bán, hoa hồng, thông báo…) nhận đơn từ ứng dụng qua cùng điểm cắm — xem
+  [Hướng dẫn tạo API — mục 8](./create-api_vi.md).
+
 ---
 
 ## Hỏi & Đáp (Q&A)
@@ -780,11 +977,12 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút |
+| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 7, 10.1) |
+| 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
 | 2026-10-26 | gp247/core, gp247/front, gp247/shop 3.2.3; API v2 và tên biến môi trường mới: 3.3.0 | Thêm API v2 (`api/v2/...`: phản hồi `{data, meta, links}`, `filter`/`sort`/`q`/`lang`, `price_final`, `meta`) và tên biến môi trường viết đúng (3.3.0); API Core theo phân quyền màn admin và theo cửa hàng; giới hạn số lần đăng nhập; token luôn có hạn, thêm `POST logout`; khách bị khoá không đăng nhập được; API công khai chỉ trả dữ liệu cửa hàng đang hiển thị, bỏ trường nội bộ; khóa API Connection lưu dạng băm; mọi lỗi có mã HTTP đúng nghĩa và dạng `{error, msg, code}`; thêm `openapi.json` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-31 · ✍️ **Tác giả (Author):** GP247</sub>
