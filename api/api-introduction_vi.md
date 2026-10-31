@@ -51,7 +51,7 @@ flowchart LR
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
 - [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, xử lý lỗi
-- [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị
+- [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng cho ERP / phần mềm kho
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
 - [10. Giỏ hàng & đặt đơn](#10-giỏ-hàng--đặt-đơn-qua-api) — giỏ, checkout, thanh toán
@@ -175,6 +175,7 @@ hình admin; quản trị viên chỉ gọi được endpoint khi tài khoản c
 | `customer/list`, `customer/detail/{id}` | Danh sách khách hàng |
 | `order/list` | Danh sách đơn hàng |
 | `order/detail/{id}` | Chi tiết đơn hàng |
+| `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | **Quyền sửa** trên màn Danh sách đơn hàng (mục 7) |
 | `product/*` | Danh sách sản phẩm |
 | `category/*`, `brand/*`, `supplier/*` | Danh sách danh mục / thương hiệu / nhà cung cấp |
 | `banner/*`, `page/*` | Danh sách banner / trang nội dung |
@@ -476,6 +477,10 @@ flowchart TD
 | `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 9.2) |
 | `409` | `event_log_disabled` | Nhật ký sự kiện đang tắt trên màn quản lý API (mục 5, 6) — từ gp247/core 3.7.0 |
 | `410` | `cursor_expired` | Con trỏ `after` cũ hơn phần nhật ký sự kiện đã dọn — đồng bộ lại bằng `updated_since`, rồi đọc sự kiện từ đầu (mục 6) |
+| `400` | `idempotency_key_required` | Header `Idempotency-Key` sai dạng (cần 8–255 ký tự in được), hoặc thiếu ở endpoint bắt buộc khoá (đặt đơn — mục 10.2) |
+| `409` | `idempotency_key_reused` | `Idempotency-Key` đã dùng cho một yêu cầu khác — dùng khoá mới (mục 7, 10.2) |
+| `409` | `idempotency_in_progress` | Yêu cầu cùng `Idempotency-Key` vẫn đang được xử lý — chờ rồi gửi lại (mục 7) — từ gp247/core 3.7.0 |
+| `503` | `idempotency_unavailable` | Site chưa chạy `php artisan gp247:update` nên chưa nhận lệnh ghi quản trị có `Idempotency-Key` (mục 7) — từ gp247/core 3.7.0 |
 | `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 9.4) |
 | `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 9.4) |
 | `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
@@ -484,7 +489,7 @@ flowchart TD
 | khác | `http_error` | Lỗi HTTP khác — đọc `msg` |
 | `500` | `server_error` | Lỗi máy chủ — nội dung chi tiết chỉ hiện khi site bật chế độ debug |
 
-Giỏ hàng và đặt đơn có thêm mã lỗi riêng (mục 10). Hãy kiểm tra **mã HTTP** trước rồi mới đọc `code` để xử lý từng
+Giỏ hàng và đặt đơn có thêm mã lỗi riêng (mục 10); lệnh ghi đơn hàng bị từ chối trả `409` kèm mã lý do (mục 7). Hãy kiểm tra **mã HTTP** trước rồi mới đọc `code` để xử lý từng
 trường hợp; `msg` là thông điệp để hiển thị hoặc ghi log.
 
 ### Mã yêu cầu `X-Request-Id`
@@ -582,6 +587,9 @@ chỉ thấy dữ liệu của cửa hàng mình (mục 3).
 | `GET` | `api/v2/core/page/list` | Danh sách trang nội dung |
 | `GET` | `api/v2/core/page/detail/{id}` | Chi tiết một trang nội dung |
 | `GET` | `api/v2/core/events` | Nhật ký sự kiện cho ERP / công cụ đồng bộ (mục 6) |
+| `POST` | `api/v2/core/order/{id}/status` | Đổi trạng thái đơn hàng ([Ghi dữ liệu qua API quản trị](#ghi-dữ-liệu-qua-api-quản-trị)) |
+| `POST` | `api/v2/core/order/{id}/shipping` | Đổi trạng thái giao hàng, lưu mã vận đơn |
+| `POST` | `api/v2/core/order/{id}/notes` | Thêm ghi chú vào lịch sử đơn |
 
 Ví dụ đăng nhập admin (dùng `curl` trong Terminal):
 
@@ -612,6 +620,111 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
   -H "Accept: application/json" \
   -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ"
 ```
+
+### Ghi dữ liệu qua API quản trị
+
+> ℹ️ **Có từ:** gp247/core 3.7.0, gp247/shop 3.6.0
+
+ERP hay phần mềm kho có thể cập nhật đơn hàng qua API thay vì nhập tay trên trang quản trị. Mỗi lệnh ghi có **cùng tác
+dụng** với thao tác tương ứng trên màn chi tiết đơn hàng: cùng trừ/trả kho, cùng dòng lịch sử đơn.
+
+| Phương thức | Đường dẫn | Thân yêu cầu (JSON) | Tác dụng |
+| --- | --- | --- | --- |
+| `POST` | `api/v2/core/order/{id}/status` | `{"status": …}` | Đổi trạng thái đơn hàng |
+| `POST` | `api/v2/core/order/{id}/shipping` | `{"shipping_status"?, "tracking_number"?, "tracking_url"?}` | Đổi trạng thái giao hàng, lưu mã vận đơn |
+| `POST` | `api/v2/core/order/{id}/notes` | `{"content": "…"}` | Thêm ghi chú vào lịch sử đơn |
+
+**Quy tắc chung (cả ba endpoint):**
+
+- **Quyền:** tài khoản phải có **quyền sửa** trên màn **Danh sách đơn hàng**, kiểm tra y như khi bấm thao tác trên màn
+  đó — ai sửa được đơn trên màn hình thì sửa được qua API. Tài khoản chỉ được xem (kể cả vai trò `view.all`) → `403 forbidden`.
+- Chỉ đơn của cửa hàng mình (mục 3); đơn của cửa hàng khác → `404 not_found`.
+- Thành công → `200 {"data": <đơn hàng>}`, cùng dạng với `order/detail/{id}`, đã gồm thay đổi vừa ghi.
+- Dữ liệu sai → `422 validation_failed` kèm `errors`.
+- Mỗi lệnh ghi có mặt trong **Nhật ký thao tác** như mọi lần gọi API quản trị (mục 9.5).
+
+**Trạng thái đơn — `order/{id}/status`:**
+
+- `status` là id một trạng thái đơn hàng của site; id không có → `422`.
+- Tác dụng như đổi trạng thái trên màn quản trị: huỷ đơn thì trả hàng về kho, mở lại đơn đã huỷ thì lấy hàng khỏi kho lần
+  nữa, mỗi lần đổi thêm một dòng lịch sử đơn. Đơn đã hoàn tất hoặc đã huỷ vẫn mở lại được, như trên màn hình.
+- Đơn đã ở đúng trạng thái gửi lên → `200`, không ghi gì.
+- Không mở lại được (ví dụ không đủ tồn kho) → `409`, `code` là mã lý do, ví dụ `admin.order.reopen_blocked_stock`.
+
+**Giao hàng — `order/{id}/shipping`:**
+
+- Gửi ít nhất `shipping_status` hoặc `tracking_number`. `tracking_url` phải đi kèm `tracking_number` và là địa chỉ `http(s)`.
+- `shipping_status`: id một trạng thái giao hàng của site; đổi thì thêm một dòng lịch sử đơn.
+- `tracking_number`: lưu làm **vận đơn thủ công** của đơn (mỗi đơn một vận đơn thủ công; gửi mã khác thì cập nhật vận đơn
+  đó), hiện trên màn chi tiết đơn hàng.
+- Gửi `payment_status` → `422`: trạng thái thanh toán luôn đi theo các khoản thanh toán của đơn, không đặt tay được.
+
+**Ghi chú — `order/{id}/notes`:**
+
+- `content` dài 1–1000 ký tự; ghi chú vào lịch sử đơn kèm người viết và nhãn `[API]`.
+- Nội dung hiện dạng chữ thường: thẻ HTML hiện nguyên văn, không được chạy.
+
+Ví dụ ERP báo đơn đã giao cho hãng vận chuyển, kèm mã vận đơn:
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/order/ORDER-ID/shipping" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ" \
+  -H "Idempotency-Key: 6f1c2a7e-0b9d-4c51-9e3a-2d8f4b7c1a90" \
+  -d '{"shipping_status":2,"tracking_number":"VN123456789","tracking_url":"https://tracking.example.com/VN123456789"}'
+```
+
+Kết quả (rút gọn):
+
+```json
+{
+  "data": {
+    "id": "ORDER-ID",
+    "status": 2,
+    "payment_status": 3,
+    "shipping_status": 2,
+    "total": 350000,
+    "balance": 0,
+    "updated_at": "2026-10-31T09:15:00+07:00"
+  }
+}
+```
+
+#### Gửi lại an toàn với `Idempotency-Key`
+
+Mạng chập chờn khiến ứng dụng không biết lệnh ghi đã chạy hay chưa. Gửi kèm header `Idempotency-Key` (8–255 ký tự in
+được, ví dụ UUID) để gửi lại mà không sợ ghi hai lần. Ở ba endpoint đơn hàng, khoá là **tuỳ chọn**; endpoint nào bắt buộc
+khoá sẽ ghi rõ (thiếu khoá → `400 idempotency_key_required`).
+
+```mermaid
+sequenceDiagram
+  participant E as ERP
+  participant API
+  E->>API: POST order/ORDER-ID/status + Idempotency-Key K
+  API-->>E: 200 (mất mạng, ERP không nhận được)
+  E->>API: gửi lại cùng khoá K, cùng thân
+  API-->>E: 200 kết quả lần đầu + Idempotent-Replayed: true
+```
+
+| Tình huống | Kết quả |
+| --- | --- |
+| Gửi lại cùng khoá, cùng thân | Trả lại đúng kết quả lần đầu, kèm header `Idempotent-Replayed: true`; không chạy lại |
+| Cùng khoá, yêu cầu khác (thân hoặc đường dẫn khác) | `409 idempotency_key_reused` |
+| Cùng khoá, lần đầu vẫn đang xử lý | `409 idempotency_in_progress` — chờ rồi gửi lại |
+| Lần đầu gặp lỗi máy chủ (`5xx`) | Khoá được giải phóng: gửi lại sẽ chạy thật |
+| Khoá sai dạng | `400 idempotency_key_required` |
+| Site chưa chạy `php artisan gp247:update` | `503 idempotency_unavailable` (chỉ khi có gửi khoá) |
+
+- Khoá tính riêng cho từng tài khoản quản trị và được giữ **24 giờ**. Mỗi lệnh ghi mới cần một khoá mới.
+- Kết quả lỗi `4xx` (ví dụ `409`, `422`) cũng được lưu: gửi lại cùng khoá nhận lại đúng lỗi đó — sửa dữ liệu thì dùng khoá mới.
+
+#### Giới hạn tần suất ghi
+
+- Lệnh ghi đếm theo **từng tài khoản quản trị**: mặc định **300 yêu cầu / phút**. Đổi bằng biến môi trường
+  `GP247_API_WRITE_THROTTLE` dạng `số-yêu-cầu,số-phút`, ví dụ `600,1`.
+- Vượt giới hạn → `429 too_many_attempts` kèm header `Retry-After`.
+- Lệnh đọc vẫn theo giới hạn chung theo IP.
 
 ---
 
@@ -1160,7 +1273,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0 | Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0; ghi đơn hàng qua API quản trị: gp247/core 3.7.0, gp247/shop 3.6.0 | Ghi đơn hàng qua API quản trị cho ERP / phần mềm kho: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (trạng thái giao hàng + mã vận đơn thủ công), `order/{id}/notes` — quyền sửa trên màn Danh sách đơn hàng, giới hạn ghi 300 lần/phút mỗi tài khoản (`GP247_API_WRITE_THROTTLE`), `Idempotency-Key` tuỳ chọn (gửi lại ⇒ kết quả lần đầu; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` khi chưa `gp247:update`) (mục 3, 6, 7); Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
