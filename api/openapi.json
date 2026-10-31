@@ -7547,6 +7547,116 @@
                     }
                 }
             }
+        },
+        "/api/v2/front/member/orders/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Cancel the signed-in customer's unpaid order placed through the API; stock goes back (since shop 3.5.1)",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {order: {id, store_id, status (4 = cancelled), payment_status, total, received, balance, currency}, payment: {type, status}}}"
+                    },
+                    "401": {
+                        "description": "invalid token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found — not an order of this customer",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "order_not_cancellable — not placed through the app, money received, or already handled by the shop",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/front/orders/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "v2 Front (storefront)"
+                ],
+                "summary": "Cancel an unpaid guest order, opened by its order access token; stock goes back (since shop 3.5.1)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Order-Access",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "access_token returned when the guest placed the order"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {order: {id, store_id, status (4 = cancelled), payment_status, total, received, balance, currency}, payment: {type, status}}}"
+                    },
+                    "404": {
+                        "description": "not_found — unknown order or wrong token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "order_not_cancellable — not placed through the app, money received, or already handled by the shop",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {

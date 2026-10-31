@@ -595,7 +595,7 @@ authentication flow.
 
 **Q10: Do I need to write tests for the new API?**
 
-→ Yes — per `testing.md`, write a feature test for the endpoint (in the `tests/` repo). At minimum check:
+→ You should — write a feature test (PHPUnit) for the endpoint, in the test folder of your project or plugin. At minimum check:
 the status code, the JSON structure, and that access is blocked when a private endpoint has no token.
 
 ---

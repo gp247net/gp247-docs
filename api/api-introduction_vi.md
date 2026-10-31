@@ -550,6 +550,8 @@ tên được phép.
 | `POST` | `api/v2/front/checkout/place` | Có (khách) hoặc `X-Cart-Token` + `Idempotency-Key` | Đặt đơn (mục 11.2) |
 | `GET` | `api/v2/front/member/orders/{id}/payment` | Có (khách) | Trạng thái thanh toán đơn của khách (mục 11.3) |
 | `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Trạng thái thanh toán đơn của khách vãng lai (mục 11.3) |
+| `POST` | `api/v2/front/member/orders/{id}/cancel` | Có (khách) | Huỷ đơn chưa trả đặt qua ứng dụng (mục 11.3) |
+| `POST` | `api/v2/front/orders/{id}/cancel` | `X-Order-Access` | Huỷ đơn chưa trả của khách vãng lai (mục 11.3) |
 
 Ví dụ: 20 sản phẩm đắt nhất của thương hiệu số 5, tên bằng tiếng Việt:
 
@@ -853,6 +855,19 @@ Site so khớp **đúng** scheme + host (+ cổng) và đường dẫn bắt đ�
   thái đơn — luôn hỏi lại trạng thái qua API.
 - **Khách huỷ ở cổng**: đơn giữ *chờ thanh toán*. Gửi lại `POST checkout/place` với **cùng** `Idempotency-Key` để nhận `payment.url` mới
   cho chính đơn đó. `payment.url` là `null` khi cổng tạm lỗi — gửi lại cùng khoá để thử lại.
+- **Huỷ đơn chưa trả**: khách đổi ý thì ứng dụng gọi `POST member/orders/{id}/cancel` (khách đã đăng nhập) hoặc `POST orders/{id}/cancel`
+  kèm `X-Order-Access` (khách vãng lai). Chỉ huỷ được đơn đặt qua ứng dụng, chưa nhận đồng nào và chưa được cửa hàng xử lý; hàng được trả
+  lại kho. Đơn khác ⇒ `409 order_not_cancellable`. Gọi lại khi đơn đã huỷ vẫn trả `200`.
+- **Đơn bỏ dở tự huỷ**: đơn thanh toán qua cổng mà sau **24 giờ** vẫn chưa trả được huỷ (trả hàng về kho) khi có đơn mới đặt qua ứng dụng —
+  không cần cron. Đổi thời hạn bằng `GP247_API_UNPAID_ORDER_MINUTES` (phút, `0` = không tự huỷ). Tiền cổng báo về sau đó vẫn được ghi để
+  cửa hàng hoàn lại.
+- **Trạng thái đơn sau khi trả**: trả đủ qua cổng ⇒ đơn chuyển sang trạng thái mà cổng dùng cho đơn web (vd *Đang xử lý* — cấu hình của
+  plugin Stripe / PayPal); hoàn hết ⇒ trạng thái *đã hoàn* của cổng.
+- **Sàn nhiều người bán một tên miền** (MultiVendor): đơn của gian hàng trả qua cổng như đơn của cửa hàng chính.
+
+> ℹ️ **Có từ:** gp247/shop 3.5.1 (cùng StripePayment 1.1.4, PaypalExpress 3.2.4) — huỷ đơn chưa trả, đơn bỏ dở tự huỷ, trạng thái đơn sau
+> khi trả / hoàn, đơn của gian hàng không có tên miền riêng trả được qua cổng. PaypalExpress 3.2.4 còn thu tiền ngay khi nhận webhook
+> `CHECKOUT.ORDER.APPROVED` — bật thêm sự kiện này trong webhook PayPal của site.
 - **`access_token`** chỉ có trong kết quả đặt đơn của khách vãng lai; ứng dụng lưu lại để hỏi trạng thái. Mã này chỉ mở trạng thái và số
   tiền của đúng đơn đó (không có địa chỉ); đơn của người khác hoặc mã sai ⇒ `404`.
 - Với đơn qua API, sự kiện "đơn thành công" và email xác nhận chạy **ngay khi đặt** (không đợi khách trả tiền). Plugin cần làm việc *sau
@@ -977,7 +992,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 7, 10.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 11.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 7, 10.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |

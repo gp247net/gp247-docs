@@ -564,6 +564,8 @@ the allowed names.
 | `POST` | `api/v2/front/checkout/place` | Yes (customer) or `X-Cart-Token` + `Idempotency-Key` | Place the order (section 11.2) |
 | `GET` | `api/v2/front/member/orders/{id}/payment` | Yes (customer) | Payment status of the customer's order (section 11.3) |
 | `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Payment status of a guest order (section 11.3) |
+| `POST` | `api/v2/front/member/orders/{id}/cancel` | Yes (customer) | Cancel an unpaid order placed through the app (section 11.3) |
+| `POST` | `api/v2/front/orders/{id}/cancel` | `X-Order-Access` | Cancel an unpaid guest order (section 11.3) |
 
 Example: the 20 most expensive products of brand 5, with names in Vietnamese:
 
@@ -881,6 +883,20 @@ editing `.env`.
 - **Payer cancels at the gateway**: the order stays *awaiting payment*. Resend `POST checkout/place` with the **same** `Idempotency-Key`
   to get a new `payment.url` for that same order. `payment.url` is `null` when the gateway is temporarily failing — resend the same key to
   retry.
+- **Cancelling an unpaid order**: when the shopper changes their mind, the app calls `POST member/orders/{id}/cancel` (signed-in customer)
+  or `POST orders/{id}/cancel` with `X-Order-Access` (guest). Only an order placed through the app, with no money received and not yet
+  handled by the shop, can be cancelled; the stock goes back. Any other order ⇒ `409 order_not_cancellable`. Calling again on a cancelled
+  order still answers `200`.
+- **Abandoned orders cancel themselves**: a gateway order still unpaid after **24 hours** is cancelled (stock back) when the next app order
+  is placed — no cron. Change the limit with `GP247_API_UNPAID_ORDER_MINUTES` (minutes, `0` = never). Money the gateway reports afterwards is
+  still recorded so the shop can refund it.
+- **Order status after payment**: paid in full through the gateway ⇒ the order moves to the status the gateway uses for website orders (e.g.
+  *Processing* — a setting of the Stripe / PayPal plugin); fully refunded ⇒ the gateway's *refunded* status.
+- **Single-domain multi-vendor marketplace** (MultiVendor): a vendor store's order is paid through the gateway like the main store's.
+
+> ℹ️ **Available since:** gp247/shop 3.5.1 (with StripePayment 1.1.4, PaypalExpress 3.2.4) — cancelling unpaid orders, abandoned orders
+> cancelling themselves, order status after payment / refund, orders of a store without its own domain paid through the gateway.
+> PaypalExpress 3.2.4 also captures as soon as it receives the `CHECKOUT.ORDER.APPROVED` webhook — add this event to the site's PayPal webhook.
 - **`access_token`** is only in the order result of a guest; the app keeps it to read the status. It opens only the status and amounts of
   that one order (no address); another person's order or a wrong token ⇒ `404`.
 - For an order placed through the API, the "order success" event and the confirmation email run **when the order is placed** (not when
@@ -1012,7 +1028,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 7, 10.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 11.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 7, 10.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |

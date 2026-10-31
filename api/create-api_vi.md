@@ -580,7 +580,7 @@ từng phía.
 
 **Câu 10: Có cần viết test cho API mới không?**
 
-→ Có — theo `testing.md`, viết feature test cho endpoint (đặt ở repo `tests/`). Ít nhất kiểm tra:
+→ Nên có — viết feature test (PHPUnit) cho endpoint, đặt trong thư mục test của dự án hoặc plugin của bạn. Ít nhất kiểm tra:
 mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token với endpoint riêng tư.
 
 ---
