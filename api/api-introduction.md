@@ -51,7 +51,7 @@ flowchart LR
 - [3. Permissions](#3-permissions-and-data-scope-of-the-core-api) — why a valid token can still get `403`
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
-- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, handle errors
+- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, handle errors
 - [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
@@ -244,6 +244,7 @@ request.
 | **REST API (all groups)** | Every API endpoint (including APIs added by plugins through the standard mechanism) |
 | **v2 · Admin API (core)** | `api/v2/core/*` |
 | **v2 · Public & customer API (front)** | `api/v2/front/*` |
+| **Event log for sync (ERP)** *(since gp247/core 3.7.0)* | Records changes so an ERP / sync tool can read them through `api/v2/core/events` (section 6) — **off by default** |
 
 The screen also has two switches for API v1 (no longer developed) — see [API v1, section 2](./api-v1.md). Ordering through
 the API has one more switch, **Ordering through the API**, under the v2 front group (section 10.2).
@@ -252,6 +253,8 @@ the API has one more switch, **Ordering through the API**, under the v2 front gr
 - Calling a group that is off → HTTP `404` with `"code": "api_disabled"` (section 6) — even without a token *(since
   gp247/core 3.4.0; 3.3.1 answers `401` when the token is missing)*.
 - A **fresh install** turns **v2** on. A site **upgraded** from an older version keeps every group that was on.
+- **Event log for sync (ERP)** is off on both fresh installs and upgraded sites. While it is off no event is recorded, and
+  reading `api/v2/core/events` answers `409 event_log_disabled`. Turn it on only when an ERP or sync tool reads it.
 - The environment variable `GP247_API_MODE=0` is still the **server-level switch**: then no API endpoint exists and the
   switches on the screen are locked — meant for hosting/technical staff who want the API off for good.
 - Plugin APIs that use their own mechanism (for example the MCP server) are **not** covered by these switches and have
@@ -364,7 +367,106 @@ flowchart TD
   list; `sort` or `page[number]` is sent together with `updated_since`.
 - **Limit in this version:** editing only the multilingual text (name, description) of a product or category does **not**
   change its `updated_at`, so that edit does not show up in sync mode.
+- **Deleted records do not show up here:** a list can only return records that still exist. To learn which records were
+  deleted, read the event log (the next sub-section).
 - Upgrading sites must run `php artisan gp247:update` (adds an index on the `updated_at` column of these tables).
+
+### Event log (`events`)
+
+> ℹ️ **Available since:** gp247/core 3.7.0
+
+For ERP and sync tools that need **every change in the order it happened**, including **deleted** records — which the
+`updated_since` lists cannot show (a deleted record is no longer there to return). Each change is an **event**; the app
+reads them in turn with the cursor `after` = the `id` of the last event it handled.
+
+- **Off by default** (fresh installs and upgraded sites alike). The site owner turns it on with the **Event log for sync
+  (ERP)** switch on the API management screen (section 5). Reading while it is off → `409 event_log_disabled`. Events are
+  **only recorded while it is on** — changes made while it is off never appear in the log.
+- **Event types:** gp247/core 3.7.0 provides the log; gp247/shop 3.6.0 records order, stock, product and customer changes.
+  Plugins may add their own event types.
+
+`GET api/v2/core/events` — needs an admin token (section 2).
+
+| Parameter | Meaning |
+| --- | --- |
+| `after` | `id` of the last event the app handled; returns the events after it. Omitted → starts from the oldest event still kept |
+| `filter[type]` | Only these event types, comma-separated |
+| `page[size]` | Events per read, default 100, maximum 500 |
+
+The response is `{"data": [...], "meta": {...}}`, **oldest event first**. `meta` holds `per_page`, `next_after` (`id` of the
+last event on the page — send it as `after` on the next read; on an empty page it equals the `after` you sent) and
+`has_more` (whether more events can be read right away).
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Growing number — use it as the `after` cursor |
+| `type` | Event type, in the form `<resource>.<action>` |
+| `subject_id` | Key of the changed record |
+| `store_id` | Store of the record |
+| `source` | Where the change came from: `api`, `admin` (admin pages), `web` (storefront), `system` (commands, background tasks) |
+| `actor` | Who made it: `{type, id}` with `type` `admin` or `customer`; `null` when there is none (for example `system`) |
+| `data` | A few values declared for that event type — **never** personal data. For the full record, read it again through the detail endpoint |
+| `occurred_at` | When it happened, ISO-8601 |
+
+```bash
+curl -G "https://shop.example.com/api/v2/core/events" \
+  --data-urlencode "after=1520" \
+  --data-urlencode "page[size]=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ"
+```
+
+Trimmed response:
+
+```json
+{
+  "data": [
+    {
+      "id": 1521,
+      "type": "<resource>.<action>",
+      "subject_id": "AbC12",
+      "store_id": "1",
+      "source": "admin",
+      "actor": { "type": "admin", "id": "1" },
+      "data": {},
+      "occurred_at": "2026-10-31T08:15:42+07:00"
+    }
+  ],
+  "meta": { "per_page": 100, "next_after": 1521, "has_more": false }
+}
+```
+
+Recommended follow loop:
+
+```mermaid
+flowchart TD
+    A["Turn the event log on<br/>on the API management screen"] --> B["First full sync<br/>through the updated_since lists"]
+    B --> C["GET events<br/>(first time without after)"]
+    C --> D["Handle the events, skip<br/>changes the app made itself"]
+    D --> E["Store meta.next_after"]
+    E --> F{"has_more?"}
+    F -- "true" --> G["GET events?after=next_after"]
+    F -- "false" --> H["Wait a while"]
+    H --> G
+    G --> D
+    G -- "410 cursor_expired" --> B
+```
+
+- **No event is skipped:** an event appears about **5 seconds** after it happened (environment variable
+  `GP247_API_EVENT_SETTLE_SECONDS`), so two changes committing at once never let an app following `after` skip one. Store
+  `next_after` only after the whole page is handled; if interrupted, read again from the old `after` — handle events so
+  that applying one twice does no harm.
+- **Permissions:** an account sees only the event types of the admin screens it may open, and only its own store's events
+  (section 3); `filter[type]` only narrows within that. No permission for the screen of any event type (including when the
+  site has no event type yet) → `403 forbidden`.
+- **Skip your own changes:** if the app also writes data to the site, use `source` and `actor` to recognise and skip the
+  events it caused itself, so changes do not bounce back and forth.
+- **Kept 30 days** (environment variable `GP247_API_EVENT_DAYS`), cleaned bit by bit while the site handles normal requests
+  — no cron needed. An `after` cursor older than the cleaned part → `410 cursor_expired`: resync through `updated_since`,
+  then read events again from the start (without `after`). `php artisan gp247:doctor` reports `api_event_retention` when
+  old events are not being cleaned.
+- `after` that is not an event `id`, or a malformed `filter[type]` → `422 validation_failed`.
+- Upgrading sites must run `php artisan gp247:update` (creates the event log table).
 
 ### Error codes
 
@@ -385,6 +487,8 @@ flowchart TD
 | `401` | `refresh_token_invalid` | Refresh token wrong, expired, or its session was signed out (section 9.2) — since gp247/core 3.6.0 |
 | `401` | `refresh_token_reused` | A used refresh token was sent again: the session was signed out for safety — sign in again (section 9.2) |
 | `409` | `refresh_in_progress` | The refresh token was used seconds ago — use the new pair you received (section 9.2) |
+| `409` | `event_log_disabled` | The event log is turned off on the API management screen (sections 5, 6) — since gp247/core 3.7.0 |
+| `410` | `cursor_expired` | The `after` cursor is older than the cleaned part of the event log — resync through `updated_since`, then read events from the start (section 6) |
 | `401` | `challenge_required` | The account needs an extra verification step (OTP…) provided by a plugin; the body has a `challenge` key (section 9.4) |
 | `401` | `challenge_invalid` | Verification ticket wrong/expired or wrong verification code (section 9.4) |
 | `422` | `validation_failed` | The submitted data is invalid — see the `errors` key for each field |
@@ -490,6 +594,7 @@ screen, and it only sees the data of its own store (section 3).
 | `GET` | `api/v2/core/banner/detail/{id}` | A banner's details |
 | `GET` | `api/v2/core/page/list` | Content page list |
 | `GET` | `api/v2/core/page/detail/{id}` | A content page's details |
+| `GET` | `api/v2/core/events` | Event log for ERP / sync tools (section 6) |
 
 Example admin login (using `curl` in a Terminal):
 
@@ -1087,7 +1192,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0 | Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0 | Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |

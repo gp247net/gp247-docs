@@ -50,7 +50,7 @@ flowchart LR
 - [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
-- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, xử lý lỗi
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, xử lý lỗi
 - [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
@@ -234,6 +234,7 @@ file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lự
 | **REST API (tất cả nhóm)** | Mọi endpoint API (kể cả API do plugin thêm qua cơ chế chuẩn) |
 | **v2 · API quản trị (core)** | `api/v2/core/*` |
 | **v2 · API công khai & khách hàng (front)** | `api/v2/front/*` |
+| **Nhật ký sự kiện cho đồng bộ (ERP)** *(từ gp247/core 3.7.0)* | Ghi lại thay đổi để ERP / công cụ đồng bộ đọc qua `api/v2/core/events` (mục 6) — **mặc định tắt** |
 
 Màn này còn hai công tắc cho API v1 (đã ngưng phát triển) — xem [API v1, mục 2](./api-v1_vi.md). Riêng việc đặt đơn qua API
 có thêm công tắc **Đặt đơn qua API** dưới nhóm v2 front (mục 10.2).
@@ -242,6 +243,8 @@ có thêm công tắc **Đặt đơn qua API** dưới nhóm v2 front (mục 10.
 - Gọi vào nhóm đang tắt → HTTP `404` với `"code": "api_disabled"` (mục 6) — kể cả khi chưa gửi token *(từ gp247/core
   3.4.0; bản 3.3.1 trả `401` nếu thiếu token)*.
 - **Cài mới** bật sẵn **v2**. Site **nâng cấp** từ bản cũ giữ nguyên mọi nhóm đang bật.
+- **Nhật ký sự kiện cho đồng bộ (ERP)** tắt sẵn trên cả site cài mới lẫn site nâng cấp. Khi tắt, không có sự kiện nào được
+  ghi và đọc `api/v2/core/events` trả `409 event_log_disabled`. Chỉ bật khi có ERP hay công cụ đồng bộ đọc nó.
 - Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
   trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
 - API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
@@ -353,7 +356,105 @@ flowchart TD
   về; gửi `sort` hoặc `page[number]` cùng với `updated_since`.
 - **Giới hạn của bản này:** chỉ sửa phần chữ đa ngôn ngữ (tên, mô tả) của sản phẩm hoặc danh mục **không** làm đổi
   `updated_at` của nó, nên thay đổi đó không xuất hiện trong chế độ đồng bộ.
+- **Bản ghi đã xoá không xuất hiện ở đây:** danh sách chỉ trả được bản ghi còn tồn tại. Muốn biết bản ghi nào đã bị xoá,
+  đọc nhật ký sự kiện (mục ngay dưới).
 - Site nâng cấp phải chạy `php artisan gp247:update` (thêm chỉ mục cho cột `updated_at` của các bảng này).
+
+### Nhật ký sự kiện (`events`)
+
+> ℹ️ **Có từ:** gp247/core 3.7.0
+
+Dành cho ERP và công cụ đồng bộ cần biết **từng thay đổi theo đúng thứ tự xảy ra**, kể cả bản ghi **đã bị xoá** — thứ
+mà danh sách `updated_since` không cho thấy được (bản ghi đã xoá không còn để trả về). Mỗi thay đổi là một **sự kiện**;
+ứng dụng đọc lần lượt bằng con trỏ `after` = `id` của sự kiện cuối cùng đã xử lý.
+
+- **Mặc định tắt** (cả site cài mới lẫn site nâng cấp). Chủ site bật bằng công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên
+  màn quản lý API (mục 5). Đang tắt mà đọc → `409 event_log_disabled`. Sự kiện **chỉ được ghi khi đang bật** — thay đổi
+  xảy ra lúc tắt không bao giờ có trong nhật ký.
+- **Loại sự kiện:** gp247/core 3.7.0 cung cấp nhật ký; gp247/shop 3.6.0 ghi thay đổi của đơn hàng, tồn kho, sản phẩm và
+  khách hàng. Plugin có thể thêm loại sự kiện riêng.
+
+`GET api/v2/core/events` — cần token admin (mục 2).
+
+| Tham số | Ý nghĩa |
+| --- | --- |
+| `after` | `id` của sự kiện cuối cùng ứng dụng đã xử lý; trả về các sự kiện sau nó. Không gửi → bắt đầu từ sự kiện cũ nhất còn được giữ |
+| `filter[type]` | Chỉ lấy các loại sự kiện này, cách nhau bằng dấu phẩy |
+| `page[size]` | Số sự kiện mỗi lần đọc, mặc định 100, tối đa 500 |
+
+Phản hồi có dạng `{"data": [...], "meta": {...}}`, sự kiện **cũ nhất trước**. `meta` gồm `per_page`, `next_after` (`id` của
+sự kiện cuối trong trang — gửi làm `after` ở lần đọc sau; trang rỗng thì bằng `after` đã gửi) và `has_more` (còn sự kiện để
+đọc tiếp ngay hay không).
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `id` | Số tăng dần — dùng làm con trỏ `after` |
+| `type` | Loại sự kiện, dạng `<tài nguyên>.<hành động>` |
+| `subject_id` | Mã của bản ghi bị thay đổi |
+| `store_id` | Cửa hàng của bản ghi |
+| `source` | Nơi phát sinh thay đổi: `api`, `admin` (trang quản trị), `web` (cửa hàng), `system` (lệnh, tác vụ chạy nền) |
+| `actor` | Ai thực hiện: `{type, id}` với `type` là `admin` hoặc `customer`; `null` khi không có (ví dụ `system`) |
+| `data` | Vài giá trị đã khai báo cho loại sự kiện đó — **không bao giờ** chứa dữ liệu cá nhân. Cần đủ thông tin thì đọc lại bản ghi qua endpoint chi tiết |
+| `occurred_at` | Thời điểm xảy ra, ISO-8601 |
+
+```bash
+curl -G "https://shop.example.com/api/v2/core/events" \
+  --data-urlencode "after=1520" \
+  --data-urlencode "page[size]=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ"
+```
+
+Phản hồi rút gọn:
+
+```json
+{
+  "data": [
+    {
+      "id": 1521,
+      "type": "<tài nguyên>.<hành động>",
+      "subject_id": "AbC12",
+      "store_id": "1",
+      "source": "admin",
+      "actor": { "type": "admin", "id": "1" },
+      "data": {},
+      "occurred_at": "2026-10-31T08:15:42+07:00"
+    }
+  ],
+  "meta": { "per_page": 100, "next_after": 1521, "has_more": false }
+}
+```
+
+Vòng theo dõi khuyến nghị:
+
+```mermaid
+flowchart TD
+    A["Bật nhật ký sự kiện<br/>trên màn quản lý API"] --> B["Đồng bộ toàn bộ lần đầu<br/>bằng danh sách updated_since"]
+    B --> C["GET events<br/>(lần đầu không gửi after)"]
+    C --> D["Xử lý sự kiện, bỏ qua<br/>thay đổi do chính ứng dụng tạo"]
+    D --> E["Lưu meta.next_after"]
+    E --> F{"has_more?"}
+    F -- "true" --> G["GET events?after=next_after"]
+    F -- "false" --> H["Chờ một lúc"]
+    H --> G
+    G --> D
+    G -- "410 cursor_expired" --> B
+```
+
+- **Không sót sự kiện:** một sự kiện chỉ xuất hiện khoảng **5 giây** sau khi xảy ra (biến môi trường
+  `GP247_API_EVENT_SETTLE_SECONDS`), để hai thay đổi ghi cùng lúc không bao giờ làm ứng dụng đi theo `after` bỏ qua một sự
+  kiện. Chỉ lưu `next_after` sau khi đã xử lý xong cả trang; bị gián đoạn thì đọc lại từ `after` cũ — xử lý sao cho áp lại
+  một sự kiện không gây sai.
+- **Quyền:** tài khoản chỉ thấy các loại sự kiện thuộc những màn quản trị nó được mở, và chỉ sự kiện của cửa hàng mình
+  (mục 3); `filter[type]` chỉ thu hẹp trong phạm vi đó. Không có quyền màn nào ứng với một loại sự kiện (kể cả khi site chưa
+  có loại sự kiện nào) → `403 forbidden`.
+- **Bỏ qua thay đổi của chính mình:** nếu ứng dụng cũng ghi dữ liệu vào site, dùng `source` và `actor` để nhận ra và bỏ
+  qua sự kiện do chính nó tạo ra, tránh ghi đi ghi lại vòng tròn.
+- **Giữ 30 ngày** (biến môi trường `GP247_API_EVENT_DAYS`), dọn dần trong lúc site xử lý yêu cầu bình thường — không cần
+  cron. Con trỏ `after` cũ hơn phần đã dọn → `410 cursor_expired`: đồng bộ lại bằng `updated_since`, rồi đọc sự kiện lại từ
+  đầu (không gửi `after`). `php artisan gp247:doctor` báo ở mục `api_event_retention` khi sự kiện cũ không được dọn.
+- `after` không phải `id` sự kiện hoặc `filter[type]` sai dạng → `422 validation_failed`.
+- Site nâng cấp phải chạy `php artisan gp247:update` (tạo bảng nhật ký sự kiện).
 
 ### Mã lỗi
 
@@ -373,6 +474,8 @@ flowchart TD
 | `401` | `refresh_token_invalid` | Refresh token sai, hết hạn hoặc phiên đã bị đăng xuất (mục 9.2) — từ gp247/core 3.6.0 |
 | `401` | `refresh_token_reused` | Refresh token đã dùng rồi bị gửi lại: phiên bị đăng xuất để an toàn — đăng nhập lại (mục 9.2) |
 | `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 9.2) |
+| `409` | `event_log_disabled` | Nhật ký sự kiện đang tắt trên màn quản lý API (mục 5, 6) — từ gp247/core 3.7.0 |
+| `410` | `cursor_expired` | Con trỏ `after` cũ hơn phần nhật ký sự kiện đã dọn — đồng bộ lại bằng `updated_since`, rồi đọc sự kiện từ đầu (mục 6) |
 | `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 9.4) |
 | `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 9.4) |
 | `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
@@ -478,6 +581,7 @@ chỉ thấy dữ liệu của cửa hàng mình (mục 3).
 | `GET` | `api/v2/core/banner/detail/{id}` | Chi tiết một banner |
 | `GET` | `api/v2/core/page/list` | Danh sách trang nội dung |
 | `GET` | `api/v2/core/page/detail/{id}` | Chi tiết một trang nội dung |
+| `GET` | `api/v2/core/events` | Nhật ký sự kiện cho ERP / công cụ đồng bộ (mục 6) |
 
 Ví dụ đăng nhập admin (dùng `curl` trong Terminal):
 
@@ -1056,7 +1160,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0 | Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0 | Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |

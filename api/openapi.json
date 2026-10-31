@@ -3,7 +3,7 @@
     "info": {
         "title": "GP247 REST API v2",
         "version": "3.7.0",
-        "description": "REST API v2 of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v1 (frozen) is described separately in openapi-v1.json and api-v1.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required. Admin lists of api/v2/core (since core 3.7.0 / shop 3.6.0 / front 3.4.0) have a change-sync mode: updated_since + page[after]."
+        "description": "REST API v2 of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v1 (frozen) is described separately in openapi-v1.json and api-v1.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required. Admin lists of api/v2/core (since core 3.7.0 / shop 3.6.0 / front 3.4.0) have a change-sync mode: updated_since + page[after]. Event log for ERP / sync tools (since core 3.7.0, off by default): GET api/v2/core/events, read by the after cursor."
     },
     "servers": [
         {
@@ -899,6 +899,109 @@
                         }
                     }
                 ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/core/events": {
+            "get": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Event log for ERP / sync tools (since core 3.7.0)",
+                "description": "Changes recorded as events, read by cursor, oldest first. An event appears about 5 seconds after it happened (settle window, GP247_API_EVENT_SETTLE_SECONDS) so two changes committing at once never let a reader skip one. The admin sees only the event types of the admin screens they may open and only their own store. Off by default: the site owner turns it on with the switch Event log for sync (ERP) on the API management screen; events are recorded only while it is on. Kept 30 days (GP247_API_EVENT_DAYS). Deleted records are visible only through events. Event types: order, stock, product and customer changes are recorded by gp247/shop 3.6.0; plugins may add their own.",
+                "parameters": [
+                    {
+                        "name": "after",
+                        "in": "query",
+                        "description": "id of the last event the reader handled; returns the events after it. Omitted = from the oldest event still kept",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "filter[type]",
+                        "in": "query",
+                        "description": "Comma-separated event types (<resource>.<action>); only narrows the types the admin may read",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 500,
+                            "default": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": [{id, type, subject_id, store_id, source, actor, data, occurred_at}], \"meta\": {per_page, next_after, has_more}} — id grows (use it as the after cursor); type is <resource>.<action>; source is api, admin, web or system; actor is {type: admin|customer, id} or null; data holds only the few values declared for the type (never personal data); occurred_at is ISO-8601. next_after is the id of the last event on the page (on an empty page: the after sent)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin may not open the admin screen of any event type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "code event_log_disabled: the event log is turned off on the API management screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "code cursor_expired: events after this cursor were cleaned; resync with updated_since and read events again without after",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "after is not an event id, or filter[type] is not a comma-separated list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "bearerAuth": [],
