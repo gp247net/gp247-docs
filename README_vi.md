@@ -29,7 +29,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Phát hành
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Phát hành GP247](./release/release_vi.md) | Các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bản vá bảo mật và phiên bản tối thiểu an toàn; cách cập nhật và báo lỗ hổng | 2026-10-30 |
+| [Phát hành và bảo mật S-Cart](./release/release_vi.md) | Site đã an toàn chưa (phiên bản tối thiểu từng package); điểm mới nổi bật; cách cập nhật; các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bản vá bảo mật; báo lỗ hổng | 2026-10-31 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -76,4 +76,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-30 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-10-31 · ✍️ **Tác giả (Author):** GP247</sub>

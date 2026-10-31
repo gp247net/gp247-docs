@@ -29,7 +29,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Releases
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 releases](./release/release.md) | S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security fixes and minimum safe versions; how to update and report a vulnerability | 2026-10-30 |
+| [S-Cart releases and security](./release/release.md) | Is your site safe (minimum version per package); highlights; how to update; S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security fixes; reporting a vulnerability | 2026-10-31 |
 
 ### System
 | Document | Summary | Last updated |
@@ -76,4 +76,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-30 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>
