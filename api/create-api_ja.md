@@ -61,7 +61,7 @@ GP247_API_MODE=true
 
 > ⚠️ **注意:** **この順序は固定です。変更しないでください。** config に明記された規約です。
 >
-> ℹ️ **対応バージョン:** gp247/core 3.5.2 — `json.response` は `auth:*` より先に動きます。トークンがなく
+> ℹ️ **対応バージョン:** gp247/core 3.6.0 — `json.response` は `auth:*` より先に動きます。トークンがなく
 > `Accept: application/json` も送らない場合でも JSON の `401` を返します（以前は `500`）。
 >
 > 👉 **プラグインにとって重要な結果：** core／shop／front の `Routes/Api/` に置いたルートには、上の 3 つのレイヤーが
@@ -588,7 +588,7 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
 | 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
 | 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
 

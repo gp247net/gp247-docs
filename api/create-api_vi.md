@@ -62,7 +62,7 @@ nghĩa ở `config('gp247-config.api.middleware')`:
 
 > ⚠️ **Thứ tự này cố định — không đổi.** Đây là quy ước đã ghi rõ trong config.
 >
-> ℹ️ **Có từ:** gp247/core 3.5.2 — `json.response` chạy trước `auth:*`: thiếu token mà không gửi `Accept: application/json`
+> ℹ️ **Có từ:** gp247/core 3.6.0 — `json.response` chạy trước `auth:*`: thiếu token mà không gửi `Accept: application/json`
 > vẫn nhận `401` JSON (trước đây `500`).
 >
 > 👉 **Hệ quả quan trọng cho plugin:** route đặt trong `Routes/Api/` của core/shop/front sẽ **tự
@@ -590,7 +590,7 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
 | 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
 

@@ -64,7 +64,7 @@ in `config('gp247-config.api.middleware')`:
 
 > ⚠️ **This order is fixed — do not change it.** It is a convention stated explicitly in the config.
 >
-> ℹ️ **Available since:** gp247/core 3.5.2 — `json.response` runs before `auth:*`: a missing token without
+> ℹ️ **Available since:** gp247/core 3.6.0 — `json.response` runs before `auth:*`: a missing token without
 > `Accept: application/json` still gets a JSON `401` (before: `500`).
 >
 > 👉 **Important consequence for plugins:** routes placed in the `Routes/Api/` folder of core/shop/front
@@ -605,7 +605,7 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.5.2, gp247/shop 3.5.0 | `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
 | 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
 
