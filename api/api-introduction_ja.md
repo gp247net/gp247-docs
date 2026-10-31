@@ -53,7 +53,7 @@ flowchart LR
 - [4. API Connection](#4-接続保護レイヤーapi-connection-任意) — アプリ用の追加の鍵
 - [5. API のオン／オフ](#5-api-のオンオフ) — API 管理画面のスイッチ
 - [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、変更の同期、イベントログ、エラー処理
-- [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント、ERP／倉庫ソフト向けの注文の書き込み
+- [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント、ERP／倉庫ソフト向けの注文・商品・在庫の書き込み
 - [8. Front API（ストアフロント）](#8-front-apiストアフロントの処理の流れ) — 公開データと顧客アカウントの流れとエンドポイント
 - [9. 顧客アカウントとセッション](#9-顧客アカウントとサインインセッション) — 会員登録、リフレッシュトークン、MFA
 - [10. カートと注文](#10-api-によるカートと注文) — カート、チェックアウト、支払い
@@ -182,6 +182,7 @@ Core API は**管理画面で見られる以上のデータを見せません**�
 | `order/detail/{id}` | 注文の詳細 |
 | `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | 注文一覧画面の**変更権限**（セクション 7） |
 | `product/*` | 商品一覧 |
+| `product/{id}`（`PATCH`）, `product/{id}/stock`, `stock/batch` | 商品一覧画面の**変更権限**（セクション 7） |
 | `category/*`, `brand/*`, `supplier/*` | カテゴリー／ブランド／仕入先一覧 |
 | `banner/*`, `page/*` | バナー／コンテンツページ一覧 |
 | `logout`, `info`, `sessions` | 有効なトークンのみ |
@@ -484,19 +485,21 @@ flowchart TD
 | `409` | `refresh_in_progress` | リフレッシュトークンが数秒前に使われた — 受け取った新しい組を使う（セクション 9.2） |
 | `409` | `event_log_disabled` | イベントログが API 管理画面でオフになっている（セクション 5、6）— gp247/core 3.7.0 から |
 | `410` | `cursor_expired` | `after` カーソルがイベントログの削除済み部分より古い — `updated_since` で同期し直し、イベントを最初から読む（セクション 6） |
-| `400` | `idempotency_key_required` | `Idempotency-Key` ヘッダーの形式が不正（印字可能な 8〜255 文字が必要）、またはキー必須のエンドポイント（注文の確定 — セクション 10.2）でキーがない |
+| `400` | `idempotency_key_required` | `Idempotency-Key` ヘッダーの形式が不正（印字可能な 8〜255 文字が必要）、またはキー必須のエンドポイント（注文の確定 — セクション 10.2、在庫の書き込み — セクション 7）でキーがない |
 | `409` | `idempotency_key_reused` | その `Idempotency-Key` は別のリクエストに使用済み — 新しいキーを使う（セクション 7、10.2） |
 | `409` | `idempotency_in_progress` | 同じ `Idempotency-Key` のリクエストがまだ処理中 — 待ってから再送する（セクション 7）— gp247/core 3.7.0 から |
 | `503` | `idempotency_unavailable` | サイトが `php artisan gp247:update` を実行していないため、`Idempotency-Key` 付きの管理の書き込みをまだ受け付けられない（セクション 7）— gp247/core 3.7.0 から |
 | `401` | `challenge_required` | プラグインによる追加の確認ステップ（OTP など）が必要。本文に `challenge` キーがある（セクション 9.4） |
 | `401` | `challenge_invalid` | 確認チケットが誤り／期限切れ、または確認コードが誤り（セクション 9.4） |
 | `422` | `validation_failed` | 送信したデータが不正 — 項目ごとの `errors` キーも確認してください |
+| `422` | `stock_would_be_negative` | 出庫すると在庫が 0 未満になる — 何も変更されない（セクション 7）— gp247/shop 3.6.0 から |
+| `422` | `stock_managed_by_components` | ビルド商品（セット商品）は構成商品から在庫を求めるため、在庫を直接書き込めない（セクション 7）— gp247/shop 3.6.0 から |
 | `429` | `too_many_attempts` | 呼び出し回数が多すぎる — `Retry-After` ヘッダーに従って待ってください |
 | `405` | `method_not_allowed` | パスに対して HTTP メソッドが違う（例: `POST` の代わりに `GET`） |
 | その他 | `http_error` | その他の HTTP エラー — `msg` を確認してください |
 | `500` | `server_error` | サーバーエラー — 詳細はサイトがデバッグモードのときだけ表示されます |
 
-カートと注文には独自のエラーコードもあります（セクション 10）。拒否された注文の書き込みは理由コード付きの `409` を返します（セクション 7）。まず **HTTP コード**を確認し、次に `code` を読んでケースごとに
+カートと注文には独自のエラーコードもあります（セクション 10）。拒否された注文の書き込みは理由コード付きの `409` を返し、`stock/batch` は行ごとに結果コードを返します（セクション 7）。まず **HTTP コード**を確認し、次に `code` を読んでケースごとに
 処理してください。`msg` は表示やログ用のメッセージです。
 
 ### リクエスト ID `X-Request-Id`
@@ -597,6 +600,9 @@ sequenceDiagram
 | `POST` | `api/v2/core/order/{id}/status` | 注文ステータスを変更（[管理 API によるデータの書き込み](#管理-api-によるデータの書き込み)） |
 | `POST` | `api/v2/core/order/{id}/shipping` | 配送ステータスを変更し、追跡番号を保存 |
 | `POST` | `api/v2/core/order/{id}/notes` | 注文履歴にメモを追加 |
+| `PATCH` | `api/v2/core/product/{id}` | 商品の販売価格・原価・ステータスを変更（[管理 API によるデータの書き込み](#管理-api-によるデータの書き込み)） |
+| `POST` | `api/v2/core/product/{id}/stock` | 入庫／出庫、棚卸し後に在庫を設定 |
+| `POST` | `api/v2/core/stock/batch` | 複数商品の在庫を一度に書き込む（最大 100 行） |
 
 管理者ログインの例（ターミナルで `curl` を使用）：
 
@@ -632,16 +638,19 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
 
 > ℹ️ **対応バージョン:** gp247/core 3.7.0, gp247/shop 3.6.0
 
-ERP や倉庫管理ソフトは、管理画面で手入力する代わりに API で注文を更新できます。各書き込みは注文詳細画面の対応する操作と
-**同じ効果**を持ちます。在庫の増減も注文履歴の行も同じです。
+ERP や倉庫管理ソフトは、管理画面で手入力する代わりに API で注文、商品の価格と在庫を更新できます。注文の各書き込みは
+注文詳細画面の対応する操作と**同じ効果**を持ちます。在庫の増減も注文履歴の行も同じです。
 
 | メソッド | パス | リクエスト本文（JSON） | 効果 |
 | --- | --- | --- | --- |
 | `POST` | `api/v2/core/order/{id}/status` | `{"status": …}` | 注文ステータスを変更 |
 | `POST` | `api/v2/core/order/{id}/shipping` | `{"shipping_status"?, "tracking_number"?, "tracking_url"?}` | 配送ステータスを変更し、追跡番号を保存 |
 | `POST` | `api/v2/core/order/{id}/notes` | `{"content": "…"}` | 注文履歴にメモを追加 |
+| `PATCH` | `api/v2/core/product/{id}` | `{"price"?, "cost"?, "status"?}` | 商品の販売価格・原価・ステータスを変更 |
+| `POST` | `api/v2/core/product/{id}/stock` | `{"delta": …}` または `{"set": …}` | 入庫／出庫、または棚卸し後に在庫を設定 |
+| `POST` | `api/v2/core/stock/batch` | `{"items": [{"id" または "sku", "delta" または "set"}, …]}` | 複数商品の在庫を書き込む（1〜100 行） |
 
-**共通のルール（3 つのエンドポイントすべて）：**
+**共通のルール（注文の 3 つのエンドポイント）：**
 
 - **権限：** アカウントには **注文一覧** 画面の **変更権限** が必要で、その画面で操作するときとまったく同じように確認されます —
   画面で注文を変更できる人は API でも変更できます。閲覧のみのアカウント（`view.all` ロールを含む）→ `403 forbidden`。
@@ -699,11 +708,109 @@ curl -X POST "https://shop.example.com/api/v2/core/order/ORDER-ID/shipping" \
 }
 ```
 
+#### 商品と在庫
+
+**共通のルール（商品・在庫の 3 つのエンドポイント）：**
+
+- **権限：** アカウントには **商品一覧** 画面の **変更権限** が必要で、注文の書き込みが注文一覧画面で確認されるのと同じ方法で
+  確認されます。閲覧のみのアカウント → `403 forbidden`。
+- 自分のストアの商品のみ。他のストアの商品 → `404 not_found`（`stock/batch` では `not_found` の行）。
+- データが不正 → `422 validation_failed`（`errors` 付き）。
+
+**価格とステータス — `PATCH product/{id}`：**
+
+- `price`、`cost`（0 以上の数値）、`status`（`0` または `1`）のうち少なくとも 1 つを送ります。本文が空 → `422`。
+- それ以外の項目（例: `sku`、`stock`）→ `422 validation_failed`。黙って無視はされません。在庫は下記の在庫コマンドで書き込みます。
+- ストアの **商品設定** でオフになっている項目（**価格を使用** / **原価を使用**）→ `422`：API は管理画面の商品フォームと
+  同じ項目スイッチに、その商品のストアの設定で従います。
+- 成功 → `200 {"data": <商品>}`。`product/detail/{id}` と同じ形です。
+- `Idempotency-Key` は注文の書き込みと同じく任意です。
+
+**1 商品の在庫 — `product/{id}/stock`：** 本文には 2 つの項目のうち **ちょうど 1 つ** を送ります。
+
+| 項目 | 意味 | ルール |
+| --- | --- | --- |
+| `delta` | 入庫（正の数）または出庫（負の数） | 0 以外。商品設定で **小数の数量を許可** がオンでない限り整数。在庫は 0 未満にならない → `422 stock_would_be_negative`、何も変更されない |
+| `set` | 棚卸し後に在庫をそのまま設定 | 0 以上。**administrator** ロールのアカウントのみ（それ以外 → `403`） |
+
+- 両方送る、またはどちらも送らない → `422 validation_failed`。
+- `delta` はアトミックに加減算されます：同じ瞬間に入った注文の分が失われることはありません。商品の **販売数** は変わりません
+  — 販売ではないためです。
+- ビルド商品（構成商品から在庫を求めるセット商品）→ `422 stock_managed_by_components`。
+- `Idempotency-Key` ヘッダーは **必須** です（なし → `400 idempotency_key_required`）：同じキーで再送しても在庫は 1 回だけ
+  動き、最初の結果がヘッダー `Idempotent-Replayed: true` 付きで返ります。
+- 成功 → `200 {"data": {"id": "…", "sku": "…", "stock": 15}}`。
+
+> 💡 **新しい在庫数ではなく `delta` を送るのはなぜ？** ERP が在庫を読んでから新しい数を送るまでの間に、お客様が注文するかも
+> しれません。新しい在庫数を送るとその注文で減った分を上書きしてしまいますが、`delta`（入庫 +20、出庫 −3）なら現在の数に
+> 対して加減算されます。`set` は実地棚卸しの直後にだけ使ってください。
+
+例：倉庫ソフトが 20 個の入庫を知らせる場合。
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/product/PRODUCT-ID/stock" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 3b9e7d10-5c2f-4a8e-b1d4-7f0a6c2e9b35" \
+  -d '{"delta":20}'
+```
+
+結果：
+
+```json
+{ "data": { "id": "PRODUCT-ID", "sku": "TSHIRT-01", "stock": 35 } }
+```
+
+**複数商品を一度に — `stock/batch`：**
+
+- `items` は 1〜100 行。各行に商品の `id` **または** `sku` と、`delta` **または** `set`（ルールは上と同じ）を指定します。
+  100 行を超える、または形式が不正な行（例: `delta` も `set` もない）→ `422`、どの行も実行されません。
+- 行ごとに結果があり、エラーの行があってもほかの行は止まりません。一部の行が失敗しても HTTP は `200` です — `ok` / `failed`
+  と各結果を確認してください。
+- `results` は `items` と同じ順で、各結果にはその行の `id` または `sku` が入ります。
+- `Idempotency-Key` は **必須**：同じバッチを再送しても在庫は二重に動かず、同じ本文が返ります。
+
+| 行の `code` | 発生する場合 |
+| --- | --- |
+| `not_found` | その `id` がアカウントのストアにない |
+| `sku_not_found` | その SKU の商品がない |
+| `sku_ambiguous` | 複数の商品が同じ SKU を持つ — `id` を送る |
+| `forbidden` | administrator ではないアカウントによる `set` |
+| `stock_would_be_negative` | 出庫すると在庫が 0 未満になる — この行は実行されない |
+| `stock_managed_by_components` | ビルド商品。在庫は構成商品から求められる |
+
+例：
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/stock/batch" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 9a4d2c61-7e3b-4f05-8c1a-0b6e5d3f2a78" \
+  -d '{"items":[{"id":"PRODUCT-ID","delta":20},{"sku":"MUG-07","delta":-3}]}'
+```
+
+結果：
+
+```json
+{
+  "data": {
+    "results": [
+      { "id": "PRODUCT-ID", "ok": true, "stock": 35 },
+      { "sku": "MUG-07", "ok": false, "code": "sku_not_found", "msg": "No product has this SKU" }
+    ],
+    "ok": 1,
+    "failed": 1
+  }
+}
+```
+
 #### `Idempotency-Key` で安全に再送する
 
 通信が不安定だと、アプリは書き込みが実行されたかどうか分かりません。`Idempotency-Key` ヘッダー（印字可能な 8〜255 文字、
-例: UUID）を付けて送れば、二重に書き込む心配なく再送できます。注文の 3 つのエンドポイントではキーは **任意** です。キーが
-必須のエンドポイントはその旨を明記します（キーなし → `400 idempotency_key_required`）。
+例: UUID）を付けて送れば、二重に書き込む心配なく再送できます。注文の 3 つのエンドポイントと `PATCH product/{id}` では
+キーは **任意**、`product/{id}/stock` と `stock/batch` では **必須** です（キーなし → `400 idempotency_key_required`）。
 
 ```mermaid
 sequenceDiagram
@@ -721,7 +828,7 @@ sequenceDiagram
 | 同じキー、別のリクエスト（本文またはパスが違う） | `409 idempotency_key_reused` |
 | 同じキー、最初のリクエストがまだ処理中 | `409 idempotency_in_progress` — 待ってから再送 |
 | 最初のリクエストがサーバーエラー（`5xx`） | キーは解放され、再送すると実際に実行される |
-| キーの形式が不正 | `400 idempotency_key_required` |
+| キーの形式が不正、または在庫の書き込みでキーがない | `400 idempotency_key_required` |
 | サイトが `php artisan gp247:update` を未実行 | `503 idempotency_unavailable`（キーを送ったときのみ） |
 
 - キーは管理者アカウントごとに別々で、**24 時間** 保持されます。新しい書き込みには新しいキーが必要です。
@@ -732,6 +839,7 @@ sequenceDiagram
 
 - 書き込みは **管理者アカウントごと** に数えます：既定は **1 分あたり 300 リクエスト**。環境変数
   `GP247_API_WRITE_THROTTLE` に `リクエスト数,分数` の形で設定して変更できます（例: `600,1`）。
+- 商品・在庫・注文の書き込みはこの制限を共有します。`stock/batch` 1 回は **1** リクエストと数えます。
 - 上限を超える → `429 too_many_attempts`（`Retry-After` ヘッダー付き）。
 - 読み取りは従来どおり IP ごとの共通の制限に従います。
 
@@ -1289,7 +1397,7 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; 変更の同期: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; イベントログ: gp247/core 3.7.0; 管理 API による注文の書き込み: gp247/core 3.7.0, gp247/shop 3.6.0 | ERP／倉庫ソフト向けに管理 API による注文の書き込みを追加: `api/v2/core/order/{id}/status`、`order/{id}/shipping`（配送ステータス ＋ 手動の送り状の追跡番号）、`order/{id}/notes` — 注文一覧画面の変更権限、書き込みはアカウントごとに 1 分 300 回まで（`GP247_API_WRITE_THROTTLE`）、`Idempotency-Key` は任意（再送 ⇒ 最初の結果。`409 idempotency_key_reused` / `idempotency_in_progress`、`gp247:update` 前は `503 idempotency_unavailable`）（セクション 3、6、7）; ERP 向けのイベントログ `api/v2/core/events` を追加（カーソル `after`、古い順、管理画面の権限とストアで制限。既定はオフ — API 管理画面の **同期用イベントログ（ERP）** スイッチ、オフの間は `409 event_log_disabled`。保持 30 日、古すぎるカーソルは `410 cursor_expired`）（セクション 5、6）; 管理用の v2 一覧に変更の同期モードを追加: `updated_since` ＋ カーソル `page[after]`、`meta.next_after` / `has_more` / `sync_until`（6 章）; ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; 変更の同期: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; イベントログ: gp247/core 3.7.0; 管理 API による注文の書き込み: gp247/core 3.7.0, gp247/shop 3.6.0; 管理 API による商品・在庫の書き込み: gp247/shop 3.6.0 | 管理 API による商品・在庫の書き込みを追加: `PATCH api/v2/core/product/{id}`（販売価格・原価・ステータス — 商品設定の項目スイッチに従う）、`product/{id}/stock`（`delta` はアトミックな入庫／出庫で 0 未満にならず販売数は変わらない、`set` は棚卸し後で administrator のみ）、`stock/batch`（1〜100 行、行ごとの結果）— 商品一覧画面の変更権限、在庫の書き込みは `Idempotency-Key` 必須、`422 stock_would_be_negative` / `stock_managed_by_components`（セクション 3、6、7）; ERP／倉庫ソフト向けに管理 API による注文の書き込みを追加: `api/v2/core/order/{id}/status`、`order/{id}/shipping`（配送ステータス ＋ 手動の送り状の追跡番号）、`order/{id}/notes` — 注文一覧画面の変更権限、書き込みはアカウントごとに 1 分 300 回まで（`GP247_API_WRITE_THROTTLE`）、`Idempotency-Key` は任意（再送 ⇒ 最初の結果。`409 idempotency_key_reused` / `idempotency_in_progress`、`gp247:update` 前は `503 idempotency_unavailable`）（セクション 3、6、7）; ERP 向けのイベントログ `api/v2/core/events` を追加（カーソル `after`、古い順、管理画面の権限とストアで制限。既定はオフ — API 管理画面の **同期用イベントログ（ERP）** スイッチ、オフの間は `409 event_log_disabled`。保持 30 日、古すぎるカーソルは `410 cursor_expired`）（セクション 5、6）; 管理用の v2 一覧に変更の同期モードを追加: `updated_since` ＋ カーソル `page[after]`、`meta.next_after` / `has_more` / `sync_until`（6 章）; ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
 | 2026-10-30 | gp247/shop 3.5.0 | API v2 によるカート（`api/v2/front/cart`、`cart/items`）: ウェブサイトと共通のアカウントのカート、`X-Cart-Token` によるゲストのカート（30 日）、ログイン / 登録時のカート統合（`cart_merge`）、最大 100 行、1 分あたり 60 回; API v2 によるチェックアウトの手順（`checkout`、`checkout/address`、`checkout/shipping-methods` + `shipping-method`、`checkout/payment-methods` + `payment-method`、`checkout/totals`）とプロモーション（`cart/promotions/{pluginKey}`）; API v2 による注文（`checkout/place`）: `Idempotency-Key` 必須（再送 ⇒ 同じ注文）、新しい合計付きの `409 price_changed`、API 管理画面の **API経由の注文** スイッチ（既定でオフ）、1 分あたり 10 件; API によるオンライン決済（`payment.url`、許可リスト `GP247_PAYMENT_RETURN_URLS`（既定で空）にある `return_url` で購入者をアプリへ戻す）と支払い状況（`member/orders/{id}/payment`、`orders/{id}/payment` + `X-Order-Access`）; v2 の商品に `attributes`、`image_sizes`、`stock_status` を追加 |
 | 2026-10-29 | gp247/core 3.6.0 | **管理者**のパスワードの変更／再設定（ユーザー画面、アカウント設定、パスワードを忘れた場合）で、その管理者のすべての API トークンとセッションをサインアウト |
 | 2026-10-28 | gp247/core 3.3.1。`X-Request-Id`、古いトークンの有効期限、平文キーの削除、`api_route_gate`：3.4.0。顧客アカウントとセッション：core 3.6.0、shop 3.4.0 | API 管理画面で API をオン／オフ（全体 + v1/v2 × core/front）、新規インストールは v2 のみオン、オフのグループは `404 api_disabled` を返す（3.3.1）。オフのグループはトークンがなくても `api_disabled` を返す。すべてのレスポンスに `X-Request-Id` ヘッダー。3.2.3 より前に発行されたトークンに `gp247:update` で有効期限を設定（最低 7 日）。`gp247:update` が API Connection キーの平文のコピーを削除。`gp247:doctor` がルートキャッシュを確認（3.4.0）。API v2 による顧客アカウント（会員登録、パスワードの再設定、プロフィール、パスワード変更、住所録、確認メールの再送）、任意のローテーション式リフレッシュトークン（60 分のトークン）、セッション管理、v2 の `logout` でセッション全体を終了、プラグインによる追加の確認ステップ（`challenge_required`）、パスワードの変更／再設定ですべての API トークンを無効化、メール確認リンクはウェブサイトへのサインイン不要、管理 API のアクセスログ（core 3.6.0、shop 3.4.0） |

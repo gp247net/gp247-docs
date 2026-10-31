@@ -52,7 +52,7 @@ flowchart LR
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
 - [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, handle errors
-- [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order writes for ERP / warehouse tools
+- [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes for ERP / warehouse tools
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
 - [10. Cart & checkout](#10-cart--checkout-through-the-api) — cart, checkout, payment
@@ -182,6 +182,7 @@ admin screen; an administrator can only call the endpoint if the account is allo
 | `order/detail/{id}` | Order details |
 | `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | **Change permission** on the Order list screen (section 7) |
 | `product/*` | Product list |
+| `product/{id}` (`PATCH`), `product/{id}/stock`, `stock/batch` | **Change permission** on the Product list screen (section 7) |
 | `category/*`, `brand/*`, `supplier/*` | Category / brand / supplier list |
 | `banner/*`, `page/*` | Banner / content page list |
 | `logout`, `info`, `sessions` | Only a valid token |
@@ -490,19 +491,21 @@ flowchart TD
 | `409` | `refresh_in_progress` | The refresh token was used seconds ago — use the new pair you received (section 9.2) |
 | `409` | `event_log_disabled` | The event log is turned off on the API management screen (sections 5, 6) — since gp247/core 3.7.0 |
 | `410` | `cursor_expired` | The `after` cursor is older than the cleaned part of the event log — resync through `updated_since`, then read events from the start (section 6) |
-| `400` | `idempotency_key_required` | The `Idempotency-Key` header is malformed (8–255 printable characters needed), or missing on an endpoint that requires it (placing an order — section 10.2) |
+| `400` | `idempotency_key_required` | The `Idempotency-Key` header is malformed (8–255 printable characters needed), or missing on an endpoint that requires it (placing an order — section 10.2; stock writes — section 7) |
 | `409` | `idempotency_key_reused` | The `Idempotency-Key` was already used for another request — use a new key (sections 7, 10.2) |
 | `409` | `idempotency_in_progress` | A request with the same `Idempotency-Key` is still being processed — wait, then send again (section 7) — since gp247/core 3.7.0 |
 | `503` | `idempotency_unavailable` | The site has not run `php artisan gp247:update`, so it cannot take admin writes with an `Idempotency-Key` yet (section 7) — since gp247/core 3.7.0 |
 | `401` | `challenge_required` | The account needs an extra verification step (OTP…) provided by a plugin; the body has a `challenge` key (section 9.4) |
 | `401` | `challenge_invalid` | Verification ticket wrong/expired or wrong verification code (section 9.4) |
 | `422` | `validation_failed` | The submitted data is invalid — see the `errors` key for each field |
+| `422` | `stock_would_be_negative` | An issue of goods would take the stock below 0 — nothing changes (section 7) — since gp247/shop 3.6.0 |
+| `422` | `stock_managed_by_components` | A build product (combo) takes its stock from its components; its stock cannot be written directly (section 7) — since gp247/shop 3.6.0 |
 | `429` | `too_many_attempts` | Too many calls — wait as indicated by the `Retry-After` header |
 | `405` | `method_not_allowed` | Wrong HTTP method for the path (for example `GET` instead of `POST`) |
 | other | `http_error` | Any other HTTP error — read `msg` |
 | `500` | `server_error` | Server error — details are only shown when the site has debug mode on |
 
-The cart and ordering have their own extra error codes (section 10); a refused order write answers `409` with a reason code (section 7). Check the **HTTP code** first, then read `code` to
+The cart and ordering have their own extra error codes (section 10); a refused order write answers `409` with a reason code; each line of `stock/batch` has its own result code (section 7). Check the **HTTP code** first, then read `code` to
 handle each case; `msg` is a message to show or log.
 
 ### Request id `X-Request-Id`
@@ -603,6 +606,9 @@ screen, and it only sees the data of its own store (section 3).
 | `POST` | `api/v2/core/order/{id}/status` | Change an order's status ([Writing data through the admin API](#writing-data-through-the-admin-api)) |
 | `POST` | `api/v2/core/order/{id}/shipping` | Change the shipping status, keep the tracking number |
 | `POST` | `api/v2/core/order/{id}/notes` | Add a note to the order history |
+| `PATCH` | `api/v2/core/product/{id}` | Change a product's selling price, cost price, status ([Writing data through the admin API](#writing-data-through-the-admin-api)) |
+| `POST` | `api/v2/core/product/{id}/stock` | Receive / issue goods, set the stock after a stock count |
+| `POST` | `api/v2/core/stock/batch` | Write the stock of many products at once (up to 100 lines) |
 
 Example admin login (using `curl` in a Terminal):
 
@@ -638,16 +644,20 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
 
 > ℹ️ **Available since:** gp247/core 3.7.0, gp247/shop 3.6.0
 
-An ERP or warehouse tool can update orders through the API instead of typing them in on the admin area. Each write has
-**the same effect** as the matching action on the order details screen: same stock movements, same order history lines.
+An ERP or warehouse tool can update orders, product prices and stock through the API instead of typing them in on the
+admin area. Each order write has **the same effect** as the matching action on the order details screen: same stock
+movements, same order history lines.
 
 | Method | Path | Request body (JSON) | Effect |
 | --- | --- | --- | --- |
 | `POST` | `api/v2/core/order/{id}/status` | `{"status": …}` | Change the order's status |
 | `POST` | `api/v2/core/order/{id}/shipping` | `{"shipping_status"?, "tracking_number"?, "tracking_url"?}` | Change the shipping status, keep the tracking number |
 | `POST` | `api/v2/core/order/{id}/notes` | `{"content": "…"}` | Add a note to the order history |
+| `PATCH` | `api/v2/core/product/{id}` | `{"price"?, "cost"?, "status"?}` | Change the product's selling price, cost price, status |
+| `POST` | `api/v2/core/product/{id}/stock` | `{"delta": …}` or `{"set": …}` | Receive / issue goods, or set the stock after a stock count |
+| `POST` | `api/v2/core/stock/batch` | `{"items": [{"id" or "sku", "delta" or "set"}, …]}` | Write the stock of many products (1–100 lines) |
 
-**Common rules (all three endpoints):**
+**Common rules (the three order endpoints):**
 
 - **Permission:** the account needs **change permission** on the **Order list** screen, checked exactly as when using an
   action on that screen — whoever may change orders on the screen may change them through the API. View-only accounts
@@ -707,11 +717,110 @@ Result (shortened):
 }
 ```
 
+#### Products and stock
+
+**Common rules (the three product and stock endpoints):**
+
+- **Permission:** the account needs **change permission** on the **Product list** screen, checked exactly as the order
+  writes are checked against the Order list screen. View-only accounts → `403 forbidden`.
+- Only products of your own store; a product of another store → `404 not_found` (in `stock/batch`: a `not_found` line).
+- Invalid data → `422 validation_failed` with `errors`.
+
+**Price and status — `PATCH product/{id}`:**
+
+- Send at least one of `price`, `cost` (a number ≥ 0), `status` (`0` or `1`). An empty body → `422`.
+- Any other field (for example `sku`, `stock`) → `422 validation_failed`; it is not silently ignored. Stock is written with
+  the stock commands below.
+- A field turned off in the store's **Config product** settings (**Use PRICE** / **Use COST PRICE**) → `422`: the API follows
+  the same field switches as the product form on the admin area, for the product's own store.
+- Success → `200 {"data": <product>}`, same shape as `product/detail/{id}`.
+- `Idempotency-Key` is optional, as for the order writes.
+
+**Stock of one product — `product/{id}/stock`:** the body carries **exactly one** of two fields.
+
+| Field | Meaning | Rules |
+| --- | --- | --- |
+| `delta` | Receive goods (positive) or issue goods (negative) | Not 0; whole numbers unless **Allow decimal quantity** is on in the product settings. The stock never goes below 0 → `422 stock_would_be_negative`, nothing changes |
+| `set` | Set the stock outright after a stock count | ≥ 0; only an account with the **administrator** role (others → `403`) |
+
+- Both fields or neither → `422 validation_failed`.
+- `delta` adds or subtracts atomically: an order placed at the same moment loses nothing. The product's **sold** counter does
+  not change — this is not a sale.
+- A build product (a combo whose stock comes from its components) → `422 stock_managed_by_components`.
+- The `Idempotency-Key` header is **required** (missing → `400 idempotency_key_required`): a retry with the same key moves
+  the stock only once and answers the first result with the header `Idempotent-Replayed: true`.
+- Success → `200 {"data": {"id": "…", "sku": "…", "stock": 15}}`.
+
+> 💡 **Why send `delta` and not the new stock figure?** Between the moment the ERP reads the stock and the moment it sends a
+> new figure, a customer may place an order. Sending the new figure would overwrite what that order took; sending a
+> `delta` (receive +20, issue −3) adds or subtracts on the current figure. Use `set` only right after a physical stock count.
+
+Example: the warehouse tool reports 20 units received:
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/product/PRODUCT-ID/stock" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 3b9e7d10-5c2f-4a8e-b1d4-7f0a6c2e9b35" \
+  -d '{"delta":20}'
+```
+
+Result:
+
+```json
+{ "data": { "id": "PRODUCT-ID", "sku": "TSHIRT-01", "stock": 35 } }
+```
+
+**Many products at once — `stock/batch`:**
+
+- `items` has 1–100 lines; each line has the product's `id` **or** `sku`, with `delta` **or** `set` (same rules as above).
+  More than 100 lines or a malformed line (for example neither `delta` nor `set`) → `422`, no line runs.
+- Each line has its own result; a bad line does not stop the others. HTTP stays `200` even when some lines fail — read
+  `ok` / `failed` and each result.
+- `results` are in the same order as `items`; each result echoes the line's `id` or `sku`.
+- `Idempotency-Key` is **required**: a retried batch moves nothing twice and answers the same body.
+
+| Line `code` | When |
+| --- | --- |
+| `not_found` | The `id` is not in the account's store |
+| `sku_not_found` | No product has this SKU |
+| `sku_ambiguous` | Several products share the SKU — send the `id` |
+| `forbidden` | `set` by an account that is not an administrator |
+| `stock_would_be_negative` | The issue would take the stock below 0 — this line does not run |
+| `stock_managed_by_components` | A build product; its stock comes from its components |
+
+Example:
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/stock/batch" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 9a4d2c61-7e3b-4f05-8c1a-0b6e5d3f2a78" \
+  -d '{"items":[{"id":"PRODUCT-ID","delta":20},{"sku":"MUG-07","delta":-3}]}'
+```
+
+Result:
+
+```json
+{
+  "data": {
+    "results": [
+      { "id": "PRODUCT-ID", "ok": true, "stock": 35 },
+      { "sku": "MUG-07", "ok": false, "code": "sku_not_found", "msg": "No product has this SKU" }
+    ],
+    "ok": 1,
+    "failed": 1
+  }
+}
+```
+
 #### Retrying safely with `Idempotency-Key`
 
 On a flaky network the app cannot tell whether a write ran. Send an `Idempotency-Key` header (8–255 printable characters,
-for example a UUID) to retry without writing twice. On the three order endpoints the key is **optional**; an endpoint that
-requires it says so (missing key → `400 idempotency_key_required`).
+for example a UUID) to retry without writing twice. On the three order endpoints and `PATCH product/{id}` the key is
+**optional**; on `product/{id}/stock` and `stock/batch` it is **required** (missing key → `400 idempotency_key_required`).
 
 ```mermaid
 sequenceDiagram
@@ -729,7 +838,7 @@ sequenceDiagram
 | Same key, another request (other body or path) | `409 idempotency_key_reused` |
 | Same key, first request still being processed | `409 idempotency_in_progress` — wait, then send again |
 | First request hit a server error (`5xx`) | The key is freed: a retry really runs |
-| Malformed key | `400 idempotency_key_required` |
+| Malformed key, or missing on a stock write | `400 idempotency_key_required` |
 | Site has not run `php artisan gp247:update` | `503 idempotency_unavailable` (only when a key is sent) |
 
 - Keys are separate for each admin account and kept **24 hours**. Each new write needs a new key.
@@ -740,6 +849,7 @@ sequenceDiagram
 
 - Writes are counted **per admin account**: by default **300 requests / minute**. Change it with the environment variable
   `GP247_API_WRITE_THROTTLE` as `requests,minutes`, for example `600,1`.
+- Product, stock and order writes share this limit; one `stock/batch` counts as **one** request.
 - Over the limit → `429 too_many_attempts` with a `Retry-After` header.
 - Reads keep the general per-IP limit.
 
@@ -1309,7 +1419,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0; order writes through the admin API: gp247/core 3.7.0, gp247/shop 3.6.0 | Order writes through the admin API for ERP / warehouse tools: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (shipping status + manual shipment tracking number), `order/{id}/notes` — change permission on the Order list screen, write limit 300 per minute per account (`GP247_API_WRITE_THROTTLE`), optional `Idempotency-Key` (retry ⇒ first result; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` before `gp247:update`) (sections 3, 6, 7); Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0; order writes through the admin API: gp247/core 3.7.0, gp247/shop 3.6.0; product and stock writes through the admin API: gp247/shop 3.6.0 | Product and stock writes through the admin API: `PATCH api/v2/core/product/{id}` (selling price, cost price, status — following the field switches of the product settings), `product/{id}/stock` (`delta` receives/issues atomically, never below 0, sold counter untouched; `set` after a stock count, administrators only), `stock/batch` (1–100 lines, one result per line) — change permission on the Product list screen, `Idempotency-Key` required for stock writes, `422 stock_would_be_negative` / `stock_managed_by_components` (sections 3, 6, 7); Order writes through the admin API for ERP / warehouse tools: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (shipping status + manual shipment tracking number), `order/{id}/notes` — change permission on the Order list screen, write limit 300 per minute per account (`GP247_API_WRITE_THROTTLE`), optional `Idempotency-Key` (retry ⇒ first result; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` before `gp247:update`) (sections 3, 6, 7); Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |

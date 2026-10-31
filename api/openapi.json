@@ -2132,6 +2132,348 @@
                 ]
             }
         },
+        "/api/v2/core/product/{id}": {
+            "patch": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Change a product's selling price, cost price or status (since shop 3.6.0)",
+                "description": "Permission: change permission on the admin Products screen, checked like the order writes against the Orders screen (view-only accounts get 403). Only products of the account's store. Writes are limited per admin account (default 300 per minute, GP247_API_WRITE_THROTTLE \"requests,minutes\"); a batch counts as one request. Only price, cost and status are writable; any other field (e.g. sku, stock) or a field turned off in the store's product settings (Config product: price / cost) is refused with 422, following the same field switches as the admin product form for the product's own store. Optional Idempotency-Key: the same key with the same body answers the first result (header Idempotent-Replayed: true) without running again; keys are per account and kept 24 hours; a 5xx frees the key.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": false,
+                        "description": "Optional; 8-255 printable characters (e.g. a UUID). A retry with the same key and body answers the first result",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "description": "At least one of price / cost / status; nothing else",
+                                "minProperties": 1,
+                                "additionalProperties": false,
+                                "properties": {
+                                    "price": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "description": "Selling price; refused (422) when the store turned the price field off"
+                                    },
+                                    "cost": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "description": "Cost price; refused (422) when the store turned the cost field off"
+                                    },
+                                    "status": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {...}} — the product after the write, same shape as product/detail. A replay of the same Idempotency-Key carries the header Idempotent-Replayed: true"
+                    },
+                    "400": {
+                        "description": "code idempotency_key_required: malformed Idempotency-Key",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the change permission on the admin Products screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found or a product of another store",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "idempotency_key_reused (same key, another request), idempotency_in_progress (same key still being processed)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed: empty body, another field (e.g. sku, stock), a field turned off in the product settings, a negative price / cost, status not 0 or 1",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Write rate limit exceeded (per admin account); see Retry-After",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "code idempotency_unavailable: an Idempotency-Key was sent but the site has not run php artisan gp247:update",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/core/product/{id}/stock": {
+            "post": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Receive / issue goods, or set the stock after a stock count (since shop 3.6.0)",
+                "description": "Permission: change permission on the admin Products screen, checked like the order writes against the Orders screen (view-only accounts get 403). Only products of the account's store. Writes are limited per admin account (default 300 per minute, GP247_API_WRITE_THROTTLE \"requests,minutes\"); a batch counts as one request. Exactly one of delta / set. Idempotency-Key is required: a retry with the same key moves the stock once and answers the first result (header Idempotent-Replayed: true); keys are per account and kept 24 hours; a 5xx frees the key. A build product (stock from its components) is refused.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "description": "Required; 8-255 printable characters (e.g. a UUID). A retry with the same key and body moves the stock once and answers the first result (header Idempotent-Replayed: true)",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "description": "Exactly one of delta / set (both or neither: 422 validation_failed)",
+                                "oneOf": [
+                                    {
+                                        "required": [
+                                            "delta"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "set"
+                                        ]
+                                    }
+                                ],
+                                "properties": {
+                                    "delta": {
+                                        "type": "number",
+                                        "not": {
+                                            "const": 0
+                                        },
+                                        "description": "Receive (+) or issue (-) goods, not 0; whole numbers unless decimal quantities are allowed in the product settings. Atomic: an order placed at the same moment loses nothing. Never below zero (422 stock_would_be_negative, nothing moves). The sold counter is not touched"
+                                    },
+                                    "set": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "description": "Set the stock outright after a stock count; administrator role only (others: 403)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"id\": \"...\", \"sku\": \"...\", \"stock\": 15}} — the stock after the move. A replay of the same Idempotency-Key carries the header Idempotent-Replayed: true",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "sku": {
+                                                    "type": "string"
+                                                },
+                                                "stock": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "code idempotency_key_required: Idempotency-Key missing or malformed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the change permission on the admin Products screen, or sent set without the administrator role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found or a product of another store",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "idempotency_key_reused (same key, another request), idempotency_in_progress (same key still being processed)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed: both or neither of delta / set, delta 0, a decimal while decimal quantities are off, set below 0; stock_would_be_negative: the issue would take the stock below zero (nothing moves); stock_managed_by_components: a build product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Write rate limit exceeded (per admin account); see Retry-After",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "code idempotency_unavailable: an Idempotency-Key was sent but the site has not run php artisan gp247:update",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v2/core/product/list": {
             "get": {
                 "tags": [
@@ -2258,6 +2600,247 @@
                         }
                     }
                 ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v2/core/stock/batch": {
+            "post": {
+                "tags": [
+                    "v2 Core (admin)"
+                ],
+                "summary": "Write the stock of many products at once, 1 to 100 lines (since shop 3.6.0)",
+                "description": "Permission: change permission on the admin Products screen, checked like the order writes against the Orders screen (view-only accounts get 403). Only products of the account's store. Writes are limited per admin account (default 300 per minute, GP247_API_WRITE_THROTTLE \"requests,minutes\"); a batch counts as one request. Each line names a product by id or sku and carries delta or set (same rules as product/{id}/stock). Each line has its own result; a bad line does not stop the others and the answer stays 200. results are in the order of items and echo the line's id or sku. Line codes: not_found (id not in the account's store), sku_not_found, sku_ambiguous (several products share the SKU: send the id), forbidden (set without the administrator role), stock_would_be_negative, stock_managed_by_components. Idempotency-Key is required: a retried batch moves nothing twice and answers the same body (header Idempotent-Replayed: true).",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "description": "Required; 8-255 printable characters (e.g. a UUID). A retry with the same key and body moves the stock once and answers the first result (header Idempotent-Replayed: true)",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "items"
+                                ],
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 100,
+                                        "description": "More than 100 lines or a malformed line: 422, nothing applied",
+                                        "items": {
+                                            "type": "object",
+                                            "description": "id or sku (not both), and exactly one of delta / set",
+                                            "allOf": [
+                                                {
+                                                    "oneOf": [
+                                                        {
+                                                            "required": [
+                                                                "id"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "required": [
+                                                                "sku"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "oneOf": [
+                                                        {
+                                                            "required": [
+                                                                "delta"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "required": [
+                                                                "set"
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "maxLength": 100
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "maxLength": 100
+                                                },
+                                                "delta": {
+                                                    "type": "number",
+                                                    "not": {
+                                                        "const": 0
+                                                    },
+                                                    "description": "Receive (+) or issue (-) goods, not 0; whole numbers unless decimal quantities are allowed in the product settings. Atomic: an order placed at the same moment loses nothing. Never below zero (422 stock_would_be_negative, nothing moves). The sold counter is not touched"
+                                                },
+                                                "set": {
+                                                    "type": "number",
+                                                    "minimum": 0,
+                                                    "description": "Set the stock outright after a stock count; administrator role only (others: 403)"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "{\"data\": {\"results\": [...], \"ok\": 1, \"failed\": 1}} — one result per line, even when some lines fail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "sku": {
+                                                                "type": "string"
+                                                            },
+                                                            "ok": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "stock": {
+                                                                "type": "number",
+                                                                "description": "When ok"
+                                                            },
+                                                            "code": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "not_found",
+                                                                    "sku_not_found",
+                                                                    "sku_ambiguous",
+                                                                    "forbidden",
+                                                                    "stock_would_be_negative",
+                                                                    "stock_managed_by_components"
+                                                                ],
+                                                                "description": "When not ok"
+                                                            },
+                                                            "msg": {
+                                                                "type": "string",
+                                                                "description": "When not ok"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "ok": {
+                                                    "type": "integer"
+                                                },
+                                                "failed": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "code idempotency_key_required: Idempotency-Key missing or malformed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the change permission on the admin Products screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "idempotency_key_reused (same key, another request), idempotency_in_progress (same key still being processed)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "validation_failed: items missing, empty or longer than 100 lines, or a malformed line; nothing applied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Write rate limit exceeded (per admin account); see Retry-After",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "code idempotency_unavailable: an Idempotency-Key was sent but the site has not run php artisan gp247:update",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "bearerAuth": [],

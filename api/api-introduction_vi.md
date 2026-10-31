@@ -51,7 +51,7 @@ flowchart LR
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
 - [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, xử lý lỗi
-- [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng cho ERP / phần mềm kho
+- [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng, sản phẩm & tồn kho cho ERP / phần mềm kho
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
 - [10. Giỏ hàng & đặt đơn](#10-giỏ-hàng--đặt-đơn-qua-api) — giỏ, checkout, thanh toán
@@ -177,6 +177,7 @@ hình admin; quản trị viên chỉ gọi được endpoint khi tài khoản c
 | `order/detail/{id}` | Chi tiết đơn hàng |
 | `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | **Quyền sửa** trên màn Danh sách đơn hàng (mục 7) |
 | `product/*` | Danh sách sản phẩm |
+| `product/{id}` (`PATCH`), `product/{id}/stock`, `stock/batch` | **Quyền sửa** trên màn Danh sách sản phẩm (mục 7) |
 | `category/*`, `brand/*`, `supplier/*` | Danh sách danh mục / thương hiệu / nhà cung cấp |
 | `banner/*`, `page/*` | Danh sách banner / trang nội dung |
 | `logout`, `info`, `sessions` | Chỉ cần token hợp lệ |
@@ -477,19 +478,21 @@ flowchart TD
 | `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 9.2) |
 | `409` | `event_log_disabled` | Nhật ký sự kiện đang tắt trên màn quản lý API (mục 5, 6) — từ gp247/core 3.7.0 |
 | `410` | `cursor_expired` | Con trỏ `after` cũ hơn phần nhật ký sự kiện đã dọn — đồng bộ lại bằng `updated_since`, rồi đọc sự kiện từ đầu (mục 6) |
-| `400` | `idempotency_key_required` | Header `Idempotency-Key` sai dạng (cần 8–255 ký tự in được), hoặc thiếu ở endpoint bắt buộc khoá (đặt đơn — mục 10.2) |
+| `400` | `idempotency_key_required` | Header `Idempotency-Key` sai dạng (cần 8–255 ký tự in được), hoặc thiếu ở endpoint bắt buộc khoá (đặt đơn — mục 10.2; ghi tồn kho — mục 7) |
 | `409` | `idempotency_key_reused` | `Idempotency-Key` đã dùng cho một yêu cầu khác — dùng khoá mới (mục 7, 10.2) |
 | `409` | `idempotency_in_progress` | Yêu cầu cùng `Idempotency-Key` vẫn đang được xử lý — chờ rồi gửi lại (mục 7) — từ gp247/core 3.7.0 |
 | `503` | `idempotency_unavailable` | Site chưa chạy `php artisan gp247:update` nên chưa nhận lệnh ghi quản trị có `Idempotency-Key` (mục 7) — từ gp247/core 3.7.0 |
 | `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 9.4) |
 | `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 9.4) |
 | `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
+| `422` | `stock_would_be_negative` | Lệnh xuất kho làm tồn kho xuống dưới 0 — không thay đổi gì (mục 7) — từ gp247/shop 3.6.0 |
+| `422` | `stock_managed_by_components` | Sản phẩm dạng build (combo) lấy tồn kho từ các thành phần, không ghi tồn kho trực tiếp được (mục 7) — từ gp247/shop 3.6.0 |
 | `429` | `too_many_attempts` | Gọi quá nhiều lần — chờ theo header `Retry-After` |
 | `405` | `method_not_allowed` | Sai phương thức HTTP cho đường dẫn (ví dụ `GET` thay cho `POST`) |
 | khác | `http_error` | Lỗi HTTP khác — đọc `msg` |
 | `500` | `server_error` | Lỗi máy chủ — nội dung chi tiết chỉ hiện khi site bật chế độ debug |
 
-Giỏ hàng và đặt đơn có thêm mã lỗi riêng (mục 10); lệnh ghi đơn hàng bị từ chối trả `409` kèm mã lý do (mục 7). Hãy kiểm tra **mã HTTP** trước rồi mới đọc `code` để xử lý từng
+Giỏ hàng và đặt đơn có thêm mã lỗi riêng (mục 10); lệnh ghi đơn hàng bị từ chối trả `409` kèm mã lý do; mỗi dòng của `stock/batch` có mã kết quả riêng (mục 7). Hãy kiểm tra **mã HTTP** trước rồi mới đọc `code` để xử lý từng
 trường hợp; `msg` là thông điệp để hiển thị hoặc ghi log.
 
 ### Mã yêu cầu `X-Request-Id`
@@ -590,6 +593,9 @@ chỉ thấy dữ liệu của cửa hàng mình (mục 3).
 | `POST` | `api/v2/core/order/{id}/status` | Đổi trạng thái đơn hàng ([Ghi dữ liệu qua API quản trị](#ghi-dữ-liệu-qua-api-quản-trị)) |
 | `POST` | `api/v2/core/order/{id}/shipping` | Đổi trạng thái giao hàng, lưu mã vận đơn |
 | `POST` | `api/v2/core/order/{id}/notes` | Thêm ghi chú vào lịch sử đơn |
+| `PATCH` | `api/v2/core/product/{id}` | Sửa giá bán, giá vốn, trạng thái sản phẩm ([Ghi dữ liệu qua API quản trị](#ghi-dữ-liệu-qua-api-quản-trị)) |
+| `POST` | `api/v2/core/product/{id}/stock` | Nhập / xuất kho, đặt lại tồn kho sau kiểm kê |
+| `POST` | `api/v2/core/stock/batch` | Ghi tồn kho nhiều sản phẩm trong một lần (tối đa 100 dòng) |
 
 Ví dụ đăng nhập admin (dùng `curl` trong Terminal):
 
@@ -625,16 +631,20 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
 
 > ℹ️ **Có từ:** gp247/core 3.7.0, gp247/shop 3.6.0
 
-ERP hay phần mềm kho có thể cập nhật đơn hàng qua API thay vì nhập tay trên trang quản trị. Mỗi lệnh ghi có **cùng tác
-dụng** với thao tác tương ứng trên màn chi tiết đơn hàng: cùng trừ/trả kho, cùng dòng lịch sử đơn.
+ERP hay phần mềm kho có thể cập nhật đơn hàng, giá và tồn kho sản phẩm qua API thay vì nhập tay trên trang quản trị. Mỗi
+lệnh ghi đơn hàng có **cùng tác dụng** với thao tác tương ứng trên màn chi tiết đơn hàng: cùng trừ/trả kho, cùng dòng lịch
+sử đơn.
 
 | Phương thức | Đường dẫn | Thân yêu cầu (JSON) | Tác dụng |
 | --- | --- | --- | --- |
 | `POST` | `api/v2/core/order/{id}/status` | `{"status": …}` | Đổi trạng thái đơn hàng |
 | `POST` | `api/v2/core/order/{id}/shipping` | `{"shipping_status"?, "tracking_number"?, "tracking_url"?}` | Đổi trạng thái giao hàng, lưu mã vận đơn |
 | `POST` | `api/v2/core/order/{id}/notes` | `{"content": "…"}` | Thêm ghi chú vào lịch sử đơn |
+| `PATCH` | `api/v2/core/product/{id}` | `{"price"?, "cost"?, "status"?}` | Sửa giá bán, giá vốn, trạng thái sản phẩm |
+| `POST` | `api/v2/core/product/{id}/stock` | `{"delta": …}` hoặc `{"set": …}` | Nhập / xuất kho, hoặc đặt lại tồn kho sau kiểm kê |
+| `POST` | `api/v2/core/stock/batch` | `{"items": [{"id" hoặc "sku", "delta" hoặc "set"}, …]}` | Ghi tồn kho nhiều sản phẩm (1–100 dòng) |
 
-**Quy tắc chung (cả ba endpoint):**
+**Quy tắc chung (ba endpoint đơn hàng):**
 
 - **Quyền:** tài khoản phải có **quyền sửa** trên màn **Danh sách đơn hàng**, kiểm tra y như khi bấm thao tác trên màn
   đó — ai sửa được đơn trên màn hình thì sửa được qua API. Tài khoản chỉ được xem (kể cả vai trò `view.all`) → `403 forbidden`.
@@ -691,11 +701,108 @@ Kết quả (rút gọn):
 }
 ```
 
+#### Sản phẩm và tồn kho
+
+**Quy tắc chung (ba endpoint sản phẩm, tồn kho):**
+
+- **Quyền:** tài khoản phải có **quyền sửa** trên màn **Danh sách sản phẩm**, kiểm tra y như lệnh ghi đơn hàng với màn
+  Danh sách đơn hàng. Tài khoản chỉ được xem → `403 forbidden`.
+- Chỉ sản phẩm của cửa hàng mình; sản phẩm của cửa hàng khác → `404 not_found` (trong `stock/batch`: dòng `not_found`).
+- Dữ liệu sai → `422 validation_failed` kèm `errors`.
+
+**Giá và trạng thái — `PATCH product/{id}`:**
+
+- Gửi ít nhất một trong `price`, `cost` (số ≥ 0), `status` (`0` hoặc `1`). Thân rỗng → `422`.
+- Trường khác (ví dụ `sku`, `stock`) → `422 validation_failed`, không bị bỏ qua lặng lẽ. Tồn kho ghi bằng lệnh tồn kho bên dưới.
+- Trường đang tắt trong **Cấu hình sản phẩm** của cửa hàng (**Sử dụng GIÁ** / **Sử dụng GIÁ GỐC**) → `422`: API theo đúng các
+  công tắc trường của form sản phẩm trên trang quản trị, theo cửa hàng của sản phẩm.
+- Thành công → `200 {"data": <sản phẩm>}`, cùng dạng với `product/detail/{id}`.
+- `Idempotency-Key` tuỳ chọn, như lệnh ghi đơn hàng.
+
+**Tồn kho một sản phẩm — `product/{id}/stock`:** thân gửi **đúng một** trong hai trường.
+
+| Trường | Ý nghĩa | Quy tắc |
+| --- | --- | --- |
+| `delta` | Nhập kho (số dương) hoặc xuất kho (số âm) | Khác 0; số nguyên, trừ khi cửa hàng bật **Cho phép số lượng thập phân** trong Cấu hình sản phẩm. Tồn kho không bao giờ xuống dưới 0 → `422 stock_would_be_negative`, không thay đổi gì |
+| `set` | Đặt thẳng tồn kho sau kiểm kê | ≥ 0; chỉ tài khoản vai trò **administrator** (tài khoản khác → `403`) |
+
+- Gửi cả hai hoặc không gửi trường nào → `422 validation_failed`.
+- `delta` cộng/trừ nguyên tử: đơn hàng đặt cùng lúc không bị mất. Số **đã bán** của sản phẩm không đổi — đây không phải bán hàng.
+- Sản phẩm dạng build (combo lấy tồn kho từ các thành phần) → `422 stock_managed_by_components`.
+- **Bắt buộc** header `Idempotency-Key` (thiếu → `400 idempotency_key_required`): gửi lại cùng khoá chỉ chuyển kho một lần
+  và trả lại kết quả lần đầu kèm header `Idempotent-Replayed: true`.
+- Thành công → `200 {"data": {"id": "…", "sku": "…", "stock": 15}}`.
+
+> 💡 **Vì sao gửi `delta` mà không gửi số tồn kho mới?** Giữa lúc ERP đọc tồn kho và lúc gửi số mới, khách có thể vừa đặt
+> đơn. Gửi số tồn kho mới sẽ ghi đè mất phần hàng đơn đó đã trừ; gửi `delta` (nhập +20, xuất −3) thì cộng/trừ trên số
+> đang có. Chỉ dùng `set` ngay sau khi kiểm kê thực tế.
+
+Ví dụ phần mềm kho báo vừa nhập 20 sản phẩm:
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/product/PRODUCT-ID/stock" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ" \
+  -H "Idempotency-Key: 3b9e7d10-5c2f-4a8e-b1d4-7f0a6c2e9b35" \
+  -d '{"delta":20}'
+```
+
+Kết quả:
+
+```json
+{ "data": { "id": "PRODUCT-ID", "sku": "TSHIRT-01", "stock": 35 } }
+```
+
+**Nhiều sản phẩm một lần — `stock/batch`:**
+
+- `items` có 1–100 dòng; mỗi dòng có `id` **hoặc** `sku` của sản phẩm, kèm `delta` **hoặc** `set` (quy tắc như trên). Quá
+  100 dòng hoặc dòng sai dạng (ví dụ thiếu cả `delta` lẫn `set`) → `422`, không dòng nào chạy.
+- Mỗi dòng có kết quả riêng; một dòng lỗi không chặn các dòng khác. HTTP vẫn là `200` khi có dòng lỗi — đọc `ok` / `failed`
+  và từng kết quả.
+- `results` cùng thứ tự với `items`; mỗi kết quả lặp lại `id` hoặc `sku` của dòng.
+- **Bắt buộc** `Idempotency-Key`: gửi lại cả lô không chuyển kho lần hai và trả lại đúng thân lần đầu.
+
+| `code` của dòng | Khi nào |
+| --- | --- |
+| `not_found` | `id` không có trong cửa hàng của tài khoản |
+| `sku_not_found` | Không sản phẩm nào có SKU này |
+| `sku_ambiguous` | Nhiều sản phẩm cùng SKU — gửi `id` |
+| `forbidden` | `set` từ tài khoản không phải administrator |
+| `stock_would_be_negative` | Xuất kho làm tồn kho dưới 0 — dòng này không chạy |
+| `stock_managed_by_components` | Sản phẩm dạng build, tồn kho lấy từ các thành phần |
+
+Ví dụ:
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/stock/batch" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ" \
+  -H "Idempotency-Key: 9a4d2c61-7e3b-4f05-8c1a-0b6e5d3f2a78" \
+  -d '{"items":[{"id":"PRODUCT-ID","delta":20},{"sku":"MUG-07","delta":-3}]}'
+```
+
+Kết quả:
+
+```json
+{
+  "data": {
+    "results": [
+      { "id": "PRODUCT-ID", "ok": true, "stock": 35 },
+      { "sku": "MUG-07", "ok": false, "code": "sku_not_found", "msg": "No product has this SKU" }
+    ],
+    "ok": 1,
+    "failed": 1
+  }
+}
+```
+
 #### Gửi lại an toàn với `Idempotency-Key`
 
 Mạng chập chờn khiến ứng dụng không biết lệnh ghi đã chạy hay chưa. Gửi kèm header `Idempotency-Key` (8–255 ký tự in
-được, ví dụ UUID) để gửi lại mà không sợ ghi hai lần. Ở ba endpoint đơn hàng, khoá là **tuỳ chọn**; endpoint nào bắt buộc
-khoá sẽ ghi rõ (thiếu khoá → `400 idempotency_key_required`).
+được, ví dụ UUID) để gửi lại mà không sợ ghi hai lần. Ở ba endpoint đơn hàng và `PATCH product/{id}`, khoá là **tuỳ chọn**;
+ở `product/{id}/stock` và `stock/batch`, khoá **bắt buộc** (thiếu khoá → `400 idempotency_key_required`).
 
 ```mermaid
 sequenceDiagram
@@ -713,7 +820,7 @@ sequenceDiagram
 | Cùng khoá, yêu cầu khác (thân hoặc đường dẫn khác) | `409 idempotency_key_reused` |
 | Cùng khoá, lần đầu vẫn đang xử lý | `409 idempotency_in_progress` — chờ rồi gửi lại |
 | Lần đầu gặp lỗi máy chủ (`5xx`) | Khoá được giải phóng: gửi lại sẽ chạy thật |
-| Khoá sai dạng | `400 idempotency_key_required` |
+| Khoá sai dạng, hoặc thiếu ở lệnh tồn kho | `400 idempotency_key_required` |
 | Site chưa chạy `php artisan gp247:update` | `503 idempotency_unavailable` (chỉ khi có gửi khoá) |
 
 - Khoá tính riêng cho từng tài khoản quản trị và được giữ **24 giờ**. Mỗi lệnh ghi mới cần một khoá mới.
@@ -723,6 +830,7 @@ sequenceDiagram
 
 - Lệnh ghi đếm theo **từng tài khoản quản trị**: mặc định **300 yêu cầu / phút**. Đổi bằng biến môi trường
   `GP247_API_WRITE_THROTTLE` dạng `số-yêu-cầu,số-phút`, ví dụ `600,1`.
+- Sản phẩm, tồn kho và đơn hàng dùng chung giới hạn này; một lô `stock/batch` tính là **một** yêu cầu.
 - Vượt giới hạn → `429 too_many_attempts` kèm header `Retry-After`.
 - Lệnh đọc vẫn theo giới hạn chung theo IP.
 
@@ -1273,7 +1381,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0; ghi đơn hàng qua API quản trị: gp247/core 3.7.0, gp247/shop 3.6.0 | Ghi đơn hàng qua API quản trị cho ERP / phần mềm kho: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (trạng thái giao hàng + mã vận đơn thủ công), `order/{id}/notes` — quyền sửa trên màn Danh sách đơn hàng, giới hạn ghi 300 lần/phút mỗi tài khoản (`GP247_API_WRITE_THROTTLE`), `Idempotency-Key` tuỳ chọn (gửi lại ⇒ kết quả lần đầu; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` khi chưa `gp247:update`) (mục 3, 6, 7); Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0; ghi đơn hàng qua API quản trị: gp247/core 3.7.0, gp247/shop 3.6.0; ghi sản phẩm & tồn kho qua API quản trị: gp247/shop 3.6.0 | Ghi sản phẩm & tồn kho qua API quản trị: `PATCH api/v2/core/product/{id}` (giá bán, giá vốn, trạng thái — theo công tắc trường của Cấu hình sản phẩm), `product/{id}/stock` (`delta` nhập/xuất nguyên tử, không xuống dưới 0, không đổi số đã bán; `set` sau kiểm kê, chỉ administrator), `stock/batch` (1–100 dòng, kết quả theo từng dòng) — quyền sửa trên màn Danh sách sản phẩm, `Idempotency-Key` bắt buộc cho lệnh tồn kho, `422 stock_would_be_negative` / `stock_managed_by_components` (mục 3, 6, 7); Ghi đơn hàng qua API quản trị cho ERP / phần mềm kho: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (trạng thái giao hàng + mã vận đơn thủ công), `order/{id}/notes` — quyền sửa trên màn Danh sách đơn hàng, giới hạn ghi 300 lần/phút mỗi tài khoản (`GP247_API_WRITE_THROTTLE`), `Idempotency-Key` tuỳ chọn (gửi lại ⇒ kết quả lần đầu; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` khi chưa `gp247:update`) (mục 3, 6, 7); Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
