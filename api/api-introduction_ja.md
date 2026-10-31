@@ -52,7 +52,7 @@ flowchart LR
 - [3. 権限](#3-core-api-の権限とデータの範囲) — 有効なトークンでも `403` になる理由
 - [4. API Connection](#4-接続保護レイヤーapi-connection-任意) — アプリ用の追加の鍵
 - [5. API のオン／オフ](#5-api-のオンオフ) — API 管理画面のスイッチ
-- [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、エラー処理
+- [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、変更の同期、エラー処理
 - [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント
 - [8. Front API（ストアフロント）](#8-front-apiストアフロントの処理の流れ) — 公開データと顧客アカウントの流れとエンドポイント
 - [9. 顧客アカウントとセッション](#9-顧客アカウントとサインインセッション) — 会員登録、リフレッシュトークン、MFA
@@ -298,6 +298,68 @@ API による注文には、v2 front グループの下にもう 1 つ **「API�
 | 顧客自身の注文 | `status` | `created_at`, `total` |
 | バナー | `type` | `sort`, `created_at` |
 | コンテンツページ | — | `created_at` |
+
+### 変更の同期（`updated_since`）
+
+> ℹ️ **対応バージョン:** gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0
+
+ERP、会計ソフト、同期ツール向けの機能です。毎回すべてを取り直す代わりに、前回の読み取り以降に**変更されたレコードだけ**を
+取得できます。対象は 8 つの管理用一覧 `api/v2/core/{product,category,brand,supplier,customer,order,banner,page}/list` です。
+公開用の一覧（`api/v2/front/...`）にはこのモードはありません。`updated_since` を送らなければ、一覧はこれまでとまったく同じに応答します。
+
+| パラメーター | 意味 |
+| --- | --- |
+| `updated_since` | ISO-8601 形式の日時。例: `2026-10-31T08:00:00+07:00`。日付のみ、またはオフセットなし → サイトのタイムゾーン。`updated_at >= updated_since` のレコードを、**変更の古い順**（`updated_at`、次に `id`）で返します |
+| `page[after]` | ページのカーソル。前のページの `meta.next_after` を使います。`page[number]` はありません |
+| `page[size]` | 1 ページあたりの件数。既定 20、最大 100 |
+| `filter[...]`, `q` | 通常どおり使えます。ストアの範囲と管理画面の権限は変わりません（3 章） |
+
+レスポンスには `total`、`last_page`、`current_page` はありません。`meta` には `per_page`、`next_after`（最後のレコードの
+カーソル。ページが空なら `null`）、`has_more`（次のページがあるか）、`sync_until`（最後のレコードの `updated_at`、ISO-8601。
+ページが空なら `null`）が入ります。`links` は `next` のみです（最後のページでは `null`）。
+
+```bash
+curl -G "https://shop.example.com/api/v2/core/product/list" \
+  --data-urlencode "updated_since=2026-10-31T08:00:00+07:00" \
+  --data-urlencode "page[size]=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ"
+```
+
+レスポンス（抜粋）:
+
+```json
+{
+  "data": [
+    { "id": "PRD-AbC12", "sku": "TSHIRT-01", "name": "Tシャツ" }
+  ],
+  "meta": { "per_page": 100, "next_after": "MjAyNi0xMC0z…", "has_more": true, "sync_until": "2026-10-31T08:15:42+07:00" },
+  "links": { "next": "https://shop.example.com/api/v2/core/product/list?updated_since=…&page[size]=100&page[after]=MjAyNi0xMC0z…" }
+}
+```
+
+> 💡 パラメーターは URL エンコードして送ってください（上の `--data-urlencode` のように）。オフセットの `+` をそのまま URL に入れると空白になります。
+
+推奨する同期ループ:
+
+```mermaid
+flowchart TD
+    A["基準 = 保存した sync_until − 5 秒"] --> B["list?updated_since=基準 を呼ぶ"]
+    B --> C["レコードを書き込み、id で重複を除く"]
+    C --> D{"has_more?"}
+    D -- "true" --> E["links.next を呼ぶ<br/>(page[after] = next_after)"]
+    E --> C
+    D -- "false" --> F["次回用に meta.sync_until<br/>を保存"]
+```
+
+- すべてのページを読み終えてから（`has_more = false` まで）`meta.sync_until` を保存します。次回は `updated_since` =
+  `sync_until` **の数秒前**（5 秒）を送り、`id` で重複を除きます。時刻の精度は 1 秒なので、いくつかのレコードが再度返ります。
+  新しいレコードがない（`sync_until` が `null`）→ 前回の基準をそのまま使います。
+- HTTP `422`（`validation_failed`）になるのは: `updated_since` が ISO-8601 でない場合、`page[after]` が一覧の返したカーソルでない
+  場合、`sort` または `page[number]` を `updated_since` と一緒に送った場合です。
+- **このバージョンの制限:** 商品またはカテゴリーの多言語テキスト（名前、説明）だけを編集しても、その `updated_at` は
+  **変わりません**。そのため、その編集は同期モードに現れません。
+- アップグレードするサイトでは `php artisan gp247:update` を実行してください（これらのテーブルの `updated_at` 列にインデックスを追加します）。
 
 ### エラーコード
 
@@ -1007,7 +1069,7 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; 変更の同期: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0 | 管理用の v2 一覧に変更の同期モードを追加: `updated_since` ＋ カーソル `page[after]`、`meta.next_after` / `has_more` / `sync_until`（6 章）; ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
 | 2026-10-30 | gp247/shop 3.5.0 | API v2 によるカート（`api/v2/front/cart`、`cart/items`）: ウェブサイトと共通のアカウントのカート、`X-Cart-Token` によるゲストのカート（30 日）、ログイン / 登録時のカート統合（`cart_merge`）、最大 100 行、1 分あたり 60 回; API v2 によるチェックアウトの手順（`checkout`、`checkout/address`、`checkout/shipping-methods` + `shipping-method`、`checkout/payment-methods` + `payment-method`、`checkout/totals`）とプロモーション（`cart/promotions/{pluginKey}`）; API v2 による注文（`checkout/place`）: `Idempotency-Key` 必須（再送 ⇒ 同じ注文）、新しい合計付きの `409 price_changed`、API 管理画面の **API経由の注文** スイッチ（既定でオフ）、1 分あたり 10 件; API によるオンライン決済（`payment.url`、許可リスト `GP247_PAYMENT_RETURN_URLS`（既定で空）にある `return_url` で購入者をアプリへ戻す）と支払い状況（`member/orders/{id}/payment`、`orders/{id}/payment` + `X-Order-Access`）; v2 の商品に `attributes`、`image_sizes`、`stock_status` を追加 |
 | 2026-10-29 | gp247/core 3.6.0 | **管理者**のパスワードの変更／再設定（ユーザー画面、アカウント設定、パスワードを忘れた場合）で、その管理者のすべての API トークンとセッションをサインアウト |
 | 2026-10-28 | gp247/core 3.3.1。`X-Request-Id`、古いトークンの有効期限、平文キーの削除、`api_route_gate`：3.4.0。顧客アカウントとセッション：core 3.6.0、shop 3.4.0 | API 管理画面で API をオン／オフ（全体 + v1/v2 × core/front）、新規インストールは v2 のみオン、オフのグループは `404 api_disabled` を返す（3.3.1）。オフのグループはトークンがなくても `api_disabled` を返す。すべてのレスポンスに `X-Request-Id` ヘッダー。3.2.3 より前に発行されたトークンに `gp247:update` で有効期限を設定（最低 7 日）。`gp247:update` が API Connection キーの平文のコピーを削除。`gp247:doctor` がルートキャッシュを確認（3.4.0）。API v2 による顧客アカウント（会員登録、パスワードの再設定、プロフィール、パスワード変更、住所録、確認メールの再送）、任意のローテーション式リフレッシュトークン（60 分のトークン）、セッション管理、v2 の `logout` でセッション全体を終了、プラグインによる追加の確認ステップ（`challenge_required`）、パスワードの変更／再設定ですべての API トークンを無効化、メール確認リンクはウェブサイトへのサインイン不要、管理 API のアクセスログ（core 3.6.0、shop 3.4.0） |

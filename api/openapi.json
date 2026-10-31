@@ -2,8 +2,8 @@
     "openapi": "3.1.0",
     "info": {
         "title": "GP247 REST API v2",
-        "version": "3.6.0",
-        "description": "REST API v2 of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v1 (frozen) is described separately in openapi-v1.json and api-v1.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required."
+        "version": "3.7.0",
+        "description": "REST API v2 of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v1 (frozen) is described separately in openapi-v1.json and api-v1.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required. Admin lists of api/v2/core (since core 3.7.0 / shop 3.6.0 / front 3.4.0) have a change-sync mode: updated_since + page[after]."
     },
     "servers": [
         {
@@ -120,10 +120,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -164,7 +164,7 @@
                     }
                 },
                 "summary": "List of banners",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -182,6 +182,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -323,10 +340,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -367,7 +384,7 @@
                     }
                 },
                 "summary": "List of brands",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -385,6 +402,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -526,10 +560,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -570,7 +604,7 @@
                     }
                 },
                 "summary": "List of categorys",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -588,6 +622,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -729,10 +780,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -773,7 +824,7 @@
                     }
                 },
                 "summary": "List of customers",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -791,6 +842,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -1085,10 +1153,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1129,7 +1197,7 @@
                     }
                 },
                 "summary": "List of orders",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -1147,6 +1215,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -1288,10 +1373,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1332,7 +1417,7 @@
                     }
                 },
                 "summary": "List of CMS pages",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -1350,6 +1435,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -1491,10 +1593,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1535,7 +1637,7 @@
                     }
                 },
                 "summary": "List of products",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock).",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Since shop 3.5.0 each product also has attributes [{group_id, name, required, options: [{value, add_price}]}], image_sizes {original, thumb} and stock_status (in_stock | out_of_stock). Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -1553,6 +1655,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -1694,10 +1813,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
                     },
                     "422": {
-                        "description": "Unknown filter or sort name",
+                        "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1738,7 +1857,7 @@
                     }
                 },
                 "summary": "List of suppliers",
-                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in. Sync mode: send updated_since to read only rows changed since that time, paged by the page[after] cursor.",
                 "parameters": [
                     {
                         "name": "page[number]",
@@ -1756,6 +1875,23 @@
                             "minimum": 1,
                             "maximum": 100,
                             "default": 20
+                        }
+                    },
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "description": "Sync mode (since core 3.7.0): ISO-8601 date-time, e.g. 2026-10-31T08:00:00+07:00 (date only or no offset = site timezone). Returns rows with updated_at >= updated_since, oldest change first (updated_at, then id). Cannot be combined with sort or page[number] (422)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "page[after]",
+                        "in": "query",
+                        "description": "Sync mode only: cursor from meta.next_after of the previous page; any other value = 422",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {

@@ -51,7 +51,7 @@ flowchart LR
 - [3. Permissions](#3-permissions-and-data-scope-of-the-core-api) — why a valid token can still get `403`
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
-- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, handle errors
+- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, handle errors
 - [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
@@ -303,6 +303,68 @@ the allowed names.
 | Customer's own orders | `status` | `created_at`, `total` |
 | Banners | `type` | `sort`, `created_at` |
 | Content pages | — | `created_at` |
+
+### Syncing changes (`updated_since`)
+
+> ℹ️ **Available since:** gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0
+
+For ERP, accounting software and sync tools: instead of downloading everything again, the app fetches **only the records
+that changed** since its last read. Available on the 8 admin lists `api/v2/core/{product,category,brand,supplier,customer,order,banner,page}/list`;
+the public lists (`api/v2/front/...`) do not have this mode. Without `updated_since` a list answers exactly as before.
+
+| Parameter | Meaning |
+| --- | --- |
+| `updated_since` | An ISO-8601 point in time, e.g. `2026-10-31T08:00:00+07:00`. Date only or no offset → the site's timezone. Returns records with `updated_at >= updated_since`, **oldest change first** (by `updated_at`, then `id`) |
+| `page[after]` | Page cursor: take it from `meta.next_after` of the previous page. There is no `page[number]` |
+| `page[size]` | Records per page, default 20, maximum 100 |
+| `filter[...]`, `q` | Still apply as usual. Store scope and the admin-screen permission are unchanged (section 3) |
+
+The response has no `total`, `last_page` or `current_page`. `meta` holds `per_page`, `next_after` (cursor of the last
+record, `null` when the page is empty), `has_more` (whether another page follows), `sync_until` (the `updated_at` of the
+last record, ISO-8601, `null` when the page is empty); `links` only has `next` (`null` on the last page).
+
+```bash
+curl -G "https://shop.example.com/api/v2/core/product/list" \
+  --data-urlencode "updated_since=2026-10-31T08:00:00+07:00" \
+  --data-urlencode "page[size]=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ"
+```
+
+Trimmed response:
+
+```json
+{
+  "data": [
+    { "id": "PRD-AbC12", "sku": "TSHIRT-01", "name": "T-shirt" }
+  ],
+  "meta": { "per_page": 100, "next_after": "MjAyNi0xMC0z…", "has_more": true, "sync_until": "2026-10-31T08:15:42+07:00" },
+  "links": { "next": "https://shop.example.com/api/v2/core/product/list?updated_since=…&page[size]=100&page[after]=MjAyNi0xMC0z…" }
+}
+```
+
+> 💡 URL-encode the parameters (as `--data-urlencode` does above): a `+` of the offset left raw in a URL turns into a space.
+
+Recommended sync loop:
+
+```mermaid
+flowchart TD
+    A["Mark = stored sync_until − 5 seconds"] --> B["Call list?updated_since=mark"]
+    B --> C["Write the records, de-duplicate by id"]
+    C --> D{"has_more?"}
+    D -- "true" --> E["Call links.next<br/>(page[after] = next_after)"]
+    E --> C
+    D -- "false" --> F["Store meta.sync_until<br/>for the next run"]
+```
+
+- Read every page (until `has_more = false`) before storing `meta.sync_until`; on the next run send `updated_since` =
+  `sync_until` **minus a few seconds** (5 seconds) and de-duplicate by `id` — timestamps have one-second precision, so a
+  few records come back again. No new records (`sync_until` is `null`) → keep the previous mark.
+- HTTP `422` (`validation_failed`) when: `updated_since` is not ISO-8601; `page[after]` is not a cursor returned by the
+  list; `sort` or `page[number]` is sent together with `updated_since`.
+- **Limit in this version:** editing only the multilingual text (name, description) of a product or category does **not**
+  change its `updated_at`, so that edit does not show up in sync mode.
+- Upgrading sites must run `php artisan gp247:update` (adds an index on the `updated_at` column of these tables).
 
 ### Error codes
 
@@ -1025,7 +1087,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0 | Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, legacy token expiry, plain keys removed, `api_route_gate`: 3.4.0; customer accounts & sessions: core 3.6.0, shop 3.4.0 | API on/off on the API management screen (all + v1/v2 × core/front), fresh installs turn on v2 only, a group that is off answers `404 api_disabled` (3.3.1); a group that is off answers `api_disabled` even without a token; `X-Request-Id` header on every response; tokens issued before 3.2.3 get an expiry at `gp247:update` (at least 7 days); `gp247:update` removes the plain copy of API Connection keys; `gp247:doctor` checks the route cache (3.4.0); customer accounts through API v2 (register, forgotten/reset password, profile, password change, address book, resend verification e-mail), optional rotating refresh tokens (60-minute tokens), session management, v2 `logout` ends the whole session, extra verification step through a plugin (`challenge_required`), changing/resetting a password revokes every API token, the e-mail verification link works without a website sign-in, admin API access log (core 3.6.0, shop 3.4.0) |

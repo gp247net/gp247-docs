@@ -50,7 +50,7 @@ flowchart LR
 - [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
-- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, xử lý lỗi
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, xử lý lỗi
 - [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
@@ -292,6 +292,68 @@ tên được phép.
 | Đơn hàng của khách | `status` | `created_at`, `total` |
 | Banner | `type` | `sort`, `created_at` |
 | Trang nội dung | — | `created_at` |
+
+### Đồng bộ thay đổi (`updated_since`)
+
+> ℹ️ **Có từ:** gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0
+
+Dành cho phần mềm ERP, kế toán hay công cụ đồng bộ: thay vì tải lại toàn bộ, ứng dụng chỉ lấy **những bản ghi đã đổi**
+kể từ lần đọc trước. Có ở 8 danh sách quản trị `api/v2/core/{product,category,brand,supplier,customer,order,banner,page}/list`;
+danh sách công khai (`api/v2/front/...`) không có chế độ này. Không gửi `updated_since` thì danh sách trả lời đúng như cũ.
+
+| Tham số | Ý nghĩa |
+| --- | --- |
+| `updated_since` | Mốc thời gian ISO-8601, ví dụ `2026-10-31T08:00:00+07:00`. Chỉ có ngày hoặc không có múi giờ → theo múi giờ của site. Trả về bản ghi có `updated_at >= updated_since`, **thay đổi cũ nhất trước** (theo `updated_at`, rồi `id`) |
+| `page[after]` | Con trỏ trang: lấy từ `meta.next_after` của trang trước. Không có `page[number]` |
+| `page[size]` | Số bản ghi mỗi trang, mặc định 20, tối đa 100 |
+| `filter[...]`, `q` | Vẫn áp dụng như thường. Phạm vi cửa hàng và quyền màn quản trị giữ nguyên (mục 3) |
+
+Phản hồi không có `total`, `last_page`, `current_page`. `meta` gồm `per_page`, `next_after` (con trỏ của bản ghi cuối,
+`null` khi trang rỗng), `has_more` (còn trang sau hay không), `sync_until` (thời điểm `updated_at` của bản ghi cuối, dạng
+ISO-8601, `null` khi trang rỗng); `links` chỉ có `next` (`null` ở trang cuối).
+
+```bash
+curl -G "https://shop.example.com/api/v2/core/product/list" \
+  --data-urlencode "updated_since=2026-10-31T08:00:00+07:00" \
+  --data-urlencode "page[size]=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ"
+```
+
+Phản hồi rút gọn:
+
+```json
+{
+  "data": [
+    { "id": "PRD-AbC12", "sku": "TSHIRT-01", "name": "Áo thun" }
+  ],
+  "meta": { "per_page": 100, "next_after": "MjAyNi0xMC0z…", "has_more": true, "sync_until": "2026-10-31T08:15:42+07:00" },
+  "links": { "next": "https://shop.example.com/api/v2/core/product/list?updated_since=…&page[size]=100&page[after]=MjAyNi0xMC0z…" }
+}
+```
+
+> 💡 Mã hoá tham số khi gửi (như `--data-urlencode` ở trên): dấu `+` của múi giờ để nguyên trong URL sẽ thành dấu cách.
+
+Vòng đồng bộ khuyến nghị:
+
+```mermaid
+flowchart TD
+    A["Mốc = sync_until đã lưu − 5 giây"] --> B["Gọi list?updated_since=mốc"]
+    B --> C["Ghi các bản ghi, gộp trùng theo id"]
+    C --> D{"has_more?"}
+    D -- "true" --> E["Gọi links.next<br/>(page[after] = next_after)"]
+    E --> C
+    D -- "false" --> F["Lưu meta.sync_until<br/>cho lần chạy sau"]
+```
+
+- Đọc hết các trang (tới khi `has_more = false`) rồi mới lưu `meta.sync_until`; lần chạy sau gửi `updated_since` =
+  `sync_until` **trừ vài giây** (5 giây) và gộp trùng theo `id` — thời gian chỉ chính xác tới từng giây nên vài bản ghi sẽ
+  được trả lại lần nữa. Không có bản ghi nào mới (`sync_until` là `null`) → giữ mốc cũ.
+- HTTP `422` (`validation_failed`) khi: `updated_since` không đúng ISO-8601; `page[after]` không phải con trỏ do danh sách trả
+  về; gửi `sort` hoặc `page[number]` cùng với `updated_since`.
+- **Giới hạn của bản này:** chỉ sửa phần chữ đa ngôn ngữ (tên, mô tả) của sản phẩm hoặc danh mục **không** làm đổi
+  `updated_at` của nó, nên thay đổi đó không xuất hiện trong chế độ đồng bộ.
+- Site nâng cấp phải chạy `php artisan gp247:update` (thêm chỉ mục cho cột `updated_at` của các bảng này).
 
 ### Mã lỗi
 
@@ -994,7 +1056,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0 | Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |
