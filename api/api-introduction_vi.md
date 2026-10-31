@@ -6,11 +6,15 @@
 
 Tài liệu này giới thiệu **hệ thống API (giao diện lập trình ứng dụng) của GP247** — cách các
 ứng dụng bên ngoài (app di động, website khác, phần mềm quản lý, tích hợp bên thứ ba…) có thể
-"nói chuyện" với site GP247 của bạn để lấy dữ liệu. Tài liệu dành cho **lập trình viên tích hợp**
+"nói chuyện" với site GP247 của bạn để lấy dữ liệu, giữ giỏ hàng và đặt đơn. Tài liệu dành cho **lập trình viên tích hợp**
 và **người quản trị site** muốn hiểu tổng quan API gồm những gì, chia làm mấy nhóm, xác thực
 (đăng nhập) và phân quyền ra sao, lỗi trả về thế nào và gọi thử như thế nào. Đọc xong, bạn biết
 **API nào dùng để làm gì, gọi ở địa chỉ nào, cần chìa khóa gì, được xem dữ liệu nào**, và có ví dụ
 copy chạy được ngay.
+
+> ⚠️ **Tài liệu này chỉ nói về API v2** (`api/v2/core`, `api/v2/front`). **API v1** (`api/core`, `api/front`) đã
+> **ngưng phát triển**: vẫn chạy cho ứng dụng đang dùng nhưng tắt sẵn trên site cài mới, không có tính năng mới và chỉ
+> nhận bản vá bảo mật. Ứng dụng mới hãy dùng v2. Đang duy trì ứng dụng cũ? Xem [API v1 (đã ngưng phát triển)](./api-v1_vi.md).
 
 > ℹ️ **API là gì (giải thích đời thường):** hãy hình dung API như một "quầy giao dịch" của site.
 > Ứng dụng bên ngoài không vào thẳng kho dữ liệu, mà gửi yêu cầu tới quầy (một địa chỉ URL), quầy
@@ -21,28 +25,58 @@ copy chạy được ngay.
 > [`openapi.json`](./openapi.json) (OpenAPI 3.1) — nạp vào Postman, Insomnia hay Swagger UI để gọi thử
 > hoặc sinh code client.
 
+## Nhìn nhanh
+
+Ứng dụng chọn nhóm API theo việc cần làm và người dùng đứng sau nó:
+
+```mermaid
+flowchart LR
+    A["Ứng dụng"] --> B{"Ai đang dùng?"}
+    B -- "Không cần đăng nhập" --> C["api/v2/front<br/>sản phẩm, danh mục…"]
+    B -- "Khách hàng" --> D["api/v2/front/login<br/>tài khoản, giỏ, đặt đơn"]
+    B -- "Quản trị viên" --> E["api/v2/core/login<br/>dữ liệu quản trị"]
+```
+
+- **Hai nhóm** — `api/v2/front` cho cửa hàng và khách, `api/v2/core` cho quản trị viên (mục 1).
+- **Đăng nhập bằng token** — `login` cấp token, gửi lại trong header `Authorization: Bearer …` (mục 2).
+- **Không xem nhiều hơn màn hình** — API quản trị theo đúng phân quyền và cửa hàng của tài khoản (mục 3).
+- **Chủ site bật/tắt từng nhóm** trên màn quản lý API; nhóm tắt trả `404 api_disabled` (mục 5).
+- **Phản hồi cố định** — luôn có khoá `data`; danh sách thêm `meta`, `links` (mục 6).
+
+## Trong trang này
+
+- [1. Hai nhóm API](#1-hai-nhóm-api) — chọn đúng nhóm cho ứng dụng của bạn
+- [2. Xác thực](#2-xác-thực-đăng-nhập-vào-api) — lấy token, thời hạn, giới hạn đăng nhập
+- [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
+- [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
+- [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, xử lý lỗi
+- [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị
+- [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
+- [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
+- [10. Giỏ hàng & đặt đơn](#10-giỏ-hàng--đặt-đơn-qua-api) — giỏ, checkout, thanh toán
+
 ---
 
-## 1. Hai nhóm API chính
+## 1. Hai nhóm API
 
 Hệ thống GP247 chia API thành **hai nhóm**, phục vụ hai đối tượng khác nhau:
 
 | Nhóm | Tiền tố địa chỉ (prefix) | Dành cho | Ai đăng nhập |
 | --- | --- | --- | --- |
-| **API Core (Admin)** | `api/core` | Quản trị hệ thống từ xa (app quản lý, dashboard riêng) | Tài khoản **quản trị viên** (admin) |
-| **API Front (Storefront)** | `api/front` | Hiển thị dữ liệu cửa hàng, tài khoản khách | Khách/thành viên, hoặc **không cần đăng nhập** với dữ liệu công khai |
+| **API Core (Admin)** | `api/v2/core` | Quản trị hệ thống từ xa (app quản lý, dashboard riêng) | Tài khoản **quản trị viên** (admin) |
+| **API Front (Storefront)** | `api/v2/front` | Hiển thị dữ liệu cửa hàng, tài khoản khách, giỏ hàng và đặt đơn | Khách/thành viên, hoặc **không cần đăng nhập** với dữ liệu công khai |
 
-- **`api/core`** do gói `gp247/core` cung cấp phần đăng nhập/thông tin admin; `gp247/shop` và
+- **`api/v2/core`** do gói `gp247/core` cung cấp phần đăng nhập/thông tin admin; `gp247/shop` và
   `gp247/front` bổ sung các endpoint đọc dữ liệu quản trị (khách hàng, đơn hàng, sản phẩm, banner…).
-- **`api/front`** do gói `gp247/front` và `gp247/shop` cung cấp — dữ liệu "mặt tiền" cửa hàng như
-  danh sách sản phẩm, danh mục, thương hiệu, trang nội dung, banner, và tài khoản/đơn hàng của khách.
+- **`api/v2/front`** do gói `gp247/front` và `gp247/shop` cung cấp — dữ liệu "mặt tiền" cửa hàng như
+  danh sách sản phẩm, danh mục, thương hiệu, trang nội dung, banner, cùng tài khoản, giỏ hàng và đơn hàng của khách.
 
-> ℹ️ **Có từ:** gp247/core, gp247/front, gp247/shop 3.3.0 — có thêm **API v2** với tiền tố `api/v2/core` và
-> `api/v2/front` (mục 8). Các tiền tố `api/core`, `api/front` ở trên là **v1**, vẫn chạy như cũ.
+> ℹ️ **Có từ:** gp247/core, gp247/front, gp247/shop 3.3.0
 
 > **Địa chỉ đầy đủ** = tên miền site + tiền tố + đường dẫn. Ví dụ nếu site của bạn là
 > `https://shop.example.com` thì endpoint lấy danh sách sản phẩm là:
-> `https://shop.example.com/api/front/product/list`.
+> `https://shop.example.com/api/v2/front/product/list`.
 
 ---
 
@@ -51,15 +85,17 @@ Hệ thống GP247 chia API thành **hai nhóm**, phục vụ hai đối tượn
 GP247 dùng **Laravel Sanctum** để cấp **token** (một chuỗi ký tự dài đóng vai trò "vé vào cửa").
 Cơ chế hoạt động chung cho cả hai nhóm:
 
-1. Ứng dụng gửi **username/email + password** tới endpoint `login`.
-2. Nếu đúng, hệ thống trả về một **`access_token`** (token dạng Bearer) kèm hạn dùng (`expires_at`).
+1. Ứng dụng gửi thông tin đăng nhập tới endpoint `login`: quản trị viên gửi **`username` + `password`** tới
+   `api/v2/core/login`, khách gửi **`email` + `password`** tới `api/v2/front/login`.
+2. Nếu đúng, hệ thống trả về trong khoá `data` một **`access_token`** (token dạng Bearer) kèm hạn dùng
+   (`expires_at`, và `expires_in` tính bằng giây).
 3. Từ đó về sau, mọi yêu cầu cần đăng nhập đều gắn kèm token này trong phần **header**:
 
    ```
    Authorization: Bearer <access_token>
    ```
 
-4. Khi muốn thoát, gọi **`POST logout`** để **thu hồi token** (token cũ hết hiệu lực ngay).
+4. Khi muốn thoát, gọi **`POST logout`** để **đăng xuất phiên hiện tại** (token cũ và refresh token của nó hết hiệu lực ngay).
 
 ### Phạm vi quyền (scope / ability)
 
@@ -86,30 +122,32 @@ Mọi token đều có hạn dùng (`expires_at`):
 | Quản trị viên | 7 ngày (`GP247_API_TOKEN_EXPIRE_ADMIN_DEFAULT`) | 30 ngày (`GP247_API_RECOMMEMBER_ADMIN`) |
 | Thành viên | 7 ngày (`GP247_API_TOKEN_EXPIRE_DEFAULT`) | 30 ngày (`GP247_API_RECOMMEMBER`) |
 
+Đăng nhập kèm `with_refresh: true` thì token truy cập chỉ sống **60 phút** và đi cùng một *refresh token* để tự gia hạn
+(mục 9.2) — cách được khuyên dùng cho ứng dụng di động.
+
 > ℹ️ **Có từ:** gp247/core 3.3.0 — biến môi trường có tên viết đúng: `GP247_API_REMEMBER`,
 > `GP247_API_REMEMBER_ADMIN`, `GP247_API_SCOPE_ADMIN_SUPER`. Tên cũ (`GP247_API_RECOMMEMBER`…) vẫn dùng được;
 > khai cả hai thì tên mới thắng. `php artisan gp247:doctor` báo tên cũ còn dùng (mục `api_config_legacy_names`).
 > Token mang scope `admin-super` cũng được chấp nhận bên cạnh `admin-supper`.
 
-Token hết hạn trả về `401`; khi đó gọi `login` để lấy token mới. Token đã hết hạn lâu (quá 7 ngày)
-được tự dọn ở lần đăng nhập kế tiếp của cùng tài khoản — không cần cron.
+Token hết hạn trả về `401`; khi đó gọi `refresh` (nếu đăng nhập kèm `with_refresh`) hoặc `login` để lấy token mới. Token đã
+hết hạn lâu (quá 7 ngày) được tự dọn ở lần đăng nhập kế tiếp của cùng tài khoản — không cần cron.
 
 > ℹ️ **Có từ:** gp247/core 3.4.0 — token cấp **trước bản 3.2.3** (lúc đó chưa có hạn) được đặt hạn khi chạy
 > `php artisan gp247:update`: tuổi thật của token cộng thời hạn "remember" (quản trị viên: `GP247_API_REMEMBER_ADMIN`,
 > thành viên: `GP247_API_REMEMBER`), nhưng **không sớm hơn 7 ngày** kể từ lúc nâng cấp. Ứng dụng đang giữ token cũ
 > có ít nhất 7 ngày trước khi phải đăng nhập lại — hãy chắc chắn ứng dụng xử lý `401` bằng cách gọi `login`.
 
-> ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0 — trên API v2, ứng dụng đăng nhập kèm `with_refresh: true` nhận
-> token truy cập sống **60 phút** cùng một *refresh token* để tự gia hạn (mục 10). Đổi hoặc đặt lại mật khẩu của khách
-> (trên website hay qua API) làm **mọi token** của khách đó hết hiệu lực, kể cả token v1. Với **quản trị viên** cũng vậy: đổi mật khẩu
-> ở màn **Người dùng**, ở **Cài đặt tài khoản** hoặc qua "quên mật khẩu" làm mọi token API của admin đó hết hiệu lực.
+> ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0 — đổi hoặc đặt lại mật khẩu của khách (trên website hay qua API) làm
+> **mọi token** của khách đó hết hiệu lực. Với **quản trị viên** cũng vậy: đổi mật khẩu ở màn **Người dùng**, ở **Cài đặt tài
+> khoản** hoặc qua "quên mật khẩu" làm mọi token API của admin đó hết hiệu lực.
 
 ### Giới hạn số lần đăng nhập
 
 > ℹ️ **Có từ:** gp247/core 3.2.3
 
-Để chống dò mật khẩu, `api/core/login`, `api/front/login` và form đăng nhập quản trị giới hạn số lần thử.
-Form đăng nhập quản trị và `api/core/login` dùng chung một bộ đếm: lần sai ở bên này được tính cho bên kia.
+Để chống dò mật khẩu, `api/v2/core/login`, `api/v2/front/login` và form đăng nhập quản trị giới hạn số lần thử.
+Form đăng nhập quản trị và `api/v2/core/login` dùng chung một bộ đếm: lần sai ở bên này được tính cho bên kia.
 
 | Giới hạn | Mặc định | Đổi bằng biến môi trường |
 | --- | --- | --- |
@@ -132,7 +170,7 @@ API Core **không cho xem nhiều hơn màn hình quản trị**. Mỗi endpoint
 hình admin; quản trị viên chỉ gọi được endpoint khi tài khoản có quyền mở màn hình đó (phân quyền ở
 **Quản trị → Vai trò / Quyền**). Không có quyền → HTTP `403`.
 
-| Endpoint | Quyền cần có (màn hình admin) |
+| Endpoint (tiền tố `api/v2/core`) | Quyền cần có (màn hình admin) |
 | --- | --- |
 | `customer/list`, `customer/detail/{id}` | Danh sách khách hàng |
 | `order/list` | Danh sách đơn hàng |
@@ -140,7 +178,8 @@ hình admin; quản trị viên chỉ gọi được endpoint khi tài khoản c
 | `product/*` | Danh sách sản phẩm |
 | `category/*`, `brand/*`, `supplier/*` | Danh sách danh mục / thương hiệu / nhà cung cấp |
 | `banner/*`, `page/*` | Danh sách banner / trang nội dung |
-| `login`, `logout`, `info` | Chỉ cần token hợp lệ |
+| `logout`, `info`, `sessions` | Chỉ cần token hợp lệ |
+| `login`, `login/challenge`, `refresh` | Không cần token |
 
 - Vai trò `administrator` gọi được mọi endpoint; vai trò `view.all` chỉ đọc.
 - **Dữ liệu theo cửa hàng:** trên site nhiều cửa hàng, quản trị viên được gắn với một cửa hàng chỉ
@@ -177,282 +216,60 @@ endpoint công khai.
 > vẫn chạy bình thường (so khớp qua bản băm). Bản lưu thường không khôi phục được, nên hãy **sao lưu cơ sở dữ liệu**
 > trước khi nâng cấp nếu bạn cần giữ nó.
 
-> Thứ tự các lớp kiểm tra (middleware) là: **gắn mã yêu cầu `X-Request-Id` → kiểm tra công tắc bật/tắt API (mục 9)
+> Thứ tự các lớp kiểm tra (middleware) là: **gắn mã yêu cầu `X-Request-Id` → kiểm tra công tắc bật/tắt API (mục 5)
 > → trả JSON → kiểm tra API Connection → giới hạn tần suất**, rồi mới đến đăng nhập/phân quyền của từng endpoint.
 > Đây là thứ tự cố định, không nên đổi. *(Hai lớp đầu: từ gp247/core 3.3.1 và 3.4.0.)*
 
 ---
 
-## 5. Luồng làm việc API Core (Admin)
+## 5. Bật/tắt API
 
-Sơ đồ dưới đây mô tả trình tự một ứng dụng quản trị đăng nhập rồi đọc dữ liệu qua API Core. Mỗi yêu cầu đi
-qua các lớp kiểm tra theo đúng thứ tự trong sơ đồ; lớp nào từ chối thì trả lỗi ngay, không đi tiếp.
+> ℹ️ **Có từ:** gp247/core 3.3.1
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant A as Ứng dụng quản trị
-    participant M as API GP247<br/>(lớp kiểm tra chung)
-    participant S as Sanctum<br/>(token)
-    participant Q as Phân quyền<br/>(màn admin + cửa hàng)
-    participant D as Cơ sở dữ liệu
-    Note over A,M: Mọi yêu cầu, kể cả login: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON<br/>→ API Connection (nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
-    A->>M: POST /api/core/login {username, password, remember_me?}
-    alt Vượt giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP)
-        M-->>A: 429 too_many_attempts + Retry-After
-    else Sai mật khẩu hoặc tài khoản admin bị tắt
-        M-->>A: 401 unauthenticated
-    else Hợp lệ
-        M->>S: Tạo token (scope admin / admin-supper, hạn 7 hoặc 30 ngày)
-        S-->>M: access_token
-        M-->>A: 200 {access_token, token_type, scopes, expires_at}
-    end
-    A->>M: GET /api/core/order/list<br/>Authorization: Bearer access_token
-    M->>S: Kiểm token: còn hạn, đúng loại token admin
-    alt Thiếu, sai, hết hạn token hoặc admin đã bị tắt
-        M-->>A: 401 unauthenticated
-    else Token hợp lệ
-        M->>Q: Có quyền màn "Danh sách đơn hàng"? Đúng tên miền cửa hàng?
-        alt Không có quyền hoặc sai tên miền cửa hàng
-            M-->>A: 403 forbidden
-        else Được phép
-            Q-->>M: Cửa hàng của tài khoản
-            M->>D: Truy vấn chỉ trong cửa hàng đó
-            D-->>M: Dữ liệu
-            M-->>A: 200 (JSON) — chi tiết không thấy thì 404 not_found
-        end
-    end
-    A->>M: POST /api/core/logout
-    M-->>A: 200 — token bị thu hồi
-```
+Chủ site bật/tắt API ngay trên **màn quản lý API** của trang quản trị (cùng màn với API Connection), không cần sửa
+file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lực ngay ở yêu cầu kế tiếp.
 
-Điểm rút ra: có token **chưa đủ** để đọc dữ liệu — tài khoản còn phải có quyền mở màn hình quản trị tương ứng, và
-chỉ thấy dữ liệu của cửa hàng mình (mục 3).
+| Công tắc | Áp dụng cho |
+| --- | --- |
+| **REST API (tất cả nhóm)** | Mọi endpoint API (kể cả API do plugin thêm qua cơ chế chuẩn) |
+| **v2 · API quản trị (core)** | `api/v2/core/*` |
+| **v2 · API công khai & khách hàng (front)** | `api/v2/front/*` |
 
-**Endpoint đăng nhập & tài khoản** (tiền tố `api/core`):
+Màn này còn hai công tắc cho API v1 (đã ngưng phát triển) — xem [API v1, mục 2](./api-v1_vi.md). Riêng việc đặt đơn qua API
+có thêm công tắc **Đặt đơn qua API** dưới nhóm v2 front (mục 10.2).
 
-| Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
-| --- | --- | --- | --- |
-| `POST` | `api/core/login` | Không | Đăng nhập admin, nhận `access_token` |
-| `POST` | `api/core/logout` | Có (Bearer) | Đăng xuất, thu hồi token hiện tại |
-| `GET` | `api/core/logout` | Có (Bearer) | Như trên — **đã lỗi thời**, phản hồi kèm header `Deprecation`; hãy chuyển sang `POST` |
-| `GET` | `api/core/info` | Có (Bearer) | Lấy thông tin quản trị viên đang đăng nhập |
-
-**Endpoint dữ liệu quản trị** (tiền tố `api/core`, cần token + quyền ở mục 3):
-
-| Phương thức | Đường dẫn | Chức năng |
-| --- | --- | --- |
-| `GET` | `api/core/customer/list` | Danh sách khách hàng |
-| `GET` | `api/core/customer/detail/{id}` | Chi tiết một khách hàng |
-| `GET` | `api/core/order/list` | Danh sách đơn hàng (kèm dòng hàng và tổng tiền) |
-| `GET` | `api/core/order/detail/{id}` | Chi tiết một đơn hàng |
-| `GET` | `api/core/product/list` | Danh sách sản phẩm |
-| `GET` | `api/core/product/detail/{id}` | Chi tiết một sản phẩm |
-| `GET` | `api/core/category/list` | Danh sách danh mục |
-| `GET` | `api/core/category/detail/{id}` | Chi tiết một danh mục |
-| `GET` | `api/core/brand/list` | Danh sách thương hiệu |
-| `GET` | `api/core/brand/detail/{id}` | Chi tiết một thương hiệu |
-| `GET` | `api/core/supplier/list` | Danh sách nhà cung cấp |
-| `GET` | `api/core/supplier/detail/{id}` | Chi tiết một nhà cung cấp |
-| `GET` | `api/core/banner/list` | Danh sách banner |
-| `GET` | `api/core/banner/detail/{id}` | Chi tiết một banner |
-| `GET` | `api/core/page/list` | Danh sách trang nội dung |
-| `GET` | `api/core/page/detail/{id}` | Chi tiết một trang nội dung |
-
-Ví dụ đăng nhập admin (dùng `curl` trong Terminal):
-
-```bash
-curl -X POST "https://shop.example.com/api/core/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"your-password","remember_me":true}'
-```
-
-Nếu thành công, bạn nhận về JSON dạng:
-
-```json
-{
-  "access_token": "1|aBcD...rất-dài...XyZ",
-  "token_type": "Bearer",
-  "scopes": ["admin-supper"],
-  "expires_at": "2026-11-25 10:00:00"
-}
-```
-
-Sau đó lấy danh sách đơn hàng bằng token vừa nhận:
-
-```bash
-curl -X GET "https://shop.example.com/api/core/order/list" \
-  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ"
-```
+- Mỗi công tắc nhóm nằm ngay trên danh sách endpoint của nhóm đó; nhóm đang tắt hiện chữ "đang tắt".
+- Gọi vào nhóm đang tắt → HTTP `404` với `"code": "api_disabled"` (mục 6) — kể cả khi chưa gửi token *(từ gp247/core
+  3.4.0; bản 3.3.1 trả `401` nếu thiếu token)*.
+- **Cài mới** bật sẵn **v2**. Site **nâng cấp** từ bản cũ giữ nguyên mọi nhóm đang bật.
+- Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
+  trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
+- API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
+- **Site có cache route** (`php artisan route:cache`): `php artisan gp247:update` tự dựng lại cache sau khi nâng cấp. Nếu bạn chỉ
+  chạy `composer update`, công tắc có thể chưa có hiệu lực — `php artisan gp247:doctor` báo ở mục `api_route_gate`
+  *(từ gp247/core 3.4.0)*; chạy `php artisan gp247:cache-rebuild` để sửa.
 
 ---
 
-## 6. Luồng làm việc API Front (Storefront)
+## 6. Định dạng phản hồi, tham số danh sách & mã lỗi
 
-API Front phục vụ hai loại dữ liệu: **dữ liệu công khai** (không cần đăng nhập — danh sách sản
-phẩm, danh mục…) và **dữ liệu riêng của khách** (cần đăng nhập — đơn hàng, thông tin cá nhân).
+Mục này giúp ứng dụng đọc đúng kết quả, lọc/sắp xếp danh sách và xử lý lỗi theo một cách duy nhất cho mọi endpoint.
 
-Sơ đồ dưới đây mô tả hai cách dùng API Front: đọc dữ liệu công khai không cần đăng nhập, và khách đăng nhập để
-xem đơn hàng của mình.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant K as Ứng dụng của khách
-    participant M as API GP247<br/>(lớp kiểm tra chung)
-    participant S as Sanctum<br/>(token)
-    participant D as Cơ sở dữ liệu
-    Note over K,M: Mọi yêu cầu: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON → API Connection (nếu bật) → giới hạn tần suất
-    K->>M: GET /api/front/product/list (không cần token)
-    M->>D: Chỉ những gì cửa hàng của tên miền này đang hiển thị<br/>(đang bán, đã duyệt, cửa hàng hoạt động)
-    D-->>M: Dữ liệu
-    M-->>K: 200 — chỉ trường công khai (không giá vốn, tồn kho, nhà cung cấp)
-    K->>M: POST /api/front/login {email, password, remember_me?}
-    alt Vượt giới hạn đăng nhập
-        M-->>K: 429 too_many_attempts + Retry-After
-    else Sai mật khẩu hoặc tài khoản khách bị khoá
-        M-->>K: 401 unauthenticated
-    else Hợp lệ
-        M->>S: Tạo token (scope user, hạn 7 hoặc 30 ngày)
-        S-->>M: access_token
-        M-->>K: 200 {access_token, token_type, scopes, expires_at}
-    end
-    K->>M: GET /api/front/member/order/list<br/>Authorization: Bearer access_token
-    M->>S: Kiểm token: còn hạn, scope user, tài khoản chưa bị khoá
-    alt Token không hợp lệ hoặc tài khoản đã bị khoá
-        M-->>K: 401 unauthenticated (token sai loại: 403 forbidden)
-    else Hợp lệ
-        M->>D: Chỉ đơn hàng của chính khách này
-        D-->>M: Dữ liệu
-        M-->>K: 200 — không kèm IP, user agent… (đơn của người khác: 404 not_found)
-    end
-```
-
-Điểm rút ra: dữ liệu công khai trên API **khớp với những gì khách thấy trên cửa hàng**, còn dữ liệu riêng chỉ trả về
-cho đúng chủ tài khoản. API v2 (mục 8) đi qua cùng các bước kiểm tra này, chỉ khác dạng phản hồi.
-
-**Các endpoint công khai** (tiền tố `api/front`, không cần token):
-
-| Phương thức | Đường dẫn | Chức năng |
-| --- | --- | --- |
-| `GET` | `api/front/product/list` | Danh sách sản phẩm |
-| `GET` | `api/front/product/detail/{id}` | Chi tiết một sản phẩm |
-| `GET` | `api/front/category/list` | Danh sách danh mục |
-| `GET` | `api/front/category/detail/{id}` | Chi tiết một danh mục (kèm sản phẩm) |
-| `GET` | `api/front/brand/list` | Danh sách thương hiệu |
-| `GET` | `api/front/brand/detail/{id}` | Chi tiết một thương hiệu |
-| `GET` | `api/front/banner/list` | Danh sách banner |
-| `GET` | `api/front/banner/detail/{id}` | Chi tiết một banner |
-| `GET` | `api/front/page/list` | Danh sách trang nội dung |
-| `GET` | `api/front/page/detail/{id}` | Chi tiết một trang nội dung |
-
-> ℹ️ **Có từ:** gp247/shop 3.2.3, gp247/front 3.2.3 — dữ liệu công khai **giống hệt những gì cửa hàng
-> đang hiển thị** trên tên miền bạn gọi: sản phẩm ẩn, chưa được duyệt hoặc thuộc cửa hàng khác không
-> xuất hiện. Phản hồi chỉ gồm các trường công khai — không có giá vốn, nhà cung cấp, số tồn/đã bán.
-> Cần các số liệu đó thì dùng API Core với tài khoản có quyền.
-
-**Các endpoint tài khoản khách** (tiền tố `api/front`, cần token của khách):
-
-| Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
-| --- | --- | --- | --- |
-| `POST` | `api/front/login` | Không | Đăng nhập bằng email/mật khẩu khách, nhận token |
-| `POST` | `api/front/logout` | Có (Bearer) | Đăng xuất khách |
-| `GET` | `api/front/logout` | Có (Bearer) | Như trên — **đã lỗi thời**, hãy chuyển sang `POST` |
-| `GET` | `api/front/info` | Có (Bearer) | Thông tin tài khoản khách |
-| `GET` | `api/front/member/order/list` | Có (Bearer) | Danh sách đơn hàng của khách |
-| `GET` | `api/front/member/order/detail/{id}` | Có (Bearer) | Chi tiết một đơn hàng |
-
-Ví dụ lấy danh sách sản phẩm (công khai, không cần token):
-
-```bash
-curl -X GET "https://shop.example.com/api/front/product/list" \
-  -H "Accept: application/json"
-```
-
-Ví dụ đăng nhập khách rồi xem đơn hàng:
-
-```bash
-# 1) Đăng nhập khách
-curl -X POST "https://shop.example.com/api/front/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"customer@example.com","password":"your-password"}'
-
-# 2) Dùng token nhận được để lấy danh sách đơn hàng
-curl -X GET "https://shop.example.com/api/front/member/order/list" \
-  -H "Authorization: Bearer 2|zzz...token-khach...zzz"
-```
-
----
-
-## 7. Định dạng phản hồi & mã lỗi
+### Phản hồi thành công
 
 - **Mọi phản hồi đều là JSON**, kể cả khi ứng dụng không gửi header `Accept: application/json`.
 
 > ℹ️ **Có từ:** gp247/core 3.6.0 — trước bản này, gọi endpoint cần đăng nhập mà thiếu token **và** không gửi
 > `Accept: application/json` (mặc định của curl, Postman, nhiều SDK) nhận HTTP `500` thay cho `401 unauthenticated`.
-- Endpoint danh sách trả về theo chuẩn phân trang của Laravel (có `data`, `current_page`, `total`…);
-  chọn trang bằng `page[number]` và `page[size]`.
-- Thành công: trả thẳng dữ liệu (một object, hoặc trang dữ liệu).
 
-> ℹ️ **Có từ:** gp247/core 3.2.3 — **mọi lỗi** có cùng một dạng và **mã HTTP đúng nghĩa**:
->
-> ```json
-> { "error": 1, "msg": "Not found", "code": "not_found" }
-> ```
+| Trường hợp | Dạng phản hồi |
+| --- | --- |
+| Một bản ghi | `{"data": {...}}` |
+| Danh sách | `{"data": [...], "meta": {...}, "links": {...}}` — `meta` có `current_page`, `per_page`, `total`, `last_page`; `links` có `first`, `last`, `prev`, `next` |
+| Tên, mô tả sản phẩm/danh mục/trang | `name`, `description`… theo ngôn ngữ chọn bằng `lang` |
+| Giá | `price` và `price_final` (giá khách trả trên cửa hàng, đã tính khuyến mãi) |
 
-| HTTP | `code` | Khi nào |
-| --- | --- | --- |
-| `401` | `unauthenticated` | Thiếu/sai token, token hết hạn, tài khoản bị tắt/khoá, sai mật khẩu khi `login` |
-| `401` | `api_connection_invalid` | API Connection đang bật mà thiếu/sai cặp `apiconnection`/`apikey` |
-| `403` | `forbidden` | Đã đăng nhập nhưng không có quyền (mục 3) hoặc token sai loại |
-| `404` | `not_found` | Bản ghi không tồn tại hoặc bạn không được xem; đường dẫn API không tồn tại |
-| `404` | `api_disabled` | Nhóm API này đang **tắt** trên màn quản lý API của site (mục 9) — từ gp247/core 3.3.1 |
-| `401` | `refresh_token_invalid` | Refresh token sai, hết hạn hoặc phiên đã bị đăng xuất (mục 10) — từ gp247/core 3.6.0 |
-| `401` | `refresh_token_reused` | Refresh token đã dùng rồi bị gửi lại: phiên bị đăng xuất để an toàn — đăng nhập lại (mục 10) |
-| `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 10) |
-| `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 10) |
-| `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 10) |
-| `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
-| `429` | `too_many_attempts` | Gọi quá nhiều lần — chờ theo header `Retry-After` |
-| `405` | `method_not_allowed` | Sai phương thức HTTP cho đường dẫn (ví dụ `GET` thay cho `POST`) |
-| khác | `http_error` | Lỗi HTTP khác — đọc `msg` |
-| `500` | `server_error` | Lỗi máy chủ — nội dung chi tiết chỉ hiện khi site bật chế độ debug |
-
-> Ứng dụng cũ đọc khoá `error`/`msg` vẫn chạy bình thường; hãy kiểm tra **mã HTTP** trước rồi mới đọc
-> `code` để xử lý từng trường hợp.
-
-### Mã yêu cầu `X-Request-Id`
-
-> ℹ️ **Có từ:** gp247/core 3.4.0
-
-Mọi phản hồi của API GP247 — kể cả phản hồi lỗi — có header **`X-Request-Id`**. Khi báo lỗi cho quản trị viên site,
-hãy gửi kèm mã này: họ dùng nó để tìm đúng dòng trong nhật ký hệ thống.
-
-- Ứng dụng có thể **tự gửi** `X-Request-Id` (chỉ gồm chữ, số, `.`, `_`, `-`; dài 8–128 ký tự): site dùng lại đúng mã
-  đó, tiện nối nhật ký của ứng dụng với nhật ký của site.
-- Thiếu hoặc sai định dạng → site tự sinh mã mới (UUID).
-- Đường dẫn không khớp endpoint nào (404 trước khi vào API) có thể không có header này.
-
----
-
-## 8. API v2
-
-> ℹ️ **Có từ:** gp247/core, gp247/front, gp247/shop 3.3.0
-
-API v2 phục vụ **cùng dữ liệu, cùng phân quyền** với v1 (mục 2–4, 7: token, quyền màn admin, dữ liệu theo
-cửa hàng, giới hạn đăng nhập, mã lỗi), nhưng phản hồi có **cấu trúc cố định** và hỗ trợ lọc/sắp xếp/tìm
-kiếm. v1 được giữ nguyên để ứng dụng cũ không vỡ — ứng dụng mới nên dùng v2.
-
-| Khác biệt | v1 | v2 |
-| --- | --- | --- |
-| Tiền tố | `api/core`, `api/front` | `api/v2/core`, `api/v2/front` |
-| Thành công (một bản ghi) | Trả thẳng object | `{"data": {...}}` |
-| Thành công (danh sách) | Phân trang Laravel (`data`, `current_page`, `total`… cùng tầng) | `{"data": [...], "meta": {...}, "links": {...}}` |
-| Tên, mô tả sản phẩm/danh mục/trang | Mảng `descriptions` mọi ngôn ngữ | `name`, `description`… theo ngôn ngữ chọn bằng `lang` |
-| Giá | `price` | `price` và `price_final` (giá khách trả trên cửa hàng, đã tính khuyến mãi) |
-| Đăng xuất | `POST` (và `GET` đã lỗi thời) | Chỉ `POST` |
-
-**Tham số cho mọi endpoint danh sách:**
+### Tham số cho mọi endpoint danh sách
 
 | Tham số | Ý nghĩa | Ví dụ |
 | --- | --- | --- |
@@ -476,84 +293,255 @@ tên được phép.
 | Banner | `type` | `sort`, `created_at` |
 | Trang nội dung | — | `created_at` |
 
-**Endpoint API v2:**
+### Mã lỗi
+
+> ℹ️ **Có từ:** gp247/core 3.2.3 — **mọi lỗi** có cùng một dạng và **mã HTTP đúng nghĩa**:
+>
+> ```json
+> { "error": 1, "msg": "Not found", "code": "not_found" }
+> ```
+
+| HTTP | `code` | Khi nào |
+| --- | --- | --- |
+| `401` | `unauthenticated` | Thiếu/sai token, token hết hạn, tài khoản bị tắt/khoá, sai mật khẩu khi `login` |
+| `401` | `api_connection_invalid` | API Connection đang bật mà thiếu/sai cặp `apiconnection`/`apikey` |
+| `403` | `forbidden` | Đã đăng nhập nhưng không có quyền (mục 3) hoặc token sai loại |
+| `404` | `not_found` | Bản ghi không tồn tại hoặc bạn không được xem; đường dẫn API không tồn tại |
+| `404` | `api_disabled` | Nhóm API này đang **tắt** trên màn quản lý API của site (mục 5) — từ gp247/core 3.3.1 |
+| `401` | `refresh_token_invalid` | Refresh token sai, hết hạn hoặc phiên đã bị đăng xuất (mục 9.2) — từ gp247/core 3.6.0 |
+| `401` | `refresh_token_reused` | Refresh token đã dùng rồi bị gửi lại: phiên bị đăng xuất để an toàn — đăng nhập lại (mục 9.2) |
+| `409` | `refresh_in_progress` | Refresh token vừa được dùng vài giây trước — dùng cặp token mới đã nhận (mục 9.2) |
+| `401` | `challenge_required` | Tài khoản cần thêm bước xác thực (mã OTP…) do plugin cung cấp; thân có khoá `challenge` (mục 9.4) |
+| `401` | `challenge_invalid` | Vé xác thực sai/hết hạn hoặc mã xác thực sai (mục 9.4) |
+| `422` | `validation_failed` | Dữ liệu gửi lên không hợp lệ — xem thêm khoá `errors` theo từng trường |
+| `429` | `too_many_attempts` | Gọi quá nhiều lần — chờ theo header `Retry-After` |
+| `405` | `method_not_allowed` | Sai phương thức HTTP cho đường dẫn (ví dụ `GET` thay cho `POST`) |
+| khác | `http_error` | Lỗi HTTP khác — đọc `msg` |
+| `500` | `server_error` | Lỗi máy chủ — nội dung chi tiết chỉ hiện khi site bật chế độ debug |
+
+Giỏ hàng và đặt đơn có thêm mã lỗi riêng (mục 10). Hãy kiểm tra **mã HTTP** trước rồi mới đọc `code` để xử lý từng
+trường hợp; `msg` là thông điệp để hiển thị hoặc ghi log.
+
+### Mã yêu cầu `X-Request-Id`
+
+> ℹ️ **Có từ:** gp247/core 3.4.0
+
+Mọi phản hồi của API GP247 — kể cả phản hồi lỗi — có header **`X-Request-Id`**. Khi báo lỗi cho quản trị viên site,
+hãy gửi kèm mã này: họ dùng nó để tìm đúng dòng trong nhật ký hệ thống.
+
+- Ứng dụng có thể **tự gửi** `X-Request-Id` (chỉ gồm chữ, số, `.`, `_`, `-`; dài 8–128 ký tự): site dùng lại đúng mã
+  đó, tiện nối nhật ký của ứng dụng với nhật ký của site.
+- Thiếu hoặc sai định dạng → site tự sinh mã mới (UUID).
+- Đường dẫn không khớp endpoint nào (404 trước khi vào API) có thể không có header này.
+
+---
+
+## 7. Luồng làm việc API Core (Admin)
+
+Sơ đồ dưới đây mô tả trình tự một ứng dụng quản trị đăng nhập rồi đọc dữ liệu qua API Core. Mỗi yêu cầu đi
+qua các lớp kiểm tra theo đúng thứ tự trong sơ đồ; lớp nào từ chối thì trả lỗi ngay, không đi tiếp.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Ứng dụng quản trị
+    participant M as API GP247<br/>(lớp kiểm tra chung)
+    participant S as Sanctum<br/>(token)
+    participant Q as Phân quyền<br/>(màn admin + cửa hàng)
+    participant D as Cơ sở dữ liệu
+    Note over A,M: Mọi yêu cầu, kể cả login: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON<br/>→ API Connection (nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
+    A->>M: POST /api/v2/core/login {username, password, remember_me?, with_refresh?}
+    alt Vượt giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP)
+        M-->>A: 429 too_many_attempts + Retry-After
+    else Sai mật khẩu hoặc tài khoản admin bị tắt
+        M-->>A: 401 unauthenticated
+    else Tài khoản cần bước xác thực thêm (mục 9.4)
+        M-->>A: 401 challenge_required + challenge
+    else Hợp lệ
+        M->>S: Tạo token (scope admin / admin-supper)
+        S-->>M: access_token
+        M-->>A: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+    end
+    A->>M: GET /api/v2/core/order/list<br/>Authorization: Bearer access_token
+    M->>S: Kiểm token: còn hạn, đúng loại token admin
+    alt Thiếu, sai, hết hạn token hoặc admin đã bị tắt
+        M-->>A: 401 unauthenticated
+    else Token hợp lệ
+        M->>Q: Có quyền màn "Danh sách đơn hàng"? Đúng tên miền cửa hàng?
+        alt Không có quyền hoặc sai tên miền cửa hàng
+            M-->>A: 403 forbidden
+        else Được phép
+            Q-->>M: Cửa hàng của tài khoản
+            M->>D: Truy vấn chỉ trong cửa hàng đó
+            D-->>M: Dữ liệu
+            M-->>A: 200 {data, meta, links} — chi tiết không thấy thì 404 not_found
+        end
+    end
+    A->>M: POST /api/v2/core/logout
+    M-->>A: 200 — phiên bị đăng xuất
+```
+
+Điểm rút ra: có token **chưa đủ** để đọc dữ liệu — tài khoản còn phải có quyền mở màn hình quản trị tương ứng, và
+chỉ thấy dữ liệu của cửa hàng mình (mục 3).
+
+**Endpoint đăng nhập & phiên** (tiền tố `api/v2/core`):
 
 | Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
 | --- | --- | --- | --- |
-| `POST` | `api/v2/core/login` | Không | Đăng nhập admin (`with_refresh` tuỳ chọn — mục 10) |
-| `POST` | `api/v2/core/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm (mục 10) |
-| `POST` | `api/v2/core/refresh` | Không (gửi refresh token) | Đổi refresh token lấy cặp token mới |
-| `POST` | `api/v2/core/logout` | Có (admin) | Đăng xuất phiên hiện tại (cả refresh token) |
-| `GET` | `api/v2/core/info` | Có (admin) | Thông tin admin (kèm vai trò) |
-| `GET` | `api/v2/core/sessions` | Có (admin) | Các phiên đăng nhập API (thiết bị) của admin |
-| `DELETE` | `api/v2/core/sessions/{id}` | Có (admin) | Đăng xuất một phiên |
-| `GET` | `api/v2/core/customer/list` | Có (admin + quyền) | Danh sách khách hàng |
-| `GET` | `api/v2/core/customer/detail/{id}` | Có (admin + quyền) | Chi tiết khách hàng |
-| `GET` | `api/v2/core/order/list` | Có (admin + quyền) | Danh sách đơn hàng |
-| `GET` | `api/v2/core/order/detail/{id}` | Có (admin + quyền) | Chi tiết đơn hàng |
-| `GET` | `api/v2/core/product/list` | Có (admin + quyền) | Danh sách sản phẩm (kèm tồn kho, giá vốn) |
-| `GET` | `api/v2/core/product/detail/{id}` | Có (admin + quyền) | Chi tiết sản phẩm |
-| `GET` | `api/v2/core/category/list` | Có (admin + quyền) | Danh sách danh mục |
-| `GET` | `api/v2/core/category/detail/{id}` | Có (admin + quyền) | Chi tiết danh mục |
-| `GET` | `api/v2/core/brand/list` | Có (admin + quyền) | Danh sách thương hiệu |
-| `GET` | `api/v2/core/brand/detail/{id}` | Có (admin + quyền) | Chi tiết thương hiệu |
-| `GET` | `api/v2/core/supplier/list` | Có (admin + quyền) | Danh sách nhà cung cấp |
-| `GET` | `api/v2/core/supplier/detail/{id}` | Có (admin + quyền) | Chi tiết nhà cung cấp |
-| `GET` | `api/v2/core/banner/list` | Có (admin + quyền) | Danh sách banner |
-| `GET` | `api/v2/core/banner/detail/{id}` | Có (admin + quyền) | Chi tiết banner |
-| `GET` | `api/v2/core/page/list` | Có (admin + quyền) | Danh sách trang nội dung |
-| `GET` | `api/v2/core/page/detail/{id}` | Có (admin + quyền) | Chi tiết trang nội dung |
-| `GET` | `api/v2/front/meta` | Không | Phiên bản API, gói đã cài, ngôn ngữ, cửa hàng |
-| `GET` | `api/v2/front/product/list` | Không | Danh sách sản phẩm |
-| `GET` | `api/v2/front/product/detail/{id}` | Không | Chi tiết sản phẩm |
-| `GET` | `api/v2/front/category/list` | Không | Danh sách danh mục |
-| `GET` | `api/v2/front/category/detail/{id}` | Không | Chi tiết danh mục |
-| `GET` | `api/v2/front/brand/list` | Không | Danh sách thương hiệu |
-| `GET` | `api/v2/front/brand/detail/{id}` | Không | Chi tiết thương hiệu |
-| `GET` | `api/v2/front/banner/list` | Không | Danh sách banner |
-| `GET` | `api/v2/front/banner/detail/{id}` | Không | Chi tiết banner |
-| `GET` | `api/v2/front/page/list` | Không | Danh sách trang nội dung |
-| `GET` | `api/v2/front/page/detail/{id}` | Không | Chi tiết trang nội dung |
-| `POST` | `api/v2/front/register` | Không | Đăng ký tài khoản khách và đăng nhập luôn (mục 10) |
+| `POST` | `api/v2/core/login` | Không | Đăng nhập admin, nhận `access_token` (`with_refresh` tuỳ chọn — mục 9.2) |
+| `POST` | `api/v2/core/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm (mục 9.4) |
+| `POST` | `api/v2/core/refresh` | Không (gửi refresh token) | Đổi refresh token lấy cặp token mới (mục 9.2) |
+| `POST` | `api/v2/core/logout` | Có (Bearer) | Đăng xuất phiên hiện tại (cả refresh token) |
+| `GET` | `api/v2/core/info` | Có (Bearer) | Thông tin quản trị viên đang đăng nhập (kèm vai trò) |
+| `GET` | `api/v2/core/sessions` | Có (Bearer) | Các phiên đăng nhập API (thiết bị) của admin (mục 9.3) |
+| `DELETE` | `api/v2/core/sessions/{id}` | Có (Bearer) | Đăng xuất một phiên |
+
+**Endpoint dữ liệu quản trị** (tiền tố `api/v2/core`, cần token + quyền ở mục 3):
+
+| Phương thức | Đường dẫn | Chức năng |
+| --- | --- | --- |
+| `GET` | `api/v2/core/customer/list` | Danh sách khách hàng |
+| `GET` | `api/v2/core/customer/detail/{id}` | Chi tiết một khách hàng |
+| `GET` | `api/v2/core/order/list` | Danh sách đơn hàng |
+| `GET` | `api/v2/core/order/detail/{id}` | Chi tiết một đơn hàng |
+| `GET` | `api/v2/core/product/list` | Danh sách sản phẩm (kèm tồn kho, giá vốn) |
+| `GET` | `api/v2/core/product/detail/{id}` | Chi tiết một sản phẩm |
+| `GET` | `api/v2/core/category/list` | Danh sách danh mục |
+| `GET` | `api/v2/core/category/detail/{id}` | Chi tiết một danh mục |
+| `GET` | `api/v2/core/brand/list` | Danh sách thương hiệu |
+| `GET` | `api/v2/core/brand/detail/{id}` | Chi tiết một thương hiệu |
+| `GET` | `api/v2/core/supplier/list` | Danh sách nhà cung cấp |
+| `GET` | `api/v2/core/supplier/detail/{id}` | Chi tiết một nhà cung cấp |
+| `GET` | `api/v2/core/banner/list` | Danh sách banner |
+| `GET` | `api/v2/core/banner/detail/{id}` | Chi tiết một banner |
+| `GET` | `api/v2/core/page/list` | Danh sách trang nội dung |
+| `GET` | `api/v2/core/page/detail/{id}` | Chi tiết một trang nội dung |
+
+Ví dụ đăng nhập admin (dùng `curl` trong Terminal):
+
+```bash
+curl -X POST "https://shop.example.com/api/v2/core/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"your-password","remember_me":true}'
+```
+
+Nếu thành công, bạn nhận về JSON dạng (rút gọn):
+
+```json
+{
+  "data": {
+    "access_token": "1|aBcD...rất-dài...XyZ",
+    "token_type": "Bearer",
+    "scopes": ["admin-supper"],
+    "expires_at": "2026-11-25 10:00:00",
+    "expires_in": 2592000
+  }
+}
+```
+
+Sau đó lấy các đơn hàng mới nhất bằng token vừa nhận (`data.access_token`):
+
+```bash
+curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&page[size]=20" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 1|aBcD...rất-dài...XyZ"
+```
+
+---
+
+## 8. Luồng làm việc API Front (Storefront)
+
+API Front phục vụ hai loại dữ liệu: **dữ liệu công khai** (không cần đăng nhập — danh sách sản
+phẩm, danh mục…) và **dữ liệu riêng của khách** (cần đăng nhập — đơn hàng, hồ sơ, sổ địa chỉ).
+
+Sơ đồ dưới đây mô tả hai cách dùng API Front: đọc dữ liệu công khai không cần đăng nhập, và khách đăng nhập để
+xem đơn hàng của mình.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K as Ứng dụng của khách
+    participant M as API GP247<br/>(lớp kiểm tra chung)
+    participant S as Sanctum<br/>(token)
+    participant D as Cơ sở dữ liệu
+    Note over K,M: Mọi yêu cầu: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON → API Connection (nếu bật) → giới hạn tần suất
+    K->>M: GET /api/v2/front/product/list (không cần token)
+    M->>D: Chỉ những gì cửa hàng của tên miền này đang hiển thị<br/>(đang bán, đã duyệt, cửa hàng hoạt động)
+    D-->>M: Dữ liệu
+    M-->>K: 200 {data, meta, links} — chỉ trường công khai (không giá vốn, tồn kho, nhà cung cấp)
+    K->>M: POST /api/v2/front/login {email, password, remember_me?, with_refresh?}
+    alt Vượt giới hạn đăng nhập
+        M-->>K: 429 too_many_attempts + Retry-After
+    else Sai mật khẩu hoặc tài khoản khách bị khoá
+        M-->>K: 401 unauthenticated
+    else Hợp lệ
+        M->>S: Tạo token (scope user)
+        S-->>M: access_token
+        M-->>K: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+    end
+    K->>M: GET /api/v2/front/member/order/list<br/>Authorization: Bearer access_token
+    M->>S: Kiểm token: còn hạn, scope user, tài khoản chưa bị khoá
+    alt Token không hợp lệ hoặc tài khoản đã bị khoá
+        M-->>K: 401 unauthenticated (token sai loại: 403 forbidden)
+    else Hợp lệ
+        M->>D: Chỉ đơn hàng của chính khách này
+        D-->>M: Dữ liệu
+        M-->>K: 200 — không kèm IP, user agent… (đơn của người khác: 404 not_found)
+    end
+```
+
+Điểm rút ra: dữ liệu công khai trên API **khớp với những gì khách thấy trên cửa hàng**, còn dữ liệu riêng chỉ trả về
+cho đúng chủ tài khoản.
+
+**Các endpoint công khai** (tiền tố `api/v2/front`, không cần token):
+
+| Phương thức | Đường dẫn | Chức năng |
+| --- | --- | --- |
+| `GET` | `api/v2/front/meta` | Phiên bản API, gói đã cài, ngôn ngữ, cửa hàng |
+| `GET` | `api/v2/front/product/list` | Danh sách sản phẩm |
+| `GET` | `api/v2/front/product/detail/{id}` | Chi tiết một sản phẩm (kèm dữ liệu để mua — mục 10.4) |
+| `GET` | `api/v2/front/category/list` | Danh sách danh mục |
+| `GET` | `api/v2/front/category/detail/{id}` | Chi tiết một danh mục |
+| `GET` | `api/v2/front/brand/list` | Danh sách thương hiệu |
+| `GET` | `api/v2/front/brand/detail/{id}` | Chi tiết một thương hiệu |
+| `GET` | `api/v2/front/banner/list` | Danh sách banner |
+| `GET` | `api/v2/front/banner/detail/{id}` | Chi tiết một banner |
+| `GET` | `api/v2/front/page/list` | Danh sách trang nội dung |
+| `GET` | `api/v2/front/page/detail/{id}` | Chi tiết một trang nội dung |
+
+> ℹ️ **Có từ:** gp247/shop 3.2.3, gp247/front 3.2.3 — dữ liệu công khai **giống hệt những gì cửa hàng
+> đang hiển thị** trên tên miền bạn gọi: sản phẩm ẩn, chưa được duyệt hoặc thuộc cửa hàng khác không
+> xuất hiện. Phản hồi chỉ gồm các trường công khai — không có giá vốn, nhà cung cấp, số tồn/đã bán.
+> Cần các số liệu đó thì dùng API Core với tài khoản có quyền.
+
+**Các endpoint tài khoản khách** (tiền tố `api/v2/front`; chi tiết ở mục 9):
+
+| Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
+| --- | --- | --- | --- |
+| `POST` | `api/v2/front/register` | Không | Đăng ký tài khoản khách và đăng nhập luôn (mục 9.1) |
 | `POST` | `api/v2/front/password/forgot` | Không | Gửi email đặt lại mật khẩu |
 | `POST` | `api/v2/front/password/reset` | Không | Đặt mật khẩu mới bằng mã trong email |
-| `POST` | `api/v2/front/login` | Không | Đăng nhập khách (`with_refresh` tuỳ chọn — mục 10) |
-| `POST` | `api/v2/front/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm |
+| `POST` | `api/v2/front/login` | Không | Đăng nhập bằng email/mật khẩu khách (`with_refresh` tuỳ chọn — mục 9.2) |
+| `POST` | `api/v2/front/login/challenge` | Không | Hoàn tất đăng nhập cần bước xác thực thêm (mục 9.4) |
 | `POST` | `api/v2/front/refresh` | Không (gửi refresh token) | Đổi refresh token lấy cặp token mới |
-| `POST` | `api/v2/front/logout` | Có (khách) | Đăng xuất phiên hiện tại (cả refresh token) |
-| `GET` | `api/v2/front/info` | Có (khách) | Thông tin tài khoản khách |
-| `GET` | `api/v2/front/member/profile` | Có (khách) | Hồ sơ đầy đủ: trạng thái xác minh email, địa chỉ mặc định |
-| `PUT` | `api/v2/front/member/profile` | Có (khách) | Sửa hồ sơ |
-| `PUT` | `api/v2/front/member/password` | Có (khách) | Đổi mật khẩu (đăng xuất mọi thiết bị khác) |
-| `POST` | `api/v2/front/member/email/verify` | Có (khách) | Gửi lại email xác minh |
-| `GET` | `api/v2/front/member/address/list` | Có (khách) | Sổ địa chỉ |
-| `POST` | `api/v2/front/member/address` | Có (khách) | Thêm địa chỉ |
-| `PUT` | `api/v2/front/member/address/{id}` | Có (khách) | Sửa địa chỉ |
-| `DELETE` | `api/v2/front/member/address/{id}` | Có (khách) | Xoá địa chỉ (không xoá được địa chỉ mặc định) |
-| `GET` | `api/v2/front/member/sessions` | Có (khách) | Các phiên đăng nhập API (thiết bị) của khách |
-| `DELETE` | `api/v2/front/member/sessions/{id}` | Có (khách) | Đăng xuất một phiên |
-| `GET` | `api/v2/front/member/order/list` | Có (khách) | Đơn hàng của khách |
-| `GET` | `api/v2/front/member/order/detail/{id}` | Có (khách) | Chi tiết một đơn hàng của khách |
-| `GET` | `api/v2/front/cart` | Có (khách) hoặc `X-Cart-Token` | Xem giỏ hàng (mục 11) |
-| `POST` | `api/v2/front/cart/items` | Có (khách) hoặc khách vãng lai | Thêm sản phẩm vào giỏ |
-| `PATCH` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Đổi số lượng một dòng (≤ 0 = xoá dòng) |
-| `DELETE` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Xoá một dòng |
-| `POST` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Áp mã giảm giá / khuyến mãi |
-| `DELETE` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Gỡ khuyến mãi |
-| `GET` | `api/v2/front/checkout` | Có (khách) hoặc `X-Cart-Token` | Trạng thái checkout (cửa hàng, địa chỉ, phương thức đã chọn — mục 11.1) |
-| `PUT` | `api/v2/front/checkout/address` | Có (khách) hoặc `X-Cart-Token` | Đặt địa chỉ giao hàng |
-| `GET` | `api/v2/front/checkout/shipping-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức giao hàng có báo giá cho địa chỉ |
-| `PUT` | `api/v2/front/checkout/shipping-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức giao hàng |
-| `GET` | `api/v2/front/checkout/payment-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức thanh toán dùng được qua API |
-| `PUT` | `api/v2/front/checkout/payment-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức thanh toán |
-| `GET` | `api/v2/front/checkout/totals` | Có (khách) hoặc `X-Cart-Token` | Tổng tiền sẽ thu |
-| `POST` | `api/v2/front/checkout/place` | Có (khách) hoặc `X-Cart-Token` + `Idempotency-Key` | Đặt đơn (mục 11.2) |
-| `GET` | `api/v2/front/member/orders/{id}/payment` | Có (khách) | Trạng thái thanh toán đơn của khách (mục 11.3) |
-| `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Trạng thái thanh toán đơn của khách vãng lai (mục 11.3) |
-| `POST` | `api/v2/front/member/orders/{id}/cancel` | Có (khách) | Huỷ đơn chưa trả đặt qua ứng dụng (mục 11.3) |
-| `POST` | `api/v2/front/orders/{id}/cancel` | `X-Order-Access` | Huỷ đơn chưa trả của khách vãng lai (mục 11.3) |
+| `POST` | `api/v2/front/logout` | Có (Bearer) | Đăng xuất phiên hiện tại (cả refresh token) |
+| `GET` | `api/v2/front/info` | Có (Bearer) | Thông tin tài khoản khách |
+| `GET` | `api/v2/front/member/profile` | Có (Bearer) | Hồ sơ đầy đủ: trạng thái xác minh email, địa chỉ mặc định |
+| `PUT` | `api/v2/front/member/profile` | Có (Bearer) | Sửa hồ sơ |
+| `PUT` | `api/v2/front/member/password` | Có (Bearer) | Đổi mật khẩu (đăng xuất mọi thiết bị khác) |
+| `POST` | `api/v2/front/member/email/verify` | Có (Bearer) | Gửi lại email xác minh |
+| `GET` | `api/v2/front/member/address/list` | Có (Bearer) | Sổ địa chỉ |
+| `POST` | `api/v2/front/member/address` | Có (Bearer) | Thêm địa chỉ |
+| `PUT` | `api/v2/front/member/address/{id}` | Có (Bearer) | Sửa địa chỉ |
+| `DELETE` | `api/v2/front/member/address/{id}` | Có (Bearer) | Xoá địa chỉ (không xoá được địa chỉ mặc định) |
+| `GET` | `api/v2/front/member/sessions` | Có (Bearer) | Các phiên đăng nhập API (thiết bị) của khách (mục 9.3) |
+| `DELETE` | `api/v2/front/member/sessions/{id}` | Có (Bearer) | Đăng xuất một phiên |
+| `GET` | `api/v2/front/member/order/list` | Có (Bearer) | Danh sách đơn hàng của khách |
+| `GET` | `api/v2/front/member/order/detail/{id}` | Có (Bearer) | Chi tiết một đơn hàng của khách |
 
-Ví dụ: 20 sản phẩm đắt nhất của thương hiệu số 5, tên bằng tiếng Việt:
+Endpoint giỏ hàng, checkout và thanh toán nằm ở mục 10.
+
+Ví dụ: 20 sản phẩm đắt nhất của thương hiệu số 5, tên bằng tiếng Việt (công khai, không cần token):
 
 ```bash
 curl -X GET "https://shop.example.com/api/v2/front/product/list?filter[brand_id]=5&sort=-price&lang=vi&page[size]=20" \
@@ -572,46 +560,31 @@ Phản hồi rút gọn:
 }
 ```
 
----
+Ví dụ đăng nhập khách rồi xem đơn hàng:
 
-## 9. Bật/tắt API
+```bash
+# 1) Đăng nhập khách
+curl -X POST "https://shop.example.com/api/v2/front/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"customer@example.com","password":"your-password"}'
 
-> ℹ️ **Có từ:** gp247/core 3.3.1
-
-Chủ site bật/tắt API ngay trên **màn quản lý API** của trang quản trị (cùng màn với API Connection), không cần sửa
-file cấu hình hay chạy lệnh trên máy chủ. Thay đổi có hiệu lực ngay ở yêu cầu kế tiếp.
-
-| Công tắc | Áp dụng cho |
-| --- | --- |
-| **REST API (tất cả nhóm)** | Mọi endpoint API (kể cả API do plugin thêm qua cơ chế chuẩn) |
-| **v1 · API quản trị (core)** | `api/core/*` |
-| **v1 · API công khai & khách hàng (front)** | `api/front/*` |
-| **v2 · API quản trị (core)** | `api/v2/core/*` |
-| **v2 · API công khai & khách hàng (front)** | `api/v2/front/*` |
-
-- Mỗi công tắc nhóm nằm ngay trên danh sách endpoint của nhóm đó; nhóm đang tắt hiện chữ "đang tắt".
-- Gọi vào nhóm đang tắt → HTTP `404` với `"code": "api_disabled"` (mục 7) — kể cả khi chưa gửi token *(từ gp247/core
-  3.4.0; bản 3.3.1 trả `401` nếu thiếu token)*.
-- **Cài mới** chỉ bật sẵn **v2**; v1 tắt. Site **nâng cấp** từ bản cũ giữ nguyên mọi nhóm đang bật. Ứng dụng viết theo v1
-  cần quản trị viên bật lại nhóm v1 tương ứng.
-- Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
-  trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
-- API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
-- **Site có cache route** (`php artisan route:cache`): `php artisan gp247:update` tự dựng lại cache sau khi nâng cấp. Nếu bạn chỉ
-  chạy `composer update`, công tắc có thể chưa có hiệu lực — `php artisan gp247:doctor` báo ở mục `api_route_gate`
-  *(từ gp247/core 3.4.0)*; chạy `php artisan gp247:cache-rebuild` để sửa.
+# 2) Dùng token nhận được (data.access_token) để lấy danh sách đơn hàng
+curl -X GET "https://shop.example.com/api/v2/front/member/order/list" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer 2|zzz...token-khach...zzz"
+```
 
 ---
 
-## 10. Tài khoản khách & phiên đăng nhập (API v2)
+## 9. Tài khoản khách & phiên đăng nhập
 
 > ℹ️ **Có từ:** gp247/core 3.6.0, gp247/shop 3.4.0
 
 Ứng dụng mua sắm làm được trọn vòng tài khoản khách qua `api/v2/front`, với **đúng luật của form trên website**:
-trường bắt buộc, trường tuỳ chỉnh, độ mạnh mật khẩu và captcha đều theo cấu hình của cửa hàng. Các endpoint này chỉ có
-ở v2.
+trường bắt buộc, trường tuỳ chỉnh, độ mạnh mật khẩu và captcha đều theo cấu hình của cửa hàng. Danh sách endpoint ở
+mục 8.
 
-### 10.1. Đăng ký, quên mật khẩu, hồ sơ, sổ địa chỉ
+### 9.1. Đăng ký, quên mật khẩu, hồ sơ, sổ địa chỉ
 
 - **`POST register`** — gửi các trường như form đăng ký (`first_name`, `email`, `password`, `password_confirmation`,
   cùng các trường cửa hàng bật như `address1`, `phone`…). Thành công → HTTP `201`, thân gồm `customer` và token như
@@ -641,7 +614,7 @@ dạng `số_lần,phút`).
 > của plugin captcha đang dùng — thiếu/sai → `422` (`errors.captcha_field`). Ứng dụng cần lấy mã captcha bằng SDK
 > của nhà cung cấp captcha, hoặc quản trị viên bỏ chọn trang đó.
 
-### 10.2. Refresh token — giữ đăng nhập mà token ngắn hạn
+### 9.2. Refresh token — giữ đăng nhập mà token ngắn hạn
 
 Gửi `with_refresh: true` (và tuỳ chọn `device_name`) khi `login`, `register` hoặc `login/challenge`:
 
@@ -665,14 +638,14 @@ curl -X POST "https://shop.example.com/api/v2/front/refresh" -H "Content-Type: a
   -d '{"refresh_token":"<refresh_token nhận được>"}'
 ```
 
-### 10.3. Quản lý phiên đăng nhập
+### 9.3. Quản lý phiên đăng nhập
 
-Mỗi lần đăng nhập v2 là một **phiên**. `GET member/sessions` (khách) và `GET sessions` (admin) liệt kê tên thiết bị,
+Mỗi lần đăng nhập là một **phiên**. `GET member/sessions` (khách) và `GET sessions` (admin) liệt kê tên thiết bị,
 IP, lần dùng cuối và phiên nào là phiên hiện tại (`current`). `DELETE …/sessions/{id}` đăng xuất một thiết bị.
-`POST logout` (v2) đăng xuất phiên hiện tại, kể cả refresh token của nó. Đổi mật khẩu (khách hoặc quản trị viên, trên website hay
+`POST logout` đăng xuất phiên hiện tại, kể cả refresh token của nó. Đổi mật khẩu (khách hoặc quản trị viên, trên website hay
 qua API) đăng xuất **mọi** phiên và token API của tài khoản đó; phiên đăng nhập website đang dùng vẫn giữ.
 
-### 10.4. Xác thực hai lớp (MFA) qua plugin
+### 9.4. Xác thực hai lớp (MFA) qua plugin
 
 Core không tự gửi mã OTP; plugin bảo mật có thể gắn thêm bước xác thực. Khi đó `login` đúng mật khẩu trả:
 
@@ -682,24 +655,51 @@ Core không tự gửi mã OTP; plugin bảo mật có thể gắn thêm bước
 ```
 
 Ứng dụng hỏi mã của người dùng rồi gọi `POST login/challenge` với `ticket` và các trường plugin yêu cầu (ví dụ `code`).
-Vé dùng một lần, hết hạn sau 5 phút; mã sai được tính vào giới hạn đăng nhập. API v1 không hỗ trợ bước này: tài khoản cần
-MFA đăng nhập v1 nhận `401 challenge_required` — hãy dùng v2. Plugin **MFA** miễn phí của GP247 (từ bản 2.3.0) dùng sẵn cơ
+Vé dùng một lần, hết hạn sau 5 phút; mã sai được tính vào giới hạn đăng nhập (API v1 không có bước này — xem
+[API v1](./api-v1_vi.md)). Plugin **MFA** miễn phí của GP247 (từ bản 2.3.0) dùng sẵn cơ
 chế này cho khách và quản trị viên đã bật xác thực hai lớp (mã TOTP hoặc mã khôi phục). Lập trình viên plugin xem
 [Hướng dẫn tạo API — mục 7](./create-api_vi.md).
 
-### 10.5. Nhật ký truy cập API quản trị
+### 9.5. Nhật ký truy cập API quản trị
 
-Mỗi lần gọi API Core (v1 và v2, trừ `login`) được ghi vào **Nhật ký thao tác** của trang quản trị — như khi thao tác trên
+Mỗi lần gọi API Core (trừ `login`) được ghi vào **Nhật ký thao tác** của trang quản trị — như khi thao tác trên
 màn admin: người dùng, đường dẫn, IP, thiết bị; mật khẩu/khoá bị che, nội dung phản hồi không được lưu. Lần gọi bị từ chối
 quyền (`403`) cũng được ghi. Tắt cùng nhật ký của trang quản trị (`GP247_ADMIN_LOG=0`). Công cụ đồng bộ gọi API liên tục sẽ
 làm nhật ký tăng nhanh — dọn định kỳ ở màn **Nhật ký thao tác**.
 
-## 11. Giỏ hàng qua API (API v2)
+---
+
+## 10. Giỏ hàng & đặt đơn qua API
 
 > ℹ️ **Có từ:** gp247/shop 3.5.0
 
 Ứng dụng di động hoặc website headless của chính cửa hàng giữ **giỏ hàng** qua API, với đúng luật của website: giá và
 phụ phí thuộc tính do máy chủ tính, luật số lượng (số dương, số lẻ theo cấu hình), mỗi biến thể một dòng.
+
+**Endpoint giỏ hàng, checkout và thanh toán** (tiền tố `api/v2/front`):
+
+| Phương thức | Đường dẫn | Cần đăng nhập | Chức năng |
+| --- | --- | --- | --- |
+| `GET` | `api/v2/front/cart` | Có (khách) hoặc `X-Cart-Token` | Xem giỏ hàng |
+| `POST` | `api/v2/front/cart/items` | Có (khách) hoặc khách vãng lai | Thêm sản phẩm vào giỏ |
+| `PATCH` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Đổi số lượng một dòng (≤ 0 = xoá dòng) |
+| `DELETE` | `api/v2/front/cart/items/{rowId}` | Có (khách) hoặc `X-Cart-Token` | Xoá một dòng |
+| `POST` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Áp mã giảm giá / khuyến mãi |
+| `DELETE` | `api/v2/front/cart/promotions/{pluginKey}` | Có (khách) hoặc `X-Cart-Token` | Gỡ khuyến mãi |
+| `GET` | `api/v2/front/checkout` | Có (khách) hoặc `X-Cart-Token` | Trạng thái checkout (cửa hàng, địa chỉ, phương thức đã chọn — mục 10.1) |
+| `PUT` | `api/v2/front/checkout/address` | Có (khách) hoặc `X-Cart-Token` | Đặt địa chỉ giao hàng |
+| `GET` | `api/v2/front/checkout/shipping-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức giao hàng có báo giá cho địa chỉ |
+| `PUT` | `api/v2/front/checkout/shipping-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức giao hàng |
+| `GET` | `api/v2/front/checkout/payment-methods` | Có (khách) hoặc `X-Cart-Token` | Phương thức thanh toán dùng được qua API |
+| `PUT` | `api/v2/front/checkout/payment-method` | Có (khách) hoặc `X-Cart-Token` | Chọn phương thức thanh toán |
+| `GET` | `api/v2/front/checkout/totals` | Có (khách) hoặc `X-Cart-Token` | Tổng tiền sẽ thu |
+| `POST` | `api/v2/front/checkout/place` | Có (khách) hoặc `X-Cart-Token` + `Idempotency-Key` | Đặt đơn (mục 10.2) |
+| `GET` | `api/v2/front/member/orders/{id}/payment` | Có (khách) | Trạng thái thanh toán đơn của khách (mục 10.3) |
+| `GET` | `api/v2/front/orders/{id}/payment` | `X-Order-Access` | Trạng thái thanh toán đơn của khách vãng lai (mục 10.3) |
+| `POST` | `api/v2/front/member/orders/{id}/cancel` | Có (khách) | Huỷ đơn chưa trả đặt qua ứng dụng (mục 10.3) |
+| `POST` | `api/v2/front/orders/{id}/cancel` | `X-Order-Access` | Huỷ đơn chưa trả của khách vãng lai (mục 10.3) |
+
+Giỏ thuộc về ai tuỳ theo khách đã đăng nhập hay chưa:
 
 ```mermaid
 flowchart LR
@@ -736,7 +736,7 @@ flowchart LR
 
 Giới hạn: **60 lần/phút** cho mỗi khách hoặc mỗi mã giỏ (`gp247-config.api.throttle.cart`).
 
-### 11.1. Các bước checkout
+### 10.1. Các bước checkout
 
 Sau khi có giỏ, ứng dụng đi các bước checkout cho **một cửa hàng** của giỏ (giỏ có hàng của nhiều cửa hàng thì gửi `store_id`;
 đổi cửa hàng thì các lựa chọn bắt đầu lại). Mọi lựa chọn được giữ giữa các lần gọi cho chủ giỏ (khách hoặc mã giỏ) — **cùng luật
@@ -773,7 +773,7 @@ flowchart LR
 | `promotion_refused` | 422 | Plugin khuyến mãi từ chối (mã sai, hết hạn…) |
 | `invalid_quantity` | 422 | Có dòng giỏ với số lượng không đặt được |
 
-### 11.2. Đặt đơn
+### 10.2. Đặt đơn
 
 `POST checkout/place` đặt đơn cho cửa hàng đang checkout. Trước khi gọi:
 
@@ -815,7 +815,7 @@ Thành công: `201 {"data": {"order": {id, store_id, status, payment_status, tot
 | `shipping_unquotable` · `invalid_quantity` · `cart_empty` | 422 | Không giao được, số lượng không hợp lệ, giỏ trống |
 | — | 429 | Quá **10 lần đặt / phút** cho mỗi khách hoặc IP (`gp247-config.api.throttle.checkout_place`) |
 
-### 11.3. Thanh toán online và trạng thái thanh toán
+### 10.3. Thanh toán online và trạng thái thanh toán
 
 Phương thức có `type: "hosted"` (ví dụ Stripe, PayPal) thu tiền qua **trang thanh toán của cổng**:
 
@@ -875,7 +875,7 @@ Site so khớp **đúng** scheme + host (+ cổng) và đường dẫn bắt đ�
 
 Phản hồi trạng thái: `{"data": {"order": {id, store_id, status, payment_status, total, received, balance, currency}, "payment": {"type": "none" | "hosted", "status": "unpaid" | "partially_paid" | "paid" | "refunded"}}}`.
 
-### 11.4. Dữ liệu sản phẩm để mua
+### 10.4. Dữ liệu sản phẩm để mua
 
 Sản phẩm v2 (`product/list`, `product/detail/{id}`) có thêm ba trường để ứng dụng dựng màn chọn biến thể và nút mua — các trường cũ giữ nguyên:
 
@@ -902,25 +902,25 @@ Cửa hàng ẩn giá thì `add_price` là `null` (như `price`).
 }
 ```
 
-### 11.5. Luồng mua hàng trọn vẹn
+### 10.5. Luồng mua hàng trọn vẹn
 
 Bảng dưới gom mọi lần gọi theo thứ tự cho một đơn (tiền tố `api/v2/front/`). Khách đã đăng nhập gửi `Authorization: Bearer <token>` ở mọi
 bước; khách vãng lai gửi `X-Cart-Token` thay cho token.
 
 | Bước | Gọi | Header riêng | Xem |
 | --- | --- | --- | --- |
-| 1. Chọn sản phẩm | `GET product/list`, `GET product/detail/{id}` | — | 11.4 |
-| 2. Giữ giỏ | `POST cart/items`, `GET cart`, `PATCH` / `DELETE cart/items/{rowId}` | `X-Cart-Token` nhận ở lần thêm đầu (khách vãng lai) | 11 |
-| 3. Địa chỉ, giao hàng, thanh toán | `PUT checkout/address` → `GET` + `PUT checkout/shipping-method(s)` → `GET` + `PUT checkout/payment-method(s)` | — | 11.1 |
-| 4. Khuyến mãi (tuỳ chọn) | `POST` / `DELETE cart/promotions/{pluginKey}` | — | 11.1 |
-| 5. Hiện tổng cho khách | `GET checkout/totals` | — | 11.1 |
-| 6. Đặt đơn | `POST checkout/place` (+ `return_url` nếu trả qua cổng) | `Idempotency-Key` (một khoá cho mỗi lần bấm *Đặt hàng*) | 11.2 |
-| 7. Trả tiền (nếu `payment.type = hosted`) | mở `payment.url` | — | 11.3 |
-| 8. Trạng thái thanh toán | `GET member/orders/{id}/payment` hoặc `GET orders/{id}/payment` | `X-Order-Access` (khách vãng lai) | 11.3 |
+| 1. Chọn sản phẩm | `GET product/list`, `GET product/detail/{id}` | — | 10.4 |
+| 2. Giữ giỏ | `POST cart/items`, `GET cart`, `PATCH` / `DELETE cart/items/{rowId}` | `X-Cart-Token` nhận ở lần thêm đầu (khách vãng lai) | 10 |
+| 3. Địa chỉ, giao hàng, thanh toán | `PUT checkout/address` → `GET` + `PUT checkout/shipping-method(s)` → `GET` + `PUT checkout/payment-method(s)` | — | 10.1 |
+| 4. Khuyến mãi (tuỳ chọn) | `POST` / `DELETE cart/promotions/{pluginKey}` | — | 10.1 |
+| 5. Hiện tổng cho khách | `GET checkout/totals` | — | 10.1 |
+| 6. Đặt đơn | `POST checkout/place` (+ `return_url` nếu trả qua cổng) | `Idempotency-Key` (một khoá cho mỗi lần bấm *Đặt hàng*) | 10.2 |
+| 7. Trả tiền (nếu `payment.type = hosted`) | mở `payment.url` | — | 10.3 |
+| 8. Trạng thái thanh toán | `GET member/orders/{id}/payment` hoặc `GET orders/{id}/payment` | `X-Order-Access` (khách vãng lai) | 10.3 |
 
 Danh sách kiểm tra trước khi đưa ứng dụng vào bán thật:
 
-- Chủ cửa hàng đã bật **Đặt đơn qua API** (mục 11.2) và — nếu dùng thanh toán online — khai địa chỉ quay về trong `GP247_PAYMENT_RETURN_URLS` (mục 11.3).
+- Chủ cửa hàng đã bật **Đặt đơn qua API** (mục 10.2) và — nếu dùng thanh toán online — khai địa chỉ quay về trong `GP247_PAYMENT_RETURN_URLS` (mục 10.3).
 - Ứng dụng lưu `X-Cart-Token` và `access_token` ở nơi an toàn của thiết bị, không ghi vào log.
 - Ứng dụng xử lý `409 price_changed` (hiện tổng mới) và gửi lại **cùng** `Idempotency-Key` khi mất mạng lúc đặt đơn.
 - Plugin của site xử lý đơn web (tách đơn theo nhà bán, hoa hồng, thông báo…) nhận đơn từ ứng dụng qua cùng điểm cắm — xem
@@ -932,15 +932,15 @@ Danh sách kiểm tra trước khi đưa ứng dụng vào bán thật:
 
 **Câu 1: Tôi nên dùng nhóm API nào?**
 
-→ Nếu bạn xây app/khách hàng cho cửa hàng (xem sản phẩm, xem đơn) → dùng **API Front**
-(`api/front`). Nếu bạn xây công cụ quản trị từ xa cho admin → dùng **API Core** (`api/core`).
+→ Nếu bạn xây app/khách hàng cho cửa hàng (xem sản phẩm, tài khoản, giỏ hàng, đặt đơn) → dùng **API Front**
+(`api/v2/front`). Nếu bạn xây công cụ quản trị từ xa cho admin → dùng **API Core** (`api/v2/core`).
 
 **Câu 2: Token lấy ở đâu và tồn tại bao lâu?**
 
 → Token do endpoint `login` cấp. Mặc định hết hạn sau 7 ngày; gửi `remember_me = true` thì 30 ngày.
-Đổi qua biến môi trường ở mục 2. Hết hạn thì gọi `login` lại. Ứng dụng v2 nên đăng nhập kèm `with_refresh: true`
-để dùng token 60 phút và tự gia hạn bằng refresh token (mục 10). Muốn thoát an toàn, gọi `POST logout` với token hiện
-tại — token đó bị xoá và không dùng lại được nữa.
+Đổi qua biến môi trường ở mục 2. Ứng dụng di động nên đăng nhập kèm `with_refresh: true` để dùng token 60 phút và tự
+gia hạn bằng refresh token (mục 9.2). Muốn thoát an toàn, gọi `POST logout` với token hiện tại — phiên đó bị đăng xuất
+và token không dùng lại được nữa.
 
 **Câu 3: `apiconnection`/`apikey` khác gì với `access_token`?**
 
@@ -950,16 +950,16 @@ tại — token đó bị xoá và không dùng lại được nữa.
 
 **Câu 4: Gọi endpoint công khai có cần token không?**
 
-→ Không. Các endpoint danh sách/chi tiết sản phẩm, danh mục, thương hiệu, banner, trang nội dung
+→ Không. Các endpoint `meta` và danh sách/chi tiết sản phẩm, danh mục, thương hiệu, banner, trang nội dung
 là công khai. Nhưng nếu lớp API Connection đang bật, bạn vẫn phải gửi header `apiconnection`/`apikey`.
 
 **Câu 5: Tôi bị lỗi `401` dù gõ đúng mật khẩu?**
 
 → Tài khoản phải đang hoạt động: admin cần `status = 1`, khách bị khoá không đăng nhập được. Gửi đúng
-trường: Core dùng `username`, Front dùng `email`. Nếu vừa thử sai nhiều lần, bạn sẽ nhận `429` — chờ
-theo `Retry-After`.
+trường: Core dùng `username`, Front dùng `email`. Nếu `code` là `challenge_required`, tài khoản đã bật xác thực hai lớp —
+gọi tiếp `login/challenge` (mục 9.4). Nếu vừa thử sai nhiều lần, bạn sẽ nhận `429` — chờ theo `Retry-After`.
 
-**Câu 6: Đăng nhập được nhưng gọi `api/core/order/list` bị `403`?**
+**Câu 6: Đăng nhập được nhưng gọi `api/v2/core/order/list` bị `403`?**
 
 → Tài khoản admin chưa có quyền mở màn **Đơn hàng**. Nhờ người quản trị cấp quyền màn đó trong
 **Vai trò / Quyền** — API dùng đúng phân quyền của trang quản trị (mục 3).
@@ -972,13 +972,15 @@ khóa mới.
 
 **Câu 8: Vì sao API công khai không trả giá vốn hay số tồn kho?**
 
-→ Đó là dữ liệu kinh doanh nội bộ. API công khai chỉ trả những gì khách thấy trên cửa hàng. Ứng dụng
-nội bộ cần các số liệu này hãy dùng API Core (`api/core/product/*`) với tài khoản có quyền.
+→ Đó là dữ liệu kinh doanh nội bộ. API công khai chỉ trả những gì khách thấy trên cửa hàng (sản phẩm chỉ có
+`stock_status` còn/hết hàng). Ứng dụng nội bộ cần các số liệu này hãy dùng API Core (`api/v2/core/product/*`) với
+tài khoản có quyền.
 
 **Câu 9: Vì sao gọi API nhận `404` với `"code": "api_disabled"`?**
 
-→ Nhóm API bạn gọi đang **tắt** trên màn quản lý API của site (mục 9). Site cài mới chỉ bật sẵn v2 — nếu ứng dụng
-dùng `api/core` hoặc `api/front` (v1), nhờ quản trị viên bật nhóm v1 tương ứng, hoặc chuyển sang v2.
+→ Nhóm API bạn gọi đang **tắt** trên màn quản lý API của site (mục 5) — nhờ quản trị viên bật lại. Nếu ứng dụng gọi
+`api/core` hoặc `api/front` (API v1): site cài mới tắt sẵn v1; xem [API v1 (đã ngưng phát triển)](./api-v1_vi.md) để bật
+lại tạm thời và cách chuyển sang v2.
 
 **Câu 10: Tôi cần thêm endpoint không có trong danh sách?**
 
@@ -992,7 +994,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 11.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 7, 10.1) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1 | Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
 | 2026-10-28 | gp247/core 3.3.1; `X-Request-Id`, hạn token cũ, xoá khóa thường, `api_route_gate`: 3.4.0; tài khoản khách & phiên: core 3.6.0, shop 3.4.0 | Bật/tắt API trên màn quản lý API (tổng + v1/v2 × core/front), cài mới chỉ bật v2, nhóm tắt trả `404 api_disabled` (3.3.1); nhóm tắt trả `api_disabled` cả khi chưa có token; header `X-Request-Id` trên mọi phản hồi; token cấp trước 3.2.3 được đặt hạn khi `gp247:update` (ít nhất 7 ngày); `gp247:update` xoá bản lưu khóa API Connection dạng thường; `gp247:doctor` kiểm cache route (3.4.0); tài khoản khách qua API v2 (đăng ký, quên/đặt lại mật khẩu, hồ sơ, đổi mật khẩu, sổ địa chỉ, gửi lại email xác minh), refresh token xoay vòng tuỳ chọn (token 60 phút), quản lý phiên, `logout` v2 huỷ cả phiên, bước xác thực thêm qua plugin (`challenge_required`), đổi/đặt lại mật khẩu huỷ mọi token API, link xác minh email không cần đăng nhập website, nhật ký truy cập API quản trị (core 3.6.0, shop 3.4.0) |

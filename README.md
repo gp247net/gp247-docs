@@ -11,7 +11,8 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### API
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 API Introduction](./api/api-introduction.md) | Overview of the API system, authentication and how to call it | 2026-10-31 |
+| [GP247 API Introduction](./api/api-introduction.md) | Overview of API v2: authentication, customer accounts, cart & ordering, how to call it | 2026-10-31 |
+| [API v1 (no longer developed)](./api/api-v1.md) | The old API for apps written before v2: endpoint list, turning it on, moving to v2 | 2026-10-31 |
 | [How to build an API correctly](./api/create-api.md) | How to write a new API endpoint the GP247 way | 2026-10-31 |
 
 ### Extensions (Plugins)

@@ -1,0 +1,2480 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "GP247 REST API v1 (frozen)",
+        "version": "3.6.0",
+        "description": "REST API v1 of gp247/core, gp247/front and gp247/shop (prefixes api/core and api/front). Frozen since v2 shipped in 3.3.0: no new features, security fixes only; fresh installs have v1 switched off (since gp247/core 3.3.1) and a group turned off answers 404 with code api_disabled. New apps should use API v2 (openapi.json, api-introduction.md). Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0). See api-v1.md."
+    },
+    "servers": [
+        {
+            "url": "https://{domain}",
+            "variables": {
+                "domain": {
+                    "default": "shop.example.com"
+                }
+            }
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "v1 Core (admin)",
+            "description": "Prefix api/core — admin token + admin screen permission (v1, frozen)"
+        },
+        {
+            "name": "v1 Front (storefront)",
+            "description": "Prefix api/front — public catalog and customer account (v1, frozen)"
+        }
+    ],
+    "paths": {
+        "/api/core/banner/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One banner",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/banner/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of banners",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/brand/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One brand",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/brand/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of brands",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/category/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One category",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/category/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of categorys",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/customer/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One customer",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/customer/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of customers",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/info": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Profile of the signed-in admin",
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/login": {
+            "post": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token issued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Wrong credentials or inactive/locked account",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many login attempts (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Admin login: issue a bearer token",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminLogin"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/logout": {
+            "post": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token revoked"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Revoke the current token",
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            },
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token revoked"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Revoke the current token (deprecated: use POST)",
+                "deprecated": true,
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/core/order/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One order",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/order/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of orders",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/page/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One CMS page",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/page/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of CMS pages",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/product/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One product",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/product/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of products",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/supplier/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One supplier",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/core/supplier/list": {
+            "get": {
+                "tags": [
+                    "v1 Core (admin)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The admin lacks the permission of the matching admin screen",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of suppliers",
+                "description": "Needs a valid admin token and the permission of the matching admin screen; rows are limited to the store the admin works in.",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/banner/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One banner",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/banner/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of banners",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/brand/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One brand",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/brand/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of brands",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/category/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One category",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/category/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of categorys",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/info": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Profile of the signed-in customer",
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/login": {
+            "post": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token issued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Wrong credentials or inactive/locked account",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing or invalid fields (see \"errors\")",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many login attempts (see Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Customer login: issue a bearer token",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerLogin"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/logout": {
+            "post": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token revoked"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Revoke the current token",
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            },
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token revoked"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Revoke the current token (deprecated: use POST)",
+                "deprecated": true,
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/front/member/order/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One order of the signed-in customer",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/member/order/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of orders of the signed-in customer",
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/page/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One CMS page",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/page/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of CMS pages",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/product/detail/{id}": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The record"
+                    },
+                    "404": {
+                        "description": "Not found or not visible to the caller",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "One product",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        },
+        "/api/front/product/list": {
+            "get": {
+                "tags": [
+                    "v1 Front (storefront)"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list (data, current_page, total…)"
+                    },
+                    "401": {
+                        "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List of products",
+                "description": "Public: the rows the storefront of the calling domain shows, public fields only.",
+                "security": [
+                    {
+                        "apiConnection": [],
+                        "apiKey": []
+                    },
+                    []
+                ],
+                "parameters": [
+                    {
+                        "name": "page[number]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page[size]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "deprecated": true
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Token from POST login; expires (7 days by default, 30 with remember_me; 60 minutes when signed in with with_refresh on v2)."
+            },
+            "apiConnection": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "apiconnection",
+                "description": "Only when the site enables api_connection_required."
+            },
+            "apiKey": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "apikey",
+                "description": "Only when the site enables api_connection_required."
+            }
+        },
+        "schemas": {
+            "Error": {
+                "type": "object",
+                "required": [
+                    "error",
+                    "msg",
+                    "code"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "integer",
+                        "const": 1
+                    },
+                    "msg": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string",
+                        "enum": [
+                            "unauthenticated",
+                            "api_connection_invalid",
+                            "forbidden",
+                            "not_found",
+                            "api_disabled",
+                            "validation_failed",
+                            "too_many_attempts",
+                            "method_not_allowed",
+                            "http_error",
+                            "server_error",
+                            "refresh_token_invalid",
+                            "refresh_token_reused",
+                            "refresh_in_progress",
+                            "challenge_required",
+                            "challenge_invalid"
+                        ]
+                    },
+                    "errors": {
+                        "type": "object",
+                        "description": "Field errors, only with validation_failed",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "AdminLogin": {
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "remember_me": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CustomerLogin": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "remember_me": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "const": "Bearer"
+                    },
+                    "scopes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "description": "Y-m-d H:i:s"
+                    }
+                }
+            }
+        }
+    }
+}

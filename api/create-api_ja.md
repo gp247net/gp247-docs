@@ -23,13 +23,20 @@ GP247 の API は、既存のいくつかの部品を組み合わせてできて
 
 ### 1.1. 2 つのグループと接頭辞（prefix）
 
+新しいエンドポイントはすべて **v2** の接頭辞の下に置きます。
+
 | グループ | ルートで使う定数 | 値 | 用途 |
 | --- | --- | --- | --- |
-| Core（管理） | `GP247_API_CORE_PREFIX` | `api/core` | システム管理（管理者トークンが必要） |
-| Front（ストアフロント） | `GP247_API_FRONT_PREFIX` | `api/front` | ストアのデータと顧客アカウント |
+| Core（管理） | `GP247_API_V2_CORE_PREFIX` | `api/v2/core` | システム管理（管理者トークンが必要） |
+| Front（ストアフロント） | `GP247_API_V2_FRONT_PREFIX` | `api/v2/front` | ストアのデータと顧客アカウント |
 
 この 2 つの定数は `vendor/gp247/core/src/Library/Const.php` で固定的に宣言されています。ルートでは**必ず定数を使ってください**
-（`"api/core"` という文字列を手書きしない）。将来接頭辞が変わっても、あなたのコードが自動的に追従します。
+（`"api/v2/core"` という文字列を手書きしない）。将来接頭辞が変わっても、あなたのコードが自動的に追従します。
+
+> ⚠️ **REST API v1 は凍結されています。** gp247/core、gp247/front、gp247/shop 3.3.0 以降、API v1
+> （`GP247_API_CORE_PREFIX` = `api/core`、`GP247_API_FRONT_PREFIX` = `api/front`）には新機能が追加されず、セキュリティ修正のみと
+> なります。gp247/core 3.3.1 以降の新規インストールでは v1 は最初からオフです。既存の v1 エンドポイントは引き続き動作しますが、
+> **そこに新しいエンドポイントを追加しないでください**。[API v1](./api-v1_ja.md) を参照してください。
 
 ### 1.2. API モードを有効にする
 
@@ -41,14 +48,21 @@ GP247_API_MODE=true
 
 このフラグがオフの場合、API のルートは**一切読み込まれません**（`vendor/gp247/core/src/routes.php` を参照）。
 
+フラグがオンでも、サイト運営者は API 管理画面でグループごとにオン／オフを切り替えられます（`api.enabled` レイヤー。
+[API 入門の 5 章](./api-introduction_ja.md) を参照）。`api/v2/front` 配下のルートは **「v2 · 公開・顧客API (front)」** の
+スイッチに、`api/v2/core` 配下のルートは **「v2 · 管理API (core)」** のスイッチに従います — プラグインが追加したルートも同じです。
+オフのグループは `404`（`code: api_disabled`）を返します。
+
 ### 1.3. API ルートが自動で読み込まれる仕組み
 
-`GP247_API_MODE=true` のとき、コアは次のフォルダー内のすべてのファイルを自動で**走査して読み込み**、
+`GP247_API_MODE=true` のとき、各パッケージは次のフォルダー内のすべてのファイルを自動で**走査して読み込み**、
 すべてをミドルウェアグループ `GP247_API_MIDDLEWARE` で包みます。
 
-- `vendor/gp247/core/src/Routes/Api/*.php`
-- `vendor/gp247/shop/src/Routes/Api/*.php`
-- `vendor/gp247/front/src/Routes/Api/*.php`
+- `vendor/gp247/core/src/Routes/Api/v2/*.php`
+- `vendor/gp247/shop/src/Routes/Api/v2/*.php`
+- `vendor/gp247/front/src/Routes/Api/v2/*.php`
+
+（v1 のファイルは同じパッケージの `Routes/Api/*.php` にあり、既存のエンドポイントを残すためだけのものです。）
 
 `GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']` です。`api.extend` は GP247 のミドルウェアグループで、
 `config('gp247-config.api.middleware')` で定義されています。
@@ -64,7 +78,7 @@ GP247_API_MODE=true
 > ℹ️ **対応バージョン:** gp247/core 3.6.0 — `json.response` は `auth:*` より先に動きます。トークンがなく
 > `Accept: application/json` も送らない場合でも JSON の `401` を返します（以前は `500`）。
 >
-> 👉 **プラグインにとって重要な結果：** core／shop／front の `Routes/Api/` に置いたルートには、上の 3 つのレイヤーが
+> 👉 **プラグインにとって重要な結果：** core／shop／front の `Routes/Api/v2/` に置いたルートには、上の 3 つのレイヤーが
 > **自動で**付きます。しかし**プラグイン**から追加したルートは別の場所（セクション 4）で読み込まれるため、
 > **自動では付きません**。自分で包むか、（3.3.0 以降は）`ApiRouteRegistrar` で登録する必要があります（セクション 4.1）。
 
@@ -78,8 +92,8 @@ GP247 は **Sanctum**（Bearer 形式のトークン）を使います。2 つ�
 
 | ガード | プロバイダー | 対象 | トークンを発行する場所 |
 | --- | --- | --- | --- |
-| `admin-api` | `admin_provider` | 管理者 | `api/core/login` |
-| `customer-api` | `customer_provider` | 顧客／会員 | `api/front/login` |
+| `admin-api` | `admin_provider` | 管理者 | `api/v2/core/login` |
+| `customer-api` | `customer_provider` | 顧客／会員 | `api/v2/front/login` |
 
 各トークンには、できることを制限する**権限の範囲（scope／ability）**も付きます。スコープは
 `config('gp247-config.api.auth')` から取得します（`.env` で変更可能）。
@@ -95,8 +109,8 @@ GP247 は **Sanctum**（Bearer 形式のトークン）を使います。2 つ�
 
 ```php
 'middleware' => [
-    'auth:admin-api',                    // Front API の場合は 'auth:customer-api'
-    'ability:admin,admin-supper',        // 許可するスコープ
+    'auth:admin-api',                                // or 'auth:customer-api' for front APIs
+    \GP247\Core\Api\Support\ApiAbilities::admin(),   // or ApiAbilities::customer(): the allowed scopes
 ]
 ```
 
@@ -106,8 +120,8 @@ GP247 のルートでは、コントローラーを `Controller::class` と直�
 `gp247_namespace()` で包みます。
 
 ```php
-$productController = gp247_namespace(\GP247\Shop\Api\Admin\AdminProductController::class);
-Route::get('list', $productController.'@getProductList');
+$catalog = gp247_namespace(\GP247\Shop\Api\V2\CatalogController::class);
+Route::get('product/list', $catalog.'@productList');
 ```
 
 このヘルパーは自動で確認します。`app/GP247/...` にオーバーライド用のファイルがあればアプリ側を使い、
@@ -122,12 +136,15 @@ Route::get('list', $productController.'@getProductList');
 
 - **リソースごとにまとめる**：データのグループごとに 1 つの `Route::group(['prefix' => 'product'], ...)` にします。
 - **2 つの標準アクション**：`list`（一覧）と `detail/{id}`（1 件の詳細）。
-- **コントローラーのメソッド名**：`get<Resource>List` と `get<Resource>Detail`
-  （例：`getProductList`、`getProductDetail`）。
-- **必ず JSON を返す**：`response()->json(...)` を使います。
-- **成功時**：データをそのまま返します（オブジェクトまたはページ分割された一覧）。
+- **コントローラーのメソッド名**：`<resource>List` と `<resource>Detail`
+  （例：`productList`、`productDetail` — shop パッケージの v2 コントローラーと同じ）。
+- **必ず JSON を返す**：ヘルパー `GP247\Core\Api\V2\ApiQuery`（`JsonResponse` を返す）を使います。レコードではない
+  レスポンスには `response()->json(...)` を使います。
+- **成功時**：データを `data` で包みます — 1 件なら `{"data": …}`（`ApiQuery::one()`）、一覧なら
+  `{"data": [...], "meta": {...}, "links": {...}}`（`ApiQuery::page()`）。
 - **失敗時／見つからない場合**：`ApiErrorResponder` を使い、**意味の正しい HTTP ステータスコード**と共通のエラー本文
-  `{"error": 1, "msg": "…", "code": "…"}` を返します（コード一覧は [API 入門](./api-introduction_ja.md) の 7 章）。
+  `{"error": 1, "msg": "…", "code": "…"}` を返します（コード一覧は [API 入門](./api-introduction_ja.md) の 6 章）。
+  `ApiQuery::one()` はレコードがなければ自動で `404` を返します。
 
   ```php
   use GP247\Core\Api\Support\ApiErrorResponder;
@@ -140,34 +157,38 @@ Route::get('list', $productController.'@getProductList');
   > ℹ️ **対応バージョン:** gp247/core 3.2.3 — `api/*` 配下の認証、権限、バリデーション、レート制限のエラーは自動でこの形式に
   > 変換されます。コントローラー自身が判断する場合だけ `notFound()`／`forbidden()` を自分で返してください。エラーに
   > `response()->json([...], 200)` を使う旧来の書き方は**もう使いません**。
-- **必要なフィールドだけを返す**：公開データでは、モデルをそのまま返さず
-  `GP247\Core\Api\Support\ApiFieldAllowlist::one()`／`::page()` でフィールドを絞り込みます。テーブルに新しく追加した列が
-  API に自動で漏れ出すことはありません。
+- **必要なフィールドだけを返す**：`ApiQuery` に渡す関数 `$toArray` で返すフィールドを正確に宣言し、モデルをそのまま返しません。
+  テーブルに新しく追加した列が API に自動で漏れ出すことはありません。公開データでは、元のクエリを
+  `GP247\Core\Api\Support\ApiVisibility::visible(...)` で作り、ウェブサイトに表示されているレコードだけを API が返すようにします。
 
-- **ページ分割**：一覧を返すときは `->get()` の代わりにマクロ `->jsonPaginate()`
-  （導入済みのパッケージ `spatie/laravel-json-api-paginate`）を使います。標準のページ分割構造
-  （`data`、`current_page`、`total` など）を返し、ページサイズはリクエストで制御できます。
+- **ページ分割・絞り込み・並べ替え**：一覧を返すときは `->get()` の代わりに
+  `ApiQuery::page($query, $request, $toArray, $filters, $sorts, $search)` を使います。クライアントは `page[number]`、
+  `page[size]`（既定 20、最大 100）、`filter[<名前>]`、`sort=<名前>`／`sort=-<名前>`、`q`（検索）で制御します。受け付けるのは
+  宣言した絞り込み／並べ替えの名前だけで、未知の名前は `422`（`validation_failed`）になります。クライアントの入力がクエリの列名に
+  なることはありません。多言語のコンテンツでは、言語を `ApiQuery::lang($request)` で、説明のフィールドを `ApiQuery::described(...)` で取得します。
 
 ---
 
 ## 3. 例 A — 自分がメンテナンスするパッケージ（core／front／shop）にエンドポイントを追加する
 
 あなたが**パッケージのメンテナー**（`vendor/gp247/<package>` を直接編集する）の場合に使います。
-例として、公開の Front API `api/front/review/list` を追加します。次の順序どおりに進めてください。
+例として、公開の Front API `api/v2/front/review/list` を追加します。次の順序どおりに進めてください。
 
-1. **コントローラーを作成**します。場所は `vendor/gp247/<package>/src/Api/...` です。Front のデータなら
+1. **コントローラーを作成**します。場所は `vendor/gp247/<package>/src/Api/V2/...` です。Front のデータなら
    `RootFrontController` を、管理のデータなら `RootAdminController` を継承します。
 
-   ファイル `src/Api/Front/ReviewController.php` を作成します。
+   ファイル `src/Api/V2/ReviewController.php` を作成します。
 
    ```php
    <?php
 
-   namespace GP247\Shop\Api\Front;
+   namespace GP247\Shop\Api\V2;
 
+   use GP247\Core\Api\V2\ApiQuery;
    use GP247\Front\Controllers\RootFrontController;
-   use Illuminate\Http\Request;
    use GP247\Shop\Models\ShopProductReview;
+   use Illuminate\Database\Eloquent\Builder;
+   use Illuminate\Http\Request;
 
    class ReviewController extends RootFrontController
    {
@@ -175,37 +196,61 @@ Route::get('list', $productController.'@getProductList');
         * Get the public review list.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit shop-api
-        * @aidlc-story US-shop-api-review-list
         */
-       public function getReviewList(Request $request)
+       public function reviewList(Request $request)
        {
-           $reviews = (new ShopProductReview)
-               ->where('status', 1)
-               ->jsonPaginate();
+           $query = ShopProductReview::query()->where('status', 1);
 
-           return response()->json($reviews, 200);
+           return ApiQuery::page($query, $request, fn ($r) => self::review($r),
+               ['product_id' => fn (Builder $q, string $v) => $q->where('product_id', $v)],   // filter[product_id]
+               ['created_at' => 'created_at']);                                                // sort=created_at | -created_at
+       }
+
+       /**
+        * Get one public review (404 when it does not exist).
+        *
+        * @return \Illuminate\Http\JsonResponse
+        */
+       public function reviewDetail(Request $request, $id)
+       {
+           $review = ShopProductReview::query()->where('status', 1)->where('id', $id)->first();
+
+           return ApiQuery::one($review, fn ($r) => self::review($r));
+       }
+
+       /**
+        * Declared shape of a review: only these fields reach the API.
+        */
+       private static function review($r): array
+       {
+           return [
+               'id'         => $r->id,
+               'product_id' => $r->product_id,
+               'point'      => (int) $r->point,
+               'comment'    => $r->comment,
+               'created_at' => optional($r->created_at)->toIso8601String(),
+           ];
        }
    }
    ```
 
-2. **ルートファイルを作成**します。場所は `src/Routes/Api/review.php` です（`Routes/Api/` フォルダーに置くだけで
-   コアが自動で読み込みます。ほかの場所で宣言する必要はありません）。
+2. **ルートファイルを作成**します。場所は `src/Routes/Api/v2/review.php` です（`Routes/Api/v2/` フォルダーに置くだけで
+   パッケージが自動で読み込みます。ほかの場所で宣言する必要はありません）。
 
    ```php
    <?php
 
-   use GP247\Shop\Api\Front\ReviewController;
+   use GP247\Shop\Api\V2\ReviewController;
    use Illuminate\Support\Facades\Route;
 
    Route::group([
-       'prefix' => GP247_API_FRONT_PREFIX,   // => api/front
+       'prefix' => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
    ], function () {
        $reviewController = gp247_namespace(ReviewController::class);
 
        Route::group(['prefix' => 'review'], function () use ($reviewController) {
-           Route::get('list', $reviewController.'@getReviewList');
+           Route::get('list', $reviewController.'@reviewList');
+           Route::get('detail/{id}', $reviewController.'@reviewDetail');
        });
    });
    ```
@@ -213,21 +258,31 @@ Route::get('list', $productController.'@getProductList');
 3. **ルートが読み込まれたか確認**します。Artisan コマンドを使います（サイトのルートフォルダーで実行）。
 
    ```bash
-   php artisan route:list --path=api/front/review
+   php artisan route:list --path=api/v2/front/review
    ```
 
-   成功すると `GET | api/front/review/list` の行が表示されます。**表示されない**場合は、
+   成功すると `GET | api/v2/front/review/list` の行が表示されます。**表示されない**場合は、
    `.env` の `GP247_API_MODE=true` を確認し、ルートキャッシュを削除してください：`php artisan route:clear`。
 
-4. **試しに呼び出します**（公開エンドポイントなのでトークンは不要です）。
+4. **試しに呼び出します**（公開エンドポイントなのでトークンは不要です。`-g` は curl が `[ ]` を解釈しないようにするためです）。
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/review/list" -H "Accept: application/json"
+   curl -g -X GET "https://shop.example.com/api/v2/front/review/list?page[size]=10&sort=-created_at" -H "Accept: application/json"
    ```
 
-> **管理用**エンドポイント（ログインが必要）の場合は、パッケージの `src/Routes/Api/` にルートを置き、
-> `prefix => GP247_API_CORE_PREFIX` とともにミドルウェアグループ `auth:admin-api` ＋ `ability:...` で包みます
-> （`vendor/gp247/shop/src/Routes/Api/admin.php` のサンプルを参照）。
+   期待される結果：
+
+   ```json
+   {
+     "data": [ { "id": 12, "product_id": 5, "point": 5, "comment": "…", "created_at": "2026-10-30T10:00:00+00:00" } ],
+     "meta": { "current_page": 1, "per_page": 10, "total": 1, "last_page": 1 },
+     "links": { "first": "…", "last": "…", "prev": null, "next": null }
+   }
+   ```
+
+> **管理用**エンドポイント（ログインが必要）の場合は、パッケージの `src/Routes/Api/v2/` にルートを置き、
+> `prefix => GP247_API_V2_CORE_PREFIX` とともにミドルウェアグループ `auth:admin-api` ＋ `ApiAbilities::admin()` で包み、
+> 各ルートで `api.admin:<管理ルート名>` を宣言します（セクション 5.1。`vendor/gp247/shop/src/Routes/Api/v2/admin.php` のサンプルを参照）。
 
 ---
 
@@ -238,7 +293,7 @@ Route::get('list', $productController.'@getProductList');
 
 > ⚠️ **注意:** **重要な違い：** プラグインのルートは API のミドルウェアグループ（セクション 1.3）の**外側**で読み込まれます。
 > そのため `GP247_API_MIDDLEWARE` で**自分で包み**、`prefix` も自分で設定する**必要があります**。忘れると、
-> API は JSON を強制**せず**、`api.connection` レイヤーも通ら**ず**、レート制限も**かかりません**。
+> API は JSON を強制**せず**、`api.connection` レイヤーも通ら**ず**、API のオン／オフのスイッチにも従わ**ず**、レート制限も**かかりません**。
 
 1. プラグイン内に**コントローラーを作成**します。例：
    `app/GP247/Plugins/MyApi/Api/Front/StatusController.php`
@@ -257,17 +312,13 @@ Route::get('list', $productController.'@getProductList');
         * Return a simple health-check payload for external monitors.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit myapi-plugin
-        * @aidlc-story US-myapi-plugin-status
         */
-       public function getStatus(Request $request)
+       public function status(Request $request)
        {
-           return response()->json([
-               'error'  => 0,
+           return response()->json(['data' => [
                'status' => 'ok',
                'time'   => gp247_time_now(),
-           ], 200);
+           ]]);
        }
    }
    ```
@@ -283,13 +334,13 @@ Route::get('list', $productController.'@getProductList');
    // Only register when the API mode is on, matching core behaviour.
    if (config('gp247-config.env.GP247_API_MODE')) {
        Route::group([
-           'middleware' => GP247_API_MIDDLEWARE,   // ['api','api.extend'] — 必ず自分で追加する
-           'prefix'     => GP247_API_FRONT_PREFIX,  // => api/front
+           'middleware' => GP247_API_MIDDLEWARE,       // required: plugin routes load outside the API group
+           'prefix'     => GP247_API_V2_FRONT_PREFIX,  // => api/v2/front
        ], function () {
            $statusController = gp247_namespace(StatusController::class);
 
            Route::group(['prefix' => 'myapi'], function () use ($statusController) {
-               Route::get('status', $statusController.'@getStatus');
+               Route::get('status', $statusController.'@status');
            });
        });
    }
@@ -299,21 +350,21 @@ Route::get('list', $productController.'@getProductList');
 
    ```bash
    php artisan route:clear
-   php artisan route:list --path=api/front/myapi
+   php artisan route:list --path=api/v2/front/myapi
    ```
 
-   成功すると `GET | api/front/myapi/status` が表示されます。
+   成功すると `GET | api/v2/front/myapi/status` が表示されます。
 
 4. **試しに呼び出します**。
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/myapi/status" -H "Accept: application/json"
+   curl -X GET "https://shop.example.com/api/v2/front/myapi/status" -H "Accept: application/json"
    ```
 
    期待される結果：
 
    ```json
-   { "error": 0, "status": "ok", "time": "2026-07-30 10:00:00" }
+   { "data": { "status": "ok", "time": "2026-07-30 10:00:00" } }
    ```
 
 ---
@@ -331,18 +382,19 @@ Route::get('list', $productController.'@getProductList');
 ```
 
 ```php
-// app/GP247/Plugins/MyApi/Routes/api.php — 接頭辞とルートだけを宣言する
+// app/GP247/Plugins/MyApi/Routes/api.php — declare only the prefix and the routes
 use Illuminate\Support\Facades\Route;
 
-Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+Route::group(['prefix' => GP247_API_V2_FRONT_PREFIX], function () {
     $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
-    Route::get('myapi/status', $statusController.'@getStatus');
+    Route::get('myapi/status', $statusController.'@status');
 });
 ```
 
 `ApiRouteRegistrar` は `GP247_API_MIDDLEWARE`（JSON、API Connection、レート制限）で自動的に包みます。
 `GP247_API_MODE` がオフのときは何も登録せず、サイトで `route:cache` 済みの場合は再登録しません。
 エラーの取り決め `{error, msg, code}` は、`api/core`、`api/front`、`api/v2/core`、`api/v2/front` 配下のすべてのパスに適用されます。
+この 4 つ以外の独自の接頭辞に置いたルートは Laravel 既定のエラー本文のままで、API 画面の全体スイッチだけに従います。
 
 ---
 
@@ -351,21 +403,22 @@ Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
 API が非公開のデータ（顧客の注文、管理データなど）を返す場合は、対応する Sanctum のガードで包む必要があります。
 コントローラーでは、ログイン中のユーザーを `$request->user()` で取得します。
 
-ログインが必要な管理用ルートの例：
+ログインが必要な顧客用ルートの例（shop パッケージの `api.customer.active` は、トークン発行後にロックされたアカウントの
+トークンを拒否します）：
 
 ```php
+use GP247\Core\Api\Support\ApiAbilities;
+
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,   // => api/core
-    'middleware' => [
-        'auth:admin-api',
-        'ability:'.config('gp247-config.api.auth.api_scope_admin')
-                 .','.config('gp247-config.api.auth.api_scope_admin_supper'),
-    ],
+    'prefix'     => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
+    'middleware' => ['auth:customer-api', ApiAbilities::customer(), 'api.customer.active'],
 ], function () {
-    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport');
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\WishlistController::class);
+    Route::get('member/wishlist/list', $ctrl.'@wishlistList');
 });
 ```
+
+管理用ルートはセクション 5.1 を参照してください。
 
 クライアントは、`login` で取得したトークンをヘッダーに付けて送る必要があります。
 
@@ -374,29 +427,30 @@ Authorization: Bearer <access_token>
 ```
 
 > **トークンの発行**（`createToken`）と**トークンの失効**（`logout`）は、core／shop のログイン用コントローラーにすでに
-> 用意されています。トークンの取得には `api/core/login`／`api/front/login` エンドポイントを**再利用**するだけで十分です。
-> 特別な要件がない限り、ログイン部分を自作する必要はありません。
+> 用意されています。トークンの取得には `api/v2/core/login`／`api/v2/front/login` エンドポイントを**再利用**するだけで十分です
+> （v2 にはリフレッシュトークンを受け取る `with_refresh`、サインインの確認ステップ用の `login/challenge`、`refresh` もあります —
+> [API 入門の 2 章](./api-introduction_ja.md) を参照）。特別な要件がない限り、ログイン部分を自作する必要はありません。
 
 ### 5.1. 管理用エンドポイント：管理画面の宣言とストアによる絞り込み
 
 > ℹ️ **対応バージョン:** gp247/core 3.2.3
 
-管理者トークンがあるだけで、すべてのデータを閲覧できるわけでは**ありません**。`GP247_API_CORE_PREFIX` 配下の各ルートは、
+管理者トークンがあるだけで、すべてのデータを閲覧できるわけでは**ありません**。`GP247_API_V2_CORE_PREFIX` 配下の各ルートは、
 ミドルウェア `api.admin:<管理ルート名>` で対応する**管理画面**を宣言する必要があります。GP247 は、アカウントがその画面を
 開く権限を持っている場合（管理画面と同じ権限設定）にだけ呼び出しを許可し、マルチストア系プラグインの制限を適用して、
 アカウントのストアを特定します。
 
 ```php
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
     'middleware' => [
         'auth:admin-api',
-        \GP247\Core\Api\Support\ApiAbilities::admin(),   // 3.3.0 以降。それより古い版では 'ability:admin,admin-supper'
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // since 3.3.0
     ],
 ], function () {
     $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport')
-        ->middleware('api.admin:admin_report.sales');   // 対応する管理画面のルート名
+    Route::get('report/sales', $ctrl.'@salesList')
+        ->middleware('api.admin:admin_report.sales');   // route name of the matching admin screen
 });
 ```
 
@@ -404,8 +458,10 @@ Route::group([
 
 ```php
 use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
 
-$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
+    fn ($o) => ['id' => $o->id, 'total' => $o->total, 'status' => (int) $o->status]);
 ```
 
 `api.admin` のないルートで `ApiStoreScope` を呼ぶとエラーになります（デフォルトで安全側）。これは、権限の宣言を忘れていることを
@@ -415,16 +471,16 @@ GP247 が知らせる仕組みです。
 
 ## 6. 「完了」とする前のチェックリスト
 
-- [ ] **定数** `GP247_API_CORE_PREFIX`／`GP247_API_FRONT_PREFIX` を使い、文字列をハードコードしていない。
+- [ ] 新しいエンドポイントは **v2** の下にある — **定数** `GP247_API_V2_CORE_PREFIX`／`GP247_API_V2_FRONT_PREFIX` を使い、文字列をハードコードせず、v1 に追加していない。
 - [ ] コントローラーを `gp247_namespace(...)` 経由で指定し、オーバーライドを可能にしている。
-- [ ] プラグインのルートは `GP247_API_MIDDLEWARE` ＋ `prefix` で**自分で包んでいる**（セクション 4）。
+- [ ] プラグインのルートは `GP247_API_MIDDLEWARE` ＋ `prefix` で**自分で包んでいる**（セクション 4）、または `ApiRouteRegistrar` で登録している（セクション 4.1）。
 - [ ] すべての入力に `$request->validate([...])` がある。SQL を文字列連結で組み立て**ない**（Eloquent を使う）。
-- [ ] 一覧は `->jsonPaginate()` を使い、すべてのレスポンスは `response()->json(...)` を通している。
-- [ ] 非公開エンドポイントには `auth:admin-api`／`auth:customer-api` ＋ 正しいスコープの `ability:...` がある。
+- [ ] 一覧は `ApiQuery::page()` を使い（必要な `filter`／`sort` の名前だけを宣言）、1 件は `ApiQuery::one()` を使っている。
+- [ ] 非公開エンドポイントには `auth:admin-api` ＋ `ApiAbilities::admin()`、または `auth:customer-api` ＋ `ApiAbilities::customer()` ＋ `api.customer.active` がある。
 - [ ] 管理用エンドポイントに `api.admin:<管理ルート名>` があり、`ApiStoreScope::apply()` でデータを絞り込んでいる（セクション 5.1）。
-- [ ] エラーは `ApiErrorResponder` で返している（意味の正しい HTTP ステータスコード）。公開データは `ApiFieldAllowlist` でフィールドを絞り込んでいる。
+- [ ] エラーは `ApiErrorResponder` で返している（意味の正しい HTTP ステータスコード）。関数 `$toArray` は宣言したフィールドだけを返す。
 - [ ] `vendor/gp247/*` を**変更していない**（そのパッケージのメンテナーである場合を除く）。
-- [ ] 各メソッドに英語の PHPDoc と `@aidlc-unit`／`@aidlc-story` タグがある（coding-style に従う）。
+- [ ] 各メソッドに英語の PHPDoc がある。
 - [ ] `php artisan route:clear` を実行し、`php artisan route:list` にルートが表示されることを確認した。
 - [ ] サインインのステップを追加するプラグインは `LoginChallenge` を実装し、`describe()` で秘密を返さない（セクション 7）。
 
@@ -481,7 +537,7 @@ config(['gp247-config.api.login_challenge.customer' => array_merge(
 残りは core が行います：1 回限りのチケット（5 分、既定のキャッシュにハッシュで保存 — 共有ホスティングでも動作）、試行回数の
 制限（ログインのカウンターと共通。チケットはどの IP からでも 5 回誤ると破棄）、`verify()` が `true` を返したときのトークン／セッションの発行。プラグインが例外を投げたり、
 クラスの登録が誤っていたりすると、サインインは**拒否**されます（確認ステップが飛ばされることはありません）。管理者向けには
-`gp247-config.api.login_challenge.admin` に登録します。アプリ側の呼び方：[API の紹介 — セクション 10.4](./api-introduction_ja.md)。
+`gp247-config.api.login_challenge.admin` に登録します。アプリ側の呼び方：[API の紹介 — セクション 9.4](./api-introduction_ja.md)。
 
 ## 8. 注文を処理するプラグイン: アプリからの注文も同じフックを通る
 
@@ -520,7 +576,7 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 - **「注文成功」は「支払い済み」ではない**: API の注文では、このイベントは注文した時点で実行されます。入金を待つべき処理（デジタル商品の
   配信、サービスの有効化など）は、注文の支払い状況にもとづいて行ってください。
 
-アプリ側の呼び出し方: [API の紹介 — 11 章](./api-introduction_ja.md)。
+アプリ側の呼び出し方: [API の紹介 — 10 章](./api-introduction_ja.md)。
 
 ---
 
@@ -543,10 +599,11 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 → プラグインのルートは API のミドルウェアグループの外側で読み込まれるためです。セクション 4 のように
 `'middleware' => GP247_API_MIDDLEWARE` で**自分で包む**必要があります。プラグインから API を追加するときに最も多い間違いです。
 
-**Q4: `jsonPaginate()` は Laravel の `paginate()` と何が違いますか？**
+**Q4: `ApiQuery::page()` は Laravel の `paginate()` と何が違いますか？**
 
-→ `jsonPaginate()`（パッケージ `spatie/laravel-json-api-paginate` のもの）は、JSON:API 標準に適したページ分割構造を返し、
-クライアントがパラメーターでページサイズを制御できます。GP247 の既存 API と揃えるため、一覧エンドポイントではこれを使ってください。
+→ `ApiQuery::page()` は内部で `paginate()` を使いますが、API v2 の標準を加えます。宣言した `filter[...]`／`sort` の名前だけを
+受け付け（未知の名前は `422`）、`page[size]` を最大 100 に制限し、ページ間でレコードが重複・欠落しないよう常に主キーでの並べ替えを
+追加し、`{data, meta, links}` の形をそのまま返します。GP247 の既存の v2 API と揃えるため、一覧エンドポイントではこれを使ってください。
 
 **Q5: 標準に沿ってエラーを返すには？**
 
@@ -567,7 +624,7 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 **Q8: ログイン／トークン発行のエンドポイントを自作する必要がありますか？**
 
-→ ありません。`api/core/login`（管理者）または `api/front/login`（顧客）を再利用してトークンを取得し、
+→ ありません。`api/v2/core/login`（管理者）または `api/v2/front/login`（顧客）を再利用してトークンを取得し、
 新しいエンドポイントを `auth:admin-api`／`auth:customer-api` で保護してください。
 独自のログインを書くのは、特殊な認証フローがある場合だけです。
 
@@ -588,7 +645,7 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0。API v2：core/front/shop 3.3.0 | 新しいエンドポイントは v2 の接頭辞（`GP247_API_V2_CORE_PREFIX`、`GP247_API_V2_FRONT_PREFIX`）の下に置き、`{data, meta, links}` のレスポンスに `ApiQuery` を使う。v1 は凍結（1〜6 章）。`json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
 | 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
 | 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
 

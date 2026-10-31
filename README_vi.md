@@ -11,7 +11,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### API
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Giới thiệu API GP247](./api/api-introduction_vi.md) | Tổng quan hệ thống API, xác thực và cách gọi thử | 2026-10-31 |
+| [Giới thiệu API GP247](./api/api-introduction_vi.md) | Tổng quan API v2: xác thực, tài khoản khách, giỏ hàng & đặt đơn, cách gọi thử | 2026-10-31 |
+| [API v1 (đã ngưng phát triển)](./api/api-v1_vi.md) | API cũ cho ứng dụng viết trước v2: danh sách endpoint, cách bật, cách chuyển sang v2 | 2026-10-31 |
 | [Hướng dẫn tạo API đúng chuẩn](./api/create-api_vi.md) | Cách tự viết endpoint API mới theo chuẩn GP247 | 2026-10-31 |
 
 ### Mở rộng (Plugin)

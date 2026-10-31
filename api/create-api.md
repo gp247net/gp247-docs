@@ -25,14 +25,21 @@ the right place.
 
 ### 1.1. The two groups and their prefixes
 
+Every new endpoint goes under the **v2** prefixes:
+
 | Group | Constant used in routes | Value | Used for |
 | --- | --- | --- | --- |
-| Core (Admin) | `GP247_API_CORE_PREFIX` | `api/core` | System administration (requires an admin token) |
-| Front (Storefront) | `GP247_API_FRONT_PREFIX` | `api/front` | Storefront data & customer accounts |
+| Core (Admin) | `GP247_API_V2_CORE_PREFIX` | `api/v2/core` | System administration (requires an admin token) |
+| Front (Storefront) | `GP247_API_V2_FRONT_PREFIX` | `api/v2/front` | Storefront data & customer accounts |
 
 Both constants are fixed in `vendor/gp247/core/src/Library/Const.php`. **Always use the constants** in
-routes (never a hand-typed `"api/core"` string) so that if the prefix ever changes, your code follows
+routes (never a hand-typed `"api/v2/core"` string) so that if the prefix ever changes, your code follows
 automatically.
+
+> ⚠️ **REST API v1 is frozen.** Since gp247/core, gp247/front, gp247/shop 3.3.0, API v1
+> (`GP247_API_CORE_PREFIX` = `api/core`, `GP247_API_FRONT_PREFIX` = `api/front`) gets no new features — security
+> fixes only; fresh installs since gp247/core 3.3.1 have v1 switched off. Existing v1 endpoints keep working, but
+> **do not add new endpoints there**. See [API v1](./api-v1.md).
 
 ### 1.2. Enable API mode
 
@@ -44,14 +51,21 @@ GP247_API_MODE=true
 
 If this flag is off, none of the API routes are loaded at all (see `vendor/gp247/core/src/routes.php`).
 
+With the flag on, the site owner can still switch each group on or off on the API management screen (the
+`api.enabled` layer, see [API Introduction, section 5](./api-introduction.md)). Routes under `api/v2/front` follow
+the **"v2 · Public & customer API (front)"** switch, routes under `api/v2/core` the **"v2 · Admin API (core)"**
+switch — routes added by a plugin included. A group that is off answers `404` with `code: api_disabled`.
+
 ### 1.3. How API routes are auto-loaded
 
-When `GP247_API_MODE=true`, core automatically **scans and loads** every file in the following folders
+When `GP247_API_MODE=true`, each package automatically **scans and loads** every file in the following folders
 and wraps them all in the `GP247_API_MIDDLEWARE` group:
 
-- `vendor/gp247/core/src/Routes/Api/*.php`
-- `vendor/gp247/shop/src/Routes/Api/*.php`
-- `vendor/gp247/front/src/Routes/Api/*.php`
+- `vendor/gp247/core/src/Routes/Api/v2/*.php`
+- `vendor/gp247/shop/src/Routes/Api/v2/*.php`
+- `vendor/gp247/front/src/Routes/Api/v2/*.php`
+
+(The v1 files live in `Routes/Api/*.php` of the same package — kept only for the existing endpoints.)
 
 `GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']`, where `api.extend` is the GP247 middleware group defined
 in `config('gp247-config.api.middleware')`:
@@ -67,7 +81,7 @@ in `config('gp247-config.api.middleware')`:
 > ℹ️ **Available since:** gp247/core 3.6.0 — `json.response` runs before `auth:*`: a missing token without
 > `Accept: application/json` still gets a JSON `401` (before: `500`).
 >
-> 👉 **Important consequence for plugins:** routes placed in the `Routes/Api/` folder of core/shop/front
+> 👉 **Important consequence for plugins:** routes placed in the `Routes/Api/v2/` folder of core/shop/front
 > get these three layers **automatically**. But routes you add from a **plugin** are loaded elsewhere
 > (section 4), so they do **not** get them automatically — you must wrap them yourself, or (since 3.3.0)
 > register them through `ApiRouteRegistrar` (section 4.1).
@@ -82,8 +96,8 @@ GP247 uses **Sanctum** (Bearer tokens). There are two separate "guards" (login g
 
 | Guard | Provider | For | Where the token is issued |
 | --- | --- | --- | --- |
-| `admin-api` | `admin_provider` | Administrators | `api/core/login` |
-| `customer-api` | `customer_provider` | Customers/members | `api/front/login` |
+| `admin-api` | `admin_provider` | Administrators | `api/v2/core/login` |
+| `customer-api` | `customer_provider` | Customers/members | `api/v2/front/login` |
 
 Each token also carries a **scope/ability** that limits what it can do. Scopes come from
 `config('gp247-config.api.auth')` (overridable via `.env`):
@@ -99,8 +113,8 @@ To protect a route that requires login, use this pair of middleware:
 
 ```php
 'middleware' => [
-    'auth:admin-api',                    // or 'auth:customer-api' for front APIs
-    'ability:admin,admin-supper',        // the allowed scopes
+    'auth:admin-api',                                // or 'auth:customer-api' for front APIs
+    \GP247\Core\Api\Support\ApiAbilities::admin(),   // or ApiAbilities::customer(): the allowed scopes
 ]
 ```
 
@@ -110,8 +124,8 @@ In GP247 routes, a controller is **not** referenced directly as `Controller::cla
 `gp247_namespace()`:
 
 ```php
-$productController = gp247_namespace(\GP247\Shop\Api\Admin\AdminProductController::class);
-Route::get('list', $productController.'@getProductList');
+$catalog = gp247_namespace(\GP247\Shop\Api\V2\CatalogController::class);
+Route::get('product/list', $catalog.'@productList');
 ```
 
 This helper checks: if an override file exists at `app/GP247/...`, it uses the app's version, otherwise
@@ -126,13 +140,16 @@ Follow these conventions so your new API stays consistent with the rest of the s
 
 - **Group by resource**: each data group is one `Route::group(['prefix' => 'product'], ...)`.
 - **Two standard actions**: `list` (collection) and `detail/{id}` (a single record).
-- **Controller method names**: `get<Resource>List` and `get<Resource>Detail`
-  (e.g. `getProductList`, `getProductDetail`).
-- **Always return JSON** via `response()->json(...)`.
-- **On success**: return the data directly (an object or a paginated list).
+- **Controller method names**: `<resource>List` and `<resource>Detail`
+  (e.g. `productList`, `productDetail` — like the v2 controllers of the shop package).
+- **Always return JSON** through the `GP247\Core\Api\V2\ApiQuery` helper (it returns a `JsonResponse`), or
+  `response()->json(...)` for a response that is not a record.
+- **On success**: wrap the data in `data` — `{"data": …}` for one record (`ApiQuery::one()`), and
+  `{"data": [...], "meta": {...}, "links": {...}}` for a list (`ApiQuery::page()`).
 - **On failure/not found**: use `ApiErrorResponder` so you get a **meaningful HTTP status code** and the
   shared error body `{"error": 1, "msg": "…", "code": "…"}` (code table in
-  [API Introduction](./api-introduction.md), section 7):
+  [API Introduction](./api-introduction.md), section 6). `ApiQuery::one()` returns `404` by itself when there is
+  no record:
 
   ```php
   use GP247\Core\Api\Support\ApiErrorResponder;
@@ -146,35 +163,40 @@ Follow these conventions so your new API stays consistent with the rest of the s
   > errors under `api/*` are converted to this shape automatically; you only need to return
   > `notFound()`/`forbidden()` yourself when the controller makes that decision. The old pattern
   > `response()->json([...], 200)` for errors is **no longer used**.
-- **Return only the fields you need**: for public data, filter fields with
-  `GP247\Core\Api\Support\ApiFieldAllowlist::one()` / `::page()` instead of returning the whole model — new
-  columns added to the table will not leak into the API automatically.
+- **Return only the fields you need**: the `$toArray` function you pass to `ApiQuery` declares exactly the fields
+  returned, instead of returning the whole model — new columns added to the table will not leak into the API
+  automatically. For public data, build the base query with `GP247\Core\Api\Support\ApiVisibility::visible(...)` so
+  the API returns exactly the records the website shows.
 
-- **Pagination**: use the `->jsonPaginate()` macro (from the pre-installed
-  `spatie/laravel-json-api-paginate` package) instead of `->get()` when returning a list — it returns a
-  standard pagination structure (`data`, `current_page`, `total`…) with the page size controlled by the
-  request.
+- **Pagination, filtering, sorting**: use `ApiQuery::page($query, $request, $toArray, $filters, $sorts, $search)`
+  instead of `->get()` when returning a list. The client drives it with `page[number]`, `page[size]` (default 20,
+  max 100), `filter[<name>]`, `sort=<name>` / `sort=-<name>` and `q` (search). Only the filter/sort names you
+  declare are accepted — an unknown name returns `422` (`validation_failed`); client input never becomes a column
+  name in the query. Multilingual content: get the language with `ApiQuery::lang($request)` and the description
+  fields with `ApiQuery::described(...)`.
 
 ---
 
 ## 3. Example A — Add an endpoint to a package you maintain (core/front/shop)
 
 Use this when you are the **package maintainer** (editing directly in `vendor/gp247/<package>`), e.g.
-adding a public front API `api/front/review/list`. Follow the exact order:
+adding a public front API `api/v2/front/review/list`. Follow the exact order:
 
-1. **Create the controller** under `vendor/gp247/<package>/src/Api/...`. For front data, extend
+1. **Create the controller** under `vendor/gp247/<package>/src/Api/V2/...`. For front data, extend
    `RootFrontController`; for admin data, extend `RootAdminController`.
 
-   Create `src/Api/Front/ReviewController.php`:
+   Create `src/Api/V2/ReviewController.php`:
 
    ```php
    <?php
 
-   namespace GP247\Shop\Api\Front;
+   namespace GP247\Shop\Api\V2;
 
+   use GP247\Core\Api\V2\ApiQuery;
    use GP247\Front\Controllers\RootFrontController;
-   use Illuminate\Http\Request;
    use GP247\Shop\Models\ShopProductReview;
+   use Illuminate\Database\Eloquent\Builder;
+   use Illuminate\Http\Request;
 
    class ReviewController extends RootFrontController
    {
@@ -182,37 +204,61 @@ adding a public front API `api/front/review/list`. Follow the exact order:
         * Get the public review list.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit shop-api
-        * @aidlc-story US-shop-api-review-list
         */
-       public function getReviewList(Request $request)
+       public function reviewList(Request $request)
        {
-           $reviews = (new ShopProductReview)
-               ->where('status', 1)
-               ->jsonPaginate();
+           $query = ShopProductReview::query()->where('status', 1);
 
-           return response()->json($reviews, 200);
+           return ApiQuery::page($query, $request, fn ($r) => self::review($r),
+               ['product_id' => fn (Builder $q, string $v) => $q->where('product_id', $v)],   // filter[product_id]
+               ['created_at' => 'created_at']);                                                // sort=created_at | -created_at
+       }
+
+       /**
+        * Get one public review (404 when it does not exist).
+        *
+        * @return \Illuminate\Http\JsonResponse
+        */
+       public function reviewDetail(Request $request, $id)
+       {
+           $review = ShopProductReview::query()->where('status', 1)->where('id', $id)->first();
+
+           return ApiQuery::one($review, fn ($r) => self::review($r));
+       }
+
+       /**
+        * Declared shape of a review: only these fields reach the API.
+        */
+       private static function review($r): array
+       {
+           return [
+               'id'         => $r->id,
+               'product_id' => $r->product_id,
+               'point'      => (int) $r->point,
+               'comment'    => $r->comment,
+               'created_at' => optional($r->created_at)->toIso8601String(),
+           ];
        }
    }
    ```
 
-2. **Create the route file** at `src/Routes/Api/review.php` (just placing it in the `Routes/Api/` folder
-   is enough — core loads it automatically, no registration needed anywhere else):
+2. **Create the route file** at `src/Routes/Api/v2/review.php` (just placing it in the `Routes/Api/v2/` folder
+   is enough — the package loads it automatically, no registration needed anywhere else):
 
    ```php
    <?php
 
-   use GP247\Shop\Api\Front\ReviewController;
+   use GP247\Shop\Api\V2\ReviewController;
    use Illuminate\Support\Facades\Route;
 
    Route::group([
-       'prefix' => GP247_API_FRONT_PREFIX,   // => api/front
+       'prefix' => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
    ], function () {
        $reviewController = gp247_namespace(ReviewController::class);
 
        Route::group(['prefix' => 'review'], function () use ($reviewController) {
-           Route::get('list', $reviewController.'@getReviewList');
+           Route::get('list', $reviewController.'@reviewList');
+           Route::get('detail/{id}', $reviewController.'@reviewDetail');
        });
    });
    ```
@@ -220,21 +266,32 @@ adding a public front API `api/front/review/list`. Follow the exact order:
 3. **Verify the route is loaded** with an Artisan command (run from the site root):
 
    ```bash
-   php artisan route:list --path=api/front/review
+   php artisan route:list --path=api/v2/front/review
    ```
 
-   On success you will see a `GET | api/front/review/list` line. If you **don't**, re-check
+   On success you will see a `GET | api/v2/front/review/list` line. If you **don't**, re-check
    `GP247_API_MODE=true` in `.env` and clear the route cache: `php artisan route:clear`.
 
-4. **Try calling it** (a public endpoint, so no token needed):
+4. **Try calling it** (a public endpoint, so no token needed; `-g` keeps curl from interpreting `[ ]`):
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/review/list" -H "Accept: application/json"
+   curl -g -X GET "https://shop.example.com/api/v2/front/review/list?page[size]=10&sort=-created_at" -H "Accept: application/json"
    ```
 
-> For an **admin** endpoint (login required), put the route in the package's `src/Routes/Api/` and wrap
-> it in the `auth:admin-api` + `ability:...` middleware group with `prefix => GP247_API_CORE_PREFIX`
-> (see the template at `vendor/gp247/shop/src/Routes/Api/admin.php`).
+   Expected result:
+
+   ```json
+   {
+     "data": [ { "id": 12, "product_id": 5, "point": 5, "comment": "…", "created_at": "2026-10-30T10:00:00+00:00" } ],
+     "meta": { "current_page": 1, "per_page": 10, "total": 1, "last_page": 1 },
+     "links": { "first": "…", "last": "…", "prev": null, "next": null }
+   }
+   ```
+
+> For an **admin** endpoint (login required), put the route in the package's `src/Routes/Api/v2/` and wrap
+> it in the `auth:admin-api` + `ApiAbilities::admin()` middleware group with `prefix => GP247_API_V2_CORE_PREFIX`,
+> each route declaring `api.admin:<admin route name>` (section 5.1; see the template at
+> `vendor/gp247/shop/src/Routes/Api/v2/admin.php`).
 
 ---
 
@@ -246,8 +303,8 @@ automatically.
 
 > ⚠️ **Key difference:** plugin routes are loaded **outside** the API middleware group (section 1.3),
 > so you **must wrap them yourself** with `GP247_API_MIDDLEWARE` and set the `prefix` yourself. If you
-> forget, your API will **not** force JSON, **not** pass through the `api.connection` layer, and **not**
-> have any rate limit.
+> forget, your API will **not** force JSON, **not** pass through the `api.connection` layer, **not** follow the
+> API on/off switches, and **not** have any rate limit.
 
 1. **Create the controller** in the plugin, e.g.
    `app/GP247/Plugins/MyApi/Api/Front/StatusController.php`:
@@ -266,17 +323,13 @@ automatically.
         * Return a simple health-check payload for external monitors.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit myapi-plugin
-        * @aidlc-story US-myapi-plugin-status
         */
-       public function getStatus(Request $request)
+       public function status(Request $request)
        {
-           return response()->json([
-               'error'  => 0,
+           return response()->json(['data' => [
                'status' => 'ok',
                'time'   => gp247_time_now(),
-           ], 200);
+           ]]);
        }
    }
    ```
@@ -293,13 +346,13 @@ automatically.
    // Only register when the API mode is on, matching core behaviour.
    if (config('gp247-config.env.GP247_API_MODE')) {
        Route::group([
-           'middleware' => GP247_API_MIDDLEWARE,   // ['api','api.extend'] — you MUST add this yourself
-           'prefix'     => GP247_API_FRONT_PREFIX,  // => api/front
+           'middleware' => GP247_API_MIDDLEWARE,       // required: plugin routes load outside the API group
+           'prefix'     => GP247_API_V2_FRONT_PREFIX,  // => api/v2/front
        ], function () {
            $statusController = gp247_namespace(StatusController::class);
 
            Route::group(['prefix' => 'myapi'], function () use ($statusController) {
-               Route::get('status', $statusController.'@getStatus');
+               Route::get('status', $statusController.'@status');
            });
        });
    }
@@ -309,21 +362,21 @@ automatically.
 
    ```bash
    php artisan route:clear
-   php artisan route:list --path=api/front/myapi
+   php artisan route:list --path=api/v2/front/myapi
    ```
 
-   On success you will see `GET | api/front/myapi/status`.
+   On success you will see `GET | api/v2/front/myapi/status`.
 
 4. **Try calling it**:
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/myapi/status" -H "Accept: application/json"
+   curl -X GET "https://shop.example.com/api/v2/front/myapi/status" -H "Accept: application/json"
    ```
 
    Expected result:
 
    ```json
-   { "error": 0, "status": "ok", "time": "2026-07-30 10:00:00" }
+   { "data": { "status": "ok", "time": "2026-07-30 10:00:00" } }
    ```
 
 ---
@@ -344,16 +397,17 @@ plugin and register it from the plugin's `Provider.php`:
 // app/GP247/Plugins/MyApi/Routes/api.php — declare only the prefix and the routes
 use Illuminate\Support\Facades\Route;
 
-Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+Route::group(['prefix' => GP247_API_V2_FRONT_PREFIX], function () {
     $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
-    Route::get('myapi/status', $statusController.'@getStatus');
+    Route::get('myapi/status', $statusController.'@status');
 });
 ```
 
 `ApiRouteRegistrar` wraps `GP247_API_MIDDLEWARE` for you (JSON, API Connection, rate limit), registers nothing
 when `GP247_API_MODE` is off, and does not register the routes again when the site has run `route:cache`. The
 `{error, msg, code}` error contract applies to every path under `api/core`, `api/front`, `api/v2/core` and
-`api/v2/front`.
+`api/v2/front`; a route under a prefix of its own (outside these four) keeps Laravel's default error bodies and
+follows only the master switch of the API screen.
 
 ---
 
@@ -362,21 +416,22 @@ when `GP247_API_MODE` is off, and does not register the routes again when the si
 If your API returns private data (a customer's orders, admin data…), you must wrap it in the matching
 Sanctum guard. In the controller, get the logged-in user via `$request->user()`.
 
-Example of an admin route that requires login:
+Example of a customer route that requires login (`api.customer.active`, from the shop package, refuses the token of
+an account locked after the token was issued):
 
 ```php
+use GP247\Core\Api\Support\ApiAbilities;
+
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,   // => api/core
-    'middleware' => [
-        'auth:admin-api',
-        'ability:'.config('gp247-config.api.auth.api_scope_admin')
-                 .','.config('gp247-config.api.auth.api_scope_admin_supper'),
-    ],
+    'prefix'     => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
+    'middleware' => ['auth:customer-api', ApiAbilities::customer(), 'api.customer.active'],
 ], function () {
-    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport');
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\WishlistController::class);
+    Route::get('member/wishlist/list', $ctrl.'@wishlistList');
 });
 ```
+
+For admin routes, see section 5.1.
 
 The client must send the token obtained from `login` in the header:
 
@@ -385,29 +440,31 @@ Authorization: Bearer <access_token>
 ```
 
 > **Issuing tokens** (`createToken`) and **revoking tokens** (`logout`) are already implemented in the
-> core/shop login controllers. You just need to **reuse** the `api/core/login` / `api/front/login`
-> endpoints to obtain a token — no need to rewrite the login part unless you have a special requirement.
+> core/shop login controllers. You just need to **reuse** the `api/v2/core/login` / `api/v2/front/login`
+> endpoints to obtain a token (v2 also offers `with_refresh` to get a refresh token, `login/challenge` for the
+> sign-in verification step, and `refresh` — see [API Introduction, section 2](./api-introduction.md)) — no need to
+> rewrite the login part unless you have a special requirement.
 
 ### 5.1. Admin endpoints: declare the admin screen and scope by store
 
 > ℹ️ **Available since:** gp247/core 3.2.3
 
 An admin token does **not** automatically allow viewing all data. Every route under
-`GP247_API_CORE_PREFIX` must declare its matching **admin screen** with the
+`GP247_API_V2_CORE_PREFIX` must declare its matching **admin screen** with the
 `api.admin:<admin route name>` middleware; GP247 only allows the call when the account has permission to
 open that screen (the same permissions as the admin panel), applies the guards of the multi-store
 plugins, and resolves the account's store:
 
 ```php
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
     'middleware' => [
         'auth:admin-api',
-        \GP247\Core\Api\Support\ApiAbilities::admin(),   // since 3.3.0; older versions: 'ability:admin,admin-supper'
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // since 3.3.0
     ],
 ], function () {
     $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport')
+    Route::get('report/sales', $ctrl.'@salesList')
         ->middleware('api.admin:admin_report.sales');   // route name of the matching admin screen
 });
 ```
@@ -416,8 +473,10 @@ In the controller, always filter the query by the account's store:
 
 ```php
 use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
 
-$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
+    fn ($o) => ['id' => $o->id, 'total' => $o->total, 'status' => (int) $o->status]);
 ```
 
 Calling `ApiStoreScope` on a route without `api.admin` raises an error (safe by default) — this is how
@@ -427,16 +486,16 @@ GP247 reminds you that you forgot to declare the permission.
 
 ## 6. Checklist before calling it "done"
 
-- [ ] Use the **constants** `GP247_API_CORE_PREFIX` / `GP247_API_FRONT_PREFIX`, not hardcoded strings.
+- [ ] The new endpoint is under **v2** — use the **constants** `GP247_API_V2_CORE_PREFIX` / `GP247_API_V2_FRONT_PREFIX`, no hardcoded strings, nothing added to v1.
 - [ ] Reference controllers through `gp247_namespace(...)` to allow overrides.
-- [ ] Plugin routes **wrap** `GP247_API_MIDDLEWARE` + `prefix` themselves (section 4).
+- [ ] Plugin routes **wrap** `GP247_API_MIDDLEWARE` + `prefix` themselves (section 4) or register through `ApiRouteRegistrar` (section 4.1).
 - [ ] Every input has `$request->validate([...])`; **no** string-concatenated SQL (use Eloquent).
-- [ ] Lists use `->jsonPaginate()`; every response goes through `response()->json(...)`.
-- [ ] Private endpoints have `auth:admin-api`/`auth:customer-api` + the correct `ability:...` scope.
+- [ ] Lists use `ApiQuery::page()` (declaring only the `filter`/`sort` names you need); one record uses `ApiQuery::one()`.
+- [ ] Private endpoints have `auth:admin-api` + `ApiAbilities::admin()`, or `auth:customer-api` + `ApiAbilities::customer()` + `api.customer.active`.
 - [ ] Admin endpoints have `api.admin:<admin route name>` and filter data with `ApiStoreScope::apply()` (section 5.1).
-- [ ] Errors go through `ApiErrorResponder` (meaningful HTTP status codes); public data filters fields with `ApiFieldAllowlist`.
+- [ ] Errors go through `ApiErrorResponder` (meaningful HTTP status codes); the `$toArray` function returns only the declared fields.
 - [ ] **Do not modify** `vendor/gp247/*` (unless you are the maintainer of that package).
-- [ ] Every method has an English PHPDoc with the `@aidlc-unit` / `@aidlc-story` tags (per coding-style).
+- [ ] Every method has an English PHPDoc.
 - [ ] You ran `php artisan route:clear` and confirmed the route appears in `php artisan route:list`.
 - [ ] A plugin adding a sign-in step implements `LoginChallenge` and returns no secret from `describe()` (section 7).
 
@@ -493,7 +552,7 @@ config(['gp247-config.api.login_challenge.customer' => array_merge(
 Core does the rest: a single-use ticket (5 minutes, stored hashed in the default cache — works on shared hosting), the attempt
 limit (shared with the login counter; a ticket is destroyed after 5 wrong answers, from any IP), and the token/session once `verify()` returns `true`. A plugin that throws, or a wrong
 class registration, **denies** the sign-in (the step is never skipped). For administrators register under
-`gp247-config.api.login_challenge.admin`. How an app calls it: [API introduction — section 10.4](./api-introduction.md).
+`gp247-config.api.login_challenge.admin`. How an app calls it: [API introduction — section 9.4](./api-introduction.md).
 
 ## 8. Order-handling plugins: app orders go through the same hooks
 
@@ -533,7 +592,7 @@ Three things to keep in mind when a plugin runs inside an API request:
 - **"Order success" does not mean "paid"**: for API orders the event runs as soon as the order is placed. Work that must wait for the money
   (digital delivery, unlocking a service…) should rely on the order's payment status.
 
-How the app calls it: [API Introduction — section 11](./api-introduction.md).
+How the app calls it: [API Introduction — section 10](./api-introduction.md).
 
 ---
 
@@ -557,11 +616,12 @@ must be active.
 `'middleware' => GP247_API_MIDDLEWARE` as in section 4. This is the single most common mistake when
 adding an API from a plugin.
 
-**Q4: How is `jsonPaginate()` different from Laravel's `paginate()`?**
+**Q4: How is `ApiQuery::page()` different from Laravel's `paginate()`?**
 
-→ `jsonPaginate()` (from `spatie/laravel-json-api-paginate`) returns a JSON:API-friendly pagination
-structure and lets the client control the page size via a parameter. Use it for list endpoints to stay
-consistent with GP247's existing APIs.
+→ `ApiQuery::page()` uses `paginate()` underneath but adds the API v2 standard: it accepts only the `filter[...]` /
+`sort` names you declare (an unknown name returns `422`), caps `page[size]` at 100, always adds an order by the
+primary key so pages neither repeat nor skip records, and returns exactly the `{data, meta, links}` shape. Use it for
+list endpoints to stay consistent with GP247's existing v2 APIs.
 
 **Q5: How do I return errors the standard way?**
 
@@ -584,7 +644,7 @@ applies automatically when the admin turns it on.
 
 **Q8: Do I have to write my own login/token-issuing endpoint?**
 
-→ No. Reuse `api/core/login` (admin) or `api/front/login` (customer) to obtain a token, then protect your
+→ No. Reuse `api/v2/core/login` (admin) or `api/v2/front/login` (customer) to obtain a token, then protect your
 new endpoint with `auth:admin-api`/`auth:customer-api`. Only write your own login for a special
 authentication flow.
 
@@ -605,7 +665,7 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | New endpoints go under the v2 prefixes (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`) and use `ApiQuery` for `{data, meta, links}` responses; v1 is frozen (sections 1–6); `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
 | 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
 

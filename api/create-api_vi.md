@@ -24,13 +24,20 @@ API của GP247 được ráp lại từ vài mảnh có sẵn. Hiểu chúng gi
 
 ### 1.1. Hai nhóm và tiền tố (prefix)
 
+Mọi endpoint mới đặt dưới tiền tố **v2**:
+
 | Nhóm | Hằng số dùng trong route | Giá trị | Dùng cho |
 | --- | --- | --- | --- |
-| Core (Admin) | `GP247_API_CORE_PREFIX` | `api/core` | Quản trị hệ thống (cần token admin) |
-| Front (Storefront) | `GP247_API_FRONT_PREFIX` | `api/front` | Dữ liệu cửa hàng & tài khoản khách |
+| Core (Admin) | `GP247_API_V2_CORE_PREFIX` | `api/v2/core` | Quản trị hệ thống (cần token admin) |
+| Front (Storefront) | `GP247_API_V2_FRONT_PREFIX` | `api/v2/front` | Dữ liệu cửa hàng & tài khoản khách |
 
 Hai hằng này khai báo cố định trong `vendor/gp247/core/src/Library/Const.php`. **Luôn dùng hằng số**
-trong route (không viết chuỗi `"api/core"` tay) để nếu sau này đổi tiền tố, code của bạn tự theo.
+trong route (không viết chuỗi `"api/v2/core"` tay) để nếu sau này đổi tiền tố, code của bạn tự theo.
+
+> ⚠️ **REST API v1 đã đóng băng.** Từ gp247/core, gp247/front, gp247/shop 3.3.0, API v1
+> (`GP247_API_CORE_PREFIX` = `api/core`, `GP247_API_FRONT_PREFIX` = `api/front`) không nhận tính năng mới — chỉ
+> còn bản vá bảo mật; site cài mới từ gp247/core 3.3.1 tắt sẵn v1. Endpoint v1 đang có vẫn chạy, nhưng **đừng thêm
+> endpoint mới vào đó**. Xem [API v1](./api-v1_vi.md).
 
 ### 1.2. Bật chế độ API
 
@@ -42,14 +49,21 @@ GP247_API_MODE=true
 
 Nếu cờ này tắt, toàn bộ route API sẽ **không được nạp** (xem `vendor/gp247/core/src/routes.php`).
 
+Khi cờ đã bật, chủ site còn bật/tắt từng nhóm trên màn quản lý API (lớp `api.enabled`, xem
+[Giới thiệu API, mục 5](./api-introduction_vi.md)). Route đặt dưới `api/v2/front` theo công tắc
+**"v2 · API công khai & khách hàng (front)"**, dưới `api/v2/core` theo công tắc **"v2 · API quản trị (core)"** —
+kể cả route do plugin thêm vào. Nhóm đang tắt trả `404` với `code: api_disabled`.
+
 ### 1.3. Cách route API được nạp tự động
 
-Khi `GP247_API_MODE=true`, core tự **quét và nạp** mọi file trong các thư mục sau, và bọc tất cả
+Khi `GP247_API_MODE=true`, mỗi gói tự **quét và nạp** mọi file trong các thư mục sau, và bọc tất cả
 trong nhóm middleware `GP247_API_MIDDLEWARE`:
 
-- `vendor/gp247/core/src/Routes/Api/*.php`
-- `vendor/gp247/shop/src/Routes/Api/*.php`
-- `vendor/gp247/front/src/Routes/Api/*.php`
+- `vendor/gp247/core/src/Routes/Api/v2/*.php`
+- `vendor/gp247/shop/src/Routes/Api/v2/*.php`
+- `vendor/gp247/front/src/Routes/Api/v2/*.php`
+
+(File v1 nằm ở `Routes/Api/*.php` của cùng gói — chỉ để giữ endpoint cũ.)
 
 `GP247_API_MIDDLEWARE = ['api', 'api.request_id', 'json.response', 'api.enabled', 'api.extend']`, trong đó `api.extend` là nhóm middleware GP247 định
 nghĩa ở `config('gp247-config.api.middleware')`:
@@ -65,7 +79,7 @@ nghĩa ở `config('gp247-config.api.middleware')`:
 > ℹ️ **Có từ:** gp247/core 3.6.0 — `json.response` chạy trước `auth:*`: thiếu token mà không gửi `Accept: application/json`
 > vẫn nhận `401` JSON (trước đây `500`).
 >
-> 👉 **Hệ quả quan trọng cho plugin:** route đặt trong `Routes/Api/` của core/shop/front sẽ **tự
+> 👉 **Hệ quả quan trọng cho plugin:** route đặt trong `Routes/Api/v2/` của core/shop/front sẽ **tự
 > động** có 3 lớp trên. Nhưng route bạn thêm từ **plugin** lại nạp ở chỗ khác (mục 4) nên **không tự
 > có** — bạn phải tự bọc chúng, hoặc (từ 3.3.0) đăng ký qua `ApiRouteRegistrar` (mục 4.1).
 
@@ -79,8 +93,8 @@ GP247 dùng **Sanctum** (token dạng Bearer). Có hai "guard" (cổng đăng nh
 
 | Guard | Provider | Dành cho | Cấp token ở đâu |
 | --- | --- | --- | --- |
-| `admin-api` | `admin_provider` | Quản trị viên | `api/core/login` |
-| `customer-api` | `customer_provider` | Khách/thành viên | `api/front/login` |
+| `admin-api` | `admin_provider` | Quản trị viên | `api/v2/core/login` |
+| `customer-api` | `customer_provider` | Khách/thành viên | `api/v2/front/login` |
 
 Mỗi token còn mang **phạm vi quyền (scope/ability)** để giới hạn nó làm được gì. Các scope lấy từ
 `config('gp247-config.api.auth')` (đổi được qua `.env`):
@@ -96,8 +110,8 @@ Mỗi token còn mang **phạm vi quyền (scope/ability)** để giới hạn n
 
 ```php
 'middleware' => [
-    'auth:admin-api',                    // hoặc 'auth:customer-api' cho API front
-    'ability:admin,admin-supper',        // các scope được phép
+    'auth:admin-api',                                // or 'auth:customer-api' for front APIs
+    \GP247\Core\Api\Support\ApiAbilities::admin(),   // or ApiAbilities::customer(): the allowed scopes
 ]
 ```
 
@@ -107,8 +121,8 @@ Trong route GP247, controller **không** viết trực tiếp `Controller::class
 `gp247_namespace()`:
 
 ```php
-$productController = gp247_namespace(\GP247\Shop\Api\Admin\AdminProductController::class);
-Route::get('list', $productController.'@getProductList');
+$catalog = gp247_namespace(\GP247\Shop\Api\V2\CatalogController::class);
+Route::get('product/list', $catalog.'@productList');
 ```
 
 Helper này tự kiểm tra: nếu tồn tại file override ở `app/GP247/...` thì dùng bản của app, ngược lại
@@ -123,12 +137,15 @@ Giữ đúng các quy ước sau để API mới đồng bộ với phần còn 
 
 - **Gom theo tài nguyên**: mỗi nhóm dữ liệu là một `Route::group(['prefix' => 'product'], ...)`.
 - **Hai action chuẩn**: `list` (danh sách) và `detail/{id}` (chi tiết một bản ghi).
-- **Tên method controller**: `get<Tài nguyên>List` và `get<Tài nguyên>Detail`
-  (ví dụ `getProductList`, `getProductDetail`).
-- **Luôn trả JSON** bằng `response()->json(...)`.
-- **Thành công**: trả thẳng dữ liệu (object hoặc danh sách phân trang).
+- **Tên method controller**: `<tàiNguyên>List` và `<tàiNguyên>Detail`
+  (ví dụ `productList`, `productDetail` — như các controller v2 của gói shop).
+- **Luôn trả JSON** qua helper `GP247\Core\Api\V2\ApiQuery` (trả về `JsonResponse`), hoặc `response()->json(...)`
+  cho phản hồi không phải bản ghi.
+- **Thành công**: bọc dữ liệu trong `data` — `{"data": …}` cho một bản ghi (`ApiQuery::one()`), và
+  `{"data": [...], "meta": {...}, "links": {...}}` cho danh sách (`ApiQuery::page()`).
 - **Thất bại/không tìm thấy**: dùng `ApiErrorResponder` để có **mã HTTP đúng nghĩa** và thân lỗi chung
-  `{"error": 1, "msg": "…", "code": "…"}` (bảng mã ở [Giới thiệu API](./api-introduction_vi.md), mục 7):
+  `{"error": 1, "msg": "…", "code": "…"}` (bảng mã ở [Giới thiệu API](./api-introduction_vi.md), mục 6).
+  `ApiQuery::one()` tự trả `404` khi không có bản ghi:
 
   ```php
   use GP247\Core\Api\Support\ApiErrorResponder;
@@ -141,34 +158,38 @@ Giữ đúng các quy ước sau để API mới đồng bộ với phần còn 
   > ℹ️ **Có từ:** gp247/core 3.2.3 — lỗi xác thực, phân quyền, validate và giới hạn tần suất dưới
   > `api/*` được tự đổi sang dạng này; bạn chỉ cần tự trả `notFound()`/`forbidden()` khi controller
   > tự quyết định. Mẫu cũ `response()->json([...], 200)` cho lỗi **không còn dùng**.
-- **Chỉ trả trường cần thiết**: với dữ liệu công khai, lọc trường bằng
-  `GP247\Core\Api\Support\ApiFieldAllowlist::one()` / `::page()` thay vì trả nguyên model — cột mới
-  thêm vào bảng sẽ không tự lộ ra API.
+- **Chỉ trả trường cần thiết**: hàm `$toArray` truyền vào `ApiQuery` khai báo đúng các trường trả về,
+  thay vì trả nguyên model — cột mới thêm vào bảng sẽ không tự lộ ra API. Với dữ liệu công khai, lấy truy vấn
+  gốc qua `GP247\Core\Api\Support\ApiVisibility::visible(...)` để API chỉ trả đúng những bản ghi website đang hiển thị.
 
-- **Phân trang**: dùng macro `->jsonPaginate()` (gói `spatie/laravel-json-api-paginate` đã cài sẵn)
-  thay cho `->get()` khi trả danh sách — nó trả về cấu trúc phân trang chuẩn (`data`, `current_page`,
-  `total`…), kích thước trang do request điều khiển.
+- **Phân trang, lọc, sắp xếp**: dùng `ApiQuery::page($query, $request, $toArray, $filters, $sorts, $search)`
+  thay cho `->get()` khi trả danh sách. Client điều khiển bằng `page[number]`, `page[size]` (mặc định 20, tối đa 100),
+  `filter[<tên>]`, `sort=<tên>` / `sort=-<tên>` và `q` (tìm kiếm). Chỉ những tên lọc/sắp xếp bạn khai báo mới
+  được nhận — tên lạ trả `422` (`validation_failed`), dữ liệu client không bao giờ thành tên cột trong truy vấn.
+  Nội dung đa ngôn ngữ: lấy ngôn ngữ bằng `ApiQuery::lang($request)` và các trường mô tả bằng `ApiQuery::described(...)`.
 
 ---
 
 ## 3. Ví dụ A — Thêm endpoint vào một gói bạn bảo trì (core/front/shop)
 
 Áp dụng khi bạn là **maintainer của gói** (sửa trực tiếp trong `vendor/gp247/<gói>`), ví dụ thêm API
-front công khai `api/front/review/list`. Làm theo đúng thứ tự:
+front công khai `api/v2/front/review/list`. Làm theo đúng thứ tự:
 
-1. **Tạo controller** tại `vendor/gp247/<gói>/src/Api/...`. Với dữ liệu front, kế thừa
+1. **Tạo controller** tại `vendor/gp247/<gói>/src/Api/V2/...`. Với dữ liệu front, kế thừa
    `RootFrontController`; với dữ liệu admin, kế thừa `RootAdminController`.
 
-   Tạo file `src/Api/Front/ReviewController.php`:
+   Tạo file `src/Api/V2/ReviewController.php`:
 
    ```php
    <?php
 
-   namespace GP247\Shop\Api\Front;
+   namespace GP247\Shop\Api\V2;
 
+   use GP247\Core\Api\V2\ApiQuery;
    use GP247\Front\Controllers\RootFrontController;
-   use Illuminate\Http\Request;
    use GP247\Shop\Models\ShopProductReview;
+   use Illuminate\Database\Eloquent\Builder;
+   use Illuminate\Http\Request;
 
    class ReviewController extends RootFrontController
    {
@@ -176,37 +197,61 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
         * Get the public review list.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit shop-api
-        * @aidlc-story US-shop-api-review-list
         */
-       public function getReviewList(Request $request)
+       public function reviewList(Request $request)
        {
-           $reviews = (new ShopProductReview)
-               ->where('status', 1)
-               ->jsonPaginate();
+           $query = ShopProductReview::query()->where('status', 1);
 
-           return response()->json($reviews, 200);
+           return ApiQuery::page($query, $request, fn ($r) => self::review($r),
+               ['product_id' => fn (Builder $q, string $v) => $q->where('product_id', $v)],   // filter[product_id]
+               ['created_at' => 'created_at']);                                                // sort=created_at | -created_at
+       }
+
+       /**
+        * Get one public review (404 when it does not exist).
+        *
+        * @return \Illuminate\Http\JsonResponse
+        */
+       public function reviewDetail(Request $request, $id)
+       {
+           $review = ShopProductReview::query()->where('status', 1)->where('id', $id)->first();
+
+           return ApiQuery::one($review, fn ($r) => self::review($r));
+       }
+
+       /**
+        * Declared shape of a review: only these fields reach the API.
+        */
+       private static function review($r): array
+       {
+           return [
+               'id'         => $r->id,
+               'product_id' => $r->product_id,
+               'point'      => (int) $r->point,
+               'comment'    => $r->comment,
+               'created_at' => optional($r->created_at)->toIso8601String(),
+           ];
        }
    }
    ```
 
-2. **Tạo file route** tại `src/Routes/Api/review.php` (chỉ cần đặt vào thư mục `Routes/Api/` là core
+2. **Tạo file route** tại `src/Routes/Api/v2/review.php` (chỉ cần đặt vào thư mục `Routes/Api/v2/` là gói
    tự nạp — không phải khai báo ở đâu khác):
 
    ```php
    <?php
 
-   use GP247\Shop\Api\Front\ReviewController;
+   use GP247\Shop\Api\V2\ReviewController;
    use Illuminate\Support\Facades\Route;
 
    Route::group([
-       'prefix' => GP247_API_FRONT_PREFIX,   // => api/front
+       'prefix' => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
    ], function () {
        $reviewController = gp247_namespace(ReviewController::class);
 
        Route::group(['prefix' => 'review'], function () use ($reviewController) {
-           Route::get('list', $reviewController.'@getReviewList');
+           Route::get('list', $reviewController.'@reviewList');
+           Route::get('detail/{id}', $reviewController.'@reviewDetail');
        });
    });
    ```
@@ -214,21 +259,31 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
 3. **Kiểm tra route đã nạp** bằng lệnh Artisan (chạy ở thư mục gốc site):
 
    ```bash
-   php artisan route:list --path=api/front/review
+   php artisan route:list --path=api/v2/front/review
    ```
 
-   Nếu thành công, bạn thấy dòng `GET | api/front/review/list`. Nếu **không thấy**, kiểm tra lại
+   Nếu thành công, bạn thấy dòng `GET | api/v2/front/review/list`. Nếu **không thấy**, kiểm tra lại
    `GP247_API_MODE=true` trong `.env` và xóa cache route: `php artisan route:clear`.
 
-4. **Gọi thử** (endpoint công khai nên không cần token):
+4. **Gọi thử** (endpoint công khai nên không cần token; `-g` để curl giữ nguyên dấu `[ ]`):
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/review/list" -H "Accept: application/json"
+   curl -g -X GET "https://shop.example.com/api/v2/front/review/list?page[size]=10&sort=-created_at" -H "Accept: application/json"
    ```
 
-> Với endpoint **admin** (cần đăng nhập), đặt route trong `src/Routes/Api/` của gói và bọc thêm nhóm
-> middleware `auth:admin-api` + `ability:...` với `prefix => GP247_API_CORE_PREFIX` (xem mẫu ở
-> `vendor/gp247/shop/src/Routes/Api/admin.php`).
+   Kết quả mong đợi:
+
+   ```json
+   {
+     "data": [ { "id": 12, "product_id": 5, "point": 5, "comment": "…", "created_at": "2026-10-30T10:00:00+00:00" } ],
+     "meta": { "current_page": 1, "per_page": 10, "total": 1, "last_page": 1 },
+     "links": { "first": "…", "last": "…", "prev": null, "next": null }
+   }
+   ```
+
+> Với endpoint **admin** (cần đăng nhập), đặt route trong `src/Routes/Api/v2/` của gói và bọc thêm nhóm
+> middleware `auth:admin-api` + `ApiAbilities::admin()` với `prefix => GP247_API_V2_CORE_PREFIX`, mỗi route khai
+> báo `api.admin:<tên route admin>` (mục 5.1; xem mẫu ở `vendor/gp247/shop/src/Routes/Api/v2/admin.php`).
 
 ---
 
@@ -239,7 +294,7 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
 
 > ⚠️ **Khác biệt then chốt:** route của plugin nạp **ngoài** nhóm middleware API (mục 1.3), nên bạn
 > **phải tự bọc** `GP247_API_MIDDLEWARE` và tự đặt `prefix`. Nếu quên, API của bạn sẽ **không** trả
-> JSON ép buộc, **không** qua lớp `api.connection`, và **không** có giới hạn tần suất.
+> JSON ép buộc, **không** qua lớp `api.connection`, **không** theo công tắc bật/tắt API, và **không** có giới hạn tần suất.
 
 1. **Tạo controller** trong plugin, ví dụ
    `app/GP247/Plugins/MyApi/Api/Front/StatusController.php`:
@@ -258,17 +313,13 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
         * Return a simple health-check payload for external monitors.
         *
         * @return \Illuminate\Http\JsonResponse
-        *
-        * @aidlc-unit myapi-plugin
-        * @aidlc-story US-myapi-plugin-status
         */
-       public function getStatus(Request $request)
+       public function status(Request $request)
        {
-           return response()->json([
-               'error'  => 0,
+           return response()->json(['data' => [
                'status' => 'ok',
                'time'   => gp247_time_now(),
-           ], 200);
+           ]]);
        }
    }
    ```
@@ -284,13 +335,13 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
    // Only register when the API mode is on, matching core behaviour.
    if (config('gp247-config.env.GP247_API_MODE')) {
        Route::group([
-           'middleware' => GP247_API_MIDDLEWARE,   // ['api','api.extend'] — bắt buộc phải tự thêm
-           'prefix'     => GP247_API_FRONT_PREFIX,  // => api/front
+           'middleware' => GP247_API_MIDDLEWARE,       // required: plugin routes load outside the API group
+           'prefix'     => GP247_API_V2_FRONT_PREFIX,  // => api/v2/front
        ], function () {
            $statusController = gp247_namespace(StatusController::class);
 
            Route::group(['prefix' => 'myapi'], function () use ($statusController) {
-               Route::get('status', $statusController.'@getStatus');
+               Route::get('status', $statusController.'@status');
            });
        });
    }
@@ -300,21 +351,21 @@ front công khai `api/front/review/list`. Làm theo đúng thứ tự:
 
    ```bash
    php artisan route:clear
-   php artisan route:list --path=api/front/myapi
+   php artisan route:list --path=api/v2/front/myapi
    ```
 
-   Nếu thành công, bạn thấy `GET | api/front/myapi/status`.
+   Nếu thành công, bạn thấy `GET | api/v2/front/myapi/status`.
 
 4. **Gọi thử**:
 
    ```bash
-   curl -X GET "https://shop.example.com/api/front/myapi/status" -H "Accept: application/json"
+   curl -X GET "https://shop.example.com/api/v2/front/myapi/status" -H "Accept: application/json"
    ```
 
    Kết quả mong đợi:
 
    ```json
-   { "error": 0, "status": "ok", "time": "2026-07-30 10:00:00" }
+   { "data": { "status": "ok", "time": "2026-07-30 10:00:00" } }
    ```
 
 ---
@@ -332,18 +383,19 @@ nó từ `Provider.php` của plugin:
 ```
 
 ```php
-// app/GP247/Plugins/MyApi/Routes/api.php — chỉ khai báo prefix và route
+// app/GP247/Plugins/MyApi/Routes/api.php — declare only the prefix and the routes
 use Illuminate\Support\Facades\Route;
 
-Route::group(['prefix' => GP247_API_FRONT_PREFIX], function () {
+Route::group(['prefix' => GP247_API_V2_FRONT_PREFIX], function () {
     $statusController = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\StatusController::class);
-    Route::get('myapi/status', $statusController.'@getStatus');
+    Route::get('myapi/status', $statusController.'@status');
 });
 ```
 
 `ApiRouteRegistrar` tự bọc `GP247_API_MIDDLEWARE` (JSON, API Connection, giới hạn tần suất), không đăng ký gì
 khi `GP247_API_MODE` tắt, và không đăng ký lại khi site đã `route:cache`. Hợp đồng lỗi `{error, msg, code}` áp
-dụng cho mọi đường dẫn dưới `api/core`, `api/front`, `api/v2/core`, `api/v2/front`.
+dụng cho mọi đường dẫn dưới `api/core`, `api/front`, `api/v2/core`, `api/v2/front`; route đặt dưới tiền tố riêng
+(ngoài bốn tiền tố này) giữ thân lỗi mặc định của Laravel và chỉ theo công tắc tổng của màn API.
 
 ---
 
@@ -352,21 +404,22 @@ dụng cho mọi đường dẫn dưới `api/core`, `api/front`, `api/v2/core`,
 Nếu API của bạn trả dữ liệu riêng tư (đơn hàng của khách, dữ liệu admin…), phải bọc bằng guard
 Sanctum tương ứng. Trong controller, lấy người dùng đang đăng nhập qua `$request->user()`.
 
-Ví dụ route admin cần đăng nhập:
+Ví dụ route khách hàng cần đăng nhập (`api.customer.active` của gói shop từ chối token của tài khoản đã bị khoá
+sau khi cấp token):
 
 ```php
+use GP247\Core\Api\Support\ApiAbilities;
+
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,   // => api/core
-    'middleware' => [
-        'auth:admin-api',
-        'ability:'.config('gp247-config.api.auth.api_scope_admin')
-                 .','.config('gp247-config.api.auth.api_scope_admin_supper'),
-    ],
+    'prefix'     => GP247_API_V2_FRONT_PREFIX,   // => api/v2/front
+    'middleware' => ['auth:customer-api', ApiAbilities::customer(), 'api.customer.active'],
 ], function () {
-    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport');
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Front\WishlistController::class);
+    Route::get('member/wishlist/list', $ctrl.'@wishlistList');
 });
 ```
+
+Với route quản trị, xem mục 5.1.
 
 Client phải gửi token đã lấy từ `login` trong header:
 
@@ -375,29 +428,31 @@ Authorization: Bearer <access_token>
 ```
 
 > Việc **cấp token** (`createToken`) và **thu hồi token** (`logout`) đã có sẵn trong các controller
-> đăng nhập của core/shop. Bạn chỉ cần **tái dùng** endpoint `api/core/login` / `api/front/login` để
-> lấy token, không cần tự viết lại phần đăng nhập trừ khi có nhu cầu đặc biệt.
+> đăng nhập của core/shop. Bạn chỉ cần **tái dùng** endpoint `api/v2/core/login` / `api/v2/front/login` để
+> lấy token (v2 có thêm `with_refresh` để nhận refresh token, `login/challenge` cho bước xác thực đăng nhập và
+> `refresh` — xem [Giới thiệu API, mục 2](./api-introduction_vi.md)), không cần tự viết lại phần đăng nhập trừ khi
+> có nhu cầu đặc biệt.
 
 ### 5.1. Endpoint quản trị: khai báo màn admin và giới hạn theo cửa hàng
 
 > ℹ️ **Có từ:** gp247/core 3.2.3
 
-Token admin **không** tự cho phép xem mọi dữ liệu. Mỗi route dưới `GP247_API_CORE_PREFIX` phải khai
+Token admin **không** tự cho phép xem mọi dữ liệu. Mỗi route dưới `GP247_API_V2_CORE_PREFIX` phải khai
 báo **màn hình admin** tương ứng bằng middleware `api.admin:<tên route admin>`; GP247 chỉ cho gọi
 khi tài khoản có quyền mở màn hình đó (cùng phân quyền với trang quản trị), áp rào chặn của plugin
 đa cửa hàng và xác định cửa hàng của tài khoản:
 
 ```php
 Route::group([
-    'prefix'     => GP247_API_CORE_PREFIX,
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
     'middleware' => [
         'auth:admin-api',
-        \GP247\Core\Api\Support\ApiAbilities::admin(),   // từ 3.3.0; bản cũ hơn: 'ability:admin,admin-supper'
+        \GP247\Core\Api\Support\ApiAbilities::admin(),   // since 3.3.0
     ],
 ], function () {
     $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportController::class);
-    Route::get('report/sales', $ctrl.'@getSalesReport')
-        ->middleware('api.admin:admin_report.sales');   // tên route của màn admin tương ứng
+    Route::get('report/sales', $ctrl.'@salesList')
+        ->middleware('api.admin:admin_report.sales');   // route name of the matching admin screen
 });
 ```
 
@@ -405,8 +460,10 @@ Trong controller, luôn lọc truy vấn theo cửa hàng của tài khoản:
 
 ```php
 use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
 
-$rows = ApiStoreScope::apply(ShopOrder::query())->jsonPaginate();
+return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
+    fn ($o) => ['id' => $o->id, 'total' => $o->total, 'status' => (int) $o->status]);
 ```
 
 Gọi `ApiStoreScope` trên route thiếu `api.admin` sẽ báo lỗi (an toàn mặc định) — đây là cách GP247
@@ -416,16 +473,16 @@ nhắc bạn đã quên khai báo quyền.
 
 ## 6. Danh sách kiểm tra trước khi coi là "xong"
 
-- [ ] Dùng **hằng số** `GP247_API_CORE_PREFIX` / `GP247_API_FRONT_PREFIX`, không hardcode chuỗi.
+- [ ] Endpoint mới nằm dưới **v2** — dùng **hằng số** `GP247_API_V2_CORE_PREFIX` / `GP247_API_V2_FRONT_PREFIX`, không hardcode chuỗi, không thêm vào v1.
 - [ ] Controller trỏ qua `gp247_namespace(...)` để cho phép override.
-- [ ] Route trong plugin **tự bọc** `GP247_API_MIDDLEWARE` + `prefix` (mục 4).
+- [ ] Route trong plugin **tự bọc** `GP247_API_MIDDLEWARE` + `prefix` (mục 4) hoặc đăng ký qua `ApiRouteRegistrar` (mục 4.1).
 - [ ] Có `$request->validate([...])` cho mọi input; **không** ghép chuỗi SQL (dùng Eloquent).
-- [ ] Danh sách dùng `->jsonPaginate()`; mọi phản hồi qua `response()->json(...)`.
-- [ ] Endpoint riêng tư có `auth:admin-api`/`auth:customer-api` + `ability:...` đúng scope.
+- [ ] Danh sách dùng `ApiQuery::page()` (chỉ khai báo các `filter`/`sort` cần thiết); một bản ghi dùng `ApiQuery::one()`.
+- [ ] Endpoint riêng tư có `auth:admin-api` + `ApiAbilities::admin()` hoặc `auth:customer-api` + `ApiAbilities::customer()` + `api.customer.active`.
 - [ ] Endpoint quản trị có `api.admin:<tên route admin>` và lọc dữ liệu bằng `ApiStoreScope::apply()` (mục 5.1).
-- [ ] Lỗi trả qua `ApiErrorResponder` (mã HTTP đúng nghĩa); dữ liệu công khai lọc trường bằng `ApiFieldAllowlist`.
+- [ ] Lỗi trả qua `ApiErrorResponder` (mã HTTP đúng nghĩa); hàm `$toArray` chỉ trả các trường đã khai báo.
 - [ ] **Không sửa** `vendor/gp247/*` (trừ khi bạn là maintainer của gói đó).
-- [ ] Mỗi method có PHPDoc tiếng Anh kèm tag `@aidlc-unit` / `@aidlc-story` (theo coding-style).
+- [ ] Mỗi method có PHPDoc tiếng Anh.
 - [ ] Đã `php artisan route:clear` và xác nhận route hiện ra trong `php artisan route:list`.
 - [ ] Plugin thêm bước xác thực đăng nhập: cài `LoginChallenge`, không trả bí mật trong `describe()` (mục 7).
 
@@ -482,7 +539,7 @@ config(['gp247-config.api.login_challenge.customer' => array_merge(
 Core lo phần còn lại: vé dùng một lần (5 phút, lưu dạng băm trong cache mặc định — chạy được trên shared host), giới hạn số lần
 thử (dùng chung bộ đếm đăng nhập; mỗi vé bị huỷ sau 5 lần sai, từ bất kỳ IP nào), cấp token/phiên khi `verify()` trả `true`. Plugin ném lỗi hoặc khai báo sai class → đăng nhập
 bị **từ chối** (không bao giờ bỏ qua bước xác thực). Đăng ký cho quản trị viên: khoá `gp247-config.api.login_challenge.admin`.
-Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 10.4](./api-introduction_vi.md).
+Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 9.4](./api-introduction_vi.md).
 
 ## 8. Plugin xử lý đơn hàng: đơn từ ứng dụng đi qua cùng điểm cắm
 
@@ -520,7 +577,7 @@ Ba điều cần nhớ khi plugin chạy trong request API:
 - **"Đơn thành công" không có nghĩa "đã trả tiền"**: với đơn qua API, sự kiện chạy ngay khi đặt. Việc chỉ làm *sau khi đã trả tiền*
   (giao hàng số, mở khoá dịch vụ…) hãy dựa vào trạng thái thanh toán của đơn.
 
-Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 11](./api-introduction_vi.md).
+Phía ứng dụng gọi thế nào: [Giới thiệu API — mục 10](./api-introduction_vi.md).
 
 ---
 
@@ -543,11 +600,12 @@ kích hoạt.
 → Vì route plugin nạp ngoài nhóm middleware API. Bạn phải **tự bọc** `'middleware' => GP247_API_MIDDLEWARE`
 như ở mục 4. Đây là lỗi hay gặp nhất khi thêm API từ plugin.
 
-**Câu 4: `jsonPaginate()` khác gì `paginate()` của Laravel?**
+**Câu 4: `ApiQuery::page()` khác gì `paginate()` của Laravel?**
 
-→ `jsonPaginate()` (từ gói `spatie/laravel-json-api-paginate`) trả về cấu trúc phân trang thân thiện
-với chuẩn JSON:API và cho client điều khiển kích thước trang qua tham số. Hãy dùng nó cho các endpoint
-danh sách để đồng bộ với các API sẵn có của GP247.
+→ `ApiQuery::page()` dùng `paginate()` bên dưới nhưng thêm phần chuẩn của API v2: chỉ nhận các `filter[...]` / `sort`
+bạn khai báo (tên lạ trả `422`), giới hạn `page[size]` tối đa 100, luôn sắp thêm theo khoá chính để các trang không
+trùng/sót bản ghi, và trả đúng dạng `{data, meta, links}`. Hãy dùng nó cho các endpoint danh sách để đồng bộ với các
+API v2 sẵn có của GP247.
 
 **Câu 5: Làm sao trả về lỗi cho đúng chuẩn?**
 
@@ -569,7 +627,7 @@ admin bật.
 
 **Câu 8: Tôi có phải tự viết endpoint đăng nhập/cấp token không?**
 
-→ Không. Hãy tái dùng `api/core/login` (admin) hoặc `api/front/login` (khách) để lấy token, rồi bảo vệ
+→ Không. Hãy tái dùng `api/v2/core/login` (admin) hoặc `api/v2/front/login` (khách) để lấy token, rồi bảo vệ
 endpoint mới bằng `auth:admin-api`/`auth:customer-api`. Chỉ tự viết login khi có luồng xác thực đặc thù.
 
 **Câu 9: Controller API nên kế thừa class nào?**
@@ -590,7 +648,7 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 | `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
+| 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | Endpoint mới đặt dưới tiền tố v2 (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`), dùng `ApiQuery` cho phản hồi `{data, meta, links}`; v1 đóng băng (mục 1–6); `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
 | 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
 
