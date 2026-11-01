@@ -51,7 +51,7 @@ flowchart LR
 - [3. Permissions](#3-permissions-and-data-scope-of-the-core-api) — why a valid token can still get `403`
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
-- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, handle errors
+- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, webhooks, handle errors
 - [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes, customer lock for ERP / CRM / warehouse tools
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
@@ -258,6 +258,7 @@ the API has one more switch, **Ordering through the API**, under the v2 front gr
 - A **fresh install** turns **v2** on. A site **upgraded** from an older version keeps every group that was on.
 - **Event log for sync (ERP)** is off on both fresh installs and upgraded sites. While it is off no event is recorded, and
   reading `api/v2/core/events` answers `409 event_log_disabled`. Turn it on only when an ERP or sync tool reads it.
+  Webhooks (section 6) deliver the events of this log, so they also need this switch on.
 - The environment variable `GP247_API_MODE=0` is still the **server-level switch**: then no API endpoint exists and the
   switches on the screen are locked — meant for hosting/technical staff who want the API off for good.
 - Plugin APIs that use their own mechanism (for example the MCP server) are **not** covered by these switches and have
@@ -500,6 +501,109 @@ Each event type belongs to an admin screen: an account can read that type only w
   `updated_at` — so the `updated_since` lists also show only real changes.
 - A change written **straight into the database with SQL** (bypassing the shop) is not seen. Plugin developers should save
   data through the shop's models so that the ERP sees the change.
+
+### Webhooks (receive events as they happen)
+
+> ℹ️ **Available since:** gp247/core 3.7.0
+
+Instead of only polling `events`, an ERP can register a **webhook**: the site sends each event of the log to the ERP's
+address as soon as it happens. Webhooks make delivery **faster**, but they do not replace reading the log — see
+[Duplicates, order and catching up missed events](#duplicates-order-and-catching-up-missed-events).
+
+#### Registering a webhook
+
+On the API management screen, block **Webhooks for sync (ERP)** — only **administrators** see and manage this block.
+Webhooks deliver the events of the log, so the **Event log for sync (ERP)** switch (section 5) must be on.
+
+| Item | Meaning |
+| --- | --- |
+| Receiving URL | An `https` URL pointing to a public internet address. Refused: the local machine, internal / private networks, link-local or cloud metadata addresses, a host name resolving to such an address, a URL with `user:password`, a port below 1024 other than 443 |
+| Event types to follow | Checkboxes listing every registered event type (for example the [8 store types](#store-event-types)) |
+| On / off | Pauses delivery without deleting the webhook |
+
+- On creation the screen shows the **signing secret only once** — copy it right away. The secret is stored encrypted; if
+  you lose it, generate a new one (the old secret stops working at once).
+- The block lists the webhooks and the **last 20 deliveries** of each: event id, status (waiting / will retry, delivered,
+  given up), number of attempts, HTTP code or error of the last attempt.
+- A webhook receives the events of **every store** (administrators see every store) — to follow a single store, filter on
+  `store_id` in the body you receive.
+- Upgrading sites must run `php artisan gp247:update` (creates the webhook tables).
+
+#### What is sent
+
+Each event is one `HTTP POST` request. The body is JSON **exactly equal to one item** of `data` from
+`GET api/v2/core/events` (`id`, `type`, `subject_id`, `store_id`, `source`, `actor`, `data`, `occurred_at` — see the field
+table in [Event log](#event-log-events)).
+
+| Header | Value |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `User-Agent` | `GP247-Webhook/1.0` |
+| `X-GP247-Event-Id` | The event's `id` |
+| `X-GP247-Event-Type` | The event's `type` |
+| `X-GP247-Signature` | `t=<unix time>,v1=<signature>` — the signature is the HMAC-SHA256 (hex) of the string `<t>.<raw request body>`, signed with the secret |
+
+#### Verifying the signature
+
+Before trusting the body: split `t` and `v1` out of the `X-GP247-Signature` header, recompute the HMAC over `t` + `.` + the
+**raw** request body (before decoding the JSON), compare in constant time (`hash_equals`), and refuse when `t` is more than
+**5 minutes** away from the current time (stops an old request from being replayed).
+
+```php
+$secret = getenv('WEBHOOK_SECRET');            // secret copied when the webhook was created, kept in the ERP's config
+$body   = file_get_contents('php://input');     // raw request body
+
+$sig = [];
+foreach (explode(',', $_SERVER['HTTP_X_GP247_SIGNATURE'] ?? '') as $pair) {
+    [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+    $sig[$key] = $value;
+}
+$t  = $sig['t'] ?? '';
+$v1 = $sig['v1'] ?? '';
+
+$valid = ctype_digit($t)
+    && abs(time() - (int) $t) <= 300
+    && hash_equals(hash_hmac('sha256', $t . '.' . $body, $secret), $v1);
+
+if (! $valid) {
+    http_response_code(401);
+    exit;
+}
+
+// Store the event (skip it if X-GP247-Event-Id is already known), handle it later, answer right away
+http_response_code(204);
+```
+
+#### Answering and retries
+
+```mermaid
+flowchart TD
+    A["Event recorded<br/>in the log"] --> B["Site finishes answering a request<br/>then POSTs to the webhook"]
+    B --> C{"ERP answers 2xx?"}
+    C -- "yes" --> D["Delivered"]
+    C -- "no" --> E["Wait for the next attempt:<br/>1 minute, 5 minutes, 30 minutes,<br/>2 hours, 12 hours"]
+    E --> B
+    C -- "6th attempt<br/>still fails" --> F["Given up — the ERP catches up<br/>with GET events"]
+```
+
+- Answer **any 2xx** quickly to acknowledge — store the event and handle it later. Any other answer, including a redirect
+  (the site **never** follows redirects), counts as a failure.
+- After a failure the site retries after 1 minute, 5 minutes, 30 minutes, 2 hours, 12 hours; when the 6th attempt still fails,
+  the delivery is **given up** (shown on the screen).
+- A webhook that fails **50 times in a row** is **turned off automatically** (the screen says why); turning it back on resets
+  the count.
+- **No cron or worker needed:** sends run right after the site has answered a request — the request that caused the event,
+  or any later request of the site while a retry is due — at most 5 sends and about 2 seconds per request. Consequence: on a
+  site with very little traffic a retry waits for the next visit; delivery time is **not guaranteed**.
+- **PHP cURL is required** on the server (to connect to exactly the address that was checked). Without cURL nothing is sent; the delivery log shows `curl_missing`.
+
+#### Duplicates, order and catching up missed events
+
+- The same event may arrive **more than once** (for example the ERP saved it but answered after the timeout) and **not always
+  in order** → de-duplicate by `X-GP247-Event-Id` and sort by `id`.
+- Webhooks are a **speed-up**, not the source of truth: keep the `GET api/v2/core/events` loop with the `after` cursor (diagram
+  in [Event log](#event-log-events)) to catch up anything missed or given up — with webhooks that loop can simply run less
+  often.
 
 ### Error codes
 
@@ -1492,7 +1596,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Lock / unlock a customer through the admin API: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, any other field → `422`; change permission on the Customer list screen; a lock refuses the customer's API tokens at once and signs the customer out on the storefront; optional `Idempotency-Key`, shared write limit) (sections 3, 7); the event log has 8 store event types: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — recorded whatever the source of the change, each type readable with the permission of its admin screen (section 6); editing a product's / category's texts now moves `updated_at`, while saving without changes and product page views do not (section 6) |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Lock / unlock a customer through the admin API: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, any other field → `422`; change permission on the Customer list screen; a lock refuses the customer's API tokens at once and signs the customer out on the storefront; optional `Idempotency-Key`, shared write limit) (sections 3, 7); the event log has 8 store event types: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — recorded whatever the source of the change, each type readable with the permission of its admin screen (section 6); editing a product's / category's texts now moves `updated_at`, while saving without changes and product page views do not (section 6); webhooks for the ERP: each event of the log is `POST`ed right away to an `https` URL registered on the API management screen (administrators only, needs the event log on), signed with `X-GP247-Signature`, retried up to 5 times then given up, no cron needed (sections 5, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0; order writes through the admin API: gp247/core 3.7.0, gp247/shop 3.6.0; product and stock writes through the admin API: gp247/shop 3.6.0 | Product and stock writes through the admin API: `PATCH api/v2/core/product/{id}` (selling price, cost price, status — following the field switches of the product settings), `product/{id}/stock` (`delta` receives/issues atomically, never below 0, sold counter untouched; `set` after a stock count, administrators only), `stock/batch` (1–100 lines, one result per line) — change permission on the Product list screen, `Idempotency-Key` required for stock writes, `422 stock_would_be_negative` / `stock_managed_by_components` (sections 3, 6, 7); Order writes through the admin API for ERP / warehouse tools: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (shipping status + manual shipment tracking number), `order/{id}/notes` — change permission on the Order list screen, write limit 300 per minute per account (`GP247_API_WRITE_THROTTLE`), optional `Idempotency-Key` (retry ⇒ first result; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` before `gp247:update`) (sections 3, 6, 7); Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |

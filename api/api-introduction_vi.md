@@ -50,7 +50,7 @@ flowchart LR
 - [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
-- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, xử lý lỗi
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, webhook, xử lý lỗi
 - [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng, sản phẩm & tồn kho, khoá khách hàng cho ERP / CRM / phần mềm kho
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
@@ -247,7 +247,8 @@ có thêm công tắc **Đặt đơn qua API** dưới nhóm v2 front (mục 10.
   3.4.0; bản 3.3.1 trả `401` nếu thiếu token)*.
 - **Cài mới** bật sẵn **v2**. Site **nâng cấp** từ bản cũ giữ nguyên mọi nhóm đang bật.
 - **Nhật ký sự kiện cho đồng bộ (ERP)** tắt sẵn trên cả site cài mới lẫn site nâng cấp. Khi tắt, không có sự kiện nào được
-  ghi và đọc `api/v2/core/events` trả `409 event_log_disabled`. Chỉ bật khi có ERP hay công cụ đồng bộ đọc nó.
+  ghi và đọc `api/v2/core/events` trả `409 event_log_disabled`. Chỉ bật khi có ERP hay công cụ đồng bộ đọc nó. Webhook
+  (mục 6) gửi đi các sự kiện của nhật ký này nên cũng cần công tắc này bật.
 - Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
   trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
 - API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
@@ -486,6 +487,108 @@ Mỗi loại sự kiện gắn với một màn quản trị: tài khoản chỉ
   `updated_since` cũng chỉ trả thay đổi thật.
 - Thay đổi ghi **thẳng vào cơ sở dữ liệu bằng SQL** (không qua cửa hàng) không được nhận ra. Lập trình viên plugin hãy lưu
   dữ liệu qua model của cửa hàng để ERP thấy thay đổi.
+
+### Webhook (nhận sự kiện ngay khi xảy ra)
+
+> ℹ️ **Có từ:** gp247/core 3.7.0
+
+Thay vì chỉ hỏi `events` định kỳ, ERP có thể đăng ký một **webhook**: site gửi ngay từng sự kiện của nhật ký tới địa chỉ
+của ERP khi sự kiện xảy ra. Webhook giúp nhận **nhanh hơn**, nhưng không thay thế việc đọc nhật ký — xem
+[Trùng lặp, thứ tự và bù sự kiện bị lỡ](#trùng-lặp-thứ-tự-và-bù-sự-kiện-bị-lỡ).
+
+#### Đăng ký webhook
+
+Trên màn quản lý API, khối **Webhook cho đồng bộ (ERP)** — chỉ **administrator** thấy và quản lý khối này. Webhook gửi sự
+kiện của nhật ký, nên công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** (mục 5) phải đang bật.
+
+| Mục | Ý nghĩa |
+| --- | --- |
+| Địa chỉ nhận | URL `https` trỏ tới một địa chỉ công khai trên internet. Bị từ chối: máy cục bộ, mạng nội bộ / mạng riêng, địa chỉ link-local hay địa chỉ metadata của cloud, tên máy phân giải ra các địa chỉ đó, URL có `user:password`, cổng dưới 1024 khác 443 |
+| Loại sự kiện theo dõi | Ô chọn liệt kê mọi loại sự kiện đã đăng ký (ví dụ [8 loại của cửa hàng](#loại-sự-kiện-của-cửa-hàng)) |
+| Bật / tắt | Tạm ngưng gửi mà không xoá webhook |
+
+- Lúc tạo, màn hiện **khoá ký (secret) một lần duy nhất** — chép ngay. Khoá được lưu mã hoá; nếu mất, sinh lại khoá mới
+  (khoá cũ hết hiệu lực ngay).
+- Khối liệt kê các webhook và **20 lần gửi gần nhất** của mỗi webhook: mã sự kiện, trạng thái (đang chờ / sẽ thử lại, đã gửi,
+  đã bỏ), số lần thử, mã HTTP hoặc lỗi của lần thử cuối.
+- Webhook nhận sự kiện của **mọi cửa hàng** (administrator thấy mọi cửa hàng) — cần riêng một cửa hàng thì lọc theo `store_id`
+  trong nội dung nhận được.
+- Site nâng cấp phải chạy `php artisan gp247:update` (tạo bảng của webhook).
+
+#### Nội dung gửi đi
+
+Mỗi sự kiện là một yêu cầu `HTTP POST`. Thân yêu cầu là JSON **đúng bằng một phần tử** trong `data` của
+`GET api/v2/core/events` (`id`, `type`, `subject_id`, `store_id`, `source`, `actor`, `data`, `occurred_at` — xem bảng trường ở
+[Nhật ký sự kiện](#nhật-ký-sự-kiện-events)).
+
+| Header | Giá trị |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `User-Agent` | `GP247-Webhook/1.0` |
+| `X-GP247-Event-Id` | `id` của sự kiện |
+| `X-GP247-Event-Type` | `type` của sự kiện |
+| `X-GP247-Signature` | `t=<thời điểm unix>,v1=<chữ ký>` — chữ ký là HMAC-SHA256 (dạng hex) của chuỗi `<t>.<thân yêu cầu nguyên bản>`, ký bằng khoá ký |
+
+#### Kiểm chữ ký
+
+Trước khi tin nội dung: tách `t` và `v1` từ header `X-GP247-Signature`, tính lại HMAC trên `t` + `.` + thân yêu cầu
+**nguyên bản** (chưa giải mã JSON), so sánh bằng hàm so sánh không lộ thời gian (`hash_equals`), và từ chối khi `t` lệch quá
+**5 phút** so với giờ hiện tại (chống gửi lại một yêu cầu cũ).
+
+```php
+$secret = getenv('WEBHOOK_SECRET');            // khoá ký đã chép lúc tạo webhook, giữ trong cấu hình của ERP
+$body   = file_get_contents('php://input');     // thân yêu cầu nguyên bản
+
+$sig = [];
+foreach (explode(',', $_SERVER['HTTP_X_GP247_SIGNATURE'] ?? '') as $pair) {
+    [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+    $sig[$key] = $value;
+}
+$t  = $sig['t'] ?? '';
+$v1 = $sig['v1'] ?? '';
+
+$valid = ctype_digit($t)
+    && abs(time() - (int) $t) <= 300
+    && hash_equals(hash_hmac('sha256', $t . '.' . $body, $secret), $v1);
+
+if (! $valid) {
+    http_response_code(401);
+    exit;
+}
+
+// Lưu sự kiện (bỏ qua nếu X-GP247-Event-Id đã có), xử lý sau, trả lời ngay
+http_response_code(204);
+```
+
+#### Trả lời và gửi lại
+
+```mermaid
+flowchart TD
+    A["Sự kiện được ghi<br/>vào nhật ký"] --> B["Site trả lời xong một yêu cầu<br/>rồi gửi POST tới webhook"]
+    B --> C{"ERP trả 2xx?"}
+    C -- "có" --> D["Đã gửi"]
+    C -- "không" --> E["Chờ lần thử kế tiếp:<br/>1 phút, 5 phút, 30 phút,<br/>2 giờ, 12 giờ"]
+    E --> B
+    C -- "lần thử thứ 6<br/>vẫn thất bại" --> F["Đã bỏ — ERP bù bằng<br/>GET events"]
+```
+
+- Trả **bất kỳ mã 2xx** thật nhanh để xác nhận đã nhận — lưu sự kiện rồi xử lý sau. Mọi mã khác, kể cả chuyển hướng (site
+  **không bao giờ** đi theo chuyển hướng), đều tính là thất bại.
+- Thất bại thì gửi lại sau 1 phút, 5 phút, 30 phút, 2 giờ, 12 giờ; lần thử thứ 6 vẫn thất bại thì lần gửi đó **bị bỏ** (hiện
+  trên màn).
+- Webhook thất bại **50 lần liên tiếp** bị **tự tắt** (màn ghi rõ lý do); bật lại thì bộ đếm về 0.
+- **Không cần cron hay worker:** việc gửi chạy ngay sau khi site đã trả lời một yêu cầu — chính yêu cầu gây ra sự kiện, hoặc
+  bất kỳ yêu cầu nào sau đó của site khi đến hạn gửi lại — tối đa 5 lần gửi và khoảng 2 giây cho mỗi yêu cầu. Hệ quả: site rất
+  ít lượt truy cập thì lần gửi lại phải chờ tới lượt truy cập kế tiếp; thời điểm nhận **không được bảo đảm**.
+- **Cần PHP cURL** trên máy chủ (để kết nối đúng địa chỉ đã kiểm). Thiếu cURL thì không gửi; nhật ký giao ghi `curl_missing`.
+
+#### Trùng lặp, thứ tự và bù sự kiện bị lỡ
+
+- Cùng một sự kiện có thể tới **nhiều hơn một lần** (ví dụ ERP đã lưu nhưng trả lời quá thời gian chờ) và **không phải lúc nào
+  cũng đúng thứ tự** → khử trùng theo `X-GP247-Event-Id` và sắp xếp theo `id`.
+- Webhook là để **nhận nhanh hơn**, không phải nguồn dữ liệu chuẩn: vẫn giữ vòng đọc `GET api/v2/core/events` bằng con trỏ
+  `after` (sơ đồ ở [Nhật ký sự kiện](#nhật-ký-sự-kiện-events)) để bù những sự kiện bị lỡ hoặc đã bị bỏ — có webhook thì vòng
+  đó chạy thưa hơn được.
 
 ### Mã lỗi
 
@@ -1452,7 +1555,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Khoá / mở khoá khách hàng qua API quản trị: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, trường khác → `422`; quyền sửa trên màn Danh sách khách hàng; khoá làm token API của khách bị từ chối ngay và đăng xuất khách trên website; `Idempotency-Key` tuỳ chọn, chung giới hạn ghi) (mục 3, 7); nhật ký sự kiện có 8 loại sự kiện của cửa hàng: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — ghi bất kể nguồn thay đổi, mỗi loại đọc được theo quyền màn quản trị tương ứng (mục 6); sửa phần chữ của sản phẩm / danh mục nay đổi `updated_at`, lưu không đổi gì và lượt xem trang sản phẩm thì không (mục 6) |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Khoá / mở khoá khách hàng qua API quản trị: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, trường khác → `422`; quyền sửa trên màn Danh sách khách hàng; khoá làm token API của khách bị từ chối ngay và đăng xuất khách trên website; `Idempotency-Key` tuỳ chọn, chung giới hạn ghi) (mục 3, 7); nhật ký sự kiện có 8 loại sự kiện của cửa hàng: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — ghi bất kể nguồn thay đổi, mỗi loại đọc được theo quyền màn quản trị tương ứng (mục 6); sửa phần chữ của sản phẩm / danh mục nay đổi `updated_at`, lưu không đổi gì và lượt xem trang sản phẩm thì không (mục 6); webhook cho ERP: mỗi sự kiện của nhật ký được `POST` ngay tới URL `https` đăng ký trên màn quản lý API (chỉ administrator, cần bật nhật ký sự kiện), ký bằng `X-GP247-Signature`, gửi lại tối đa 5 lần rồi bỏ, không cần cron (mục 5, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0; ghi đơn hàng qua API quản trị: gp247/core 3.7.0, gp247/shop 3.6.0; ghi sản phẩm & tồn kho qua API quản trị: gp247/shop 3.6.0 | Ghi sản phẩm & tồn kho qua API quản trị: `PATCH api/v2/core/product/{id}` (giá bán, giá vốn, trạng thái — theo công tắc trường của Cấu hình sản phẩm), `product/{id}/stock` (`delta` nhập/xuất nguyên tử, không xuống dưới 0, không đổi số đã bán; `set` sau kiểm kê, chỉ administrator), `stock/batch` (1–100 dòng, kết quả theo từng dòng) — quyền sửa trên màn Danh sách sản phẩm, `Idempotency-Key` bắt buộc cho lệnh tồn kho, `422 stock_would_be_negative` / `stock_managed_by_components` (mục 3, 6, 7); Ghi đơn hàng qua API quản trị cho ERP / phần mềm kho: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (trạng thái giao hàng + mã vận đơn thủ công), `order/{id}/notes` — quyền sửa trên màn Danh sách đơn hàng, giới hạn ghi 300 lần/phút mỗi tài khoản (`GP247_API_WRITE_THROTTLE`), `Idempotency-Key` tuỳ chọn (gửi lại ⇒ kết quả lần đầu; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` khi chưa `gp247:update`) (mục 3, 6, 7); Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Đổi/đặt lại mật khẩu **quản trị viên** (màn Người dùng, Cài đặt tài khoản, quên mật khẩu) đăng xuất mọi token và phiên API của admin đó |
