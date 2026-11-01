@@ -51,7 +51,7 @@ flowchart LR
 - [3. Permissions](#3-permissions-and-data-scope-of-the-core-api) — why a valid token can still get `403`
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
-- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, webhooks, handle errors
+- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, webhooks, ERP sync from start to finish, handle errors
 - [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes, customer lock for ERP / CRM / warehouse tools
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
@@ -604,6 +604,39 @@ flowchart TD
 - Webhooks are a **speed-up**, not the source of truth: keep the `GET api/v2/core/events` loop with the `after` cursor (diagram
   in [Event log](#event-log-events)) to catch up anything missed or given up — with webhooks that loop can simply run less
   often.
+
+### ERP sync from start to finish
+
+> ℹ️ **Available since:** gp247/core 3.7.0, gp247/shop 3.6.0
+
+A short checklist for an ERP or sync tool, in the order to do it. Each step points to the section that describes it —
+read the parameters, limits and error codes there.
+
+1. **Turn the event log on:** on the API management screen, turn on **Event log for sync (ERP)**
+   ([section 5](#5-turning-the-api-on-and-off)) — before the first sync, because changes made while it is off never reach
+   the log. To receive events as they happen, also register a webhook (administrators only —
+   [Registering a webhook](#registering-a-webhook)).
+2. **First full sync:** read each admin list you need (`product/list`, `order/list`, `customer/list`, `category/list`, …)
+   with `updated_since` set far in the past (for example `2000-01-01`), following `page[after]` (`links.next`) until
+   `has_more` is `false`, then keep the `meta.sync_until` of each list ([Syncing changes](#syncing-changes-updated_since)).
+3. **Get the event cursor:** call `GET api/v2/core/events` once **without `after`** (it starts from the oldest event still
+   kept), handle it as in step 4, then keep `meta.next_after` as the cursor ([Event log](#event-log-events)).
+4. **Keep following:** read the events after the cursor (`after` = the cursor), handle the whole page before saving
+   `meta.next_after`; when `has_more` is `false`, wait a while and read again. With a webhook, keep this loop anyway (less
+   often) to catch up missed events ([Duplicates, order and catching up missed events](#duplicates-order-and-catching-up-missed-events)).
+   For each event:
+   - when you need the full record, read it again through its detail endpoint (for example `order/detail/{id}`) — `data`
+     carries only a few values;
+   - `product.deleted` → delete that product on the ERP side ([Store event types](#store-event-types));
+   - skip events your own writes caused: `source` is `api` and `actor` is the admin account the ERP uses.
+5. **Write back to the site:** order status, shipping and notes; product price and stock; customer lock
+   ([Writing data through the admin API](#writing-data-through-the-admin-api)). Send a new `Idempotency-Key` with **every**
+   write (required for stock writes, worth sending on the others too —
+   [Retrying safely with `Idempotency-Key`](#retrying-safely-with-idempotency-key)); on `429`, wait as `Retry-After` says
+   ([Write rate limit](#write-rate-limit)).
+6. **When the cursor is too old:** if reading events answers `410 cursor_expired`, resync with `updated_since` from your saved
+   `sync_until` (minus 5 seconds, as in the sync loop), then read the events again from the start, without `after`
+   ([Error codes](#error-codes)). On top of that, re-run step 2 from the latest `sync_until` from time to time as a safety net.
 
 ### Error codes
 

@@ -469,6 +469,115 @@ return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
 Gọi `ApiStoreScope` trên route thiếu `api.admin` sẽ báo lỗi (an toàn mặc định) — đây là cách GP247
 nhắc bạn đã quên khai báo quyền.
 
+### 5.2. Endpoint ghi quản trị, danh sách đồng bộ và sự kiện
+
+> ℹ️ **Có từ:** gp247/core 3.7.0
+
+Phần này dành cho plugin muốn ERP hay công cụ đồng bộ **ghi** dữ liệu của plugin, **đọc thay đổi** theo `updated_since` và
+**nhận sự kiện** của plugin — cùng cơ chế các endpoint có sẵn đang dùng (phía ứng dụng gọi thế nào:
+[Giới thiệu API — mục 6, 7](./api-introduction_vi.md)).
+
+**a) Endpoint ghi quản trị.** Khai báo `api.admin:<tên route màn admin>,write`: chỉ cho gọi khi tài khoản **được thay đổi dữ
+liệu** trên màn đó — kiểm tra y như các thao tác của chính màn hình; tài khoản chỉ được xem nhận `403`. Thêm hai middleware:
+
+| Middleware | Tác dụng |
+| --- | --- |
+| `throttle:gp247-api-write` | Giới hạn ghi theo **từng tài khoản quản trị**, mặc định 300 yêu cầu / phút (biến môi trường `GP247_API_WRITE_THROTTLE`, dạng `số-yêu-cầu,số-phút`); vượt → `429` |
+| `api.idempotent` | **Bắt buộc** header `Idempotency-Key` (thiếu → `400 idempotency_key_required`). Gửi lại cùng khoá, cùng thân → trả lại kết quả lần đầu kèm header `Idempotent-Replayed: true`, không chạy lại; cùng khoá, thân khác → `409 idempotency_key_reused` |
+| `api.idempotent:optional` | Nhận khoá nếu có, không bắt buộc. Dùng `api.idempotent` cho lệnh mà chạy hai lần sẽ sai (ví dụ cộng/trừ tồn kho) |
+
+```php
+Route::group([
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),
+        'api.admin:admin_report.sales,write',   // a write on the matching admin screen
+        'throttle:gp247-api-write',
+        'api.idempotent:optional',
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportWriteController::class);
+    Route::post('report/{id}/status', $ctrl.'@status');
+});
+```
+
+Trong controller: tìm bản ghi qua `ApiStoreScope` (ngoài cửa hàng của tài khoản → `404`), chỉ nhận các trường trong danh sách
+cho phép (từ chối khoá lạ, không lặng lẽ bỏ qua), và đổi trạng thái qua model / method nghiệp vụ — không ghi SQL trần:
+
+```php
+use GP247\Core\Api\Support\ApiErrorResponder;
+use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
+
+/**
+ * `POST report/{id}/status` — change the status of one report.
+ */
+public function status(Request $request, $id)
+{
+    $report = ApiStoreScope::apply(MyReport::query())->where('id', (string) $id)->first();
+    if ($report === null) {
+        return ApiErrorResponder::notFound();                 // 404: not in the account's store
+    }
+    $rules = ['status' => 'required|integer|in:0,1'];
+    foreach (array_diff(array_keys($request->all()), array_keys($rules)) as $unknown) {
+        $rules[$unknown] = 'prohibited';                       // unknown keys → 422, never silently dropped
+    }
+    $report->changeStatus((int) $request->validate($rules)['status']);   // business method, not raw SQL
+
+    return ApiQuery::one($report->fresh(), fn ($r) => ['id' => $r->id, 'status' => (int) $r->status]);
+}
+```
+
+**b) Danh sách sẵn sàng cho đồng bộ.** Truyền `changedSince: true` cho `ApiQuery::page()` — danh sách nhận thêm
+`updated_since` và phân trang bằng con trỏ `page[after]` (khi đó `sort` và `page[number]` bị từ chối bằng `422`):
+
+```php
+return ApiQuery::page(ApiStoreScope::apply(MyReport::query()), $request,
+    fn ($r) => ['id' => $r->id, 'status' => (int) $r->status],
+    ['status' => fn (Builder $q, string $v) => $q->where('status', $v)],   // filter[status]
+    ['created_at' => 'created_at'],                                          // sort (normal mode only)
+    changedSince: true);
+```
+
+- Bảng phải có cột `updated_at` (nên có chỉ mục trên cột này).
+- Mọi lệnh ghi phải làm `updated_at` mới lên — lưu qua Eloquent (`save()` / `update()`) thì tự có; cập nhật bằng SQL trần
+  hay query builder thì bản ghi không hiện ra trong danh sách `updated_since`.
+
+**c) Loại sự kiện của plugin.** Khai báo trong config `gp247-config.api.events`, dạng
+`'<tiền tố>.<tài nguyên>.<hành động>' => ['fields' => [...], 'permission' => '<tên route màn admin>']`. **Gộp** vào mảng
+đang có, không bao giờ ghi đè (core và gói shop cũng đăng ký loại của mình ở đây):
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.events' => array_merge((array) config('gp247-config.api.events', []), [
+    'myapi.report.status_changed' => [
+        'fields'     => ['from', 'to'],               // the only keys ever kept in data
+        'permission' => 'admin_report.sales',         // admins allowed to open this screen may read the event
+    ],
+])]);
+```
+
+- Tên viết thường, các đoạn cách nhau bằng dấu chấm, tối đa 64 ký tự; plugin đặt **tiền tố là khoá của plugin** để không trùng
+  với loại khác. Tên sai dạng bị bỏ qua.
+- Ghi sự kiện bằng `\GP247\Core\Api\Sync\ApiEvents::record($type, $subjectId, $storeId, $data)`:
+
+  ```php
+  \GP247\Core\Api\Sync\ApiEvents::record('myapi.report.status_changed', (string) $report->id, (string) $report->store_id,
+      ['from' => $old, 'to' => (int) $report->status]);
+  ```
+
+- Chỉ các trường đã khai báo trong `fields` được giữ; **không bao giờ** đưa dữ liệu cá nhân vào `data` (ERP cần thêm thì đọc
+  lại bản ghi qua endpoint chi tiết). `source` và `actor` do core tự điền.
+- Sự kiện được ghi **sau khi giao dịch bao quanh commit** — giao dịch rollback thì không có sự kiện. Chủ site đang tắt nhật ký
+  sự kiện (hoặc site chưa chạy `php artisan gp247:update`) thì không có gì được ghi. Lỗi khi ghi chỉ được báo vào log, **không
+  bao giờ ném ra** — thay đổi của plugin không bị hỏng vì nhật ký.
+- Sự kiện đã ghi cũng được gửi tới các webhook theo dõi loại đó; loại mới tự hiện trong ô chọn loại sự kiện của webhook.
+
+**d) Để thay đổi của plugin có sự kiện của cửa hàng** (đơn hàng, tồn kho, sản phẩm, khách hàng): lưu qua model của gói shop
+(Eloquent `save()` / `update()` / `delete()`) hoặc các method của gói shop. Thay đổi ghi bằng SQL trần hay `update()` của query
+builder không được nhận ra — ERP sẽ không thấy.
+
 ---
 
 ## 6. Danh sách kiểm tra trước khi coi là "xong"
@@ -480,6 +589,10 @@ nhắc bạn đã quên khai báo quyền.
 - [ ] Danh sách dùng `ApiQuery::page()` (chỉ khai báo các `filter`/`sort` cần thiết); một bản ghi dùng `ApiQuery::one()`.
 - [ ] Endpoint riêng tư có `auth:admin-api` + `ApiAbilities::admin()` hoặc `auth:customer-api` + `ApiAbilities::customer()` + `api.customer.active`.
 - [ ] Endpoint quản trị có `api.admin:<tên route admin>` và lọc dữ liệu bằng `ApiStoreScope::apply()` (mục 5.1).
+- [ ] Endpoint ghi quản trị có `api.admin:<tên route admin>,write` + `throttle:gp247-api-write` + `api.idempotent` (hoặc `api.idempotent:optional`); controller tìm bản ghi qua `ApiStoreScope`, từ chối trường lạ, đổi trạng thái qua model / method nghiệp vụ (mục 5.2).
+- [ ] Danh sách cần đồng bộ dùng `ApiQuery::page(..., changedSince: true)`; bảng có cột `updated_at` (có chỉ mục) và mọi lệnh ghi làm mới cột này (mục 5.2).
+- [ ] Loại sự kiện của plugin được **gộp** vào `gp247-config.api.events` (tiền tố là khoá plugin, khai báo `fields` và `permission`), ghi bằng `ApiEvents::record()`, không có dữ liệu cá nhân trong `data` (mục 5.2).
+- [ ] Thay đổi dữ liệu cửa hàng lưu qua model / method của gói shop (không SQL trần) để ERP nhận được sự kiện (mục 5.2).
 - [ ] Lỗi trả qua `ApiErrorResponder` (mã HTTP đúng nghĩa); hàm `$toArray` chỉ trả các trường đã khai báo.
 - [ ] **Không sửa** `vendor/gp247/*` (trừ khi bạn là maintainer của gói đó).
 - [ ] Mỗi method có PHPDoc tiếng Anh.
@@ -648,10 +761,11 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Endpoint ghi quản trị: `api.admin:<route>,write` (quyền như thao tác ghi trên màn admin), `throttle:gp247-api-write`, `api.idempotent` / `api.idempotent:optional`; danh sách đồng bộ bằng `ApiQuery::page(..., changedSince: true)`; plugin đăng ký loại sự kiện qua `gp247-config.api.events` và ghi bằng `ApiEvents::record()`; lưu qua model của gói shop để có sự kiện của cửa hàng (mục 5.2, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | Endpoint mới đặt dưới tiền tố v2 (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`), dùng `ApiQuery` cho phản hồi `{data, meta, links}`; v1 đóng băng (mục 1–6); `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
 | 2026-10-26 | gp247/core 3.2.3; seam đăng ký route: 3.3.0 | Mỗi gói/plugin đăng ký route API qua `ApiRouteRegistrar`, thêm thư mục `Routes/Api/v2/`, `ApiAbilities::admin()` (3.3.0); endpoint quản trị phải khai báo màn admin (`api.admin`) và lọc theo cửa hàng (`ApiStoreScope`); lỗi trả qua `ApiErrorResponder` với mã HTTP đúng nghĩa; lọc trường dữ liệu công khai bằng `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-31 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-01 · ✍️ **Tác giả (Author):** GP247</sub>

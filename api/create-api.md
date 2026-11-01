@@ -482,6 +482,117 @@ return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
 Calling `ApiStoreScope` on a route without `api.admin` raises an error (safe by default) — this is how
 GP247 reminds you that you forgot to declare the permission.
 
+### 5.2. Admin write endpoints, sync-ready lists and events
+
+> ℹ️ **Available since:** gp247/core 3.7.0
+
+This part is for plugins that want an ERP or sync tool to **write** the plugin's data, **read its changes** with
+`updated_since` and **receive the plugin's events** — the same mechanisms the built-in endpoints use (how an application
+calls them: [API Introduction, sections 6 and 7](./api-introduction.md)).
+
+**a) Admin write endpoints.** Declare `api.admin:<admin screen route name>,write`: the call is allowed only when the account
+**may change data** on that screen — checked exactly like the screen's own actions; a view-only account gets `403`. Add two
+more middleware:
+
+| Middleware | Effect |
+| --- | --- |
+| `throttle:gp247-api-write` | Write limit **per admin account**, by default 300 requests / minute (environment variable `GP247_API_WRITE_THROTTLE`, as `requests,minutes`); over the limit → `429` |
+| `api.idempotent` | The `Idempotency-Key` header is **required** (missing → `400 idempotency_key_required`). A retry with the same key and body answers the first result with the header `Idempotent-Replayed: true`, without running again; the same key with another body → `409 idempotency_key_reused` |
+| `api.idempotent:optional` | The key is accepted when sent, not required. Use `api.idempotent` for commands that would be wrong if run twice (for example adding to or removing from stock) |
+
+```php
+Route::group([
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),
+        'api.admin:admin_report.sales,write',   // a write on the matching admin screen
+        'throttle:gp247-api-write',
+        'api.idempotent:optional',
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportWriteController::class);
+    Route::post('report/{id}/status', $ctrl.'@status');
+});
+```
+
+In the controller: find the record through `ApiStoreScope` (outside the account's store → `404`), accept only an allowlist
+of fields (refuse unknown keys, never drop them silently), and change state through the model / business methods — not raw
+SQL:
+
+```php
+use GP247\Core\Api\Support\ApiErrorResponder;
+use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
+
+/**
+ * `POST report/{id}/status` — change the status of one report.
+ */
+public function status(Request $request, $id)
+{
+    $report = ApiStoreScope::apply(MyReport::query())->where('id', (string) $id)->first();
+    if ($report === null) {
+        return ApiErrorResponder::notFound();                 // 404: not in the account's store
+    }
+    $rules = ['status' => 'required|integer|in:0,1'];
+    foreach (array_diff(array_keys($request->all()), array_keys($rules)) as $unknown) {
+        $rules[$unknown] = 'prohibited';                       // unknown keys → 422, never silently dropped
+    }
+    $report->changeStatus((int) $request->validate($rules)['status']);   // business method, not raw SQL
+
+    return ApiQuery::one($report->fresh(), fn ($r) => ['id' => $r->id, 'status' => (int) $r->status]);
+}
+```
+
+**b) Sync-ready lists.** Pass `changedSince: true` to `ApiQuery::page()` — the list then also accepts `updated_since` and
+pages with the `page[after]` cursor (in that mode `sort` and `page[number]` are refused with `422`):
+
+```php
+return ApiQuery::page(ApiStoreScope::apply(MyReport::query()), $request,
+    fn ($r) => ['id' => $r->id, 'status' => (int) $r->status],
+    ['status' => fn (Builder $q, string $v) => $q->where('status', $v)],   // filter[status]
+    ['created_at' => 'created_at'],                                          // sort (normal mode only)
+    changedSince: true);
+```
+
+- The table needs an `updated_at` column (an index on it is recommended).
+- Every write must move `updated_at` forward — saving through Eloquent (`save()` / `update()`) does it for you; a raw SQL or
+  query-builder update leaves the record out of the `updated_since` list.
+
+**c) Plugin event types.** Declare them in the config `gp247-config.api.events`, as
+`'<prefix>.<resource>.<action>' => ['fields' => [...], 'permission' => '<admin screen route name>']`. **Merge** into the
+existing array, never overwrite it (core and the shop package register their types there too):
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.events' => array_merge((array) config('gp247-config.api.events', []), [
+    'myapi.report.status_changed' => [
+        'fields'     => ['from', 'to'],               // the only keys ever kept in data
+        'permission' => 'admin_report.sales',         // admins allowed to open this screen may read the event
+    ],
+])]);
+```
+
+- Names are lower case, segments separated by dots, at most 64 characters; a plugin **prefixes with its own key** so it never
+  clashes with other types. A malformed name is ignored.
+- Record an event with `\GP247\Core\Api\Sync\ApiEvents::record($type, $subjectId, $storeId, $data)`:
+
+  ```php
+  \GP247\Core\Api\Sync\ApiEvents::record('myapi.report.status_changed', (string) $report->id, (string) $report->store_id,
+      ['from' => $old, 'to' => (int) $report->status]);
+  ```
+
+- Only the fields declared in `fields` are kept; **never** put personal data in `data` (an ERP that needs more reads the
+  record again through its detail endpoint). Core fills in `source` and `actor`.
+- The event is recorded **after the surrounding transaction commits** — a rolled-back transaction leaves no event. While the
+  site owner keeps the event log off (or the site has not run `php artisan gp247:update`), nothing is recorded. A failure to
+  record is only reported to the log and **never thrown** — the plugin's change cannot break because of the log.
+- Recorded events also reach the webhooks following that type; a new type shows up by itself in the webhook's event type picker.
+
+**d) To have the shop's own events for your plugin's changes** (orders, stock, products, customers): save through the shop
+package's models (Eloquent `save()` / `update()` / `delete()`) or its methods. A change written with raw SQL or a bare
+query-builder `update()` is not seen — the ERP will not notice it.
+
 ---
 
 ## 6. Checklist before calling it "done"
@@ -493,6 +604,10 @@ GP247 reminds you that you forgot to declare the permission.
 - [ ] Lists use `ApiQuery::page()` (declaring only the `filter`/`sort` names you need); one record uses `ApiQuery::one()`.
 - [ ] Private endpoints have `auth:admin-api` + `ApiAbilities::admin()`, or `auth:customer-api` + `ApiAbilities::customer()` + `api.customer.active`.
 - [ ] Admin endpoints have `api.admin:<admin route name>` and filter data with `ApiStoreScope::apply()` (section 5.1).
+- [ ] Admin write endpoints have `api.admin:<admin route name>,write` + `throttle:gp247-api-write` + `api.idempotent` (or `api.idempotent:optional`); the controller finds the record through `ApiStoreScope`, refuses unknown fields and changes state through the model / business methods (section 5.2).
+- [ ] Lists meant for sync use `ApiQuery::page(..., changedSince: true)`; the table has an `updated_at` column (indexed) and every write updates it (section 5.2).
+- [ ] Plugin event types are **merged** into `gp247-config.api.events` (prefixed with the plugin key, with `fields` and `permission`), recorded with `ApiEvents::record()`, with no personal data in `data` (section 5.2).
+- [ ] Changes to shop data are saved through the shop package's models / methods (no raw SQL) so the ERP gets the events (section 5.2).
 - [ ] Errors go through `ApiErrorResponder` (meaningful HTTP status codes); the `$toArray` function returns only the declared fields.
 - [ ] **Do not modify** `vendor/gp247/*` (unless you are the maintainer of that package).
 - [ ] Every method has an English PHPDoc.
@@ -665,10 +780,11 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Admin write endpoints: `api.admin:<route>,write` (permission as a write action on the admin screen), `throttle:gp247-api-write`, `api.idempotent` / `api.idempotent:optional`; sync-ready lists with `ApiQuery::page(..., changedSince: true)`; plugins register event types through `gp247-config.api.events` and record them with `ApiEvents::record()`; save through the shop package's models to get the shop's events (sections 5.2, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | New endpoints go under the v2 prefixes (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`) and use `ApiQuery` for `{data, meta, links}` responses; v1 is frozen (sections 1–6); `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
 | 2026-10-26 | gp247/core 3.2.3; route registration seam: 3.3.0 | Every package/plugin registers its API routes through `ApiRouteRegistrar`, added the `Routes/Api/v2/` folder, `ApiAbilities::admin()` (3.3.0); admin endpoints must declare their admin screen (`api.admin`) and filter by store (`ApiStoreScope`); errors are returned through `ApiErrorResponder` with meaningful HTTP status codes; public data fields are filtered with `ApiFieldAllowlist` |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-01 · ✍️ **Author:** GP247</sub>

@@ -50,7 +50,7 @@ flowchart LR
 - [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
-- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, webhook, xử lý lỗi
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, webhook, đồng bộ ERP từ đầu đến cuối, xử lý lỗi
 - [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng, sản phẩm & tồn kho, khoá khách hàng cho ERP / CRM / phần mềm kho
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
@@ -589,6 +589,36 @@ flowchart TD
 - Webhook là để **nhận nhanh hơn**, không phải nguồn dữ liệu chuẩn: vẫn giữ vòng đọc `GET api/v2/core/events` bằng con trỏ
   `after` (sơ đồ ở [Nhật ký sự kiện](#nhật-ký-sự-kiện-events)) để bù những sự kiện bị lỡ hoặc đã bị bỏ — có webhook thì vòng
   đó chạy thưa hơn được.
+
+### Đồng bộ ERP từ đầu đến cuối
+
+> ℹ️ **Có từ:** gp247/core 3.7.0, gp247/shop 3.6.0
+
+Danh sách kiểm tra ngắn cho ERP hay công cụ đồng bộ, theo đúng thứ tự làm. Mỗi bước trỏ tới mục mô tả chi tiết — tham số,
+giới hạn và mã lỗi đọc ở đó.
+
+1. **Bật nhật ký sự kiện:** trên màn quản lý API, bật công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** ([mục 5](#5-bậttắt-api))
+   — bật trước khi đồng bộ lần đầu, vì thay đổi xảy ra lúc tắt không bao giờ có trong nhật ký. Muốn nhận sự kiện ngay khi
+   xảy ra thì đăng ký thêm webhook (chỉ administrator — [Đăng ký webhook](#đăng-ký-webhook)).
+2. **Đồng bộ toàn bộ lần đầu:** đọc từng danh sách quản trị cần dùng (`product/list`, `order/list`, `customer/list`,
+   `category/list`, …) với `updated_since` là một mốc rất xa trong quá khứ (ví dụ `2000-01-01`), đi theo `page[after]`
+   (`links.next`) tới khi `has_more` là `false`, rồi lưu `meta.sync_until` của từng danh sách
+   ([Đồng bộ thay đổi](#đồng-bộ-thay-đổi-updated_since)).
+3. **Lấy con trỏ sự kiện:** gọi `GET api/v2/core/events` một lần **không gửi `after`** (bắt đầu từ sự kiện cũ nhất còn giữ),
+   xử lý như bước 4 rồi lưu `meta.next_after` làm con trỏ ([Nhật ký sự kiện](#nhật-ký-sự-kiện-events)).
+4. **Theo dõi liên tục:** đọc sự kiện sau con trỏ (`after` = con trỏ), xử lý hết trang rồi mới lưu `meta.next_after`; khi
+   `has_more` là `false` thì chờ một lúc rồi đọc tiếp. Có webhook thì vẫn giữ vòng đọc này (chạy thưa hơn) để bù sự kiện bị
+   lỡ ([Trùng lặp, thứ tự và bù sự kiện bị lỡ](#trùng-lặp-thứ-tự-và-bù-sự-kiện-bị-lỡ)). Với mỗi sự kiện:
+   - cần đủ thông tin thì đọc lại bản ghi qua endpoint chi tiết (ví dụ `order/detail/{id}`) — `data` chỉ có vài giá trị;
+   - `product.deleted` → xoá sản phẩm đó phía ERP ([Loại sự kiện của cửa hàng](#loại-sự-kiện-của-cửa-hàng));
+   - bỏ qua sự kiện do chính ERP ghi: `source` là `api` và `actor` là tài khoản quản trị mà ERP dùng.
+5. **Ghi ngược về site:** trạng thái, giao hàng, ghi chú của đơn hàng; giá và tồn kho sản phẩm; khoá khách hàng
+   ([Ghi dữ liệu qua API quản trị](#ghi-dữ-liệu-qua-api-quản-trị)). Gửi một `Idempotency-Key` mới cho **mỗi** lệnh ghi
+   (bắt buộc ở lệnh tồn kho, nên gửi cả ở lệnh khác — [Gửi lại an toàn với `Idempotency-Key`](#gửi-lại-an-toàn-với-idempotency-key));
+   gặp `429` thì chờ theo `Retry-After` ([Giới hạn tần suất ghi](#giới-hạn-tần-suất-ghi)).
+6. **Khi con trỏ quá cũ:** đọc sự kiện nhận `410 cursor_expired` → đồng bộ lại bằng `updated_since` từ `sync_until` đã lưu
+   (trừ 5 giây, như vòng đồng bộ), rồi đọc sự kiện lại từ đầu, không gửi `after` ([Mã lỗi](#mã-lỗi)). Ngoài ra, định kỳ
+   chạy lại bước 2 từ `sync_until` gần nhất làm lưới an toàn.
 
 ### Mã lỗi
 

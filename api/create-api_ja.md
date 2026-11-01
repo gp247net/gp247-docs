@@ -467,6 +467,116 @@ return ApiQuery::page(ApiStoreScope::apply(ShopOrder::query()), $request,
 `api.admin` のないルートで `ApiStoreScope` を呼ぶとエラーになります（デフォルトで安全側）。これは、権限の宣言を忘れていることを
 GP247 が知らせる仕組みです。
 
+### 5.2. 管理用の書き込みエンドポイント、同期向けの一覧、イベント
+
+> ℹ️ **対応バージョン:** gp247/core 3.7.0
+
+ここでは、ERP や同期ツールがプラグインのデータを**書き込み**、`updated_since` で**変更を読み**、プラグインの**イベントを受け取れる**
+ようにしたいプラグイン向けに説明します。仕組みは既存のエンドポイントと同じです（アプリ側からの呼び出し方:
+[API 入門の 6、7 章](./api-introduction_ja.md)）。
+
+**a) 管理用の書き込みエンドポイント。** `api.admin:<管理画面のルート名>,write` を宣言します。アカウントがその画面で**データを変更できる**
+場合にだけ呼び出しが許可されます — 画面自体の操作とまったく同じ方法で確認され、閲覧のみのアカウントには `403` が返ります。
+さらに 2 つのミドルウェアを追加します。
+
+| ミドルウェア | 効果 |
+| --- | --- |
+| `throttle:gp247-api-write` | **管理アカウントごと**の書き込み制限。既定は 1 分あたり 300 リクエスト（環境変数 `GP247_API_WRITE_THROTTLE`、形式は `リクエスト数,分数`）。超えると `429` |
+| `api.idempotent` | ヘッダー `Idempotency-Key` が**必須**（ない場合は `400 idempotency_key_required`）。同じキー・同じ本文での再送には、再実行せずに最初の結果をヘッダー `Idempotent-Replayed: true` 付きで返します。同じキーで本文が異なる場合は `409 idempotency_key_reused` |
+| `api.idempotent:optional` | キーがあれば受け付けますが、必須ではありません。2 回実行されると誤りになるコマンド（例: 在庫の加算・減算）には `api.idempotent` を使ってください |
+
+```php
+Route::group([
+    'prefix'     => GP247_API_V2_CORE_PREFIX,   // => api/v2/core
+    'middleware' => [
+        'auth:admin-api',
+        \GP247\Core\Api\Support\ApiAbilities::admin(),
+        'api.admin:admin_report.sales,write',   // a write on the matching admin screen
+        'throttle:gp247-api-write',
+        'api.idempotent:optional',
+    ],
+], function () {
+    $ctrl = gp247_namespace(\App\GP247\Plugins\MyApi\Api\Admin\ReportWriteController::class);
+    Route::post('report/{id}/status', $ctrl.'@status');
+});
+```
+
+コントローラーでは、`ApiStoreScope` でレコードを探し（アカウントのストア外なら `404`）、許可リストにあるフィールドだけを受け付け
+（不明なキーは黙って捨てずに拒否します）、状態の変更はモデル／業務メソッドで行います — 生の SQL は使いません。
+
+```php
+use GP247\Core\Api\Support\ApiErrorResponder;
+use GP247\Core\Api\Support\ApiStoreScope;
+use GP247\Core\Api\V2\ApiQuery;
+
+/**
+ * `POST report/{id}/status` — change the status of one report.
+ */
+public function status(Request $request, $id)
+{
+    $report = ApiStoreScope::apply(MyReport::query())->where('id', (string) $id)->first();
+    if ($report === null) {
+        return ApiErrorResponder::notFound();                 // 404: not in the account's store
+    }
+    $rules = ['status' => 'required|integer|in:0,1'];
+    foreach (array_diff(array_keys($request->all()), array_keys($rules)) as $unknown) {
+        $rules[$unknown] = 'prohibited';                       // unknown keys → 422, never silently dropped
+    }
+    $report->changeStatus((int) $request->validate($rules)['status']);   // business method, not raw SQL
+
+    return ApiQuery::one($report->fresh(), fn ($r) => ['id' => $r->id, 'status' => (int) $r->status]);
+}
+```
+
+**b) 同期向けの一覧。** `ApiQuery::page()` に `changedSince: true` を渡すと、一覧は `updated_since` も受け付け、カーソル `page[after]`
+でページングします（このモードでは `sort` と `page[number]` は `422` で拒否されます）。
+
+```php
+return ApiQuery::page(ApiStoreScope::apply(MyReport::query()), $request,
+    fn ($r) => ['id' => $r->id, 'status' => (int) $r->status],
+    ['status' => fn (Builder $q, string $v) => $q->where('status', $v)],   // filter[status]
+    ['created_at' => 'created_at'],                                          // sort (normal mode only)
+    changedSince: true);
+```
+
+- テーブルには `updated_at` 列が必要です（この列にインデックスを付けることをおすすめします）。
+- すべての書き込みで `updated_at` を更新してください — Eloquent（`save()`／`update()`）で保存すれば自動で更新されます。生の SQL や
+  クエリビルダーで更新すると、そのレコードは `updated_since` の一覧に現れません。
+
+**c) プラグインのイベントの種類。** 設定 `gp247-config.api.events` に
+`'<接頭辞>.<リソース>.<アクション>' => ['fields' => [...], 'permission' => '<管理画面のルート名>']` の形で宣言します。既存の配列に
+**マージ**し、決して上書きしないでください（core と shop パッケージも自分の種類をここに登録しています）。
+
+```php
+// In the plugin's service provider (boot)
+config(['gp247-config.api.events' => array_merge((array) config('gp247-config.api.events', []), [
+    'myapi.report.status_changed' => [
+        'fields'     => ['from', 'to'],               // the only keys ever kept in data
+        'permission' => 'admin_report.sales',         // admins allowed to open this screen may read the event
+    ],
+])]);
+```
+
+- 名前は小文字で、各部分をドットで区切り、最大 64 文字です。ほかの種類と重ならないよう、プラグインは**自分のキーを接頭辞**にします。
+  形式が正しくない名前は無視されます。
+- イベントは `\GP247\Core\Api\Sync\ApiEvents::record($type, $subjectId, $storeId, $data)` で記録します。
+
+  ```php
+  \GP247\Core\Api\Sync\ApiEvents::record('myapi.report.status_changed', (string) $report->id, (string) $report->store_id,
+      ['from' => $old, 'to' => (int) $report->status]);
+  ```
+
+- `fields` で宣言したフィールドだけが残ります。`data` に個人データを**決して**入れないでください（ERP がそれ以上の情報を必要とする場合は、
+  詳細エンドポイントでレコードを読み直します）。`source` と `actor` は core が自動で設定します。
+- イベントは**周囲のトランザクションがコミットされた後**に記録されます — ロールバックされたトランザクションではイベントは残りません。
+  サイトの所有者がイベントログをオフにしている間（またはサイトがまだ `php artisan gp247:update` を実行していない場合）は、何も記録されません。
+  記録の失敗はログに報告されるだけで**例外は投げられません** — ログのせいでプラグインの変更が壊れることはありません。
+- 記録されたイベントは、その種類を購読している Webhook にも送られます。新しい種類は Webhook のイベントの種類の選択欄に自動で表示されます。
+
+**d) プラグインの変更でストアのイベント**（注文、在庫、商品、顧客）**を発生させるには:** shop パッケージのモデル（Eloquent の
+`save()`／`update()`／`delete()`）またはそのメソッドを通して保存してください。生の SQL やクエリビルダーの `update()` だけで書いた変更は
+検知されず、ERP は気づきません。
+
 ---
 
 ## 6. 「完了」とする前のチェックリスト
@@ -478,6 +588,10 @@ GP247 が知らせる仕組みです。
 - [ ] 一覧は `ApiQuery::page()` を使い（必要な `filter`／`sort` の名前だけを宣言）、1 件は `ApiQuery::one()` を使っている。
 - [ ] 非公開エンドポイントには `auth:admin-api` ＋ `ApiAbilities::admin()`、または `auth:customer-api` ＋ `ApiAbilities::customer()` ＋ `api.customer.active` がある。
 - [ ] 管理用エンドポイントに `api.admin:<管理ルート名>` があり、`ApiStoreScope::apply()` でデータを絞り込んでいる（セクション 5.1）。
+- [ ] 管理用の書き込みエンドポイントに `api.admin:<管理ルート名>,write` ＋ `throttle:gp247-api-write` ＋ `api.idempotent`（または `api.idempotent:optional`）がある。コントローラーは `ApiStoreScope` でレコードを探し、不明なフィールドを拒否し、モデル／業務メソッドで状態を変更している（セクション 5.2）。
+- [ ] 同期に使う一覧は `ApiQuery::page(..., changedSince: true)` を使い、テーブルには `updated_at` 列（インデックス付き）があり、すべての書き込みでこの列を更新している（セクション 5.2）。
+- [ ] プラグインのイベントの種類は `gp247-config.api.events` に**マージ**されており（プラグインのキーを接頭辞にし、`fields` と `permission` を宣言）、`ApiEvents::record()` で記録し、`data` に個人データを入れていない（セクション 5.2）。
+- [ ] ストアのデータの変更は shop パッケージのモデル／メソッドで保存し（生の SQL を使わない）、ERP がイベントを受け取れるようにしている（セクション 5.2）。
 - [ ] エラーは `ApiErrorResponder` で返している（意味の正しい HTTP ステータスコード）。関数 `$toArray` は宣言したフィールドだけを返す。
 - [ ] `vendor/gp247/*` を**変更していない**（そのパッケージのメンテナーである場合を除く）。
 - [ ] 各メソッドに英語の PHPDoc がある。
@@ -645,10 +759,11 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | 管理用の書き込みエンドポイント: `api.admin:<ルート>,write`（管理画面での書き込み操作と同じ権限）、`throttle:gp247-api-write`、`api.idempotent`／`api.idempotent:optional`。`ApiQuery::page(..., changedSince: true)` による同期向けの一覧。プラグインは `gp247-config.api.events` でイベントの種類を登録し、`ApiEvents::record()` で記録する。ストアのイベントを発生させるには shop パッケージのモデルで保存する（5.2、6 章） |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0。API v2：core/front/shop 3.3.0 | 新しいエンドポイントは v2 の接頭辞（`GP247_API_V2_CORE_PREFIX`、`GP247_API_V2_FRONT_PREFIX`）の下に置き、`{data, meta, links}` のレスポンスに `ApiQuery` を使う。v1 は凍結（1〜6 章）。`json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
 | 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
 | 2026-10-26 | gp247/core 3.2.3。ルート登録の仕組み：3.3.0 | 各パッケージ／プラグインが `ApiRouteRegistrar` で API ルートを登録するように変更、`Routes/Api/v2/` フォルダーと `ApiAbilities::admin()` を追加（3.3.0）。管理用エンドポイントは管理画面の宣言（`api.admin`）とストアによる絞り込み（`ApiStoreScope`）が必須に。エラーは `ApiErrorResponder` で意味の正しい HTTP ステータスコードとともに返す。公開データのフィールドは `ApiFieldAllowlist` で絞り込む |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-31 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-01 · ✍️ **作成者 (Author):** GP247</sub>
