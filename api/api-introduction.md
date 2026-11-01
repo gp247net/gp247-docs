@@ -43,6 +43,7 @@ flowchart LR
 - **Never more than the screens show** — the admin API follows the account's own permissions and store (section 3).
 - **The site owner turns each group on or off** on the API management screen; a group that is off answers `404 api_disabled` (section 5).
 - **Fixed response shape** — always a `data` key; lists add `meta` and `links` (section 6).
+- **Light and fast** — take only the fields you need (`fields`), embed related records (`include`), get `304` when reloading unchanged data (section 6).
 
 ## On this page
 
@@ -51,11 +52,12 @@ flowchart LR
 - [3. Permissions](#3-permissions-and-data-scope-of-the-core-api) — why a valid token can still get `403`
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
-- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, webhooks, ERP sync from start to finish, handle errors
+- [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, choose fields & include, caching & `304`, sync changes, event log, webhooks, ERP sync from start to finish, handle errors
 - [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes, customer lock for ERP / CRM / warehouse tools
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
 - [10. Cart & checkout](#10-cart--checkout-through-the-api) — cart, checkout, payment
+- [11. Deprecation & generated clients](#11-deprecation-policy--clients-generated-from-openapi) — notice before removal, `Deprecation` header, TypeScript client
 
 ---
 
@@ -163,7 +165,11 @@ The admin login form and `api/v2/core/login` share one counter: failed attempts 
 
 Over the limit → HTTP `429` with a `Retry-After` header (the number of seconds to wait). A successful
 login clears the counter for that account. In addition, every API endpoint has a general limit of 1000
-requests/minute per IP (`GP247_API_THROTTLE`).
+requests/minute (`GP247_API_THROTTLE`), counted **per account** once signed in and per IP otherwise.
+
+> ℹ️ **Available since:** gp247/core 3.8.0 — before this release the general limit was counted per IP, so many app users
+> behind one network (a carrier or office NAT) shared one counter. If several tools use **one shared account**, they now share
+> its counter — give each tool its own account or raise `GP247_API_THROTTLE`.
 
 ---
 
@@ -310,6 +316,67 @@ the allowed names.
 | Customer's own orders | `status` | `created_at`, `total` |
 | Banners | `type` | `sort`, `created_at` |
 | Content pages | — | `created_at` |
+
+### Choosing fields (`fields`) and embedding related records (`include`)
+
+> ℹ️ **Available since:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+An app screen usually needs only a few fields. Send `fields[<type>]` to get exactly those — the answer is lighter and the
+server skips heavy data you do not use (product variants, for example). Send `include` to get related records in the same
+call instead of one extra call per record.
+
+| Parameter | Meaning | Example |
+| --- | --- | --- |
+| `fields[<type>]` | Return only the listed fields (`id` is always there). `<type>`: `product`, `category`, `brand`, `supplier`, `customer`, `order`, `banner`, `page`, or the type of an included record | `fields[product]=name,image,price_final` |
+| `include` | Embed related records — one level, at most 3 per call (`GP247_API_MAX_INCLUDE`) | `include=brand,categories` |
+
+| Data | Allowed `include` | Type for choosing the fields of included records |
+| --- | --- | --- |
+| Products (storefront) | `images`, `brand` (enabled brands only), `categories` (visible categories only) | `brand`, `category` |
+| Products (admin) | `images`, `brand`, `categories` | `brand`, `category` |
+| Orders (admin) | `transactions` (payment ledger), `histories` (processing history, plain text without HTML) | `transaction`, `history` |
+| Other data | — | — |
+
+```bash
+curl "https://your-domain.com/api/v2/front/product/list?fields[product]=name,image,price_final,brand&include=brand&fields[brand]=name"
+```
+
+- Without `fields` / `include` the answer is exactly what it was.
+- A type, field or `include` that is not listed, a nested `include` (`brand.products`) or too many of them → `422`
+  (`validation_failed`); the answer names the valid ones.
+- Choosing fields never opens a hidden field: the public API still returns neither cost price nor stock quantity.
+- Works in the `updated_since` sync mode too (next section).
+
+### Caching and `304 Not Modified`
+
+> ℹ️ **Available since:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+Every successful `GET` answer has an `ETag` header — a "fingerprint" of the content. The app keeps it with the data and
+next time sends `If-None-Match: <ETag>`. If nothing changed, the API answers `304` with no content and the app uses its copy.
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant API
+    App->>API: GET product/detail/12
+    API-->>App: 200 + ETag: W/"a1b2…"
+    Note over App: keep data + ETag
+    App->>API: GET product/detail/12<br/>If-None-Match: W/"a1b2…"
+    alt unchanged
+        API-->>App: 304 (no content)
+    else changed (price, stock, promotion…)
+        API-->>App: 200 + new ETag
+    end
+```
+
+- The `ETag` is computed from the exact content returned, so any change the app would see — even a promotion that has just
+  started — gives a new `ETag`. The API does not use `Last-Modified`.
+- `304` saves the customer's bandwidth; the server still reads the data to compare.
+- Products, categories, brands, banners and content pages called **without a token** carry `Cache-Control: public,
+  max-age=<N>` with `Vary: Authorization`, so a browser or CDN may keep a copy. `N` defaults to `0` (always ask the server
+  again, `304` when unchanged); the site owner raises it with `GP247_API_PUBLIC_MAX_AGE` (seconds) — in exchange a new price
+  may show up to `N` seconds late.
+- Calls with a token, the cart, ordering, customer accounts and the admin API are **never** cached publicly.
 
 ### Syncing changes (`updated_since`)
 
@@ -1560,6 +1627,42 @@ Checklist before the app sells for real:
 
 ---
 
+## 11. Deprecation policy & clients generated from OpenAPI
+
+### Deprecating part of the API
+
+> ℹ️ **Available since:** gp247/core 3.8.0
+
+GP247 never removes an endpoint or parameter in use without notice:
+
+- At least **12 months and 2 minor releases** of notice before it is removed.
+- During that time every answer of the deprecated part (errors included) carries these headers:
+
+| Header | Meaning | Example |
+| --- | --- | --- |
+| `Deprecation` | When it was deprecated (RFC 9745, as `@<unix time>`) | `Deprecation: @1793491200` |
+| `Sunset` | The day it stops working (RFC 8594) | `Sunset: Fri, 31 Dec 2027 00:00:00 GMT` |
+| `Link` | The migration guide | `Link: <https://gp247.net/en/docs/api/about-api-gp247.html#…>; rel="deprecation"` |
+
+- Every change by release is listed in **Change history** at the end of this page.
+- API v1 is no longer developed but **has no sunset date yet**; `GET logout` of v1 still answers `Deprecation: true` as before.
+
+Apps should log every `Deprecation` header they meet, so there is time to move to the new way.
+
+### Generating a TypeScript client from `openapi.json`
+
+GP247 does not ship its own SDK — [`openapi.json`](./openapi.json) is enough to generate types and a client for your app.
+Download the file, then run, for example with `openapi-typescript`:
+
+```bash
+npx openapi-typescript ./openapi.json -o gp247-api.d.ts
+```
+
+Other languages (Kotlin, Swift, Dart…) use [OpenAPI Generator](https://openapi-generator.tech/) with the same file. Each time you
+upgrade gp247/core, gp247/shop or gp247/front, download `openapi.json` again and regenerate the client.
+
+---
+
 ## Q&A
 
 **Q1: Which API group should I use?**
@@ -1629,6 +1732,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0 | `ETag` + `If-None-Match` → `304` for every v2 `GET`; `Cache-Control: public` (default `max-age=0`, `GP247_API_PUBLIC_MAX_AGE`) for products, categories, brands, banners and content pages called without a token; `fields[<type>]` and `include` (at most 3, `GP247_API_MAX_INCLUDE`) (section 6); the general limit of 1000 requests/minute is counted per account once signed in (section 2); deprecation policy (`Deprecation` / `Sunset` / `Link`) and clients generated from `openapi.json` (section 11) |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Lock / unlock a customer through the admin API: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, any other field → `422`; change permission on the Customer list screen; a lock refuses the customer's API tokens at once and signs the customer out on the storefront; optional `Idempotency-Key`, shared write limit) (sections 3, 7); the event log has 8 store event types: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — recorded whatever the source of the change, each type readable with the permission of its admin screen (section 6); editing a product's / category's texts now moves `updated_at`, while saving without changes and product page views do not (section 6); webhooks for the ERP: each event of the log is `POST`ed right away to an `https` URL registered on the API management screen (administrators only, needs the event log on), signed with `X-GP247-Signature`, retried up to 5 times then given up, no cron needed (sections 5, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0; order writes through the admin API: gp247/core 3.7.0, gp247/shop 3.6.0; product and stock writes through the admin API: gp247/shop 3.6.0 | Product and stock writes through the admin API: `PATCH api/v2/core/product/{id}` (selling price, cost price, status — following the field switches of the product settings), `product/{id}/stock` (`delta` receives/issues atomically, never below 0, sold counter untouched; `set` after a stock count, administrators only), `stock/batch` (1–100 lines, one result per line) — change permission on the Product list screen, `Idempotency-Key` required for stock writes, `422 stock_would_be_negative` / `stock_managed_by_components` (sections 3, 6, 7); Order writes through the admin API for ERP / warehouse tools: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (shipping status + manual shipment tracking number), `order/{id}/notes` — change permission on the Order list screen, write limit 300 per minute per account (`GP247_API_WRITE_THROTTLE`), optional `Idempotency-Key` (retry ⇒ first result; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` before `gp247:update`) (sections 3, 6, 7); Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
@@ -1638,4 +1742,4 @@ code. See [How to create an API the right way](./create-api.md).
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-01 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-02 · ✍️ **Author:** GP247</sub>

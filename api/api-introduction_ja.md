@@ -44,6 +44,7 @@ flowchart LR
 - **画面で見られる以上は見せない** — 管理 API はアカウント自身の権限とストアに従います（セクション 3）。
 - **サイトのオーナーがグループごとにオン／オフ** — API 管理画面で切り替え、オフのグループは `404 api_disabled` を返します（セクション 5）。
 - **固定されたレスポンス形式** — 常に `data` キーがあり、一覧には `meta` と `links` が付きます（セクション 6）。
+- **軽くて速い** — 必要な項目だけ取得（`fields`）、関連データを同時に取得（`include`）、変わっていないデータの再読み込みには `304`（セクション 6）。
 
 ## このページの内容
 
@@ -52,11 +53,12 @@ flowchart LR
 - [3. 権限](#3-core-api-の権限とデータの範囲) — 有効なトークンでも `403` になる理由
 - [4. API Connection](#4-接続保護レイヤーapi-connection-任意) — アプリ用の追加の鍵
 - [5. API のオン／オフ](#5-api-のオンオフ) — API 管理画面のスイッチ
-- [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、変更の同期、イベントログ、Webhook、ERP 同期の全体の流れ、エラー処理
+- [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、項目の選択と関連データ、キャッシュと `304`、変更の同期、イベントログ、Webhook、ERP 同期の全体の流れ、エラー処理
 - [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント、ERP／CRM／倉庫ソフト向けの注文・商品・在庫の書き込み、顧客のロック
 - [8. Front API（ストアフロント）](#8-front-apiストアフロントの処理の流れ) — 公開データと顧客アカウントの流れとエンドポイント
 - [9. 顧客アカウントとセッション](#9-顧客アカウントとサインインセッション) — 会員登録、リフレッシュトークン、MFA
 - [10. カートと注文](#10-api-によるカートと注文) — カート、チェックアウト、支払い
+- [11. 非推奨とクライアント生成](#11-非推奨ポリシーと-openapi-からのクライアント生成) — 廃止前の予告、`Deprecation` ヘッダー、TypeScript クライアント
 
 ---
 
@@ -163,7 +165,12 @@ GP247 は **Laravel Sanctum** を使って**トークン**（「入場券」の�
 
 制限を超えると → HTTP `429` と `Retry-After` ヘッダー（待つ必要がある秒数）が返ります。
 正しくログインすると、そのアカウントのカウンターはリセットされます。
-このほか、すべての API エンドポイントには IP ごとに 1 分あたり 1000 回の共通制限があります（`GP247_API_THROTTLE`）。
+このほか、すべての API エンドポイントには 1 分あたり 1000 回の共通制限があります（`GP247_API_THROTTLE`）。ログイン済みなら
+**アカウントごと**、未ログインなら IP ごとに数えます。
+
+> ℹ️ **対応バージョン:** gp247/core 3.8.0 — それ以前は共通制限を IP ごとに数えていたため、同じネットワーク（携帯回線や
+> オフィスの NAT）の背後にいる多くのアプリ利用者が 1 つのカウンターを共有していました。複数のツールが **1 つのアカウントを共有**
+> している場合は、今後そのカウンターを共有します — ツールごとにアカウントを分けるか、`GP247_API_THROTTLE` を引き上げてください。
 
 ---
 
@@ -305,6 +312,67 @@ API による注文には、v2 front グループの下にもう 1 つ **「API�
 | 顧客自身の注文 | `status` | `created_at`, `total` |
 | バナー | `type` | `sort`, `created_at` |
 | コンテンツページ | — | `created_at` |
+
+### 項目の選択（`fields`）と関連データの同時取得（`include`）
+
+> ℹ️ **対応バージョン:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+アプリの画面が必要とする項目は、たいてい一部だけです。`fields[<種類>]` を送ると、その項目だけが返ります — レスポンスが軽くなり、
+サーバーも使わない重いデータ（商品のバリエーションなど）を読みません。`include` を送ると、レコードごとに追加で呼び出す代わりに、
+関連データを同じ呼び出しで受け取れます。
+
+| パラメーター | 意味 | 例 |
+| --- | --- | --- |
+| `fields[<種類>]` | 指定した項目だけを返します（`id` は常に含まれます）。`<種類>`: `product`、`category`、`brand`、`supplier`、`customer`、`order`、`banner`、`page`、または同時取得したデータの種類 | `fields[product]=name,image,price_final` |
+| `include` | 関連データを同時に取得 — 1 階層のみ、1 回の呼び出しで最大 3 つ（`GP247_API_MAX_INCLUDE`） | `include=brand,categories` |
+
+| データ | 使える `include` | 同時取得したデータの項目を選ぶ種類 |
+| --- | --- | --- |
+| 商品（ストア） | `images`、`brand`（有効なブランドのみ）、`categories`（表示中のカテゴリーのみ） | `brand`、`category` |
+| 商品（管理） | `images`、`brand`、`categories` | `brand`、`category` |
+| 注文（管理） | `transactions`（入金台帳）、`histories`（処理履歴、HTML を含まないテキスト） | `transaction`、`history` |
+| その他のデータ | — | — |
+
+```bash
+curl "https://your-domain.com/api/v2/front/product/list?fields[product]=name,image,price_final,brand&include=brand&fields[brand]=name"
+```
+
+- `fields` / `include` を送らなければ、レスポンスはこれまでとまったく同じです。
+- 一覧にない種類・項目・`include`、入れ子の `include`（`brand.products`）、上限を超える数 → `422`（`validation_failed`）。
+  レスポンスに有効な名前が示されます。
+- 項目を選んでも隠れた項目は開きません: 公開 API は引き続き原価や在庫数を返しません。
+- 同期モード `updated_since`（次の項）でも使えます。
+
+### キャッシュと `304 Not Modified`
+
+> ℹ️ **対応バージョン:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+成功した `GET` のレスポンスには、内容の「指紋」である `ETag` ヘッダーが付きます。アプリはデータと一緒に保存し、次回は
+`If-None-Match: <ETag>` を送ります。データが変わっていなければ API は中身のない `304` を返し、アプリは保存したデータを使います。
+
+```mermaid
+sequenceDiagram
+    participant App as アプリ
+    participant API
+    App->>API: GET product/detail/12
+    API-->>App: 200 + ETag: W/"a1b2…"
+    Note over App: データと ETag を保存
+    App->>API: GET product/detail/12<br/>If-None-Match: W/"a1b2…"
+    alt 変更なし
+        API-->>App: 304（中身なし）
+    else 変更あり（価格、在庫、セール…）
+        API-->>App: 200 + 新しい ETag
+    end
+```
+
+- `ETag` は実際に返す内容から計算するので、アプリから見える変更は — 始まったばかりのセールも含めて — すべて新しい `ETag` になります。
+  API は `Last-Modified` を使いません。
+- `304` は購入者の通信量を節約します。サーバーは比較のためにデータを読みます。
+- 商品、カテゴリー、ブランド、バナー、コンテンツページを **トークンなし** で呼ぶと、`Cache-Control: public, max-age=<N>` と
+  `Vary: Authorization` が付くので、ブラウザーや CDN がコピーを保持できます。`N` の既定値は `0`（毎回サーバーに確認し、
+  変更がなければ `304`）。サイトのオーナーは `GP247_API_PUBLIC_MAX_AGE`（秒）で引き上げられます — その代わり、新しい価格の
+  表示が最大 `N` 秒遅れることがあります。
+- トークン付きの呼び出し、カート、注文、顧客アカウント、管理 API は **決して** 公開キャッシュされません。
 
 ### 変更の同期（`updated_since`）
 
@@ -1536,6 +1604,42 @@ v2 の商品（`product/list`、`product/detail/{id}`）には、アプリがバ
 
 ---
 
+## 11. 非推奨ポリシーと OpenAPI からのクライアント生成
+
+### API の一部を非推奨にする
+
+> ℹ️ **対応バージョン:** gp247/core 3.8.0
+
+GP247 は、使われているエンドポイントやパラメーターを予告なしに削除しません:
+
+- 削除の **少なくとも 12 か月前、かつ 2 つ以上のマイナーリリース前** に予告します。
+- その間、非推奨になった部分のすべてのレスポンス（エラーを含む）に次のヘッダーが付きます:
+
+| ヘッダー | 意味 | 例 |
+| --- | --- | --- |
+| `Deprecation` | 非推奨になった時点（RFC 9745、`@<unix 時刻>` 形式） | `Deprecation: @1793491200` |
+| `Sunset` | 動作が止まる日（RFC 8594） | `Sunset: Fri, 31 Dec 2027 00:00:00 GMT` |
+| `Link` | 移行ガイド | `Link: <https://gp247.net/ja/docs/api/about-api-gp247.html#…>; rel="deprecation"` |
+
+- リリースごとの変更は、このページ末尾の **変更履歴** に記載します。
+- API v1 は開発を終了していますが、**停止日はまだ決まっていません**。v1 の `GET logout` は従来どおり `Deprecation: true` を返します。
+
+アプリは `Deprecation` ヘッダーを受け取るたびにログに記録し、新しい方法へ移行する時間を確保してください。
+
+### `openapi.json` から TypeScript クライアントを生成する
+
+GP247 は独自の SDK を提供していません — [`openapi.json`](./openapi.json) があれば、アプリ用の型とクライアントを生成できます。
+ファイルをダウンロードして、たとえば `openapi-typescript` で次のように実行します:
+
+```bash
+npx openapi-typescript ./openapi.json -o gp247-api.d.ts
+```
+
+ほかの言語（Kotlin、Swift、Dart など）は、同じファイルで [OpenAPI Generator](https://openapi-generator.tech/) を使います。
+gp247/core、gp247/shop、gp247/front をアップグレードするたびに、`openapi.json` をダウンロードし直してクライアントを再生成してください。
+
+---
+
 ## よくある質問（Q&A）
 
 **Q1: どちらの API グループを使えばよいですか？**
@@ -1603,6 +1707,7 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0 | v2 のすべての `GET` に `ETag` + `If-None-Match` → `304`。トークンなしで呼んだ商品、カテゴリー、ブランド、バナー、コンテンツページに `Cache-Control: public`（既定 `max-age=0`、`GP247_API_PUBLIC_MAX_AGE`）。`fields[<種類>]` と `include`（最大 3、`GP247_API_MAX_INCLUDE`）（セクション 6）。1 分あたり 1000 回の共通制限をログイン済みならアカウントごとに数える（セクション 2）。非推奨ポリシー（`Deprecation` / `Sunset` / `Link`）と `openapi.json` からのクライアント生成（セクション 11） |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | 管理 API による顧客のロック／ロック解除: `PATCH api/v2/core/customer/{id}`（`{"status": 0 / 1}`、それ以外のフィールド → `422`。顧客一覧画面の変更権限。ロックすると顧客の API トークンはすぐに拒否され、ストアではサインアウトされる。`Idempotency-Key` は任意、書き込みの回数制限を共有）（セクション 3、7）; イベントログにストアの 8 種類のイベント: `order.created`、`order.status_changed`、`order.payment_status_changed`、`stock.changed`、`product.updated`、`product.deleted`、`customer.created`、`customer.updated` — 変更元を問わず記録、各種類は対応する管理画面の権限で読める（セクション 6）; 商品／カテゴリーのテキストの編集で `updated_at` が変わるようになり、変更なしの保存と商品ページの閲覧では変わらない（セクション 6）; ERP 向け Webhook: ログのイベントを、API 管理画面で登録した `https` の URL にすぐ `POST`（administrator のみ、イベントログのオンが必要）、`X-GP247-Signature` で署名、最大 5 回再送した後は断念、cron 不要（セクション 5、6） |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; 変更の同期: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; イベントログ: gp247/core 3.7.0; 管理 API による注文の書き込み: gp247/core 3.7.0, gp247/shop 3.6.0; 管理 API による商品・在庫の書き込み: gp247/shop 3.6.0 | 管理 API による商品・在庫の書き込みを追加: `PATCH api/v2/core/product/{id}`（販売価格・原価・ステータス — 商品設定の項目スイッチに従う）、`product/{id}/stock`（`delta` はアトミックな入庫／出庫で 0 未満にならず販売数は変わらない、`set` は棚卸し後で administrator のみ）、`stock/batch`（1〜100 行、行ごとの結果）— 商品一覧画面の変更権限、在庫の書き込みは `Idempotency-Key` 必須、`422 stock_would_be_negative` / `stock_managed_by_components`（セクション 3、6、7）; ERP／倉庫ソフト向けに管理 API による注文の書き込みを追加: `api/v2/core/order/{id}/status`、`order/{id}/shipping`（配送ステータス ＋ 手動の送り状の追跡番号）、`order/{id}/notes` — 注文一覧画面の変更権限、書き込みはアカウントごとに 1 分 300 回まで（`GP247_API_WRITE_THROTTLE`）、`Idempotency-Key` は任意（再送 ⇒ 最初の結果。`409 idempotency_key_reused` / `idempotency_in_progress`、`gp247:update` 前は `503 idempotency_unavailable`）（セクション 3、6、7）; ERP 向けのイベントログ `api/v2/core/events` を追加（カーソル `after`、古い順、管理画面の権限とストアで制限。既定はオフ — API 管理画面の **同期用イベントログ（ERP）** スイッチ、オフの間は `409 event_log_disabled`。保持 30 日、古すぎるカーソルは `410 cursor_expired`）（セクション 5、6）; 管理用の v2 一覧に変更の同期モードを追加: `updated_since` ＋ カーソル `page[after]`、`meta.next_after` / `has_more` / `sync_until`（6 章）; ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
 | 2026-10-30 | gp247/shop 3.5.0 | API v2 によるカート（`api/v2/front/cart`、`cart/items`）: ウェブサイトと共通のアカウントのカート、`X-Cart-Token` によるゲストのカート（30 日）、ログイン / 登録時のカート統合（`cart_merge`）、最大 100 行、1 分あたり 60 回; API v2 によるチェックアウトの手順（`checkout`、`checkout/address`、`checkout/shipping-methods` + `shipping-method`、`checkout/payment-methods` + `payment-method`、`checkout/totals`）とプロモーション（`cart/promotions/{pluginKey}`）; API v2 による注文（`checkout/place`）: `Idempotency-Key` 必須（再送 ⇒ 同じ注文）、新しい合計付きの `409 price_changed`、API 管理画面の **API経由の注文** スイッチ（既定でオフ）、1 分あたり 10 件; API によるオンライン決済（`payment.url`、許可リスト `GP247_PAYMENT_RETURN_URLS`（既定で空）にある `return_url` で購入者をアプリへ戻す）と支払い状況（`member/orders/{id}/payment`、`orders/{id}/payment` + `X-Order-Access`）; v2 の商品に `attributes`、`image_sizes`、`stock_status` を追加 |
@@ -1612,4 +1717,4 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-01 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-02 · ✍️ **作成者 (Author):** GP247</sub>

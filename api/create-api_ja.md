@@ -577,6 +577,51 @@ config(['gp247-config.api.events' => array_merge((array) config('gp247-config.ap
 `save()`／`update()`／`delete()`）またはそのメソッドを通して保存してください。生の SQL やクエリビルダーの `update()` だけで書いた変更は
 検知されず、ERP は気づきません。
 
+### 5.3. 項目の選択、関連データ、キャッシュ、非推奨
+
+> ℹ️ **対応バージョン:** gp247/core 3.8.0
+
+作成したエンドポイントは、`GP247_API_MIDDLEWARE` により v2 の成功した `GET` すべてで `ETag` / `304` に対応します — 何もする必要は
+ありません。残りの 3 つはエンドポイントに応じて設定します:
+
+- **`fields` / `include`:** `ApiShape`（種類名、項目、同時取得できるリレーション）を宣言し、選択結果を `ApiQuery::page()` /
+  `ApiQuery::one()` に渡します。リレーションに対応づけた項目が選ばれなければ、`$shape->with()` はそのリレーションを読み込みません —
+  `$toArray` は外された項目のリレーションを読まないでください（重い値はクロージャーと `ApiShapeSelection::build()` で）。
+  同時取得するリレーションは、単独で読むときと同じ表示ルールに従う必要があります。
+- **`api.cache.public`:** 個人のデータを **決して** 含まない公開ルート（カタログ、コンテンツ）だけに付けます。カート、アカウント、
+  注文、管理 API には付けません。
+- **`api.deprecated:<非推奨日>,<停止日>,<ガイドのアンカー>`:** 削除予定のルートに付けます。少なくとも 12 か月前、かつ 2 つ以上の
+  マイナーリリース前に予告してください。
+
+```php
+use GP247\Core\Api\V2\ApiQuery;
+use GP247\Core\Api\V2\ApiShape;
+
+// Declare the fields of the resource; a field mapped to relations lets ApiShape skip loading them.
+$shape = (new ApiShape('myapi_item', ['name' => ['descriptions'], 'price', 'status'], [
+    'brand' => [
+        'with'   => ['brand' => fn ($q) => $q->where('status', 1)],
+        'render' => fn ($item) => $item->brand ? ['id' => $item->brand->id, 'name' => $item->brand->name] : null,
+        'type'   => 'brand',
+        'fields' => ['id', 'name'],
+    ],
+]))->resolve($request);   // 422 for an unknown type, field or include
+
+$query = MyItem::query()->with($shape->with(['descriptions']));
+
+return ApiQuery::page($query, $request, fn ($item) => [
+    'id' => $item->id, 'name' => $item->descriptions->first()?->name, 'price' => (float) $item->price, 'status' => (int) $item->status,
+], [], [], null, false, $shape);
+```
+
+```php
+// Routes/api.php — a public route without anyone's own data may be cached by browsers / a CDN
+Route::get('myapi/items', $controller.'@index')->middleware('api.cache.public');
+
+// A route you plan to remove: Deprecation + Sunset + Link headers on every answer
+Route::get('myapi/old-items', $controller.'@old')->middleware('api.deprecated:2026-11-01,2027-12-31,myapi-items');
+```
+
 ---
 
 ## 6. 「完了」とする前のチェックリスト
@@ -597,6 +642,7 @@ config(['gp247-config.api.events' => array_merge((array) config('gp247-config.ap
 - [ ] 各メソッドに英語の PHPDoc がある。
 - [ ] `php artisan route:clear` を実行し、`php artisan route:list` にルートが表示されることを確認した。
 - [ ] サインインのステップを追加するプラグインは `LoginChallenge` を実装し、`describe()` で秘密を返さない（セクション 7）。
+- [ ] `fields` / `include` を受け付ける一覧・詳細は `ApiShape` を宣言し、同時取得するリレーションは表示ルールに従う。個人のデータを含まない公開ルートだけに `api.cache.public`、削除予定のルートには `api.deprecated`（セクション 5.3）。
 
 ---
 
@@ -759,6 +805,7 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0 | v2 のエンドポイントは `ETag` / `304` に標準対応。プラグインは `ApiShape` を宣言して `fields` / `include` を受け付け、公開ルートに `api.cache.public`、削除予定のルートに `api.deprecated` を付ける（セクション 5.3、6） |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | 管理用の書き込みエンドポイント: `api.admin:<ルート>,write`（管理画面での書き込み操作と同じ権限）、`throttle:gp247-api-write`、`api.idempotent`／`api.idempotent:optional`。`ApiQuery::page(..., changedSince: true)` による同期向けの一覧。プラグインは `gp247-config.api.events` でイベントの種類を登録し、`ApiEvents::record()` で記録する。ストアのイベントを発生させるには shop パッケージのモデルで保存する（5.2、6 章） |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0。API v2：core/front/shop 3.3.0 | 新しいエンドポイントは v2 の接頭辞（`GP247_API_V2_CORE_PREFIX`、`GP247_API_V2_FRONT_PREFIX`）の下に置き、`{data, meta, links}` のレスポンスに `ApiQuery` を使う。v1 は凍結（1〜6 章）。`json.response` は `GP247_API_MIDDLEWARE` に含まれ `auth:*` より先に動く — `Accept` がなくても `500` にならない（1 章）。API v2 からの注文がウェブの注文と同じフック（`ShopOrder::created`、`endApp()`、`gp247_listen_order_success`、確認メール）を通る。注文の `channel` 列（`api` / `web`）（8 章） |
 | 2026-10-28 | gp247/core 3.6.0 | プラグインが `LoginChallenge` で API サインインの確認ステップ（MFA）を追加（セクション 7） |
@@ -766,4 +813,4 @@ API からの注文（`POST api/v2/front/checkout/place`）は、**ウェブサ�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-01 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-02 · ✍️ **作成者 (Author):** GP247</sub>

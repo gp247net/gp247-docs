@@ -42,6 +42,7 @@ flowchart LR
 - **Không xem nhiều hơn màn hình** — API quản trị theo đúng phân quyền và cửa hàng của tài khoản (mục 3).
 - **Chủ site bật/tắt từng nhóm** trên màn quản lý API; nhóm tắt trả `404 api_disabled` (mục 5).
 - **Phản hồi cố định** — luôn có khoá `data`; danh sách thêm `meta`, `links` (mục 6).
+- **Nhẹ và nhanh** — chỉ lấy trường cần (`fields`), lấy kèm dữ liệu liên quan (`include`), tải lại dữ liệu không đổi nhận `304` (mục 6).
 
 ## Trong trang này
 
@@ -50,11 +51,12 @@ flowchart LR
 - [3. Phân quyền](#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) — vì sao có token vẫn bị `403`
 - [4. API Connection](#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) — khóa bổ sung cho ứng dụng
 - [5. Bật/tắt API](#5-bậttắt-api) — công tắc trên màn quản lý API
-- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, đồng bộ thay đổi, nhật ký sự kiện, webhook, đồng bộ ERP từ đầu đến cuối, xử lý lỗi
+- [6. Phản hồi, tham số & mã lỗi](#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) — đọc kết quả, lọc, sắp xếp, chọn trường & lấy kèm, lưu tạm & `304`, đồng bộ thay đổi, nhật ký sự kiện, webhook, đồng bộ ERP từ đầu đến cuối, xử lý lỗi
 - [7. API Core (Admin)](#7-luồng-làm-việc-api-core-admin) — luồng và endpoint quản trị, ghi đơn hàng, sản phẩm & tồn kho, khoá khách hàng cho ERP / CRM / phần mềm kho
 - [8. API Front (Storefront)](#8-luồng-làm-việc-api-front-storefront) — luồng và endpoint công khai, tài khoản khách
 - [9. Tài khoản khách & phiên](#9-tài-khoản-khách--phiên-đăng-nhập) — đăng ký, refresh token, MFA
 - [10. Giỏ hàng & đặt đơn](#10-giỏ-hàng--đặt-đơn-qua-api) — giỏ, checkout, thanh toán
+- [11. Ngừng hỗ trợ & sinh client](#11-chính-sách-ngừng-hỗ-trợ--sinh-client-từ-openapi) — báo trước khi gỡ, header `Deprecation`, client TypeScript
 
 ---
 
@@ -158,7 +160,12 @@ Form đăng nhập quản trị và `api/v2/core/login` dùng chung một bộ �
 > không còn được đọc. Nếu bạn đã đặt chúng, hãy đổi tên trong `.env`; nếu không, giá trị mặc định ở trên được dùng.
 
 Vượt giới hạn → HTTP `429` kèm header `Retry-After` (số giây cần chờ). Đăng nhập đúng sẽ xoá bộ đếm của
-tài khoản đó. Ngoài ra, mọi endpoint API có giới hạn chung 1000 lần/phút mỗi IP (`GP247_API_THROTTLE`).
+tài khoản đó. Ngoài ra, mọi endpoint API có giới hạn chung 1000 lần/phút (`GP247_API_THROTTLE`): đếm **theo tài khoản** khi
+đã đăng nhập, theo IP khi chưa đăng nhập.
+
+> ℹ️ **Có từ:** gp247/core 3.8.0 — trước bản này giới hạn chung đếm theo IP, nên nhiều khách dùng ứng dụng sau cùng một mạng
+> (NAT của nhà mạng, văn phòng) dùng chung một bộ đếm. Nếu nhiều công cụ dùng **chung một tài khoản**, nay chúng chung bộ đếm —
+> hãy cấp mỗi công cụ một tài khoản hoặc tăng `GP247_API_THROTTLE`.
 
 ---
 
@@ -299,6 +306,66 @@ tên được phép.
 | Đơn hàng của khách | `status` | `created_at`, `total` |
 | Banner | `type` | `sort`, `created_at` |
 | Trang nội dung | — | `created_at` |
+
+### Chọn trường (`fields`) và lấy kèm (`include`)
+
+> ℹ️ **Có từ:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+Màn hình của ứng dụng thường chỉ cần vài trường. Gửi `fields[<loại>]` để nhận đúng các trường đó — phản hồi nhẹ hơn và máy chủ
+không phải đọc dữ liệu nặng bạn không dùng (ví dụ biến thể sản phẩm). Gửi `include` để lấy kèm dữ liệu liên quan trong cùng một
+lần gọi, thay vì gọi thêm cho từng bản ghi.
+
+| Tham số | Ý nghĩa | Ví dụ |
+| --- | --- | --- |
+| `fields[<loại>]` | Chỉ trả các trường liệt kê (luôn kèm `id`). `<loại>`: `product`, `category`, `brand`, `supplier`, `customer`, `order`, `banner`, `page`, hoặc loại của dữ liệu lấy kèm | `fields[product]=name,image,price_final` |
+| `include` | Lấy kèm dữ liệu liên quan — một cấp, tối đa 3 mỗi lần gọi (`GP247_API_MAX_INCLUDE`) | `include=brand,categories` |
+
+| Dữ liệu | `include` được phép | Loại để chọn trường của dữ liệu kèm |
+| --- | --- | --- |
+| Sản phẩm (cửa hàng) | `images`, `brand` (chỉ thương hiệu đang bật), `categories` (chỉ danh mục đang hiển thị) | `brand`, `category` |
+| Sản phẩm (quản trị) | `images`, `brand`, `categories` | `brand`, `category` |
+| Đơn hàng (quản trị) | `transactions` (sổ thanh toán), `histories` (lịch sử xử lý, văn bản thuần không HTML) | `transaction`, `history` |
+| Dữ liệu khác | — | — |
+
+```bash
+curl "https://your-domain.com/api/v2/front/product/list?fields[product]=name,image,price_final,brand&include=brand&fields[brand]=name"
+```
+
+- Không gửi `fields` / `include` → phản hồi y hệt như trước.
+- Loại, tên trường hay `include` không có trong danh sách, `include` lồng (`brand.products`) hoặc quá số cho phép → `422`
+  (`validation_failed`), phản hồi nêu các tên hợp lệ.
+- Chọn trường không mở thêm trường bị ẩn: API công khai vẫn không trả giá vốn hay số tồn kho.
+- Dùng được cả trong chế độ đồng bộ `updated_since` (mục dưới).
+
+### Lưu tạm và `304 Not Modified`
+
+> ℹ️ **Có từ:** gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0
+
+Mỗi phản hồi `GET` thành công có header `ETag` — "dấu vân tay" của nội dung. Ứng dụng lưu nó cùng dữ liệu; lần sau gửi
+`If-None-Match: <ETag>`. Dữ liệu không đổi thì API trả `304` không có nội dung, ứng dụng dùng bản đã lưu.
+
+```mermaid
+sequenceDiagram
+    participant App as Ứng dụng
+    participant API
+    App->>API: GET product/detail/12
+    API-->>App: 200 + ETag: W/"a1b2…"
+    Note over App: lưu dữ liệu + ETag
+    App->>API: GET product/detail/12<br/>If-None-Match: W/"a1b2…"
+    alt không đổi
+        API-->>App: 304 (không có nội dung)
+    else đã đổi (giá, tồn, khuyến mãi…)
+        API-->>App: 200 + ETag mới
+    end
+```
+
+- `ETag` tính từ đúng nội dung trả về, nên mọi thay đổi ứng dụng nhìn thấy — kể cả khuyến mãi vừa bắt đầu — đều cho `ETag`
+  mới. API không dùng `Last-Modified`.
+- `304` tiết kiệm đường truyền cho khách; máy chủ vẫn đọc dữ liệu để so.
+- Sản phẩm, danh mục, thương hiệu, banner, trang nội dung gọi **không token** có `Cache-Control: public, max-age=<N>` kèm
+  `Vary: Authorization`, nên trình duyệt hoặc CDN được giữ bản sao. `N` mặc định `0` (luôn hỏi lại máy chủ, nhận `304` khi
+  không đổi); chủ site tăng bằng `GP247_API_PUBLIC_MAX_AGE` (giây) — đổi lại, giá mới có thể hiện chậm tối đa `N` giây.
+- Gọi có token, giỏ hàng, đặt đơn, tài khoản khách và API quản trị **không bao giờ** được lưu công khai.
 
 ### Đồng bộ thay đổi (`updated_since`)
 
@@ -1519,6 +1586,42 @@ Danh sách kiểm tra trước khi đưa ứng dụng vào bán thật:
 
 ---
 
+## 11. Chính sách ngừng hỗ trợ & sinh client từ OpenAPI
+
+### Ngừng hỗ trợ một phần API
+
+> ℹ️ **Có từ:** gp247/core 3.8.0
+
+GP247 không gỡ endpoint hay tham số đang được dùng mà không báo trước:
+
+- Báo trước **ít nhất 12 tháng và ít nhất 2 bản minor** trước khi gỡ hẳn.
+- Trong thời gian đó, mọi phản hồi của phần sắp ngừng (kể cả lỗi) có các header sau:
+
+| Header | Ý nghĩa | Ví dụ |
+| --- | --- | --- |
+| `Deprecation` | Thời điểm bắt đầu ngừng hỗ trợ (RFC 9745, dạng `@<unix time>`) | `Deprecation: @1793491200` |
+| `Sunset` | Ngày ngừng hẳn (RFC 8594) | `Sunset: Fri, 31 Dec 2027 00:00:00 GMT` |
+| `Link` | Hướng dẫn chuyển đổi | `Link: <https://gp247.net/vi/docs/api/about-api-gp247.html#…>; rel="deprecation"` |
+
+- Mọi thay đổi theo phiên bản ghi ở mục **Lịch sử thay đổi** cuối trang.
+- API v1 đã ngưng phát triển nhưng **chưa có ngày ngừng hẳn**; `GET logout` của v1 vẫn trả `Deprecation: true` như trước.
+
+Ứng dụng nên ghi log mỗi khi gặp header `Deprecation` để kịp chuyển sang cách mới.
+
+### Sinh client TypeScript từ `openapi.json`
+
+GP247 không phát hành SDK riêng — [`openapi.json`](./openapi.json) đủ để tự sinh kiểu dữ liệu và client cho ứng dụng của bạn.
+Tải file về rồi chạy, ví dụ với `openapi-typescript`:
+
+```bash
+npx openapi-typescript ./openapi.json -o gp247-api.d.ts
+```
+
+Ngôn ngữ khác (Kotlin, Swift, Dart…) dùng [OpenAPI Generator](https://openapi-generator.tech/) với cùng file. Mỗi khi nâng cấp
+gp247/core, gp247/shop, gp247/front, hãy tải lại `openapi.json` và sinh lại client.
+
+---
+
 ## Hỏi & Đáp (Q&A)
 
 **Câu 1: Tôi nên dùng nhóm API nào?**
@@ -1585,6 +1688,7 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0, gp247/shop 3.7.0, gp247/front 3.5.0 | `ETag` + `If-None-Match` → `304` cho mọi `GET` v2; `Cache-Control: public` (mặc định `max-age=0`, `GP247_API_PUBLIC_MAX_AGE`) cho sản phẩm, danh mục, thương hiệu, banner, trang nội dung gọi không token; `fields[<loại>]` và `include` (tối đa 3, `GP247_API_MAX_INCLUDE`) (mục 6); giới hạn chung 1000 lần/phút đếm theo tài khoản khi đã đăng nhập (mục 2); chính sách ngừng hỗ trợ (`Deprecation` / `Sunset` / `Link`) và sinh client từ `openapi.json` (mục 11) |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Khoá / mở khoá khách hàng qua API quản trị: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, trường khác → `422`; quyền sửa trên màn Danh sách khách hàng; khoá làm token API của khách bị từ chối ngay và đăng xuất khách trên website; `Idempotency-Key` tuỳ chọn, chung giới hạn ghi) (mục 3, 7); nhật ký sự kiện có 8 loại sự kiện của cửa hàng: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — ghi bất kể nguồn thay đổi, mỗi loại đọc được theo quyền màn quản trị tương ứng (mục 6); sửa phần chữ của sản phẩm / danh mục nay đổi `updated_at`, lưu không đổi gì và lượt xem trang sản phẩm thì không (mục 6); webhook cho ERP: mỗi sự kiện của nhật ký được `POST` ngay tới URL `https` đăng ký trên màn quản lý API (chỉ administrator, cần bật nhật ký sự kiện), ký bằng `X-GP247-Signature`, gửi lại tối đa 5 lần rồi bỏ, không cần cron (mục 5, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; đồng bộ thay đổi: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; nhật ký sự kiện: gp247/core 3.7.0; ghi đơn hàng qua API quản trị: gp247/core 3.7.0, gp247/shop 3.6.0; ghi sản phẩm & tồn kho qua API quản trị: gp247/shop 3.6.0 | Ghi sản phẩm & tồn kho qua API quản trị: `PATCH api/v2/core/product/{id}` (giá bán, giá vốn, trạng thái — theo công tắc trường của Cấu hình sản phẩm), `product/{id}/stock` (`delta` nhập/xuất nguyên tử, không xuống dưới 0, không đổi số đã bán; `set` sau kiểm kê, chỉ administrator), `stock/batch` (1–100 dòng, kết quả theo từng dòng) — quyền sửa trên màn Danh sách sản phẩm, `Idempotency-Key` bắt buộc cho lệnh tồn kho, `422 stock_would_be_negative` / `stock_managed_by_components` (mục 3, 6, 7); Ghi đơn hàng qua API quản trị cho ERP / phần mềm kho: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (trạng thái giao hàng + mã vận đơn thủ công), `order/{id}/notes` — quyền sửa trên màn Danh sách đơn hàng, giới hạn ghi 300 lần/phút mỗi tài khoản (`GP247_API_WRITE_THROTTLE`), `Idempotency-Key` tuỳ chọn (gửi lại ⇒ kết quả lần đầu; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` khi chưa `gp247:update`) (mục 3, 6, 7); Nhật ký sự kiện cho ERP `api/v2/core/events` (con trỏ `after`, cũ nhất trước, theo quyền màn quản trị và cửa hàng; mặc định tắt — công tắc **Nhật ký sự kiện cho đồng bộ (ERP)** trên màn quản lý API, đang tắt trả `409 event_log_disabled`; giữ 30 ngày, con trỏ quá cũ trả `410 cursor_expired`) (mục 5, 6); Danh sách quản trị v2 có chế độ đồng bộ thay đổi: `updated_since` + con trỏ `page[after]`, `meta.next_after` / `has_more` / `sync_until` (mục 6); Tài liệu chỉ còn API v2; API v1 chuyển sang tài liệu riêng ([API v1](./api-v1_vi.md)); shop 3.5.1: huỷ đơn chưa trả qua ứng dụng (`orders/{id}/cancel`, `member/orders/{id}/cancel`), đơn qua cổng chưa trả sau 24 giờ tự huỷ, đơn trả xong / hoàn hết chuyển trạng thái theo cổng, đơn của gian hàng không tên miền trả được qua cổng (mục 10.3); Mọi phản hồi là JSON kể cả khi không gửi `Accept: application/json` (thiếu token → `401`, không còn `500`); `register` và `member/password` bắt buộc mật khẩu, thân thiếu trường bắt buộc → `422` (mục 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Giỏ hàng qua API v2 (`api/v2/front/cart`, `cart/items`): giỏ của tài khoản dùng chung website, giỏ khách vãng lai bằng `X-Cart-Token` (30 ngày), gộp giỏ khi đăng nhập / đăng ký (`cart_merge`), tối đa 100 dòng, 60 lần/phút; các bước checkout qua API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) và khuyến mãi (`cart/promotions/{pluginKey}`); đặt đơn qua API v2 (`checkout/place`): `Idempotency-Key` bắt buộc (gửi lại ⇒ cùng đơn), `409 price_changed` kèm tổng mới, công tắc **Đặt đơn qua API** trên màn Quản lý API (mặc định tắt), 10 lần đặt/phút; thanh toán online qua API (`payment.url`, đưa khách về ứng dụng qua `return_url` trong danh sách cho phép `GP247_PAYMENT_RETURN_URLS`, mặc định rỗng) và trạng thái thanh toán (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); sản phẩm v2 thêm `attributes`, `image_sizes`, `stock_status` |
@@ -1594,4 +1698,4 @@ Xem [Hướng dẫn tạo API đúng chuẩn](./create-api_vi.md).
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-01 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-02 · ✍️ **Tác giả (Author):** GP247</sub>

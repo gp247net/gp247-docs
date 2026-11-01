@@ -578,6 +578,50 @@ config(['gp247-config.api.events' => array_merge((array) config('gp247-config.ap
 (Eloquent `save()` / `update()` / `delete()`) hoặc các method của gói shop. Thay đổi ghi bằng SQL trần hay `update()` của query
 builder không được nhận ra — ERP sẽ không thấy.
 
+### 5.3. Chọn trường, lấy kèm, lưu tạm và ngừng hỗ trợ
+
+> ℹ️ **Có từ:** gp247/core 3.8.0
+
+Endpoint của bạn hưởng sẵn `ETag` / `304` cho mọi `GET` v2 thành công qua `GP247_API_MIDDLEWARE` — không cần làm gì. Ba việc
+còn lại tuỳ endpoint:
+
+- **`fields` / `include`:** khai báo `ApiShape` (tên loại, các trường, quan hệ được lấy kèm) rồi truyền lựa chọn vào
+  `ApiQuery::page()` / `ApiQuery::one()`. Trường gắn với quan hệ nào thì `$shape->with()` bỏ nạp quan hệ đó khi trường không
+  được chọn — hàm `$toArray` không được đọc quan hệ của trường đã bị bỏ (dùng `ApiShapeSelection::build()` với closure cho
+  giá trị nặng). Quan hệ lấy kèm phải đi qua cùng luật hiển thị như khi đọc riêng.
+- **`api.cache.public`:** chỉ gắn cho route công khai **không bao giờ** chứa dữ liệu riêng của một người (danh mục, nội dung).
+  Không gắn cho giỏ hàng, tài khoản, đơn hàng hay API quản trị.
+- **`api.deprecated:<ngày ngừng>,<ngày dừng>,<neo tài liệu>`:** gắn cho route sắp gỡ; báo trước ít nhất 12 tháng và 2 bản minor.
+
+```php
+use GP247\Core\Api\V2\ApiQuery;
+use GP247\Core\Api\V2\ApiShape;
+
+// Declare the fields of the resource; a field mapped to relations lets ApiShape skip loading them.
+$shape = (new ApiShape('myapi_item', ['name' => ['descriptions'], 'price', 'status'], [
+    'brand' => [
+        'with'   => ['brand' => fn ($q) => $q->where('status', 1)],
+        'render' => fn ($item) => $item->brand ? ['id' => $item->brand->id, 'name' => $item->brand->name] : null,
+        'type'   => 'brand',
+        'fields' => ['id', 'name'],
+    ],
+]))->resolve($request);   // 422 for an unknown type, field or include
+
+$query = MyItem::query()->with($shape->with(['descriptions']));
+
+return ApiQuery::page($query, $request, fn ($item) => [
+    'id' => $item->id, 'name' => $item->descriptions->first()?->name, 'price' => (float) $item->price, 'status' => (int) $item->status,
+], [], [], null, false, $shape);
+```
+
+```php
+// Routes/api.php — a public route without anyone's own data may be cached by browsers / a CDN
+Route::get('myapi/items', $controller.'@index')->middleware('api.cache.public');
+
+// A route you plan to remove: Deprecation + Sunset + Link headers on every answer
+Route::get('myapi/old-items', $controller.'@old')->middleware('api.deprecated:2026-11-01,2027-12-31,myapi-items');
+```
+
 ---
 
 ## 6. Danh sách kiểm tra trước khi coi là "xong"
@@ -598,6 +642,7 @@ builder không được nhận ra — ERP sẽ không thấy.
 - [ ] Mỗi method có PHPDoc tiếng Anh.
 - [ ] Đã `php artisan route:clear` và xác nhận route hiện ra trong `php artisan route:list`.
 - [ ] Plugin thêm bước xác thực đăng nhập: cài `LoginChallenge`, không trả bí mật trong `describe()` (mục 7).
+- [ ] Danh sách/chi tiết khai `ApiShape` nếu muốn nhận `fields` / `include`; quan hệ lấy kèm theo đúng luật hiển thị; chỉ route công khai không có dữ liệu riêng mới gắn `api.cache.public`; route sắp gỡ gắn `api.deprecated` (mục 5.3).
 
 ---
 
@@ -761,6 +806,7 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0 | Endpoint v2 có sẵn `ETag` / `304`; plugin khai `ApiShape` để nhận `fields` / `include`, gắn `api.cache.public` cho route công khai và `api.deprecated` cho route sắp gỡ (mục 5.3, 6) |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Endpoint ghi quản trị: `api.admin:<route>,write` (quyền như thao tác ghi trên màn admin), `throttle:gp247-api-write`, `api.idempotent` / `api.idempotent:optional`; danh sách đồng bộ bằng `ApiQuery::page(..., changedSince: true)`; plugin đăng ký loại sự kiện qua `gp247-config.api.events` và ghi bằng `ApiEvents::record()`; lưu qua model của gói shop để có sự kiện của cửa hàng (mục 5.2, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | Endpoint mới đặt dưới tiền tố v2 (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`), dùng `ApiQuery` cho phản hồi `{data, meta, links}`; v1 đóng băng (mục 1–6); `json.response` thuộc `GP247_API_MIDDLEWARE` và chạy trước `auth:*` — thiếu `Accept` không còn ra `500` (mục 1); đơn đặt qua API v2 đi qua cùng điểm cắm với đơn web (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, email xác nhận); cột `channel` của đơn (`api` / `web`) (mục 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugin thêm bước xác thực đăng nhập API (MFA) qua `LoginChallenge` (mục 7) |
@@ -768,4 +814,4 @@ mã trạng thái, cấu trúc JSON, và chặn truy cập khi thiếu token v�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-01 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-02 · ✍️ **Tác giả (Author):** GP247</sub>

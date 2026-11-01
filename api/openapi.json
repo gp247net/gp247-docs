@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "GP247 REST API v2",
-        "version": "3.7.0",
+        "version": "3.8.0",
         "description": "REST API v2 of gp247/core, gp247/front and gp247/shop. Every error body is {\"error\":1,\"msg\":\"…\",\"code\":\"…\"}. Every response carries an X-Request-Id header (since 3.4.0; a valid id sent by the client is reused). A group turned off on the API management screen answers 404 with code api_disabled (since 3.3.1). See api-introduction.md. API v1 (frozen) is described separately in openapi-v1.json and api-v1.md. API v2 sessions (since core 3.6.0 / shop 3.4.0): with_refresh on login returns a rotating refresh token; a sign-in challenge registered by a plugin answers 401 challenge_required. Admin lists of api/v2/core (since core 3.7.0 / shop 3.6.0 / front 3.4.0) have a change-sync mode: updated_since + page[after]. Event log for ERP / sync tools (since core 3.7.0, off by default): GET api/v2/core/events, read by the after cursor."
     },
     "servers": [
@@ -38,7 +38,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -79,6 +84,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One banner",
@@ -99,6 +117,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -120,7 +144,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -161,6 +190,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of banners",
@@ -237,6 +269,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -258,7 +296,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -299,6 +342,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One brand",
@@ -319,6 +375,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -340,7 +402,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -381,6 +448,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of brands",
@@ -457,6 +527,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -478,7 +554,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -519,6 +600,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One category",
@@ -539,6 +633,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -560,7 +660,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -601,6 +706,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of categorys",
@@ -677,6 +785,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -698,7 +812,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -739,6 +858,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One customer",
@@ -759,6 +891,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -780,7 +918,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -821,6 +964,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of customers",
@@ -897,6 +1043,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -1095,11 +1247,19 @@
                             "maximum": 500,
                             "default": 100
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [{id, type, subject_id, store_id, source, actor, data, occurred_at}], \"meta\": {per_page, next_after, has_more}} — id grows (use it as the after cursor); type is <resource>.<action>; source is api, admin, web or system; actor is {type: admin|customer, id} or null; data holds only the few values declared for the type (never personal data); occurred_at is ISO-8601. next_after is the id of the last event on the page (on an empty page: the after sent)"
+                        "description": "{\"data\": [{id, type, subject_id, store_id, source, actor, data, occurred_at}], \"meta\": {per_page, next_after, has_more}} — id grows (use it as the after cursor); type is <resource>.<action>; source is api, admin, web or system; actor is {type: admin|customer, id} or null; data holds only the few values declared for the type (never personal data); occurred_at is ISO-8601. next_after is the id of the last event on the page (on an empty page: the after sent)",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -1150,6 +1310,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "security": [
@@ -1171,7 +1334,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Profile"
+                        "description": "Profile",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -1192,6 +1360,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "Profile of the signed-in admin",
@@ -1203,6 +1374,11 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ]
             }
@@ -1324,7 +1500,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -1365,6 +1546,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One order",
@@ -1382,6 +1576,20 @@
                         "name": "lang",
                         "in": "query",
                         "description": "Language of names/descriptions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): transactions (payment ledger), histories (processing history, plain text). Anything else = 422. Since core 3.8.0.",
                         "schema": {
                             "type": "string"
                         }
@@ -1849,7 +2057,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -1890,6 +2103,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of orders",
@@ -1966,6 +2182,20 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): transactions (payment ledger), histories (processing history, plain text). Anything else = 422. Since core 3.8.0.",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "security": [
@@ -1987,7 +2217,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -2028,6 +2263,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One CMS page",
@@ -2048,6 +2296,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -2069,7 +2323,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -2110,6 +2369,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of CMS pages",
@@ -2186,6 +2448,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -2207,7 +2475,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -2248,6 +2521,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One product",
@@ -2265,6 +2551,20 @@
                         "name": "lang",
                         "in": "query",
                         "description": "Language of names/descriptions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): images, brand, categories. Anything else = 422. Since core 3.8.0.",
                         "schema": {
                             "type": "string"
                         }
@@ -2631,7 +2931,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -2672,6 +2977,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of products",
@@ -2745,6 +3053,20 @@
                         "name": "lang",
                         "in": "query",
                         "description": "Language of names/descriptions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): images, brand, categories. Anything else = 422. Since core 3.8.0.",
                         "schema": {
                             "type": "string"
                         }
@@ -3010,7 +3332,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -3051,6 +3378,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One supplier",
@@ -3071,6 +3411,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -3092,7 +3438,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}. With updated_since (sync mode): {\"data\": [...], \"meta\": {per_page, next_after, has_more, sync_until}, \"links\": {next}} — no total, last_page or current_page; next_after and sync_until are null on an empty page, links.next is null on the last page",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name; in sync mode also: updated_since not ISO-8601, page[after] not a cursor from this list, sort or page[number] sent with updated_since",
@@ -3133,6 +3484,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of suppliers",
@@ -3209,6 +3563,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -3230,7 +3590,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -3254,6 +3622,19 @@
                     },
                     "429": {
                         "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3288,6 +3669,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3299,7 +3686,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -3330,6 +3725,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of banners",
@@ -3396,6 +3794,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3407,7 +3811,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -3431,6 +3843,19 @@
                     },
                     "429": {
                         "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3465,6 +3890,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3476,7 +3907,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -3507,6 +3946,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of brands",
@@ -3573,6 +4015,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3584,7 +4032,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -3608,6 +4064,19 @@
                     },
                     "429": {
                         "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3642,6 +4111,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3653,7 +4128,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -3684,6 +4167,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of categorys",
@@ -3750,6 +4236,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -3761,7 +4253,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Profile"
+                        "description": "Profile",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -3782,6 +4279,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "Profile of the signed-in customer",
@@ -3793,6 +4293,11 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ]
             }
@@ -3914,7 +4419,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -3945,6 +4455,19 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     }
                 },
                 "summary": "One order of the signed-in customer",
@@ -3964,6 +4487,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -3985,7 +4514,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -4016,6 +4550,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of orders of the signed-in customer",
@@ -4074,6 +4611,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ],
                 "security": [
@@ -4095,7 +4638,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {api_version, packages, languages, locale, store_id}}"
+                        "description": "{\"data\": {api_version, packages, languages, locale, store_id}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "API Connection is enabled and apiconnection/apikey is missing or invalid",
@@ -4116,6 +4664,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "API version, installed packages, languages and store",
@@ -4125,6 +4676,11 @@
                         "apiKey": []
                     },
                     []
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    }
                 ]
             }
         },
@@ -4135,7 +4691,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -4159,6 +4723,19 @@
                     },
                     "429": {
                         "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4193,6 +4770,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -4204,7 +4787,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -4235,6 +4826,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of CMS pages",
@@ -4301,6 +4895,12 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -4312,7 +4912,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...}}"
+                        "description": "{\"data\": {...}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found or not visible to the caller",
@@ -4336,6 +4944,19 @@
                     },
                     "429": {
                         "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4370,6 +4991,20 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): images, brand (enabled brands only), categories (visible categories only). Anything else = 422. Since core 3.8.0.",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ]
             }
@@ -4381,7 +5016,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}"
+                        "description": "{\"data\": [...], \"meta\": {current_page, per_page, total, last_page}, \"links\": {first, last, prev, next}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            },
+                            "Cache-Control": {
+                                "$ref": "#/components/headers/CacheControlPublic"
+                            }
+                        }
                     },
                     "422": {
                         "description": "Unknown filter or sort name",
@@ -4412,6 +5055,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "summary": "List of products",
@@ -4475,6 +5121,20 @@
                         "name": "lang",
                         "in": "query",
                         "description": "Language of names/descriptions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Comma-separated related records to embed (one level, at most 3): images, brand (enabled brands only), categories (visible categories only). Anything else = 422. Since core 3.8.0.",
                         "schema": {
                             "type": "string"
                         }
@@ -4634,7 +5294,12 @@
                 "summary": "API sessions (devices) of the signed-in owner (since core 3.6.0 / shop 3.4.0)",
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}"
+                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -4645,6 +5310,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "security": [
@@ -4655,6 +5323,11 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ]
             }
@@ -4854,7 +5527,12 @@
                 "summary": "API sessions (devices) of the signed-in owner (since core 3.6.0 / shop 3.4.0)",
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}"
+                        "description": "{\"data\": [{id, name, ip, created_at, last_used_at, refreshable, refresh_expires_at, current}]}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -4865,6 +5543,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "security": [
@@ -4875,6 +5556,11 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ]
             }
@@ -5090,7 +5776,12 @@
                 "summary": "Profile of the signed-in customer (incl. e-mail verification state, default address) (since core 3.6.0 / shop 3.4.0)",
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {...customer, email_verified, email_verification_required, default_address_id, default_address}}"
+                        "description": "{\"data\": {...customer, email_verified, email_verification_required, default_address_id, default_address}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
@@ -5101,6 +5792,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 },
                 "security": [
@@ -5111,6 +5805,11 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ]
             },
@@ -5280,10 +5979,28 @@
                 "summary": "Address book of the signed-in customer (since core 3.6.0 / shop 3.4.0)",
                 "responses": {
                     "200": {
-                        "description": "{\"data\": [{id, first_name, …, is_default}]}"
+                        "description": "{\"data\": [{id, first_name, …, is_default}]}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Missing, invalid or expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
+                    },
+                    "422": {
+                        "description": "Unknown fields type/name or include",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5301,6 +6018,14 @@
                     },
                     {
                         "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    },
+                    {
+                        "$ref": "#/components/parameters/Fields"
                     }
                 ]
             }
@@ -5489,7 +6214,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}"
+                        "description": "{\"data\": {stores: [{store_id, lines: [{id, product_id, sku, name, image, qty, options, unit_price, line_total, purchasable, reason}], subtotal}], line_count, item_count, currency}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "login_required / invalid token",
@@ -5510,8 +6240,16 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
-                }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
+                    }
+                ]
             }
         },
         "/api/v2/front/cart/items": {
@@ -5774,11 +6512,19 @@
                             "type": "string"
                         },
                         "description": "Store to check out when the cart holds several"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}"
+                        "description": "{\"data\": {store_id, address, save_address, shipping_method, payment_method, promotions}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "login_required / invalid token",
@@ -5809,6 +6555,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -5974,11 +6723,19 @@
                             "type": "string"
                         },
                         "description": "Store to check out when the cart holds several"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {required, rates: [{id, plugin_key, service_code, title, amount, currency, eta_min_days, eta_max_days}], unquotable, selected}}"
+                        "description": "{\"data\": {required, rates: [{id, plugin_key, service_code, title, amount, currency, eta_min_days, eta_max_days}], unquotable, selected}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "login_required / invalid token",
@@ -6009,6 +6766,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -6115,11 +6875,19 @@
                             "type": "string"
                         },
                         "description": "Store to check out when the cart holds several"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {required, methods: [{key, title, note, type: none|hosted}], selected}}"
+                        "description": "{\"data\": {required, methods: [{key, title, note, type: none|hosted}], selected}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "login_required / invalid token",
@@ -6150,6 +6918,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -6256,11 +7027,19 @@
                             "type": "string"
                         },
                         "description": "Store to check out when the cart holds several"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {store_id, lines: [{code, title, value, text}], currency}}"
+                        "description": "{\"data\": {store_id, lines: [{code, title, value, text}], currency}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "login_required / invalid token",
@@ -6291,6 +7070,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -6602,11 +7384,19 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}"
+                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "401": {
                         "description": "invalid token",
@@ -6627,6 +7417,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -6654,11 +7447,19 @@
                             "type": "string"
                         },
                         "description": "access_token returned when the guest placed the order"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IfNoneMatch"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}"
+                        "description": "{\"data\": {order: {id, store_id, status, payment_status, total, received, balance, currency}, payment: {type: none|hosted, status: unpaid|partially_paid|paid|refunded}}}",
+                        "headers": {
+                            "ETag": {
+                                "$ref": "#/components/headers/ETag"
+                            }
+                        }
                     },
                     "404": {
                         "description": "not_found — unknown order or wrong token",
@@ -6669,6 +7470,9 @@
                                 }
                             }
                         }
+                    },
+                    "304": {
+                        "$ref": "#/components/responses/NotModified"
                     }
                 }
             }
@@ -7097,6 +7901,53 @@
                     },
                     "default": {
                         "type": "boolean"
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "Fields": {
+                "name": "fields",
+                "in": "query",
+                "style": "deepObject",
+                "explode": true,
+                "description": "fields[<type>]=a,b keeps only those fields (and id) of the record and of included records. Unknown type or field = 422. Without it the body is unchanged. Since core 3.8.0.",
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "IfNoneMatch": {
+                "name": "If-None-Match",
+                "in": "header",
+                "description": "ETag of a previous answer; 304 with an empty body when nothing changed. Since core 3.8.0.",
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "headers": {
+            "ETag": {
+                "description": "Weak ETag hashed from the body (W/\"<sha256>\") — send it back in If-None-Match. Since core 3.8.0.",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "CacheControlPublic": {
+                "description": "Without a token: public, max-age=<GP247_API_PUBLIC_MAX_AGE, default 0> + Vary: Authorization; with a token: no-store, private. Since core 3.8.0.",
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses": {
+            "NotModified": {
+                "description": "Not modified: the If-None-Match ETag still matches; empty body.",
+                "headers": {
+                    "ETag": {
+                        "$ref": "#/components/headers/ETag"
                     }
                 }
             }

@@ -593,6 +593,51 @@ config(['gp247-config.api.events' => array_merge((array) config('gp247-config.ap
 package's models (Eloquent `save()` / `update()` / `delete()`) or its methods. A change written with raw SQL or a bare
 query-builder `update()` is not seen — the ERP will not notice it.
 
+### 5.3. Choosing fields, including relations, caching and deprecation
+
+> ℹ️ **Available since:** gp247/core 3.8.0
+
+Your endpoint already gets `ETag` / `304` on every successful v2 `GET` through `GP247_API_MIDDLEWARE` — nothing to do. The
+other three depend on the endpoint:
+
+- **`fields` / `include`:** declare an `ApiShape` (type name, fields, relations that can be included) and pass the choice to
+  `ApiQuery::page()` / `ApiQuery::one()`. When a field mapped to a relation is not chosen, `$shape->with()` skips loading that
+  relation — your `$toArray` must not read the relation of a dropped field (use `ApiShapeSelection::build()` with closures for
+  costly values). Included relations must follow the same visibility rules as when read on their own.
+- **`api.cache.public`:** only for public routes that **never** carry one person's own data (catalog, content). Never on the cart,
+  accounts, orders or the admin API.
+- **`api.deprecated:<deprecated-on>,<sunset-on>,<guide anchor>`:** on a route you plan to remove; give at least 12 months and 2 minor
+  releases of notice.
+
+```php
+use GP247\Core\Api\V2\ApiQuery;
+use GP247\Core\Api\V2\ApiShape;
+
+// Declare the fields of the resource; a field mapped to relations lets ApiShape skip loading them.
+$shape = (new ApiShape('myapi_item', ['name' => ['descriptions'], 'price', 'status'], [
+    'brand' => [
+        'with'   => ['brand' => fn ($q) => $q->where('status', 1)],
+        'render' => fn ($item) => $item->brand ? ['id' => $item->brand->id, 'name' => $item->brand->name] : null,
+        'type'   => 'brand',
+        'fields' => ['id', 'name'],
+    ],
+]))->resolve($request);   // 422 for an unknown type, field or include
+
+$query = MyItem::query()->with($shape->with(['descriptions']));
+
+return ApiQuery::page($query, $request, fn ($item) => [
+    'id' => $item->id, 'name' => $item->descriptions->first()?->name, 'price' => (float) $item->price, 'status' => (int) $item->status,
+], [], [], null, false, $shape);
+```
+
+```php
+// Routes/api.php — a public route without anyone's own data may be cached by browsers / a CDN
+Route::get('myapi/items', $controller.'@index')->middleware('api.cache.public');
+
+// A route you plan to remove: Deprecation + Sunset + Link headers on every answer
+Route::get('myapi/old-items', $controller.'@old')->middleware('api.deprecated:2026-11-01,2027-12-31,myapi-items');
+```
+
 ---
 
 ## 6. Checklist before calling it "done"
@@ -613,6 +658,7 @@ query-builder `update()` is not seen — the ERP will not notice it.
 - [ ] Every method has an English PHPDoc.
 - [ ] You ran `php artisan route:clear` and confirmed the route appears in `php artisan route:list`.
 - [ ] A plugin adding a sign-in step implements `LoginChallenge` and returns no secret from `describe()` (section 7).
+- [ ] Lists/details declare an `ApiShape` if they should accept `fields` / `include`; included relations follow the visibility rules; only public routes without anyone's own data get `api.cache.public`; routes to be removed get `api.deprecated` (section 5.3).
 
 ---
 
@@ -780,6 +826,7 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-02 | gp247/core 3.8.0 | v2 endpoints get `ETag` / `304` for free; plugins declare an `ApiShape` to accept `fields` / `include`, add `api.cache.public` to public routes and `api.deprecated` to routes being removed (sections 5.3, 6) |
 | 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Admin write endpoints: `api.admin:<route>,write` (permission as a write action on the admin screen), `throttle:gp247-api-write`, `api.idempotent` / `api.idempotent:optional`; sync-ready lists with `ApiQuery::page(..., changedSince: true)`; plugins register event types through `gp247-config.api.events` and record them with `ApiEvents::record()`; save through the shop package's models to get the shop's events (sections 5.2, 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0; API v2: core/front/shop 3.3.0 | New endpoints go under the v2 prefixes (`GP247_API_V2_CORE_PREFIX`, `GP247_API_V2_FRONT_PREFIX`) and use `ApiQuery` for `{data, meta, links}` responses; v1 is frozen (sections 1–6); `json.response` belongs to `GP247_API_MIDDLEWARE` and runs before `auth:*` — a missing `Accept` no longer gives `500` (section 1); orders placed through API v2 go through the same hooks as website orders (`ShopOrder::created`, `endApp()`, `gp247_listen_order_success`, confirmation e-mail); order `channel` column (`api` / `web`) (section 8) |
 | 2026-10-28 | gp247/core 3.6.0 | Plugins add an API sign-in verification step (MFA) through `LoginChallenge` (section 7) |
@@ -787,4 +834,4 @@ the status code, the JSON structure, and that access is blocked when a private e
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-01 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-02 · ✍️ **Author:** GP247</sub>
