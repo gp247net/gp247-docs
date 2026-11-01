@@ -53,7 +53,7 @@ flowchart LR
 - [4. API Connection](#4-接続保護レイヤーapi-connection-任意) — アプリ用の追加の鍵
 - [5. API のオン／オフ](#5-api-のオンオフ) — API 管理画面のスイッチ
 - [6. レスポンス、パラメーター、エラー](#6-レスポンスの形式一覧のパラメーターエラーコード) — 結果の読み方、絞り込み、並べ替え、変更の同期、イベントログ、エラー処理
-- [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント、ERP／倉庫ソフト向けの注文・商品・在庫の書き込み
+- [7. Core API（管理）](#7-core-api管理の処理の流れ) — 管理の流れとエンドポイント、ERP／CRM／倉庫ソフト向けの注文・商品・在庫の書き込み、顧客のロック
 - [8. Front API（ストアフロント）](#8-front-apiストアフロントの処理の流れ) — 公開データと顧客アカウントの流れとエンドポイント
 - [9. 顧客アカウントとセッション](#9-顧客アカウントとサインインセッション) — 会員登録、リフレッシュトークン、MFA
 - [10. カートと注文](#10-api-によるカートと注文) — カート、チェックアウト、支払い
@@ -178,6 +178,7 @@ Core API は**管理画面で見られる以上のデータを見せません**�
 | エンドポイント（接頭辞 `api/v2/core`） | 必要な権限（管理画面） |
 | --- | --- |
 | `customer/list`, `customer/detail/{id}` | 顧客一覧 |
+| `customer/{id}`（`PATCH`） | 顧客一覧画面の**変更権限**（セクション 7） |
 | `order/list` | 注文一覧 |
 | `order/detail/{id}` | 注文の詳細 |
 | `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | 注文一覧画面の**変更権限**（セクション 7） |
@@ -362,8 +363,9 @@ flowchart TD
   新しいレコードがない（`sync_until` が `null`）→ 前回の基準をそのまま使います。
 - HTTP `422`（`validation_failed`）になるのは: `updated_since` が ISO-8601 でない場合、`page[after]` が一覧の返したカーソルでない
   場合、`sort` または `page[number]` を `updated_since` と一緒に送った場合です。
-- **このバージョンの制限:** 商品またはカテゴリーの多言語テキスト（名前、説明）だけを編集しても、その `updated_at` は
-  **変わりません**。そのため、その編集は同期モードに現れません。
+- **実際の変更だけが `updated_at` を動かします** *（gp247/shop 3.6.0 から）*: 商品またはカテゴリーの多言語テキスト（名前、
+  説明）を編集しても `updated_at` が変わります。何も変えずにフォームを保存した場合や、顧客が商品ページを閲覧した場合は
+  **変わりません**。
 - **削除されたレコードはここには現れません:** 一覧が返せるのは、まだ存在するレコードだけです。どのレコードが削除されたかを
   知るには、イベントログ（すぐ下の節）を読んでください。
 - アップグレードするサイトでは `php artisan gp247:update` を実行してください（これらのテーブルの `updated_at` 列にインデックスを追加します）。
@@ -379,8 +381,9 @@ flowchart TD
 - **既定はオフ**です（新規インストールでもアップグレードしたサイトでも）。サイトのオーナーが API 管理画面の
   **同期用イベントログ（ERP）** スイッチでオンにします（セクション 5）。オフのときに読むと → `409 event_log_disabled`。
   イベントは**オンの間だけ記録されます** — オフの間に起きた変更は、ログに一切現れません。
-- **イベントの種類:** gp247/core 3.7.0 がログの仕組みを提供し、gp247/shop 3.6.0 が注文、在庫、商品、顧客の変更を記録します。
-  プラグインが独自のイベントの種類を追加することもできます。
+- **イベントの種類:** gp247/core 3.7.0 がログの仕組みを提供し、gp247/shop 3.6.0 が注文、在庫、商品、顧客について 8 種類の
+  イベントを記録します — [ストアのイベントの種類](#ストアのイベントの種類) を参照。プラグインが独自のイベントの種類を追加する
+  こともできます。
 
 `GET api/v2/core/events` — 管理者のトークンが必要です（セクション 2）。
 
@@ -420,12 +423,12 @@ curl -G "https://shop.example.com/api/v2/core/events" \
   "data": [
     {
       "id": 1521,
-      "type": "<リソース>.<操作>",
+      "type": "stock.changed",
       "subject_id": "AbC12",
       "store_id": "1",
       "source": "admin",
       "actor": { "type": "admin", "id": "1" },
-      "data": {},
+      "data": { "delta": -2, "stock": 13 },
       "occurred_at": "2026-10-31T08:15:42+07:00"
     }
   ],
@@ -464,6 +467,35 @@ flowchart TD
   が `api_event_retention` で報告します。
 - `after` がイベントの `id` でない、または `filter[type]` の形式が不正 → `422 validation_failed`。
 - アップグレードするサイトでは `php artisan gp247:update` を実行してください（イベントログのテーブルを作成します）。
+
+#### ストアのイベントの種類
+
+> ℹ️ **対応バージョン:** gp247/shop 3.6.0
+
+イベントの種類はそれぞれ 1 つの管理画面に対応します。アカウントがその種類を読めるのは、対応する画面を開く権限がある
+場合だけです（セクション 3）。
+
+| `type` | いつ | `data` | 読める人（画面を開ける管理者） |
+| --- | --- | --- | --- |
+| `order.created` | 新しい注文（ストアでの注文、API での注文、管理画面の *注文作成*、プラグイン） | `status`, `payment_status`, `channel`, `total`, `currency` | 注文一覧画面 |
+| `order.status_changed` | 注文ステータスまたは配送ステータスが変わった | `field`（`status` または `shipping_status`）, `from`, `to` | 注文一覧画面 |
+| `order.payment_status_changed` | 支払いステータスが変わった（入金／返金の入力、決済ゲートウェイの確認、注文合計の再計算） | `from`, `to`, `received`, `balance` | 注文一覧画面 |
+| `stock.changed` | 商品の在庫が動いた（販売とキャンセル、商品フォームでの在庫編集、API の在庫コマンド、入荷伝票などのプラグイン） | `delta`（正: 入庫、負: 出庫）, `stock`（変動後の在庫） | 商品一覧画面 |
+| `product.updated` | 商品が編集された | `fields`（変わった列の**名前**。値は決して含まない。商品のテキストが変わったときは `descriptions`）, `status` | 商品一覧画面 |
+| `product.deleted` | 商品が削除された | `sku` | 商品一覧画面 |
+| `customer.created` | 顧客が会員登録した、または作成された（ストア、API、管理画面、プラグイン） | `status` | 顧客一覧画面 |
+| `customer.updated` | 顧客の情報が変わった | `fields`（変わった列の名前。値もパスワードも決して含まない）, `status` | 顧客一覧画面 |
+
+- **`order.created`** は**注文作成時点**の値を持ちます。管理画面で作成した注文は空（合計 0）で始まり、その後に明細行が
+  追加されます — 最終的な数値は注文の詳細（`order/detail/{id}`）を読んでください。
+- **`stock.changed`** は商品ごとに 1 件記録されます。ビルド（セット）商品を販売すると各構成品の在庫も動く → 構成品ごとに
+  1 件。在庫の変動だけなら `stock.changed` になり、`product.updated` には**なりません**。
+- **`product.deleted`** は商品が削除されたことを知る唯一の方法です（削除されたレコードは一覧に現れません）。
+- イベントは変更が**どこから来ても**記録されます: ストア、管理画面、API、ショップのモデル経由で保存するプラグイン。
+- **何も変えずに**フォームを保存した場合や、顧客が**商品ページを閲覧**した場合は、イベントは記録されず `updated_at` も
+  変わりません — そのため `updated_since` の一覧も実際の変更だけを返します。
+- **SQL でデータベースに直接**書き込んだ変更（ショップを経由しない）は検知されません。プラグインの開発者は、ERP が変更を
+  受け取れるよう、ショップのモデル経由でデータを保存してください。
 
 ### エラーコード
 
@@ -603,6 +635,7 @@ sequenceDiagram
 | `PATCH` | `api/v2/core/product/{id}` | 商品の販売価格・原価・ステータスを変更（[管理 API によるデータの書き込み](#管理-api-によるデータの書き込み)） |
 | `POST` | `api/v2/core/product/{id}/stock` | 入庫／出庫、棚卸し後に在庫を設定 |
 | `POST` | `api/v2/core/stock/batch` | 複数商品の在庫を一度に書き込む（最大 100 行） |
+| `PATCH` | `api/v2/core/customer/{id}` | 顧客をロック／ロック解除（[顧客](#顧客)） |
 
 管理者ログインの例（ターミナルで `curl` を使用）：
 
@@ -638,7 +671,8 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
 
 > ℹ️ **対応バージョン:** gp247/core 3.7.0, gp247/shop 3.6.0
 
-ERP や倉庫管理ソフトは、管理画面で手入力する代わりに API で注文、商品の価格と在庫を更新できます。注文の各書き込みは
+ERP、CRM や倉庫管理ソフトは、管理画面で手作業する代わりに API で注文、商品の価格と在庫を更新し、顧客をロック／
+ロック解除できます。注文の各書き込みは
 注文詳細画面の対応する操作と**同じ効果**を持ちます。在庫の増減も注文履歴の行も同じです。
 
 | メソッド | パス | リクエスト本文（JSON） | 効果 |
@@ -649,6 +683,7 @@ ERP や倉庫管理ソフトは、管理画面で手入力する代わりに API
 | `PATCH` | `api/v2/core/product/{id}` | `{"price"?, "cost"?, "status"?}` | 商品の販売価格・原価・ステータスを変更 |
 | `POST` | `api/v2/core/product/{id}/stock` | `{"delta": …}` または `{"set": …}` | 入庫／出庫、または棚卸し後に在庫を設定 |
 | `POST` | `api/v2/core/stock/batch` | `{"items": [{"id" または "sku", "delta" または "set"}, …]}` | 複数商品の在庫を書き込む（1〜100 行） |
+| `PATCH` | `api/v2/core/customer/{id}` | `{"status": 0}` または `{"status": 1}` | 顧客をロック／ロック解除 |
 
 **共通のルール（注文の 3 つのエンドポイント）：**
 
@@ -806,11 +841,50 @@ curl -X POST "https://shop.example.com/api/v2/core/stock/batch" \
 }
 ```
 
+#### 顧客
+
+CRM や ERP は `PATCH customer/{id}` で顧客アカウントをロックし（例: 不正行為、支払い遅延）、再びロック解除できます。
+
+- 本文は `status`（必須）だけです: `0` でロック、`1` でロック解除。`0`／`1` 以外の値 → `422`。
+- それ以外のフィールド（例: `email`、`first_name`）→ `422 validation_failed`: 個人情報は顧客自身または管理画面で変更する
+  もので、同期ツールが変更することはありません。
+- **権限：** **顧客一覧** 画面の **変更権限** が必要で、その画面と同じ方法で確認されます。閲覧のみのアカウント →
+  `403 forbidden`。
+- 自分のストアの顧客のみ。他のストアの顧客 → `404 not_found`。
+- **ロックはすぐに効きます：** 次のリクエストから顧客の API トークンは拒否され（`401`）、ストアにサインイン中の顧客は
+  サインアウトされます。
+- 成功 → `200 {"data": <顧客>}`、`customer/detail/{id}` と同じ形式。
+- `Idempotency-Key` は注文の書き込みと同じく任意です。
+
+CRM が顧客をロックする例：
+
+```bash
+curl -X PATCH "https://shop.example.com/api/v2/core/customer/CUSTOMER-ID" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 5d8e1f02-a6b4-4c37-9e2d-1b7c0a4f6e93" \
+  -d '{"status":0}'
+```
+
+結果（抜粋）：
+
+```json
+{
+  "data": {
+    "id": "CUSTOMER-ID",
+    "email": "customer@example.com",
+    "status": 0,
+    "updated_at": "2026-11-01T10:20:00+07:00"
+  }
+}
+```
+
 #### `Idempotency-Key` で安全に再送する
 
 通信が不安定だと、アプリは書き込みが実行されたかどうか分かりません。`Idempotency-Key` ヘッダー（印字可能な 8〜255 文字、
-例: UUID）を付けて送れば、二重に書き込む心配なく再送できます。注文の 3 つのエンドポイントと `PATCH product/{id}` では
-キーは **任意**、`product/{id}/stock` と `stock/batch` では **必須** です（キーなし → `400 idempotency_key_required`）。
+例: UUID）を付けて送れば、二重に書き込む心配なく再送できます。注文の 3 つのエンドポイント、`PATCH product/{id}` と
+`PATCH customer/{id}` ではキーは **任意**、`product/{id}/stock` と `stock/batch` では **必須** です（キーなし → `400 idempotency_key_required`）。
 
 ```mermaid
 sequenceDiagram
@@ -839,7 +913,7 @@ sequenceDiagram
 
 - 書き込みは **管理者アカウントごと** に数えます：既定は **1 分あたり 300 リクエスト**。環境変数
   `GP247_API_WRITE_THROTTLE` に `リクエスト数,分数` の形で設定して変更できます（例: `600,1`）。
-- 商品・在庫・注文の書き込みはこの制限を共有します。`stock/batch` 1 回は **1** リクエストと数えます。
+- 商品・在庫・注文・顧客の書き込みはこの制限を共有します。`stock/batch` 1 回は **1** リクエストと数えます。
 - 上限を超える → `429 too_many_attempts`（`Retry-After` ヘッダー付き）。
 - 読み取りは従来どおり IP ごとの共通の制限に従います。
 
@@ -1397,6 +1471,7 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | 管理 API による顧客のロック／ロック解除: `PATCH api/v2/core/customer/{id}`（`{"status": 0 / 1}`、それ以外のフィールド → `422`。顧客一覧画面の変更権限。ロックすると顧客の API トークンはすぐに拒否され、ストアではサインアウトされる。`Idempotency-Key` は任意、書き込みの回数制限を共有）（セクション 3、7）; イベントログにストアの 8 種類のイベント: `order.created`、`order.status_changed`、`order.payment_status_changed`、`stock.changed`、`product.updated`、`product.deleted`、`customer.created`、`customer.updated` — 変更元を問わず記録、各種類は対応する管理画面の権限で読める（セクション 6）; 商品／カテゴリーのテキストの編集で `updated_at` が変わるようになり、変更なしの保存と商品ページの閲覧では変わらない（セクション 6） |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; 変更の同期: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; イベントログ: gp247/core 3.7.0; 管理 API による注文の書き込み: gp247/core 3.7.0, gp247/shop 3.6.0; 管理 API による商品・在庫の書き込み: gp247/shop 3.6.0 | 管理 API による商品・在庫の書き込みを追加: `PATCH api/v2/core/product/{id}`（販売価格・原価・ステータス — 商品設定の項目スイッチに従う）、`product/{id}/stock`（`delta` はアトミックな入庫／出庫で 0 未満にならず販売数は変わらない、`set` は棚卸し後で administrator のみ）、`stock/batch`（1〜100 行、行ごとの結果）— 商品一覧画面の変更権限、在庫の書き込みは `Idempotency-Key` 必須、`422 stock_would_be_negative` / `stock_managed_by_components`（セクション 3、6、7）; ERP／倉庫ソフト向けに管理 API による注文の書き込みを追加: `api/v2/core/order/{id}/status`、`order/{id}/shipping`（配送ステータス ＋ 手動の送り状の追跡番号）、`order/{id}/notes` — 注文一覧画面の変更権限、書き込みはアカウントごとに 1 分 300 回まで（`GP247_API_WRITE_THROTTLE`）、`Idempotency-Key` は任意（再送 ⇒ 最初の結果。`409 idempotency_key_reused` / `idempotency_in_progress`、`gp247:update` 前は `503 idempotency_unavailable`）（セクション 3、6、7）; ERP 向けのイベントログ `api/v2/core/events` を追加（カーソル `after`、古い順、管理画面の権限とストアで制限。既定はオフ — API 管理画面の **同期用イベントログ（ERP）** スイッチ、オフの間は `409 event_log_disabled`。保持 30 日、古すぎるカーソルは `410 cursor_expired`）（セクション 5、6）; 管理用の v2 一覧に変更の同期モードを追加: `updated_since` ＋ カーソル `page[after]`、`meta.next_after` / `has_more` / `sync_until`（6 章）; ドキュメントは API v2 のみを扱うように変更し、API v1 は別ドキュメント（[API v1](./api-v1_ja.md)）に移動; shop 3.5.1: アプリからの未払い注文のキャンセル（`orders/{id}/cancel`、`member/orders/{id}/cancel`）、24 時間未払いのゲートウェイ注文の自動キャンセル、支払い / 全額返金後の注文ステータスをゲートウェイに合わせる、独自ドメインのないストアの注文のゲートウェイ払い（10.3 節）; `Accept: application/json` を送らなくてもレスポンスはすべて JSON（トークンなし → `401`、`500` は返らない）。`register` と `member/password` はパスワード必須、必須項目のない本文 → `422`（6 章、9.1） |
 | 2026-10-30 | gp247/shop 3.5.0 | API v2 によるカート（`api/v2/front/cart`、`cart/items`）: ウェブサイトと共通のアカウントのカート、`X-Cart-Token` によるゲストのカート（30 日）、ログイン / 登録時のカート統合（`cart_merge`）、最大 100 行、1 分あたり 60 回; API v2 によるチェックアウトの手順（`checkout`、`checkout/address`、`checkout/shipping-methods` + `shipping-method`、`checkout/payment-methods` + `payment-method`、`checkout/totals`）とプロモーション（`cart/promotions/{pluginKey}`）; API v2 による注文（`checkout/place`）: `Idempotency-Key` 必須（再送 ⇒ 同じ注文）、新しい合計付きの `409 price_changed`、API 管理画面の **API経由の注文** スイッチ（既定でオフ）、1 分あたり 10 件; API によるオンライン決済（`payment.url`、許可リスト `GP247_PAYMENT_RETURN_URLS`（既定で空）にある `return_url` で購入者をアプリへ戻す）と支払い状況（`member/orders/{id}/payment`、`orders/{id}/payment` + `X-Order-Access`）; v2 の商品に `attributes`、`image_sizes`、`stock_status` を追加 |
 | 2026-10-29 | gp247/core 3.6.0 | **管理者**のパスワードの変更／再設定（ユーザー画面、アカウント設定、パスワードを忘れた場合）で、その管理者のすべての API トークンとセッションをサインアウト |
@@ -1405,4 +1480,4 @@ v2 への移行方法は [API v1（開発終了）](./api-v1_ja.md)を参照し�
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-31 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-01 · ✍️ **作成者 (Author):** GP247</sub>

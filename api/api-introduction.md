@@ -52,7 +52,7 @@ flowchart LR
 - [4. API Connection](#4-the-api-connection-protection-layer--optional) — an extra key for apps
 - [5. Turning the API on and off](#5-turning-the-api-on-and-off) — switches on the API management screen
 - [6. Responses, parameters & errors](#6-response-format-list-parameters--error-codes) — read results, filter, sort, sync changes, event log, handle errors
-- [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes for ERP / warehouse tools
+- [7. Core API (Admin)](#7-core-api-workflow-admin) — admin flow and endpoints, order, product and stock writes, customer lock for ERP / CRM / warehouse tools
 - [8. Front API (Storefront)](#8-front-api-workflow-storefront) — public and customer-account flow and endpoints
 - [9. Customer accounts & sessions](#9-customer-accounts--sign-in-sessions) — registration, refresh tokens, MFA
 - [10. Cart & checkout](#10-cart--checkout-through-the-api) — cart, checkout, payment
@@ -178,6 +178,7 @@ admin screen; an administrator can only call the endpoint if the account is allo
 | Endpoint (prefix `api/v2/core`) | Permission required (admin screen) |
 | --- | --- |
 | `customer/list`, `customer/detail/{id}` | Customer list |
+| `customer/{id}` (`PATCH`) | **Change permission** on the Customer list screen (section 7) |
 | `order/list` | Order list |
 | `order/detail/{id}` | Order details |
 | `order/{id}/status`, `order/{id}/shipping`, `order/{id}/notes` | **Change permission** on the Order list screen (section 7) |
@@ -367,8 +368,9 @@ flowchart TD
   few records come back again. No new records (`sync_until` is `null`) → keep the previous mark.
 - HTTP `422` (`validation_failed`) when: `updated_since` is not ISO-8601; `page[after]` is not a cursor returned by the
   list; `sort` or `page[number]` is sent together with `updated_since`.
-- **Limit in this version:** editing only the multilingual text (name, description) of a product or category does **not**
-  change its `updated_at`, so that edit does not show up in sync mode.
+- **Only real changes move `updated_at`** *(since gp247/shop 3.6.0)*: editing the multilingual text (name, description) of
+  a product or category also changes its `updated_at`; saving a form without changing anything, or a customer viewing a
+  product page, does **not**.
 - **Deleted records do not show up here:** a list can only return records that still exist. To learn which records were
   deleted, read the event log (the next sub-section).
 - Upgrading sites must run `php artisan gp247:update` (adds an index on the `updated_at` column of these tables).
@@ -384,8 +386,8 @@ reads them in turn with the cursor `after` = the `id` of the last event it handl
 - **Off by default** (fresh installs and upgraded sites alike). The site owner turns it on with the **Event log for sync
   (ERP)** switch on the API management screen (section 5). Reading while it is off → `409 event_log_disabled`. Events are
   **only recorded while it is on** — changes made while it is off never appear in the log.
-- **Event types:** gp247/core 3.7.0 provides the log; gp247/shop 3.6.0 records order, stock, product and customer changes.
-  Plugins may add their own event types.
+- **Event types:** gp247/core 3.7.0 provides the log; gp247/shop 3.6.0 records 8 event types for orders, stock, products
+  and customers — see [Store event types](#store-event-types). Plugins may add their own event types.
 
 `GET api/v2/core/events` — needs an admin token (section 2).
 
@@ -425,12 +427,12 @@ Trimmed response:
   "data": [
     {
       "id": 1521,
-      "type": "<resource>.<action>",
+      "type": "stock.changed",
       "subject_id": "AbC12",
       "store_id": "1",
       "source": "admin",
       "actor": { "type": "admin", "id": "1" },
-      "data": {},
+      "data": { "delta": -2, "stock": 13 },
       "occurred_at": "2026-10-31T08:15:42+07:00"
     }
   ],
@@ -469,6 +471,35 @@ flowchart TD
   old events are not being cleaned.
 - `after` that is not an event `id`, or a malformed `filter[type]` → `422 validation_failed`.
 - Upgrading sites must run `php artisan gp247:update` (creates the event log table).
+
+#### Store event types
+
+> ℹ️ **Available since:** gp247/shop 3.6.0
+
+Each event type belongs to an admin screen: an account can read that type only when it may open the matching screen
+(section 3).
+
+| `type` | When | `data` | Who can read it (admins allowed to open the screen) |
+| --- | --- | --- | --- |
+| `order.created` | A new order (storefront checkout, API checkout, *Create order* on the admin area, plugins) | `status`, `payment_status`, `channel`, `total`, `currency` | Order list screen |
+| `order.status_changed` | The order status or the shipping status changed | `field` (`status` or `shipping_status`), `from`, `to` | Order list screen |
+| `order.payment_status_changed` | The payment status changed (payments / refunds entered, gateway confirmations, order totals recalculated) | `from`, `to`, `received`, `balance` | Order list screen |
+| `stock.changed` | The stock of a product moved (sales and cancellations, stock edits on the product form, API stock commands, plugins such as goods receipts) | `delta` (positive: in, negative: out), `stock` (stock after the move) | Product list screen |
+| `product.updated` | A product was edited | `fields` (the **names** of the changed columns, never the values; `descriptions` when the product texts changed), `status` | Product list screen |
+| `product.deleted` | A product was deleted | `sku` | Product list screen |
+| `customer.created` | A customer signed up or was created (storefront, API, admin area, plugins) | `status` | Customer list screen |
+| `customer.updated` | A customer's details changed | `fields` (names of the changed columns; never the values, never the password), `status` | Customer list screen |
+
+- **`order.created`** carries the values **at the moment the order is created**. An order created on the admin area starts
+  empty (total 0) and gets its lines afterwards — for the final figures, read the order details (`order/detail/{id}`).
+- **`stock.changed`** records one event per product. Selling a build (bundle) product also moves the stock of each
+  component → one event per component. A stock move alone gives `stock.changed`, **not** `product.updated`.
+- **`product.deleted`** is the only way to learn that a product was deleted (a deleted record no longer appears in lists).
+- Events are recorded **whatever the source**: storefront, admin area, API, or plugins saving through the shop's models.
+- Saving a form **without changing anything**, or a customer **viewing a product page**, records no event and does not move
+  `updated_at` — so the `updated_since` lists also show only real changes.
+- A change written **straight into the database with SQL** (bypassing the shop) is not seen. Plugin developers should save
+  data through the shop's models so that the ERP sees the change.
 
 ### Error codes
 
@@ -609,6 +640,7 @@ screen, and it only sees the data of its own store (section 3).
 | `PATCH` | `api/v2/core/product/{id}` | Change a product's selling price, cost price, status ([Writing data through the admin API](#writing-data-through-the-admin-api)) |
 | `POST` | `api/v2/core/product/{id}/stock` | Receive / issue goods, set the stock after a stock count |
 | `POST` | `api/v2/core/stock/batch` | Write the stock of many products at once (up to 100 lines) |
+| `PATCH` | `api/v2/core/customer/{id}` | Lock / unlock a customer ([Customers](#customers)) |
 
 Example admin login (using `curl` in a Terminal):
 
@@ -644,8 +676,8 @@ curl -X GET "https://shop.example.com/api/v2/core/order/list?sort=-created_at&pa
 
 > ℹ️ **Available since:** gp247/core 3.7.0, gp247/shop 3.6.0
 
-An ERP or warehouse tool can update orders, product prices and stock through the API instead of typing them in on the
-admin area. Each order write has **the same effect** as the matching action on the order details screen: same stock
+An ERP, CRM or warehouse tool can update orders, product prices and stock, and lock / unlock customers through the API
+instead of doing it by hand on the admin area. Each order write has **the same effect** as the matching action on the order details screen: same stock
 movements, same order history lines.
 
 | Method | Path | Request body (JSON) | Effect |
@@ -656,6 +688,7 @@ movements, same order history lines.
 | `PATCH` | `api/v2/core/product/{id}` | `{"price"?, "cost"?, "status"?}` | Change the product's selling price, cost price, status |
 | `POST` | `api/v2/core/product/{id}/stock` | `{"delta": …}` or `{"set": …}` | Receive / issue goods, or set the stock after a stock count |
 | `POST` | `api/v2/core/stock/batch` | `{"items": [{"id" or "sku", "delta" or "set"}, …]}` | Write the stock of many products (1–100 lines) |
+| `PATCH` | `api/v2/core/customer/{id}` | `{"status": 0}` or `{"status": 1}` | Lock / unlock a customer |
 
 **Common rules (the three order endpoints):**
 
@@ -816,11 +849,51 @@ Result:
 }
 ```
 
+#### Customers
+
+A CRM or ERP locks a customer account (for example after fraud or overdue debt) and unlocks it again through
+`PATCH customer/{id}`.
+
+- The body holds only `status` (required): `0` locks, `1` unlocks. A value other than `0` / `1` → `422`.
+- Any other field (for example `email`, `first_name`) → `422 validation_failed`: personal data is changed by the customer
+  or on the admin area, never by a sync tool.
+- **Permission:** **change permission** on the **Customer list** screen, checked exactly as on that screen. View-only
+  accounts → `403 forbidden`.
+- Only customers of your own store; a customer of another store → `404 not_found`.
+- **A lock bites at once:** the customer's API tokens are refused from the next request (`401`), and a customer signed in
+  on the storefront is signed out.
+- Success → `200 {"data": <customer>}`, same shape as `customer/detail/{id}`.
+- `Idempotency-Key` is optional, as for the order writes.
+
+Example of a CRM locking a customer:
+
+```bash
+curl -X PATCH "https://shop.example.com/api/v2/core/customer/CUSTOMER-ID" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer 1|aBcD...very-long...XyZ" \
+  -H "Idempotency-Key: 5d8e1f02-a6b4-4c37-9e2d-1b7c0a4f6e93" \
+  -d '{"status":0}'
+```
+
+Result (trimmed):
+
+```json
+{
+  "data": {
+    "id": "CUSTOMER-ID",
+    "email": "customer@example.com",
+    "status": 0,
+    "updated_at": "2026-11-01T10:20:00+07:00"
+  }
+}
+```
+
 #### Retrying safely with `Idempotency-Key`
 
 On a flaky network the app cannot tell whether a write ran. Send an `Idempotency-Key` header (8–255 printable characters,
-for example a UUID) to retry without writing twice. On the three order endpoints and `PATCH product/{id}` the key is
-**optional**; on `product/{id}/stock` and `stock/batch` it is **required** (missing key → `400 idempotency_key_required`).
+for example a UUID) to retry without writing twice. On the three order endpoints, `PATCH product/{id}` and
+`PATCH customer/{id}` the key is **optional**; on `product/{id}/stock` and `stock/batch` it is **required** (missing key → `400 idempotency_key_required`).
 
 ```mermaid
 sequenceDiagram
@@ -849,7 +922,7 @@ sequenceDiagram
 
 - Writes are counted **per admin account**: by default **300 requests / minute**. Change it with the environment variable
   `GP247_API_WRITE_THROTTLE` as `requests,minutes`, for example `600,1`.
-- Product, stock and order writes share this limit; one `stock/batch` counts as **one** request.
+- Product, stock, order and customer writes share this limit; one `stock/batch` counts as **one** request.
 - Over the limit → `429 too_many_attempts` with a `Retry-After` header.
 - Reads keep the general per-IP limit.
 
@@ -1419,6 +1492,7 @@ code. See [How to create an API the right way](./create-api.md).
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-01 | gp247/core 3.7.0, gp247/shop 3.6.0 | Lock / unlock a customer through the admin API: `PATCH api/v2/core/customer/{id}` (`{"status": 0 / 1}`, any other field → `422`; change permission on the Customer list screen; a lock refuses the customer's API tokens at once and signs the customer out on the storefront; optional `Idempotency-Key`, shared write limit) (sections 3, 7); the event log has 8 store event types: `order.created`, `order.status_changed`, `order.payment_status_changed`, `stock.changed`, `product.updated`, `product.deleted`, `customer.created`, `customer.updated` — recorded whatever the source of the change, each type readable with the permission of its admin screen (section 6); editing a product's / category's texts now moves `updated_at`, while saving without changes and product page views do not (section 6) |
 | 2026-10-31 | gp247/core 3.6.0, gp247/shop 3.5.0 / 3.5.1; change sync: gp247/core 3.7.0, gp247/shop 3.6.0, gp247/front 3.4.0; event log: gp247/core 3.7.0; order writes through the admin API: gp247/core 3.7.0, gp247/shop 3.6.0; product and stock writes through the admin API: gp247/shop 3.6.0 | Product and stock writes through the admin API: `PATCH api/v2/core/product/{id}` (selling price, cost price, status — following the field switches of the product settings), `product/{id}/stock` (`delta` receives/issues atomically, never below 0, sold counter untouched; `set` after a stock count, administrators only), `stock/batch` (1–100 lines, one result per line) — change permission on the Product list screen, `Idempotency-Key` required for stock writes, `422 stock_would_be_negative` / `stock_managed_by_components` (sections 3, 6, 7); Order writes through the admin API for ERP / warehouse tools: `api/v2/core/order/{id}/status`, `order/{id}/shipping` (shipping status + manual shipment tracking number), `order/{id}/notes` — change permission on the Order list screen, write limit 300 per minute per account (`GP247_API_WRITE_THROTTLE`), optional `Idempotency-Key` (retry ⇒ first result; `409 idempotency_key_reused` / `idempotency_in_progress`, `503 idempotency_unavailable` before `gp247:update`) (sections 3, 6, 7); Event log for ERP `api/v2/core/events` (`after` cursor, oldest first, limited by admin-screen permission and store; off by default — **Event log for sync (ERP)** switch on the API management screen, `409 event_log_disabled` while off; kept 30 days, a too-old cursor gets `410 cursor_expired`) (sections 5, 6); Admin v2 lists gain a change-sync mode: `updated_since` + `page[after]` cursor, `meta.next_after` / `has_more` / `sync_until` (section 6); The document now covers API v2 only; API v1 moved to its own document ([API v1](./api-v1.md)); shop 3.5.1: cancelling an unpaid app order (`orders/{id}/cancel`, `member/orders/{id}/cancel`), gateway orders unpaid after 24 hours cancel themselves, paid / fully refunded orders follow the gateway's status, orders of a store without its own domain are paid through the gateway (section 10.3); Every response is JSON even without `Accept: application/json` (missing token → `401`, no more `500`); `register` and `member/password` require a password, a body missing a required field → `422` (sections 6, 9.1) |
 | 2026-10-30 | gp247/shop 3.5.0 | Cart through API v2 (`api/v2/front/cart`, `cart/items`): account cart shared with the website, guest cart with `X-Cart-Token` (30 days), guest cart merged at sign-in / registration (`cart_merge`), at most 100 lines, 60 calls per minute; checkout steps through API v2 (`checkout`, `checkout/address`, `checkout/shipping-methods` + `shipping-method`, `checkout/payment-methods` + `payment-method`, `checkout/totals`) and promotions (`cart/promotions/{pluginKey}`); ordering through API v2 (`checkout/place`): `Idempotency-Key` required (resend ⇒ same order), `409 price_changed` with the new totals, **Ordering through the API** switch on the API management screen (off by default), 10 orders per minute; online payment through the API (`payment.url`, payer sent back to the app through a `return_url` on the allowed list `GP247_PAYMENT_RETURN_URLS`, empty by default) and payment status (`member/orders/{id}/payment`, `orders/{id}/payment` + `X-Order-Access`); v2 product adds `attributes`, `image_sizes`, `stock_status` |
 | 2026-10-29 | gp247/core 3.6.0 | Changing/resetting an **administrator** password (Users screen, Account settings, forgot password) signs every API token and session of that admin out |
@@ -1427,4 +1501,4 @@ code. See [How to create an API the right way](./create-api.md).
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-01 · ✍️ **Author:** GP247</sub>
