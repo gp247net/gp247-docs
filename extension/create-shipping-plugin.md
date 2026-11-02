@@ -91,7 +91,7 @@ MyWeightShipping/
     "configKey": "MyWeightShipping",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/shop"],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -950,8 +950,9 @@ product and returns the item with extra `meta`. Never a closure — it makes `ph
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/shop 3.1.4 | New document: a weight-based price plugin that works right away + a skeleton for connecting a carrier with an API |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

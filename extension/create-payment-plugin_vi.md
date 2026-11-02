@@ -96,7 +96,7 @@ Thay toàn bộ nội dung file:
     "configKey": "MyBankTransfer",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/shop"],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -1043,8 +1043,9 @@ hàng của **đơn** (`$order->store_id`).
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/shop 3.1.4 | Tài liệu mới: plugin chuyển khoản chạy được ngay + khung nối cổng thanh toán online; `getInfo()['note']` hiện ở trang thanh toán |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

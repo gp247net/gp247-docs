@@ -110,7 +110,7 @@ Ba điều phải nhớ suốt lộ trình:
     "configKey": "MyPlugin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -124,7 +124,7 @@ Ba điều phải nhớ suốt lộ trình:
 | `configCode` | Vai trò của plugin: `"Payment"` (thanh toán), `"Shipping"` (vận chuyển), `"Promotion"` (mã giảm giá); plugin khác ghi giống `configKey` |
 | `version` | `1.0`, `1.1`, `2.0`… Mỗi bản phát hành phải **lớn hơn** bản trước |
 | `requireCore` | Phiên bản lõi chạy được: ghi dòng `core` của `gp247:info`, ví dụ `["3.1"]` |
-| `requireUpdateFrom` | Bản đang cài thấp nhất được cập nhật thẳng lên bản này; `"1.0"` là không chặn |
+| `minUpdateFrom` | Bản đang cài thấp nhất (≥) được cập nhật thẳng lên bản này; `"1.0"` là không chặn. Có từ core 3.9, thay tên cũ `requireUpdateFrom` (bị gỡ ở core 4.0) |
 | `requireComposerPackages` | Gói Composer bắt buộc, ví dụ `["gp247/shop"]` cho plugin bán hàng |
 | `requireGp247Extensions` | Plugin GP247 khác phải cài trước (theo `configKey`) |
 | `storeScope` | `"global"` (một thiết lập chung) hoặc `"store"` (mỗi cửa hàng một thiết lập) |
@@ -492,7 +492,7 @@ Quy tắc giao diện: chỉ dùng component `<x-gp247::*>`, Livewire và Alpine
 - **Thiếu gói trong `requireComposerPackages` / plugin trong `requireGp247Extensions` thì không cài được.**
 
 **Khi cập nhật**
-- **`version` mới phải lớn hơn bản đang cài**, và bản đang cài không thấp hơn `requireUpdateFrom` — nếu không, cập nhật 1-click từ chối.
+- **`version` mới phải lớn hơn bản đang cài**, và bản đang cài không thấp hơn `minUpdateFrom` — nếu không, cập nhật 1-click từ chối.
 - **`update()` báo lỗi thì bản cũ được khôi phục** (cập nhật 1-click); với `git pull` thì file không khôi phục, chỉ giữ trạng thái "chờ áp dụng" để chạy lại.
 
 ---
@@ -547,9 +547,10 @@ Làm cùng AI agent thì dùng skill `gp247-plugin-create`.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | Sắp xếp lại thành trang chính 6 bước; tách [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) và [Plugin nâng cao](./create-plugin-advanced_vi.md); thêm hướng dẫn plugin thanh toán và vận chuyển. **Sửa:** `requireCore` ghi theo `gp247:info` (giá trị `"2.1"` cũ bị lõi 3.x từ chối); thiết lập mặc định lưu mỗi khoá một dòng với màn `ConfigForm` (giữ được khoá bí mật); thêm `clickApp()` cho nút Cấu hình |
 | 2026-09-29 |  | Hook `AppConfig::update($fromVersion)` nay cũng được gọi khi chủ site thay file bằng `git pull`/Composer/chép tay (qua `gp247:update`, `gp247:ext-update --local`, nút **Áp dụng cập nhật dữ liệu**); lần đầu có thể nhận `null`. |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

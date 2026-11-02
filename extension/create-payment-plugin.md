@@ -96,7 +96,7 @@ Replace the whole file:
     "configKey": "MyBankTransfer",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/shop"],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -1050,8 +1050,9 @@ save keeps the old secret.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/shop 3.1.4 | New document: a bank transfer plugin that works right away + a skeleton for connecting an online payment gateway; `getInfo()['note']` shows on the checkout page |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

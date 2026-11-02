@@ -96,7 +96,7 @@ MyBankTransfer/
     "configKey": "MyBankTransfer",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/shop"],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -1043,8 +1043,9 @@ class MyGatewayWebhookTest extends TestCase
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/shop 3.1.4 | 新しいドキュメント：すぐに動く銀行振込プラグイン + オンライン決済ゲートウェイに接続するスケルトン。`getInfo()['note']` が決済ページに表示される |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

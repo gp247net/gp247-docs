@@ -127,7 +127,7 @@ Open `gp247.json`; the generated sample content is:
     "configKey": "MyShopSkin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/front"],
     "requireGp247Extensions": []
 }
@@ -142,7 +142,7 @@ What the important fields mean:
 | `version` | Version (semver: `1.0`, `1.1`...). Every new release must **increase** this number. |
 | `requireCore` | Core versions it runs on: write the `core` line of `php artisan gp247:info`, e.g. `["3.1"]`. Each `"X.Y"` value is the range "from X.Y within the X.x line" — `"2.1"` is refused by a 3.x core. |
 | **`requireComposerPackages`** | **Always includes `"gp247/front"`** — because a template only runs with the storefront present. Add `"gp247/shop"` if the template is meant only for shopping sites. |
-| `requireUpdateFrom` | The minimum version allowed to 1-click update to this one. `"1.0"` is a safe default. |
+| `minUpdateFrom` | The lowest installed version (≥) allowed to 1-click update to this one. `"1.0"` is a safe default. Since core 3.9, replaces the old name `requireUpdateFrom` (removed in core 4.0). |
 
 > **Keys renamed in gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`. Core 2.1 **still reads** the old keys (backward compatible) but they are **deprecated** — new templates should use the new keys (`requireComposerPackages` always includes `"gp247/front"`).
 
@@ -403,8 +403,9 @@ most common issue, caused by Laravel still holding the old cache.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Fixed:** `requireCore` follows the running core (`php artisan gp247:info`) — the old `"2.1"` is refused by a 3.x core; section titles no longer carry a "Step" number that disagreed with the section number |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

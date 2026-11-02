@@ -18,14 +18,14 @@
 ### 拡張（プラグイン）
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
-| [プラグインの作り方](./extension/create-plugin_ja.md) | 出発点：プラグインの種類に合ったガイドの選び方、コード付きの 6 ステップ（データベースに保存する設定、設定画面、インストール、公開） | 2026-10-22 |
-| [決済プラグインを作る](./extension/create-payment-plugin_ja.md) | コード付きの手順：すぐに動く銀行振込プラグイン＋オンライン決済ゲートウェイ接続の枠組み（入金を一度だけ記録、Webhook） | 2026-10-22 |
-| [配送プラグインを作る](./extension/create-shipping-plugin_ja.md) | コード付きの手順：すぐに動く重量別送料プラグイン＋API を持つ配送会社接続の枠組み（送り状、Webhook、代金引換） | 2026-10-22 |
-| [更新に強いプラグイン](./extension/create-plugin-update-safety_ja.md) | 更新の仕組み、6 つのルール、`update()` フック、独自のデータテーブル | 2026-10-22 |
+| [プラグインの作り方](./extension/create-plugin_ja.md) | 出発点：プラグインの種類に合ったガイドの選び方、コード付きの 6 ステップ（データベースに保存する設定、設定画面、インストール、公開） | 2026-11-03 |
+| [決済プラグインを作る](./extension/create-payment-plugin_ja.md) | コード付きの手順：すぐに動く銀行振込プラグイン＋オンライン決済ゲートウェイ接続の枠組み（入金を一度だけ記録、Webhook） | 2026-11-03 |
+| [配送プラグインを作る](./extension/create-shipping-plugin_ja.md) | コード付きの手順：すぐに動く重量別送料プラグイン＋API を持つ配送会社接続の枠組み（送り状、Webhook、代金引換） | 2026-11-03 |
+| [更新に強いプラグイン](./extension/create-plugin-update-safety_ja.md) | 更新の仕組み、6 つのルール、`update()` フック、独自のデータテーブル | 2026-11-03 |
 | [高度なプラグイン](./extension/create-plugin-advanced_ja.md) | ストアごとの設定、秘密キー、ストアフロントのページ／ブロック／差し込みポイント、割引コード、メニュー | 2026-10-22 |
-| [テンプレート（デザイン）の作り方](./extension/create-template_ja.md) | 新しいストアフロントテンプレートの作成、gp247/shop のビューフォールバックの仕組み | 2026-10-22 |
+| [テンプレート（デザイン）の作り方](./extension/create-template_ja.md) | 新しいストアフロントテンプレートの作成、gp247/shop のビューフォールバックの仕組み | 2026-11-03 |
 | [プラグインとテンプレートのインストール](./extension/install-extension_ja.md) | 4 つのインストール方法：オンライン（ライブラリ）、インポート（.zip）、手動、CLI（`gp247:ext-*`） | 2026-10-22 |
-| [プラグイン v1 から v2 への移行](./extension/convert-plugin-v1-to-v2_ja.md) | プラグインを Core 1.x から Core 2.0 へアップグレード | 2026-10-22 |
+| [プラグイン v1 から v2 への移行](./extension/convert-plugin-v1-to-v2_ja.md) | プラグインを Core 1.x から Core 2.0 へアップグレード | 2026-11-03 |
 
 ### リリース
 | ドキュメント | 概要 | 最終更新 |
@@ -52,8 +52,8 @@
 | --- | --- | --- |
 | [注文のライフサイクル](./s-cart/order-processing/order-lifecycle_ja.md) | 注文の各段階 — 注文、編集、入金、返金、キャンセル、再開、削除 — と各段階での在庫／金額／履歴、フロー図 | 2026-10-22 |
 | [支払リクエスト（Payment Request）](./s-cart/order-processing/payment-request_ja.md) | カート外での入金／出金：オンライン支払リンク、手動記録、返金；4 つのお金の流れ、注文／InOut／MultiVendor の用途、出金の権限、フロー図 | 2026-10-22 |
-| [GP247 の決済](./s-cart/payment/payment_ja.md) | 設定と運用：決済ゲートウェイの導入（テスト → 本番、Webhook）、注文の支払台帳、代金引換、支払時にお客様に表示する案内；開発者は[決済プラグインを作る](./extension/create-payment-plugin_ja.md)を参照 | 2026-10-22 |
-| [GP247 の配送](./s-cart/shipping/shipping_ja.md) | 設定と運用：配送タブ、集荷倉庫、送り状、追跡、代金引換（shop 3.1.4 から）；開発者は[配送プラグインを作る](./extension/create-shipping-plugin_ja.md)を参照 | 2026-10-22 |
+| [GP247 の決済](./s-cart/payment/payment_ja.md) | 設定と運用：決済ゲートウェイの導入（テスト → 本番、Webhook）、注文の支払台帳、代金引換、支払時にお客様に表示する案内；開発者は[決済プラグインを作る](./extension/create-payment-plugin_ja.md)を参照 | 2026-11-03 |
+| [GP247 の配送](./s-cart/shipping/shipping_ja.md) | 設定と運用：配送タブ、集荷倉庫、送り状、追跡、代金引換（shop 3.1.4 から）；開発者は[配送プラグインを作る](./extension/create-shipping-plugin_ja.md)を参照 | 2026-11-03 |
 | [通貨（Currency）](./s-cart/tax-and-currency/currency_ja.md) | 明示的な基準通貨、価値を保ったままの基準通貨の変更、金額入力欄の注記（shop 2.1 から） | 2026-10-22 |
 | [GP247 の税](./s-cart/tax-and-currency/tax_ja.md) | 商品ごとの税の仕組みと設定方法 | 2026-10-22 |
 | [セット商品（Bundle/Combo）](./s-cart/product/product-bundle_ja.md) | 複数の子商品からなるセット商品の作成；価格と在庫の差し引き | 2026-10-22 |
@@ -77,4 +77,4 @@
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-02 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

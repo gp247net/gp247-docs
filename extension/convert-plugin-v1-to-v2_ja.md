@@ -37,7 +37,7 @@ GP247 はコアの中に「プラグインの雛形」（plugin format）を持�
 | LayoutBlock の page-type 登録 | *（なし）* | `Provider.php` で `token => lang-key` を登録（プラグインが独自の公開ページを持つ場合） |
 | `gp247.json` → `requireCore` | `["1.2"]` | 稼働中のコアのバージョン。例：`["3.1"]`（`php artisan gp247:info` を参照） |
 | `gp247.json` → 依存関係のキー | `requirePackages`／`requireExtensions` | `requireComposerPackages`／`requireGp247Extensions`（core 2.1 で名称変更） |
-| `gp247.json` → `requireUpdateFrom` | *（なし）* | `"1.0"`（ワンクリック更新の条件） |
+| `gp247.json` → `minUpdateFrom` | *（なし）* | `"1.0"`（ワンクリック更新の条件） |
 
 **結論：** ビジネスロジック（モデル、データ処理、インストール／アンインストール）はほとんど変わりません。
 変わるのは **UI** と **いくつかの設定の宣言**です。
@@ -51,7 +51,7 @@ GP247 はコアの中に「プラグインの雛形」（plugin format）を持�
 
 | ファイル | 作業内容 | 必須？ |
 |---|---|---|
-| `gp247.json` | `requireCore` を稼働中のコアに合わせる（例：`["3.1"]`）、`requireUpdateFrom` を追加、`requirePackages`／`requireExtensions` → `requireComposerPackages`／`requireGp247Extensions` に名称変更 | ✅ 必須 |
+| `gp247.json` | `requireCore` を稼働中のコアに合わせる（例：`["3.1"]`）、`minUpdateFrom` を追加、`requirePackages`／`requireExtensions` → `requireComposerPackages`／`requireGp247Extensions` に名称変更 | ✅ 必須 |
 | `Views/Admin.blade.php` | マスターレイアウトを TailAdmin に変更し、jQuery／AdminLTE を除去 | ✅ 必須 |
 | `AppConfig.php` | `disable()` のエラーメッセージを多言語対応に変更 | ✅ 必須 |
 | `Livewire/AdminLivewire.php` | **新規作成** — Livewire 方式の管理画面 | 🟡 推奨 |
@@ -82,7 +82,7 @@ GP247 はコアの中に「プラグインの雛形」（plugin format）を持�
 
 ### ステップ 2 — `gp247.json` を更新する
 
-プラグインのフォルダーにある `gp247.json` ファイルを開きます。`requireCore` を修正し、`requireUpdateFrom` を**追加**し、
+プラグインのフォルダーにある `gp247.json` ファイルを開きます。`requireCore` を修正し、`minUpdateFrom` を**追加**し、
 core 2.1 の標準に従って依存関係の 2 つのキーを**名称変更**します：`requirePackages` → `requireComposerPackages`、
 `requireExtensions` → `requireGp247Extensions`。
 
@@ -103,7 +103,7 @@ core 2.1 の標準に従って依存関係の 2 つのキーを**名称変更**�
 {
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false
@@ -114,9 +114,10 @@ core 2.1 の標準に従って依存関係の 2 つのキーを**名称変更**�
 - `requireCore`：このプラグインが対応する GP247 コアのバージョン。`php artisan gp247:info` の `core` の行を正しく書きます（例：`["3.1"]`）。各値 `"X.Y"` は「X.x 系の中で X.Y 以上」という範囲です — `"2.1"` と書くと 3.x のコアは**インストールを拒否します**。
 - `requireLivewire`：プラグインが Livewire を必要とするかどうか（`true`／`false`）。ステップ 5 で Livewire の画面を導入するときに追加します（`false` が安全な既定値です — Livewire はコアに同梱されています）。
 - `requireComposerPackages`／`requireGp247Extensions`：依存元（Composer パッケージか GP247 拡張機能か）を明確にするため、`requirePackages`／`requireExtensions` から名称変更されました。Core 2.1 は旧キーも読みます（後方互換）が、非推奨（deprecated）です — 新しいキーを使ってください。
-- `requireUpdateFrom`：このバージョンへワンクリック更新できる、インストール済みの**最低**バージョン。
+- `minUpdateFrom`：このバージョンへワンクリック更新できる、インストール済みの**最低**バージョン。
   `"1.0"` にしておけば安全です（ほぼ制限なし）。旧系列から自動移行できないメジャーリリースを出すときだけ、
-  この値を上げてください。
+  この値を上げてください。例 `"1.2"`：1.2・1.3・1.9 はいずれも直接更新でき、1.1 はブロックされます。
+  `minUpdateFrom` は gp247/core 3.9 から使え、旧名称 `requireUpdateFrom` を置き換えます（旧名称は非推奨の警告付きで読み込まれ、core 4.0 で削除）。
 
 ### ステップ 3 — 管理画面ビューのレイアウトを修正する（最重要）
 
@@ -465,7 +466,7 @@ AI エージェントと作業する場合は、[gp247-skills](https://github.co
 
 ## 4. 「完了」とする前のチェックリスト
 
-- [ ] `gp247.json`：`requireCore` が `gp247:info` に従っている（例：`["3.1"]`）、`requireUpdateFrom` を追加済み、`requireComposerPackages`／`requireGp247Extensions` に変更済み。
+- [ ] `gp247.json`：`requireCore` が `gp247:info` に従っている（例：`["3.1"]`）、`minUpdateFrom` を追加済み、`requireComposerPackages`／`requireGp247Extensions` に変更済み。
 - [ ] `Views/Admin.blade.php`：レイアウトを `gp247-admin::layouts.admin` に変更済み。
 - [ ] ビュー／アセットに `$(...)`、pjax、jQuery のウィジェット（select2／daterangepicker など）が残っていない。
 - [ ] 表示テキストは `gp247_language_render(...)` で表示し、ハードコードしていない。
@@ -507,7 +508,7 @@ UI 層といくつかの設定宣言ファイルだけです。
 → `php artisan optimize:clear` を実行してルート／ビュー／設定のキャッシュを削除し、ページを再読み込みしてください。
 Laravel が古いキャッシュを保持していることによる、最もよくある問題です。
 
-**Q6: `requireUpdateFrom` にはどの値を設定すべきですか？**
+**Q6: `minUpdateFrom` にはどの値を設定すべきですか？**
 
 → `"1.0"` が最も安全です（更新をほとんど妨げません）。`update()` で旧系列から移行できない
 メジャーリリースを出すときだけ、値を上げてください（例：`"2.0"`）。
@@ -544,8 +545,9 @@ php artisan gp247:make-plugin --name=YourPluginName --download=0
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/core 3.1 | **修正：** `requireCore` を稼働中のコア（`php artisan gp247:info`）に従って書く — 古い値 `"2.1"` は 3.x のコアに拒否される。ステップ 8d から決済／配送プラグインのガイドへリンク |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

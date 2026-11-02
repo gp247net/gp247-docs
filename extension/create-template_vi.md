@@ -124,7 +124,7 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
     "configKey": "MyShopSkin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/front"],
     "requireGp247Extensions": []
 }
@@ -139,7 +139,7 @@ Mở `gp247.json`, nội dung mẫu sinh sẵn:
 | `version` | Phiên bản (semver: `1.0`, `1.1`...). Mỗi bản phát hành mới phải **tăng** số này. |
 | `requireCore` | Phiên bản lõi chạy được: ghi dòng `core` của `php artisan gp247:info`, ví dụ `["3.1"]`. Mỗi giá trị `"X.Y"` là khoảng "từ X.Y trong dòng X.x" — `"2.1"` bị lõi 3.x từ chối. |
 | **`requireComposerPackages`** | **Luôn có `"gp247/front"`** — vì template chỉ chạy khi có storefront. Thêm `"gp247/shop"` nếu template chỉ dành cho site có bán hàng. |
-| `requireUpdateFrom` | Phiên bản tối thiểu được cập nhật 1-click lên bản này. Để `"1.0"` là an toàn. |
+| `minUpdateFrom` | Phiên bản đang cài thấp nhất (≥) được cập nhật 1-click lên bản này. Để `"1.0"` là an toàn. Có từ core 3.9, thay tên cũ `requireUpdateFrom` (bị gỡ ở core 4.0). |
 
 > **Đổi tên khóa từ gp247/core 2.1:** `requirePackages` → `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`. Core 2.1 **vẫn đọc** khóa cũ (tương thích ngược) nhưng đã **deprecated** — template mới hãy dùng khóa mới (`requireComposerPackages` luôn có `"gp247/front"`).
 
@@ -398,8 +398,9 @@ nhất do Laravel còn giữ cache cũ.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Sửa:** `requireCore` ghi theo lõi đang chạy (`php artisan gp247:info`) — giá trị `"2.1"` cũ bị lõi 3.x từ chối; tiêu đề mục bỏ số "Bước" lệch với số mục |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

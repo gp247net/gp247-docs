@@ -110,7 +110,7 @@ flowchart LR
     "configKey": "MyPlugin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -124,7 +124,7 @@ flowchart LR
 | `configCode` | プラグインの役割：`"Payment"`（決済）、`"Shipping"`（配送）、`"Promotion"`（クーポン）。それ以外のプラグインは `configKey` と同じ値を書きます |
 | `version` | `1.0`、`1.1`、`2.0`… リリースのたびに前のバージョンより**大きく**なければなりません |
 | `requireCore` | 動作するコアのバージョン：`gp247:info` の `core` の行を書きます。例：`["3.1"]` |
-| `requireUpdateFrom` | このバージョンへ直接更新できる、インストール済みの最低バージョン。`"1.0"` は制限なし |
+| `minUpdateFrom` | このバージョンへ直接更新できる、インストール済みの最低バージョン（以上）。`"1.0"` は制限なし。core 3.9 から、旧名称 `requireUpdateFrom` を置き換え（core 4.0 で削除） |
 | `requireComposerPackages` | 必須の Composer パッケージ。例：販売系プラグインなら `["gp247/shop"]` |
 | `requireGp247Extensions` | 先にインストールが必要な他の GP247 プラグイン（`configKey` で指定） |
 | `storeScope` | `"global"`（共通の設定が 1 つ）または `"store"`（ストアごとに設定） |
@@ -492,7 +492,7 @@ UI のルール：`<x-gp247::*>` コンポーネント、Livewire、Alpine だ�
 - **`requireComposerPackages` のパッケージ、または `requireGp247Extensions` のプラグインが不足していると、インストールできません。**
 
 **更新時**
-- **新しい `version` はインストール済みのものより大きく**、インストール済みのものが `requireUpdateFrom` 以上である必要があります — そうでないと、ワンクリック更新は拒否されます。
+- **新しい `version` はインストール済みのものより大きく**、インストール済みのものが `minUpdateFrom` 以上である必要があります — そうでないと、ワンクリック更新は拒否されます。
 - **`update()` がエラーを返すと、旧バージョンが復元されます**（ワンクリック更新）。`git pull` の場合はファイルは復元されず、再実行できるよう「適用待ち」の状態だけが残ります。
 
 ---
@@ -547,9 +547,10 @@ AI エージェントと作業する場合は、スキル `gp247-plugin-create` 
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/core 3.1 | 6 ステップのメインページに再構成。[更新に安全なプラグイン](./create-plugin-update-safety_ja.md) と [高度なプラグイン](./create-plugin-advanced_ja.md) を分離。決済プラグインと配送プラグインのガイドを追加。**修正：** `requireCore` を `gp247:info` に従って書く（古い値 `"2.1"` は 3.x のコアに拒否される）。既定の設定はキーごとに 1 行で保存し、`ConfigForm` 画面を使う（秘密鍵を保持できる）。「設定」ボタンのために `clickApp()` を追加 |
 | 2026-09-29 |  | フック `AppConfig::update($fromVersion)` が、サイトオーナーが `git pull`／Composer／手動コピーでファイルを置き換えたときにも呼ばれるようになりました（`gp247:update`、`gp247:ext-update --local`、「データ更新を適用」(Apply data update) ボタン経由）。初回は `null` を受け取ることがあります。 |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

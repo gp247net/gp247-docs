@@ -25,7 +25,7 @@ flowchart LR
     U -. "lỗi (1-click)" .-> R["Khôi phục bản cũ"]
 ```
 
-- Đường 1-click: trước khi ghi đè, hệ thống kiểm checksum, `configKey`, `version`, `requireUpdateFrom`, `requireCore`; lỗi ở
+- Đường 1-click: trước khi ghi đè, hệ thống kiểm checksum, `configKey`, `version`, `minUpdateFrom`, `requireCore`; lỗi ở
   bước ghi đè hoặc `update()` → plugin được **khôi phục** từ bản sao lưu.
 - Đường thay file bằng tay (`git pull`, Composer, chép tay; rồi `gp247:update`, `gp247:ext-update --local` hoặc nút **Áp dụng cập nhật
   dữ liệu**): không có bước sao lưu file; lỗi ở `update()` chỉ giữ plugin ở trạng thái "chờ áp dụng" để chạy
@@ -48,7 +48,7 @@ flowchart LR
 | 2 | Thiết lập chủ cửa hàng chỉnh nằm trong database | Cập nhật ghi đè mọi file |
 | 3 | `update()` chạy lại an toàn và xử lý được `null` | Nó chạy sau cả `git pull`, có thể nhiều lần |
 | 4 | Không lưu file người dùng tải lên trong thư mục plugin | Thư mục bị xoá và thay khi cập nhật |
-| 5 | Đặt đúng `requireCore` và `requireUpdateFrom` | Chặn cài lên lõi chưa thử, chặn nhảy từ bản quá cũ |
+| 5 | Đặt đúng `requireCore` và `minUpdateFrom` | Chặn cài lên lõi chưa thử, chặn nhảy từ bản quá cũ |
 | 6 | Bảng dữ liệu riêng tạo được lại khi cài lại | Gỡ → cài lại phải dựng đủ bảng |
 
 ### Quy tắc 1 — `version` tăng, `configKey` giữ nguyên
@@ -131,12 +131,13 @@ public function update(?string $fromVersion = null)
 Ảnh, file khách tải lên lưu ở `storage/` hoặc khu dữ liệu chung `public/GP247/…`. Thư mục `public/` của plugin chỉ chứa asset đi
 kèm bản phát hành (css, js, ảnh giao diện).
 
-### Quy tắc 5 — `requireCore` và `requireUpdateFrom`
+### Quy tắc 5 — `requireCore` và `minUpdateFrom`
 
 - `requireCore`: mỗi giá trị `"X.Y"` là khoảng "từ X.Y trong dòng X.x". Ghi theo `php artisan gp247:info`; hỗ trợ nhiều dòng
   lớn thì mỗi dòng một giá trị (`["3.1", "4.0"]`); không ghi số bản vá.
-- `requireUpdateFrom`: bản đang cài thấp nhất được cập nhật thẳng. `"1.0"` là không chặn; nâng lên (ví dụ `"2.0"`) khi
+- `minUpdateFrom`: bản đang cài thấp nhất được cập nhật thẳng. `"1.0"` là không chặn; nâng lên (ví dụ `"2.0"`) khi
   `update()` không di trú được từ dòng cũ hơn.
+  Tên cũ `requireUpdateFrom` (trước core 3.9) vẫn chạy kèm cảnh báo deprecated, bị gỡ ở core 4.0 — hãy đổi sang `minUpdateFrom`.
 
 ### Quy tắc 6 — Bảng dữ liệu riêng
 
@@ -202,7 +203,7 @@ Gọi `(new ExtensionModel)->installExtension()` trong `install()` và `uninstal
 
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 
-- **Bản mới phải có `version` lớn hơn** và bản đang cài không thấp hơn `requireUpdateFrom` — nếu không, cập nhật 1-click từ chối.
+- **Bản mới phải có `version` lớn hơn** và bản đang cài không thấp hơn `minUpdateFrom` — nếu không, cập nhật 1-click từ chối.
 - **Gỡ plugin đang phát triển luôn dùng `--only-data`** — gỡ thường xoá cả thư mục mã nguồn (`app/…` và `public/…`).
 - **`update()` lỗi trên đường thay file bằng tay không khôi phục file** — chỉ giữ trạng thái chờ để chạy lại; viết `update()`
   sao cho chạy lại luôn an toàn.
@@ -239,10 +240,10 @@ Gọi `(new ExtensionModel)->installExtension()` trong `install()` và `uninstal
 
 → Chúng nằm trong thư mục plugin, bị xoá và thay khi cập nhật. Lưu ở `storage/` hoặc `public/GP247/…` chung.
 
-**Câu 8: Khi nào nâng `requireUpdateFrom`?**
+**Câu 8: Khi nào nâng `minUpdateFrom`?**
 
 → Khi bản mới không di trú được từ một dòng cũ — người đang ở dòng đó phải cài lại thay vì cập nhật thẳng.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -39,7 +39,7 @@ v1 and v2 templates:
 | LayoutBlock page-type registration | *(none)* | Register `token => lang-key` in `Provider.php` (if the plugin has its own public page) |
 | `gp247.json` → `requireCore` | `["1.2"]` | The running core version, e.g. `["3.1"]` (see `php artisan gp247:info`) |
 | `gp247.json` → dependency keys | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (renamed in core 2.1) |
-| `gp247.json` → `requireUpdateFrom` | *(none)* | `"1.0"` (1-click update condition) |
+| `gp247.json` → `minUpdateFrom` | *(none)* | `"1.0"` (1-click update condition) |
 
 **Conclusion:** your business logic (Model, data processing, install/uninstall) barely changes.
 What changes is the **UI** and **a few configuration declarations**.
@@ -54,7 +54,7 @@ the new standard.
 
 | File | What to do | Required? |
 |---|---|---|
-| `gp247.json` | Set `requireCore` to the running core (e.g. `["3.1"]`), add `requireUpdateFrom`, rename `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Required |
+| `gp247.json` | Set `requireCore` to the running core (e.g. `["3.1"]`), add `minUpdateFrom`, rename `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Required |
 | `Views/Admin.blade.php` | Switch the master layout to TailAdmin, remove jQuery/AdminLTE | ✅ Required |
 | `AppConfig.php` | Change the error message in `disable()` to the multilingual helper | ✅ Required |
 | `Livewire/AdminLivewire.php` | **Create new** — Livewire-style admin screen | 🟡 Recommended |
@@ -86,7 +86,7 @@ the new standard.
 
 ### Step 2 — Update `gp247.json`
 
-Open the `gp247.json` file in the plugin folder. Change `requireCore`, **add** `requireUpdateFrom`,
+Open the `gp247.json` file in the plugin folder. Change `requireCore`, **add** `minUpdateFrom`,
 and **rename** the two dependency keys per the core 2.1 standard: `requirePackages` →
 `requireComposerPackages`, `requireExtensions` → `requireGp247Extensions`.
 
@@ -107,7 +107,7 @@ and **rename** the two dependency keys per the core 2.1 standard: `requirePackag
 {
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false
@@ -118,9 +118,10 @@ Meaning of the lines:
 - `requireCore`: the GP247 core version this plugin is valid for. Write the `core` line of `php artisan gp247:info` (e.g. `["3.1"]`). Each `"X.Y"` value is the range "from X.Y within the X.x line" — `"2.1"` is **refused** by a 3.x core.
 - `requireLivewire`: whether the plugin needs Livewire (`true`/`false`). Add it when you introduce a Livewire screen in Step 5 (`false` is a safe default — Livewire ships with core).
 - `requireComposerPackages` / `requireGp247Extensions`: renamed from `requirePackages` / `requireExtensions` to state the dependency source (Composer package vs GP247 extension). Core 2.1 still reads the old keys (backward compatible) but they are deprecated — use the new keys.
-- `requireUpdateFrom`: the **minimum** currently-installed version allowed to 1-click update to
+- `minUpdateFrom`: the **minimum** currently-installed version allowed to 1-click update to
   this release. Leaving it at `"1.0"` is safe (practically no restriction). Only raise this
-  number when you ship a major release that cannot auto-migrate from older lines.
+  number when you ship a major release that cannot auto-migrate from older lines. Example `"1.2"`: 1.2, 1.3 or 1.9 can all update straight, 1.1 is blocked.
+  `minUpdateFrom` exists since gp247/core 3.9 and replaces the old name `requireUpdateFrom` (still read with a deprecation warning, removed in core 4.0).
 
 ### Step 3 — Fix the admin view layout (the most important change)
 
@@ -477,7 +478,7 @@ the [gp247-skills](https://github.com/gp247net/gp247-skills) repository.
 
 ## 4. Checklist before calling it "done"
 
-- [ ] `gp247.json`: `requireCore` from `gp247:info` (e.g. `["3.1"]`), `requireUpdateFrom` added, keys renamed to `requireComposerPackages`/`requireGp247Extensions`.
+- [ ] `gp247.json`: `requireCore` from `gp247:info` (e.g. `["3.1"]`), `minUpdateFrom` added, keys renamed to `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout changed to `gp247-admin::layouts.admin`.
 - [ ] No `$(...)`, pjax, or jQuery widgets (select2/daterangepicker…) left in views/assets.
 - [ ] Displayed text rendered via `gp247_language_render(...)`, not hardcoded.
@@ -521,7 +522,7 @@ the UI layer and a few configuration declaration files.
 → Run `php artisan optimize:clear` to clear the route/view/config cache, then reload the page. This
 is the most common issue, caused by Laravel still holding the old cache.
 
-**Q6: What value should `requireUpdateFrom` be?**
+**Q6: What value should `minUpdateFrom` be?**
 
 → Leaving it at `"1.0"` is safest (it barely blocks any updates). Only raise it (for example
 `"2.0"`) when you ship a major release whose `update()` hook cannot migrate from older lines.
@@ -559,8 +560,9 @@ new layout) so you do not have to create each file by hand.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Fixed:** `requireCore` follows the running core (`php artisan gp247:info`) — the old `"2.1"` is refused by a 3.x core; Step 8d points to the payment / shipping plugin guides |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

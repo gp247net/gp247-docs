@@ -18,14 +18,14 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Mở rộng (Plugin)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Hướng dẫn tạo Plugin](./extension/create-plugin_vi.md) | Điểm bắt đầu: chọn đúng hướng dẫn theo loại plugin, lộ trình 6 bước có code (thiết lập lưu trong database, màn cấu hình, cài, phát hành) | 2026-10-22 |
-| [Tạo plugin thanh toán](./extension/create-payment-plugin_vi.md) | Từng bước có code: plugin chuyển khoản chạy được ngay + khung nối cổng thanh toán online (ghi tiền đúng một lần, webhook) | 2026-10-22 |
-| [Tạo plugin vận chuyển](./extension/create-shipping-plugin_vi.md) | Từng bước có code: plugin phí theo khối lượng chạy được ngay + khung nối hãng vận chuyển có API (vận đơn, webhook, thu hộ) | 2026-10-22 |
-| [Plugin an toàn khi cập nhật](./extension/create-plugin-update-safety_vi.md) | Cập nhật chạy thế nào, 6 quy tắc, hook `update()`, bảng dữ liệu riêng | 2026-10-22 |
+| [Hướng dẫn tạo Plugin](./extension/create-plugin_vi.md) | Điểm bắt đầu: chọn đúng hướng dẫn theo loại plugin, lộ trình 6 bước có code (thiết lập lưu trong database, màn cấu hình, cài, phát hành) | 2026-11-03 |
+| [Tạo plugin thanh toán](./extension/create-payment-plugin_vi.md) | Từng bước có code: plugin chuyển khoản chạy được ngay + khung nối cổng thanh toán online (ghi tiền đúng một lần, webhook) | 2026-11-03 |
+| [Tạo plugin vận chuyển](./extension/create-shipping-plugin_vi.md) | Từng bước có code: plugin phí theo khối lượng chạy được ngay + khung nối hãng vận chuyển có API (vận đơn, webhook, thu hộ) | 2026-11-03 |
+| [Plugin an toàn khi cập nhật](./extension/create-plugin-update-safety_vi.md) | Cập nhật chạy thế nào, 6 quy tắc, hook `update()`, bảng dữ liệu riêng | 2026-11-03 |
 | [Plugin nâng cao](./extension/create-plugin-advanced_vi.md) | Cấu hình theo cửa hàng, khoá bí mật, trang / khối / điểm cắm storefront, mã giảm giá, menu | 2026-10-22 |
-| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-10-22 |
+| [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-11-03 |
 | [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-10-22 |
-| [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-10-22 |
+| [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-11-03 |
 
 ### Phát hành
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -52,8 +52,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | --- | --- | --- |
 | [Vòng đời đơn hàng](./s-cart/order-processing/order-lifecycle_vi.md) | Từng chặng của đơn — đặt, sửa, thu tiền, hoàn tiền, hủy, mở lại, xóa — kèm tồn kho/tiền/lịch sử ở mỗi chặng và sơ đồ luồng | 2026-10-22 |
 | [Yêu cầu thanh toán (Payment Request)](./s-cart/order-processing/payment-request_vi.md) | Thu/chi tiền ngoài giỏ hàng: link thanh toán online, ghi nhận tay, hoàn tiền; 4 luồng tiền, mục đích đơn hàng/InOut/MultiVendor, phân quyền chi tiền, sơ đồ luồng | 2026-10-22 |
-| [Thanh toán trong GP247](./s-cart/payment/payment_vi.md) | Thiết lập và vận hành: cài cổng thanh toán (thử → thật, webhook), sổ thanh toán của đơn, COD, hướng dẫn khách thấy khi thanh toán; developer xem [Tạo plugin thanh toán](./extension/create-payment-plugin_vi.md) | 2026-10-22 |
-| [Vận chuyển trong GP247](./s-cart/shipping/shipping_vi.md) | Thiết lập và vận hành: tab Vận chuyển, kho lấy hàng, vận đơn, theo dõi, thu hộ (từ shop 3.1.4); developer xem [Tạo plugin vận chuyển](./extension/create-shipping-plugin_vi.md) | 2026-10-22 |
+| [Thanh toán trong GP247](./s-cart/payment/payment_vi.md) | Thiết lập và vận hành: cài cổng thanh toán (thử → thật, webhook), sổ thanh toán của đơn, COD, hướng dẫn khách thấy khi thanh toán; developer xem [Tạo plugin thanh toán](./extension/create-payment-plugin_vi.md) | 2026-11-03 |
+| [Vận chuyển trong GP247](./s-cart/shipping/shipping_vi.md) | Thiết lập và vận hành: tab Vận chuyển, kho lấy hàng, vận đơn, theo dõi, thu hộ (từ shop 3.1.4); developer xem [Tạo plugin vận chuyển](./extension/create-shipping-plugin_vi.md) | 2026-11-03 |
 | [Tiền tệ (Currency)](./s-cart/tax-and-currency/currency_vi.md) | Đồng tiền gốc tường minh, đổi gốc bảo toàn giá trị, ghi chú ô nhập tiền (từ shop 2.1) | 2026-10-22 |
 | [Thuế trong GP247](./s-cart/tax-and-currency/tax_vi.md) | Cách thuế theo sản phẩm hoạt động và cách cấu hình | 2026-10-22 |
 | [Sản phẩm gói (Bundle/Combo)](./s-cart/product/product-bundle_vi.md) | Tạo sản phẩm combo gồm nhiều sản phẩm con; giá & trừ kho | 2026-10-22 |
@@ -77,4 +77,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-02 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

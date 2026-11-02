@@ -27,7 +27,7 @@ flowchart LR
     U -. "fails (1-click)" .-> R["Restore the old version"]
 ```
 
-- 1-click: before overwriting, the system checks the checksum, `configKey`, `version`, `requireUpdateFrom`, `requireCore`; a
+- 1-click: before overwriting, the system checks the checksum, `configKey`, `version`, `minUpdateFrom`, `requireCore`; a
   failure while overwriting or in `update()` → the plugin is **restored** from the backup.
 - Files replaced by hand (`git pull`, Composer, manual copy; then `gp247:update`, `gp247:ext-update --local` or the **Apply data
   update** button): there is no file backup; a failure in `update()` only leaves the plugin "pending" so it can run again. A
@@ -50,7 +50,7 @@ flowchart LR
 | 2 | Settings the store owner edits live in the database | An update overwrites every file |
 | 3 | `update()` is safe to re-run and handles `null` | It also runs after `git pull`, possibly several times |
 | 4 | Never store user uploads inside the plugin folder | The folder is deleted and replaced on update |
-| 5 | Set `requireCore` and `requireUpdateFrom` correctly | Blocks installing on an untested core and jumping from a too-old version |
+| 5 | Set `requireCore` and `minUpdateFrom` correctly | Blocks installing on an untested core and jumping from a too-old version |
 | 6 | Own data tables can be rebuilt on reinstall | Uninstall → reinstall must create every table again |
 
 ### Rule 1 — `version` increases, `configKey` stays
@@ -133,12 +133,13 @@ public function update(?string $fromVersion = null)
 Images and files customers upload go in `storage/` or the shared `public/GP247/…` area. The plugin's own `public/` folder only
 holds assets shipped with the release (css, js, interface images).
 
-### Rule 5 — `requireCore` and `requireUpdateFrom`
+### Rule 5 — `requireCore` and `minUpdateFrom`
 
 - `requireCore`: each `"X.Y"` value is the range "from X.Y within the X.x line". Write it from `php artisan gp247:info`; to support
   several major lines, one value per line (`["3.1", "4.0"]`); never a patch number.
-- `requireUpdateFrom`: the lowest installed version allowed to update straight to this one. `"1.0"` blocks nothing; raise it
+- `minUpdateFrom`: the lowest installed version allowed to update straight to this one. `"1.0"` blocks nothing; raise it
   (e.g. `"2.0"`) when `update()` cannot migrate from an older line.
+  The old name `requireUpdateFrom` (before core 3.9) still works with a deprecation warning and is removed in core 4.0 — rename it to `minUpdateFrom`.
 
 ### Rule 6 — Own data tables
 
@@ -205,7 +206,7 @@ Call `(new ExtensionModel)->installExtension()` in `install()` and `uninstallExt
 
 ## Conditions & Rules (know before you act)
 
-- **The new version must have a greater `version`** and the installed one must not be lower than `requireUpdateFrom` — otherwise the 1-click update refuses.
+- **The new version must have a greater `version`** and the installed one must not be lower than `minUpdateFrom` — otherwise the 1-click update refuses.
 - **Uninstall a plugin you are developing with `--only-data`** — a plain uninstall also deletes the source folder (`app/…` and `public/…`).
 - **When `update()` fails on the hand-replaced path, files are not restored** — it only stays pending to run again; write `update()`
   so a re-run is always safe.
@@ -242,10 +243,10 @@ Call `(new ExtensionModel)->installExtension()` in `install()` and `uninstallExt
 
 → They are stored inside the plugin folder, which is deleted and replaced on update. Store them in `storage/` or the shared `public/GP247/…`.
 
-**Q8: When should I raise `requireUpdateFrom`?**
+**Q8: When should I raise `minUpdateFrom`?**
 
 → When the new version cannot migrate from an old line — people on that line must reinstall instead of updating straight.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

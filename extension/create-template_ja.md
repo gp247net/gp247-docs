@@ -121,7 +121,7 @@ app/GP247/Templates/MyShopSkin/
     "configKey": "MyShopSkin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/front"],
     "requireGp247Extensions": []
 }
@@ -136,7 +136,7 @@ app/GP247/Templates/MyShopSkin/
 | `version` | バージョン（semver：`1.0`、`1.1` など）。新しいリリースごとにこの番号を**上げる**必要があります。 |
 | `requireCore` | 動作するコアのバージョンです。`php artisan gp247:info` の `core` 行の値を書きます（例：`["3.1"]`）。各値 `"X.Y"` は「X.x 系の中で X.Y 以上」という範囲を表します。`"2.1"` は 3.x のコアで拒否されます。 |
 | **`requireComposerPackages`** | **常に `"gp247/front"` を含めます**。テンプレートはストアフロントがある場合にのみ動作するためです。販売サイト専用のテンプレートなら `"gp247/shop"` も追加します。 |
-| `requireUpdateFrom` | このバージョンへのワンクリックアップデートを許可する最低バージョンです。`"1.0"` にしておけば安全です。 |
+| `minUpdateFrom` | このバージョンへのワンクリックアップデートを許可する、インストール済みの最低バージョン（以上）です。`"1.0"` にしておけば安全です。core 3.9 から、旧名称 `requireUpdateFrom` を置き換え（core 4.0 で削除）。 |
 
 > **gp247/core 2.1 からのキー名の変更：** `requirePackages` → `requireComposerPackages`、`requireExtensions` → `requireGp247Extensions`。Core 2.1 は旧キーも**読み込みます**（後方互換）が、**非推奨**です。新しいテンプレートでは新しいキーを使ってください（`requireComposerPackages` には常に `"gp247/front"` を含めます）。
 
@@ -390,8 +390,9 @@ CSS ファイルを再コンパイル（`npx tailwindcss ...`）すると反映�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/core 3.1 | **修正：** `requireCore` を稼働中のコア（`php artisan gp247:info`）に合わせて記載 — 旧値 `"2.1"` は 3.x のコアで拒否されます。章のタイトルから、章番号と食い違っていた「ステップ」番号を削除 |
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

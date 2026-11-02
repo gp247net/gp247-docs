@@ -111,7 +111,7 @@ Three things to keep in mind all the way:
     "configKey": "MyPlugin",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -125,7 +125,7 @@ Three things to keep in mind all the way:
 | `configCode` | The plugin's role: `"Payment"`, `"Shipping"`, `"Promotion"` (coupons); any other plugin uses the same value as `configKey` |
 | `version` | `1.0`, `1.1`, `2.0`… Every release must be **greater** than the previous one |
 | `requireCore` | Core versions it runs on: write the `core` line of `gp247:info`, e.g. `["3.1"]` |
-| `requireUpdateFrom` | The lowest installed version allowed to update straight to this one; `"1.0"` blocks nothing |
+| `minUpdateFrom` | The lowest installed version (≥) allowed to update straight to this one; `"1.0"` blocks nothing. Since core 3.9, replaces the old name `requireUpdateFrom` (removed in core 4.0) |
 | `requireComposerPackages` | Required Composer packages, e.g. `["gp247/shop"]` for a selling plugin |
 | `requireGp247Extensions` | Other GP247 plugins that must be installed first (by `configKey`) |
 | `storeScope` | `"global"` (one shared setting) or `"store"` (one setting per store) |
@@ -493,7 +493,7 @@ UI rules: only `<x-gp247::*>` components, Livewire and Alpine; **no** jQuery, Ad
 - **A missing package in `requireComposerPackages` / plugin in `requireGp247Extensions` blocks the install.**
 
 **When updating**
-- **The new `version` must be greater than the installed one**, and the installed one not lower than `requireUpdateFrom` — otherwise the 1-click update refuses.
+- **The new `version` must be greater than the installed one**, and the installed one not lower than `minUpdateFrom` — otherwise the 1-click update refuses.
 - **When `update()` fails, the old version is restored** (1-click update); with `git pull` the files are not restored, the update just stays "pending" so it can run again.
 
 ---
@@ -548,9 +548,10 @@ With an AI agent, use the `gp247-plugin-create` skill.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | Restructured into a 6-step main page; split out [Update-safe plugins](./create-plugin-update-safety.md) and [Advanced plugins](./create-plugin-advanced.md); added payment and shipping plugin guides. **Fixed:** `requireCore` follows `gp247:info` (the old `"2.1"` is refused by a 3.x core); settings default to one row per key with a `ConfigForm` screen (holds secrets); added `clickApp()` for the Config button |
 | 2026-09-29 |  | The `AppConfig::update($fromVersion)` hook now also runs when the site owner replaces files via `git pull`/Composer/manual copy (through `gp247:update`, `gp247:ext-update --local`, the **Apply data update** button); the first time it may receive `null`. |
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

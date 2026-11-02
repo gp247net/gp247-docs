@@ -38,7 +38,7 @@ khuôn v1 và v2:
 | Đăng ký page-type LayoutBlock | *(không có)* | Đăng ký `token => lang-key` trong `Provider.php` (nếu plugin có trang public riêng) |
 | `gp247.json` → `requireCore` | `["1.2"]` | Phiên bản lõi đang chạy, ví dụ `["3.1"]` (xem `php artisan gp247:info`) |
 | `gp247.json` → khóa phụ thuộc | `requirePackages` / `requireExtensions` | `requireComposerPackages` / `requireGp247Extensions` (đổi tên từ core 2.1) |
-| `gp247.json` → `requireUpdateFrom` | *(không có)* | `"1.0"` (điều kiện cập nhật 1-click) |
+| `gp247.json` → `minUpdateFrom` | *(không có)* | `"1.0"` (điều kiện cập nhật 1-click) |
 
 **Kết luận:** logic nghiệp vụ (Model, xử lý dữ liệu, cài/gỡ) của bạn gần như không đổi.
 Cái thay đổi là **giao diện** và **một số khai báo cấu hình**.
@@ -52,7 +52,7 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 
 | File | Cần làm gì | Bắt buộc? |
 |---|---|---|
-| `gp247.json` | Đổi `requireCore` theo lõi đang chạy (ví dụ `["3.1"]`), thêm `requireUpdateFrom`, đổi `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Bắt buộc |
+| `gp247.json` | Đổi `requireCore` theo lõi đang chạy (ví dụ `["3.1"]`), thêm `minUpdateFrom`, đổi `requirePackages`/`requireExtensions` → `requireComposerPackages`/`requireGp247Extensions` | ✅ Bắt buộc |
 | `Views/Admin.blade.php` | Đổi layout master sang TailAdmin, bỏ jQuery/AdminLTE | ✅ Bắt buộc |
 | `AppConfig.php` | Đổi thông báo lỗi trong `disable()` sang đa ngôn ngữ | ✅ Bắt buộc |
 | `Livewire/AdminLivewire.php` | **Tạo mới** — màn admin kiểu Livewire | 🟡 Khuyến nghị |
@@ -84,7 +84,7 @@ là tối thiểu để plugin chạy được, việc nào là khuyến nghị 
 
 ### Bước 2 — Cập nhật `gp247.json`
 
-Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `requireUpdateFrom`, và
+Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `minUpdateFrom`, và
 **đổi tên** 2 khóa phụ thuộc theo chuẩn core 2.1: `requirePackages` → `requireComposerPackages`,
 `requireExtensions` → `requireGp247Extensions`.
 
@@ -105,7 +105,7 @@ Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `
 {
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": [],
     "requireGp247Extensions": [],
     "requireLivewire": false
@@ -116,9 +116,10 @@ Mở file `gp247.json` trong thư mục plugin. Sửa `requireCore`, **thêm** `
 - `requireCore`: phiên bản lõi GP247 mà plugin này hợp lệ. Ghi đúng dòng `core` của `php artisan gp247:info` (ví dụ `["3.1"]`). Mỗi giá trị `"X.Y"` là khoảng "từ X.Y trong dòng X.x" — ghi `"2.1"` thì lõi 3.x **từ chối cài**.
 - `requireLivewire`: plugin có cần Livewire hay không (`true`/`false`). Thêm khi bạn đưa màn Livewire vào ở Bước 5 (`false` là mặc định an toàn — Livewire đi kèm core).
 - `requireComposerPackages` / `requireGp247Extensions`: đổi tên từ `requirePackages` / `requireExtensions` cho rõ nguồn phụ thuộc (gói Composer vs extension GP247). Core 2.1 vẫn đọc khóa cũ (tương thích ngược) nhưng đã deprecated — hãy dùng khóa mới.
-- `requireUpdateFrom`: phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này.
+- `minUpdateFrom`: phiên bản đang cài **tối thiểu** được phép cập nhật 1-click lên bản này.
   Để `"1.0"` là an toàn (gần như không giới hạn). Chỉ nâng số này lên khi bạn phát hành bản
-  lớn mà không thể tự động migrate từ dòng cũ.
+  lớn mà không thể tự động migrate từ dòng cũ. Ví dụ `"1.2"`: bản 1.2, 1.3 hay 1.9 đều cập nhật thẳng được, bản 1.1 bị chặn.
+  `minUpdateFrom` có từ gp247/core 3.9, thay tên cũ `requireUpdateFrom` (vẫn được đọc kèm cảnh báo deprecated, bị gỡ ở core 4.0).
 
 ### Bước 3 — Sửa layout của view admin (quan trọng nhất)
 
@@ -471,7 +472,7 @@ Nếu làm cùng AI agent, dùng skill `gp247-payment-plugin-create` / `gp247-sh
 
 ## 4. Danh sách kiểm tra trước khi coi là "xong"
 
-- [ ] `gp247.json`: `requireCore` theo `gp247:info` (ví dụ `["3.1"]`), đã thêm `requireUpdateFrom`, đã đổi sang `requireComposerPackages`/`requireGp247Extensions`.
+- [ ] `gp247.json`: `requireCore` theo `gp247:info` (ví dụ `["3.1"]`), đã thêm `minUpdateFrom`, đã đổi sang `requireComposerPackages`/`requireGp247Extensions`.
 - [ ] `Views/Admin.blade.php`: layout đã đổi sang `gp247-admin::layouts.admin`.
 - [ ] Không còn `$(...)`, pjax, hay widget jQuery (select2/daterangepicker…) nào trong view/asset.
 - [ ] Text hiển thị render qua `gp247_language_render(...)`, không hardcode.
@@ -513,7 +514,7 @@ thành `@extends('gp247-admin::layouts.admin')`.
 → Chạy `php artisan optimize:clear` để xóa cache route/view/config, rồi tải lại trang. Đây là
 lỗi hay gặp nhất do Laravel còn giữ cache cũ.
 
-**Câu 6: `requireUpdateFrom` nên để giá trị nào?**
+**Câu 6: `minUpdateFrom` nên để giá trị nào?**
 
 → Để `"1.0"` là an toàn nhất (gần như không chặn cập nhật). Chỉ nâng lên (ví dụ `"2.0"`) khi
 bạn phát hành một bản lớn mà hàm `update()` không thể migrate từ dòng cũ.
@@ -550,8 +551,9 @@ Lệnh này sinh sẵn đầy đủ cấu trúc chuẩn v2 (đã có Livewire, S
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Sửa:** `requireCore` ghi theo lõi đang chạy (`php artisan gp247:info`) — giá trị `"2.1"` cũ bị lõi 3.x từ chối; Bước 8d trỏ sang hướng dẫn plugin thanh toán / vận chuyển |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

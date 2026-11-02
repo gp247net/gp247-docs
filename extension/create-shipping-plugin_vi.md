@@ -90,7 +90,7 @@ MyWeightShipping/
     "configKey": "MyWeightShipping",
     "version": "1.0",
     "requireCore": ["3.1"],
-    "requireUpdateFrom": "1.0",
+    "minUpdateFrom": "1.0",
     "requireComposerPackages": ["gp247/shop"],
     "requireGp247Extensions": [],
     "requireLivewire": false,
@@ -945,8 +945,9 @@ phẩm, trả về món hàng đã thêm `meta`. Không dùng closure — sẽ l
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/shop 3.1.4 | Tài liệu mới: plugin phí theo khối lượng chạy được ngay + khung nối hãng vận chuyển có API |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
