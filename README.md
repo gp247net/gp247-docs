@@ -30,7 +30,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Releases
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [S-Cart releases and security](./release/release.md) | Is your site safe (minimum version per package); highlights; how to update; S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security fixes; reporting a vulnerability | 2026-10-31 |
+| [S-Cart releases and security](./release/release.md) | Recommended versions (minimum per package); highlights; how to update; S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security and reporting a vulnerability | 2026-11-02 |
 
 ### System
 | Document | Summary | Last updated |

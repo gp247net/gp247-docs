@@ -30,7 +30,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Phát hành
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Phát hành và bảo mật S-Cart](./release/release_vi.md) | Site đã an toàn chưa (phiên bản tối thiểu từng package); điểm mới nổi bật; cách cập nhật; các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bản vá bảo mật; báo lỗ hổng | 2026-10-31 |
+| [Phát hành và bảo mật S-Cart](./release/release_vi.md) | Phiên bản nên dùng (tối thiểu từng package); điểm mới nổi bật; cách cập nhật; các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bảo mật và báo lỗ hổng | 2026-11-02 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
