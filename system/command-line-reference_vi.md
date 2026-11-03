@@ -658,6 +658,8 @@ php artisan gp247:ext-publish --type=plugin --all
 
 ### `gp247:doctor` kiểm những gì
 
+> ℹ️ `gp247:doctor` không kiểm `APP_DEBUG`, HTTPS hay cookie. Cách tự kiểm các mục đó: [Cấu hình production an toàn](../security/security-production-config_vi.md) trong bộ tài liệu [Bảo mật](../security/security-introduction_vi.md).
+
 Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WARN** (nên dọn, nhưng không chặn), **FAIL**
 (phải sửa — lệnh thoát khác 0, đủ để chặn CI hoặc chặn cài đặt).
 
@@ -891,4 +893,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

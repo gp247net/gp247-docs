@@ -677,6 +677,8 @@ php artisan gp247:ext-publish --type=plugin --all
 
 ### What `gp247:doctor` checks
 
+> ℹ️ `gp247:doctor` does not check `APP_DEBUG`, HTTPS or cookies. How to check those yourself: [Secure production configuration](../security/security-production-config.md) in the [Security](../security/security-introduction.md) documentation.
+
 Every row comes back as one of three states: **PASS** (fine), **WARN** (worth cleaning up, but nothing is
 blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop CI or an install).
 
@@ -912,4 +914,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

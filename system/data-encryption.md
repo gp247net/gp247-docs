@@ -17,6 +17,8 @@ This document explains **how GP247 protects sensitive information** (SMTP passwo
 ## Where the key lives: `GP247_ENCRYPTION_KEY`
 GP247 uses a **dedicated key** to encrypt secrets: the `GP247_ENCRYPTION_KEY` variable in your `.env`. It is deliberately **separate** from `APP_KEY` (Laravel's general key): so even if `APP_KEY` is changed or regenerated, your encrypted secrets are **not affected**.
 
+> ⚠️ **Exception:** the REST API **webhook** signing secrets (**Webhook** screen) are still encrypted with `APP_KEY`, not the dedicated key. If you change `APP_KEY`, regenerate the secret of each webhook. What each key protects and what to back up: see [Encryption keys & backups](../security/security-keys-and-backup.md) in the [Security](../security/security-introduction.md) documentation.
+
 If you have **not set** `GP247_ENCRYPTION_KEY`, GP247 temporarily uses `APP_KEY` so nothing breaks — but `gp247:doctor` will **remind** you to set the dedicated key. Set it from the start (below).
 
 ### Set the dedicated key (do this right after install)
@@ -165,7 +167,7 @@ Three notes: (1) the column must be **TEXT** (ciphertext is long); (2) you **can
 
 **Q5: Does changing `APP_KEY` (not the encryption key) lose secrets?**
 
-→ No, if you have set a dedicated `GP247_ENCRYPTION_KEY`. Secrets are tied to the dedicated key, independent of `APP_KEY`.
+→ No, if you have set a dedicated `GP247_ENCRYPTION_KEY`. Configuration secrets are tied to the dedicated key, independent of `APP_KEY`. Exception: webhook signing secrets still use `APP_KEY` — after changing `APP_KEY`, regenerate them on the **Webhook** screen; everyone is also signed out.
 
 **Q6: Is the SMTP password exposed on the admin screen?**
 
@@ -181,4 +183,4 @@ Three notes: (1) the column must be **TEXT** (ciphertext is long); (2) you **can
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

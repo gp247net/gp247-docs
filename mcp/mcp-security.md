@@ -151,6 +151,8 @@ On a site with store partitioning (e.g. MultiStore Pro), MCP is **locked down by
 
 ## Safety checklist for site owners
 
+> ℹ️ Checklist for the whole site (HTTPS, encryption keys, backups, admin accounts): [Security checklist](../security/security-checklist.md) in the [Security](../security/security-introduction.md) documentation.
+
 - [ ] **Run the site on HTTPS** — the MCP Server screen warns when it does not.
 - [ ] **Only grant "MCP server — use" to people who really need it.**
 - [ ] **Start with *Read only* tokens**; only turn on the write tools you need, and only give write tokens to agents you trust.
@@ -207,4 +209,4 @@ On a site with store partitioning (e.g. MultiStore Pro), MCP is **locked down by
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

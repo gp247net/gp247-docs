@@ -20,6 +20,11 @@
 | --- | --- | --- |
 | [MCP サーバーの紹介](./mcp/mcp-introduction_ja.md) | MCP ドキュメントの入口：AI エージェント（Claude、Cursor、VS Code など）がショップで作業できるようにする — クイックスタート、15 ツールの一覧、セキュリティと権限、管理と設定、トラブルシューティング | 2026-11-03 |
 
+### セキュリティ
+| ドキュメント | 概要 | 最終更新 |
+| --- | --- | --- |
+| [GP247 システムのセキュリティ](./security/security-introduction_ja.md) | セキュリティ ドキュメントの入口：GP247 が担うこと、あなたが行うべきこと — 本番環境の設定、暗号化キーとバックアップ、アカウントと権限、更新とインシデント対応、チェックリストとよくある間違い | 2026-11-04 |
+
 ### 拡張（プラグイン）
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
@@ -35,17 +40,17 @@
 ### リリース
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
-| [S-Cart のリリースとセキュリティ](./release/release_ja.md) | 推奨バージョン（パッケージごとの最低バージョン）；注目の新機能；更新方法；S-Cart の各リリース（core／front／shop をまとめたもの）：新機能、不具合の修正、更新時の対応；セキュリティと脆弱性の報告 | 2026-11-03 |
+| [S-Cart のリリースとセキュリティ](./release/release_ja.md) | 推奨バージョン（パッケージごとの最低バージョン）；注目の新機能；更新方法；S-Cart の各リリース（core／front／shop をまとめたもの）：新機能、不具合の修正、更新時の対応；セキュリティと脆弱性の報告 | 2026-11-04 |
 
 ### システム
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
 | [リリースノート v3.0 — 注文の金額](./system/release-notes-3.0_ja.md) | v2.1／v3.0 からのアップグレード：注文ごとの支払台帳、入金日基準のキャッシュフロー、一段ずれた支払ステータスの修正、**割引は税の前に差し引き**；プラグイン開発者向けの注意点 | 2026-10-22 |
-| [CLI コマンド一覧](./system/command-line-reference_ja.md) | GP247 のすべての CLI コマンドのリファレンス：`--json` 出力と終了コードの約束、`gp247:ext-*` のライフサイクル、install／update／doctor／info；`core-update` はアップグレード用マイグレーションを実行（core 2.2） | 2026-11-03 |
+| [CLI コマンド一覧](./system/command-line-reference_ja.md) | GP247 のすべての CLI コマンドのリファレンス：`--json` 出力と終了コードの約束、`gp247:ext-*` のライフサイクル、install／update／doctor／info；`core-update` はアップグレード用マイグレーションを実行（core 2.2） | 2026-11-04 |
 | [GP247 の更新ガイド](./system/update-gp247_ja.md) | 稼働中サイトの安全な更新、標準化コマンド `gp247:update` を優先；公開版 v2.1 からデータを自動変換；オプション `--overwrite-lang`、`--publish`；`git pull` 後に拡張機能のデータ更新を適用 | 2026-11-03 |
 | [多言語システム](./system/language-system_ja.md) | GP247 での言語／i18n の使い方 | 2026-10-22 |
 | [メール送信システム](./system/mail-system_ja.md) | メール送信の流れ（図付き）、SMTP 設定、送信チャネルの選択 | 2026-10-22 |
-| [機密データの暗号化](./system/data-encryption_ja.md) | 秘密情報（SMTP／OAuth／ライセンス）の保存時暗号化；専用キー `GP247_ENCRYPTION_KEY`；`gp247:encryption-key-rotate` による**安全なキー変更の手順**；他テーブルの列の暗号化 | 2026-10-22 |
+| [機密データの暗号化](./system/data-encryption_ja.md) | 秘密情報（SMTP／OAuth／ライセンス）の保存時暗号化；専用キー `GP247_ENCRYPTION_KEY`；`gp247:encryption-key-rotate` による**安全なキー変更の手順**；他テーブルの列の暗号化 | 2026-11-04 |
 | [スケジュールとキュー](./system/schedule-and-queue_ja.md) | schedule:run と queue:work の違い；環境別のメール送信用 cron の設定 | 2026-10-22 |
 | [キャッシュの扱い](./system/cache-system_ja.md) | Config Cache Manager 画面；キャッシュするもの／しないもの；バージョン番号の更新；ヘルパー関数 | 2026-10-22 |
 | [カスタムフィールド（Custom Field）](./system/custom-fields_ja.md) | 4 つのフックの仕組み；対象は customer／product のみ；他テーブルで有効にする開発者向け手順 | 2026-10-22 |
@@ -82,4 +87,4 @@
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

@@ -184,6 +184,9 @@ promotion codes were not applied
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Start of the 3.x line: a payment ledger per order, discounts taken before tax — [v3.0 notes](../system/release-notes-3.0.md) |
 
 ## Security
+
+Keeping a site secure is more than updating — configuration, encryption keys, backups, accounts and incident response are covered in [GP247 system security](../security/security-introduction.md).
+
 GP247 reviews security regularly, and improvements ship in every release. The simplest way to keep your site safe is to run
 at least the versions in [Recommended versions](#recommended-versions) and update when a new release comes out.
 
@@ -212,4 +215,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

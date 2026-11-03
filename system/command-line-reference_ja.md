@@ -657,6 +657,8 @@ php artisan gp247:ext-publish --type=plugin --all
 
 ### `gp247:doctor` が確認する項目
 
+> ℹ️ `gp247:doctor` は `APP_DEBUG`、HTTPS、Cookie を確認しません。これらを自分で確認する方法は、[セキュリティ](../security/security-introduction_ja.md) ドキュメントの [本番環境の安全な設定](../security/security-production-config_ja.md) を参照してください。
+
 結果の各行は、次の 3 つの状態のいずれかになります: **PASS**（問題なし）、**WARN**（整理すべきだがブロックしない）、**FAIL**
 （修正が必要 — コマンドは 0 以外で終了し、CI やインストールをブロックできます）。
 
@@ -890,4 +892,4 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

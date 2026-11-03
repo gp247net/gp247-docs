@@ -183,6 +183,9 @@ bị xếp dọc
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Mở đầu dòng 3.x: sổ thanh toán từng đơn, giảm giá trừ trước thuế — [ghi chú v3.0](../system/release-notes-3.0_vi.md) |
 
 ## Bảo mật
+
+Giữ site an toàn không chỉ là cập nhật — cấu hình, khoá mã hoá, sao lưu, tài khoản và xử lý sự cố có ở bộ tài liệu [Bảo mật hệ thống GP247](../security/security-introduction_vi.md).
+
 GP247 rà soát bảo mật thường xuyên, và các cải tiến được đưa vào từng bản phát hành. Cách đơn giản nhất để giữ site an
 toàn là dùng ít nhất phiên bản ở bảng [Phiên bản nên dùng](#phiên-bản-nên-dùng) và cập nhật khi có bản mới.
 
@@ -211,4 +214,4 @@ trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

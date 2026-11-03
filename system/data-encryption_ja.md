@@ -17,6 +17,8 @@
 ## 暗号鍵の場所：`GP247_ENCRYPTION_KEY`
 GP247 は機密情報の暗号化に**専用の鍵**を使います。`.env` ファイルの変数 `GP247_ENCRYPTION_KEY` です。この鍵は、意図的に `APP_KEY`（Laravel 共通の鍵）から**分離**されています。そのため、`APP_KEY` を変更・再生成しても、暗号化済みの機密情報には**影響しません**。
 
+> ⚠️ **例外:** REST API の **Webhook** 署名シークレット（**Webhook** 画面）は、専用鍵ではなく今も `APP_KEY` で暗号化されています。`APP_KEY` を変更した場合は、各 Webhook のシークレットを再生成してください。それぞれの鍵が何を守るか、何をバックアップすべきかは、[セキュリティ](../security/security-introduction_ja.md) ドキュメントの [暗号化キーとバックアップ](../security/security-keys-and-backup_ja.md) を参照してください。
+
 `GP247_ENCRYPTION_KEY` を**まだ設定していない**場合、GP247 は動作を止めないように一時的に `APP_KEY` を使います。ただし、診断コマンド `gp247:doctor` が専用鍵を設定するよう**通知**します。最初から設定しておくことをおすすめします（下の章を参照）。
 
 ### 初めて専用の鍵を設定する（インストール直後に行うことを推奨）
@@ -165,7 +167,7 @@ config(['gp247-config.security.encrypted_columns.my_plugin_tokens' => ['api_toke
 
 **Q5: `APP_KEY`（暗号鍵ではないほう）を変更すると、機密情報は失われますか？**
 
-→ 専用の `GP247_ENCRYPTION_KEY` を設定していれば、失われません。機密情報は専用鍵に結び付いており、`APP_KEY` には依存しません。
+→ 専用の `GP247_ENCRYPTION_KEY` を設定していれば、設定の機密情報は失われません。専用鍵に結び付いており、`APP_KEY` には依存しません。例外として、Webhook の署名シークレットは今も `APP_KEY` を使います。`APP_KEY` を変更したら **Webhook** 画面で再生成してください。また、全員がログアウトされます。
 
 **Q6: SMTP パスワードは管理画面で見えてしまいますか？**
 
@@ -181,4 +183,4 @@ config(['gp247-config.security.encrypted_columns.my_plugin_tokens' => ['api_toke
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

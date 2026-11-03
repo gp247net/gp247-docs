@@ -150,6 +150,8 @@ Trên site có phân vùng cửa hàng (ví dụ MultiStore Pro), MCP **mặc đ
 
 ## Danh sách kiểm tra an toàn cho chủ site
 
+> ℹ️ Checklist cho toàn site (HTTPS, khoá mã hoá, sao lưu, tài khoản quản trị): [Checklist bảo mật](../security/security-checklist_vi.md) trong bộ tài liệu [Bảo mật](../security/security-introduction_vi.md).
+
 - [ ] **Chạy site bằng HTTPS** — màn MCP Server cảnh báo khi chưa có.
 - [ ] **Chỉ cấp quyền "MCP server — use" cho người thật sự cần.**
 - [ ] **Bắt đầu bằng token *Chỉ đọc***; chỉ bật công cụ ghi cần dùng, và chỉ cấp token ghi cho agent bạn tin cậy.
@@ -206,4 +208,4 @@ Trên site có phân vùng cửa hàng (ví dụ MultiStore Pro), MCP **mặc đ
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

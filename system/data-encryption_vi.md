@@ -17,6 +17,8 @@ Tài liệu này giải thích **GP247 bảo vệ các thông tin nhạy cảm n
 ## Khoá mã hoá nằm ở đâu: `GP247_ENCRYPTION_KEY`
 GP247 dùng một **khoá riêng** để mã hoá bí mật: biến `GP247_ENCRYPTION_KEY` trong file `.env`. Khoá này **tách riêng** khỏi `APP_KEY` (khoá chung của Laravel) có chủ đích: nhờ vậy, lỡ đổi hay tạo lại `APP_KEY` cũng **không ảnh hưởng** tới bí mật đã mã hoá.
 
+> ⚠️ **Ngoại lệ:** secret ký **webhook** của REST API (màn **Webhook**) vẫn được mã hoá bằng `APP_KEY`, không bằng khoá riêng. Đổi `APP_KEY` thì tạo lại secret cho từng webhook. Mỗi khoá bảo vệ những gì, cần sao lưu gì: xem [Khoá mã hoá & sao lưu](../security/security-keys-and-backup_vi.md) trong bộ tài liệu [Bảo mật](../security/security-introduction_vi.md).
+
 Nếu bạn **chưa đặt** `GP247_ENCRYPTION_KEY`, GP247 tạm dùng `APP_KEY` để không gián đoạn — nhưng lệnh kiểm tra `gp247:doctor` sẽ **nhắc** bạn đặt khoá riêng. Nên đặt ngay từ đầu (xem mục dưới).
 
 ### Đặt khoá riêng lần đầu (khuyến nghị làm ngay sau khi cài)
@@ -165,7 +167,7 @@ Ba lưu ý: (1) cột phải kiểu **TEXT** vì bản mã dài; (2) **không t�
 
 **Câu 5: Đổi `APP_KEY` (không phải khoá mã hoá) có mất bí mật không?**
 
-→ Không, nếu bạn đã đặt `GP247_ENCRYPTION_KEY` riêng. Bí mật gắn với khoá riêng, không phụ thuộc `APP_KEY`.
+→ Không, nếu bạn đã đặt `GP247_ENCRYPTION_KEY` riêng. Bí mật cấu hình gắn với khoá riêng, không phụ thuộc `APP_KEY`. Ngoại lệ: secret ký webhook vẫn dùng `APP_KEY` — đổi `APP_KEY` thì tạo lại secret ở màn **Webhook**; mọi người cũng bị đăng xuất.
 
 **Câu 6: Mật khẩu SMTP có bị lộ trên màn admin không?**
 
@@ -181,4 +183,4 @@ Ba lưu ý: (1) cột phải kiểu **TEXT** vì bản mã dài; (2) **không t�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
