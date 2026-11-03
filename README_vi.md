@@ -15,6 +15,11 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [API v1 (đã ngưng phát triển)](./api/api-v1_vi.md) | API cũ cho ứng dụng viết trước v2: danh sách endpoint, cách bật, cách chuyển sang v2 | 2026-11-03 |
 | [Hướng dẫn tạo API đúng chuẩn](./api/create-api_vi.md) | Cách tự viết endpoint API mới theo chuẩn GP247 | 2026-11-02 |
 
+### MCP (AI agent)
+| Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
+| --- | --- | --- |
+| [Giới thiệu MCP server](./mcp/mcp-introduction_vi.md) | Trang chính của bộ tài liệu MCP: cho AI agent (Claude, Cursor, VS Code…) làm việc với cửa hàng — bắt đầu nhanh, danh mục 15 công cụ, an toàn & phân quyền, quản trị & cài đặt, xử lý sự cố | 2026-11-03 |
+
 ### Mở rộng (Plugin)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |

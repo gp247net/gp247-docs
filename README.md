@@ -15,6 +15,11 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [API v1 (no longer developed)](./api/api-v1.md) | The old API for apps written before v2: endpoint list, turning it on, moving to v2 | 2026-11-03 |
 | [How to build an API correctly](./api/create-api.md) | How to write a new API endpoint the GP247 way | 2026-11-02 |
 
+### MCP (AI agents)
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [Introduction to the MCP server](./mcp/mcp-introduction.md) | Entry page of the MCP documentation: let AI agents (Claude, Cursor, VS Code…) work with your shop — quick start, catalogue of 15 tools, security & permissions, administration & setup, troubleshooting | 2026-11-03 |
+
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
 | --- | --- | --- |

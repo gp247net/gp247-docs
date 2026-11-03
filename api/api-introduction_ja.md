@@ -27,6 +27,9 @@ API にどんな機能があるか、いくつのグループに分かれるか�
 > [`openapi.json`](./openapi.json)（OpenAPI 3.1）にまとめています。Postman、Insomnia、Swagger UI に読み込んで
 > 試しに呼び出したり、クライアントのコードを生成したりできます。
 
+> 🤖 **AI エージェント（Claude、Cursor、VS Code など）をショップで使いたい場合は？** コードは不要です。S-Cart に組み込まれた **MCP サーバー**をお使いください：
+> [MCP サーバーの紹介](../mcp/mcp-introduction_ja.md)。
+
 ## ひと目でわかる
 
 アプリは、行う処理と利用者に応じて API グループを選びます。

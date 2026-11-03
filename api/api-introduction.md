@@ -26,6 +26,9 @@ lets you see**, with copy-and-run examples.
 > [`openapi.json`](./openapi.json) (OpenAPI 3.1) — load it into Postman, Insomnia or Swagger UI to try
 > calls or generate client code.
 
+> 🤖 **Want to use an AI agent (Claude, Cursor, VS Code…) with your shop?** No code needed — use the **MCP server** built into S-Cart:
+> [Introduction to the MCP server](../mcp/mcp-introduction.md).
+
 ## At a glance
 
 An app picks the API group by the job to do and by who is behind it:

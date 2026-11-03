@@ -25,6 +25,9 @@ copy chạy được ngay.
 > [`openapi.json`](./openapi.json) (OpenAPI 3.1) — nạp vào Postman, Insomnia hay Swagger UI để gọi thử
 > hoặc sinh code client.
 
+> 🤖 **Muốn dùng AI agent (Claude, Cursor, VS Code…) với cửa hàng?** Không cần viết code — dùng **MCP server** có sẵn trong S-Cart:
+> [Giới thiệu MCP server](../mcp/mcp-introduction_vi.md).
+
 ## Nhìn nhanh
 
 Ứng dụng chọn nhóm API theo việc cần làm và người dùng đứng sau nó:
