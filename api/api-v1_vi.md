@@ -94,7 +94,7 @@ Các bước bật lại v1:
 - Gọi vào nhóm đang tắt → HTTP `404` với `"code": "api_disabled"` — kể cả khi chưa gửi token *(từ gp247/core 3.4.0;
   bản 3.3.1 trả `401` nếu thiếu token)*.
 - Biến môi trường `GP247_API_MODE=0` tắt hẳn mọi API ở tầng máy chủ và khoá các công tắc trên màn.
-- Site có cache route: xem lưu ý ở [Giới thiệu API — mục 5](./api-introduction_vi.md#5-bậttắt-api).
+- Site có cache route: xem lưu ý ở [Bật/tắt API](./api-concepts_vi.md#bậttắt-api).
 
 > 💡 **Mẹo:** khi không còn ứng dụng nào gọi v1, hãy tắt lại các nhóm v1 — bớt một cửa vào site mà không ai dùng.
 
@@ -107,15 +107,15 @@ v1 và v2 đi qua **cùng các lớp kiểm tra** của site, nên phần lớn 
 
 | Chủ đề | Giống v2 | Chi tiết |
 | --- | --- | --- |
-| Đăng nhập bằng token, header `Authorization: Bearer …`, scope `admin` / `admin-supper` / `user` | Có | [Giới thiệu API — mục 2](./api-introduction_vi.md#2-xác-thực-đăng-nhập-vào-api) |
-| Giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP), giới hạn chung 1000 lần/phút | Có — form quản trị, `api/core/login` và `api/v2/core/login` dùng chung một bộ đếm | [Giới thiệu API — mục 2](./api-introduction_vi.md#2-xác-thực-đăng-nhập-vào-api) |
-| Quyền theo màn admin, dữ liệu theo cửa hàng | Có | [Giới thiệu API — mục 3](./api-introduction_vi.md#3-phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) |
-| Lớp API Connection (`apiconnection` / `apikey`) | Có | [Giới thiệu API — mục 4](./api-introduction_vi.md#4-lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) |
-| Thân lỗi `{"error": 1, "msg": "…", "code": "…"}` và mã HTTP đúng nghĩa | Có | [Giới thiệu API — mục 6](./api-introduction_vi.md#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) |
-| Header `X-Request-Id` trên mọi phản hồi | Có | [Giới thiệu API — mục 6](./api-introduction_vi.md#6-định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) |
+| Đăng nhập bằng token, header `Authorization: Bearer …`, scope `admin` / `admin-supper` / `user` | Có | [Xác thực (đăng nhập vào API)](./api-authentication_vi.md#xác-thực-đăng-nhập-vào-api) |
+| Giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP), giới hạn chung 1000 lần/phút | Có — form quản trị, `api/core/login` và `api/v2/core/login` dùng chung một bộ đếm | [Xác thực (đăng nhập vào API)](./api-authentication_vi.md#xác-thực-đăng-nhập-vào-api) |
+| Quyền theo màn admin, dữ liệu theo cửa hàng | Có | [Phân quyền và phạm vi dữ liệu của API Core](./api-concepts_vi.md#phân-quyền-và-phạm-vi-dữ-liệu-của-api-core) |
+| Lớp API Connection (`apiconnection` / `apikey`) | Có | [Lớp bảo vệ kết nối (API Connection) — tùy chọn](./api-concepts_vi.md#lớp-bảo-vệ-kết-nối-api-connection--tùy-chọn) |
+| Thân lỗi `{"error": 1, "msg": "…", "code": "…"}` và mã HTTP đúng nghĩa | Có | [Định dạng phản hồi, tham số danh sách & mã lỗi](./api-conventions_vi.md#định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) |
+| Header `X-Request-Id` trên mọi phản hồi | Có | [Định dạng phản hồi, tham số danh sách & mã lỗi](./api-conventions_vi.md#định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi) |
 | Dữ liệu công khai chỉ gồm những gì cửa hàng đang hiển thị | Có | mục 5 |
-| Ghi vào **Nhật ký thao tác** mỗi lần gọi API quản trị (trừ `login`) | Có | [Giới thiệu API — mục 9.5](./api-introduction_vi.md#95-nhật-ký-truy-cập-api-quản-trị) |
-| Đổi / đặt lại mật khẩu làm mọi token hết hiệu lực | Có — kể cả token v1 | [Giới thiệu API — mục 2](./api-introduction_vi.md#2-xác-thực-đăng-nhập-vào-api) |
+| Ghi vào **Nhật ký thao tác** mỗi lần gọi API quản trị (trừ `login`) | Có | [Nhật ký truy cập API quản trị](./api-authentication_vi.md#nhật-ký-truy-cập-api-quản-trị) |
+| Đổi / đặt lại mật khẩu làm mọi token hết hiệu lực | Có — kể cả token v1 | [Xác thực (đăng nhập vào API)](./api-authentication_vi.md#xác-thực-đăng-nhập-vào-api) |
 
 **Những điểm chỉ có ở v1** (lý do nên chuyển sang v2):
 
@@ -382,4 +382,4 @@ tra ở mục 7.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-31 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
