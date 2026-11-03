@@ -2727,7 +2727,7 @@ Fields of the objects the endpoints above send and return. Dates are ISO 8601 st
 | `name` | `string \| null` | Title in the requested language. |
 | `keyword` | `string \| null` | SEO keywords. |
 | `description` | `string \| null` | Short description. |
-| `content` | `string \| null` | HTML body; detail answers only (not in lists). |
+| `content` | `string \| null` | HTML body; detail answers only (not in lists). *(detail only)* |
 | `status` | `integer` | 1 = enabled. |
 | `store_id` | `string \| null` | Store id. |
 | `created_at` | `string \| null` | Creation time (ISO 8601). |

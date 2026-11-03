@@ -2300,7 +2300,7 @@ delta / set のどちらか一方のみ（両方を指定、またはどちら�
 | `name` | `string \| null` | 指定した言語でのタイトル。 |
 | `keyword` | `string \| null` | SEO キーワード。 |
 | `description` | `string \| null` | 短い説明。 |
-| `content` | `string \| null` | HTML 本文。詳細のレスポンスのみ（一覧には含まれません）。 |
+| `content` | `string \| null` | HTML 本文。詳細のレスポンスのみ（一覧には含まれません）。 *(詳細のみ)* |
 | `status` | `integer` | 1 = 有効。 |
 | `store_id` | `string \| null` | ストア ID。 |
 | `created_at` | `string \| null` | 作成日時（ISO 8601）。 |

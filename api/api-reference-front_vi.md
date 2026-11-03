@@ -2727,7 +2727,7 @@ Các trường của đối tượng mà các endpoint ở trên gửi và trả
 | `name` | `string \| null` | Tiêu đề bằng ngôn ngữ được yêu cầu. |
 | `keyword` | `string \| null` | Từ khoá SEO. |
 | `description` | `string \| null` | Mô tả ngắn. |
-| `content` | `string \| null` | Nội dung HTML; chỉ có ở phản hồi chi tiết (không có trong danh sách). |
+| `content` | `string \| null` | Nội dung HTML; chỉ có ở phản hồi chi tiết (không có trong danh sách). *(chỉ ở chi tiết)* |
 | `status` | `integer` | 1 = đang bật. |
 | `store_id` | `string \| null` | Id cửa hàng. |
 | `created_at` | `string \| null` | Thời điểm tạo (ISO 8601). |

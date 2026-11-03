@@ -11195,7 +11195,8 @@
                             "null"
                         ],
                         "description": "HTML body; detail answers only (not in lists).",
-                        "example": "<p>Who we are.<\/p>"
+                        "example": "<p>Who we are.<\/p>",
+                        "x-gp247-detail-only": true
                     },
                     "status": {
                         "type": "integer",
