@@ -154,8 +154,8 @@ the API has one more switch, **Ordering through the API**, under the v2 front gr
   Webhooks ([Response format, list parameters & error codes](./api-conventions.md#response-format-list-parameters--error-codes)) deliver the events of this log, so they also need this switch on.
 - The environment variable `GP247_API_MODE=0` is still the **server-level switch**: then no API endpoint exists and the
   switches on the screen are locked — meant for hosting/technical staff who want the API off for good.
-- Plugin APIs that use their own mechanism (for example the MCP server) are **not** covered by these switches and have
-  their own switch on the plugin's screen.
+- APIs with their own mechanism (for example the MCP server, `gp247/mcp`) are **not** covered by the v1 / v2 switches and have
+  their own switch on their own screen; the master switch above still turns the MCP server off.
 - **Sites with a route cache** (`php artisan route:cache`): `php artisan gp247:update` rebuilds the cache after upgrading.
   If you only run `composer update`, the switches may not take effect yet — `php artisan gp247:doctor` reports it under
   `api_route_gate` *(since gp247/core 3.4.0)*; run `php artisan gp247:cache-rebuild` to fix it.

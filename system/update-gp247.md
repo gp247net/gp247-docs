@@ -8,7 +8,7 @@ This document explains how to update a GP247 (S-Cart) website to a newer version
 written for site administrators, including non-technical ones: just follow each
 step and copy the exact commands. The key idea: **prefer GP247's standardized
 commands** (`gp247:update`, `gp247:info`, `gp247:doctor`) — you no longer need to
-remember a separate command per package (core/front/shop).
+remember a separate command per package (core/front/shop/mcp).
 
 > ℹ️ **Two kinds of commands to distinguish:**
 > - **Standardized command (recommended):** `gp247:update` — a single command that
@@ -72,13 +72,19 @@ Updating GP247 always involves **2 distinct parts**, and you must do **both**:
 1. Go to the website root folder in the Terminal.
 
 2. **Download the new source code** with Composer. Run the packages you actually
-   use — if unsure, just run all three; any package not present is skipped:
+   use — if unsure, just run all four; any package not present is skipped:
 
    ```bash
    composer update gp247/core
    composer update gp247/front
    composer update gp247/shop
+   composer update gp247/mcp
    ```
+
+   A site installed from S-Cart **before 3.5** does not have the MCP server package (`gp247/mcp`) yet: run
+   `composer require gp247/mcp` **once**. If the site uses the old McpServer plugin, step 3 moves the plugin's
+   tokens, settings and permissions to the built-in MCP; then remove the leftover plugin folder with
+   `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`.
 
    If successful, Composer prints the list of packages that were upgraded.
 
@@ -92,6 +98,7 @@ Updating GP247 always involves **2 distinct parts**, and you must do **both**:
    - Updates **core**;
    - Upgrades the **shop** data structure — *only if* the site has the shop module
      installed;
+   - Updates the **MCP server** data (settings, menu, permissions) — *only if* the `gp247/mcp` package is present;
    - Applies the **data update of plugins/templates** whose files are newer than the data in use
      (for example after you `git pull` a plugin) — see section C below;
    - Rebuilds the **caches** (route/config) so the site picks up the new code.
@@ -279,4 +286,4 @@ GP247's artisan commands with their options and examples.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

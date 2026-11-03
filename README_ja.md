@@ -36,8 +36,8 @@
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
 | [リリースノート v3.0 — 注文の金額](./system/release-notes-3.0_ja.md) | v2.1／v3.0 からのアップグレード：注文ごとの支払台帳、入金日基準のキャッシュフロー、一段ずれた支払ステータスの修正、**割引は税の前に差し引き**；プラグイン開発者向けの注意点 | 2026-10-22 |
-| [CLI コマンド一覧](./system/command-line-reference_ja.md) | GP247 のすべての CLI コマンドのリファレンス：`--json` 出力と終了コードの約束、`gp247:ext-*` のライフサイクル、install／update／doctor／info；`core-update` はアップグレード用マイグレーションを実行（core 2.2） | 2026-10-22 |
-| [GP247 の更新ガイド](./system/update-gp247_ja.md) | 稼働中サイトの安全な更新、標準化コマンド `gp247:update` を優先；公開版 v2.1 からデータを自動変換；オプション `--overwrite-lang`、`--publish`；`git pull` 後に拡張機能のデータ更新を適用 | 2026-10-22 |
+| [CLI コマンド一覧](./system/command-line-reference_ja.md) | GP247 のすべての CLI コマンドのリファレンス：`--json` 出力と終了コードの約束、`gp247:ext-*` のライフサイクル、install／update／doctor／info；`core-update` はアップグレード用マイグレーションを実行（core 2.2） | 2026-11-03 |
+| [GP247 の更新ガイド](./system/update-gp247_ja.md) | 稼働中サイトの安全な更新、標準化コマンド `gp247:update` を優先；公開版 v2.1 からデータを自動変換；オプション `--overwrite-lang`、`--publish`；`git pull` 後に拡張機能のデータ更新を適用 | 2026-11-03 |
 | [多言語システム](./system/language-system_ja.md) | GP247 での言語／i18n の使い方 | 2026-10-22 |
 | [メール送信システム](./system/mail-system_ja.md) | メール送信の流れ（図付き）、SMTP 設定、送信チャネルの選択 | 2026-10-22 |
 | [機密データの暗号化](./system/data-encryption_ja.md) | 秘密情報（SMTP／OAuth／ライセンス）の保存時暗号化；専用キー `GP247_ENCRYPTION_KEY`；`gp247:encryption-key-rotate` による**安全なキー変更の手順**；他テーブルの列の暗号化 | 2026-10-22 |

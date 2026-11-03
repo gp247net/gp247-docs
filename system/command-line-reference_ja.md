@@ -47,6 +47,9 @@ GP247 サイトの開発者と管理者向けのドキュメントです。読�
 | `gp247:shop-uninstall` | shop | shop モジュールをアンインストール（shop のテーブルを削除） |
 | `gp247:shop-sample` | shop | サンプルデータを作成（⚠️ 既存の shop データを削除） |
 | `gp247:shop-clear-cart` | shop | 期限切れのカート／お気に入り／比較を削除 |
+| `gp247:mcp-install` | mcp | MCP サーバーの設定、メニュー、権限を作成（データを壊さない。エンドポイントは無効のまま） |
+| `gp247:mcp-update` | mcp | インストール済みバージョンの MCP データを適用（何度実行しても安全。旧 McpServer プラグインのデータを移行） |
+| `gp247:mcp-uninstall` | mcp | MCP のデータを削除し、すべての MCP トークンを取り消す（確認あり。スクリプトでは `--force`） |
 | `gp247:ext-list` | core | ローカルのプラグイン／テンプレート + 状態 + 更新版の有無を一覧表示 |
 | `gp247:ext-install` | core | `.zip` ファイル、フォルダ、またはマーケットプレイスからプラグイン／テンプレートをインストール |
 | `gp247:ext-enable` / `gp247:ext-disable` | core | インストール済みのプラグイン／テンプレートを有効化／無効化 |
@@ -57,8 +60,8 @@ GP247 サイトの開発者と管理者向けのドキュメントです。読�
 | `gp247:ext-license` | core | 有料拡張機能のプラグインごとのライセンスを設定／表示／削除 |
 | `gp247:ext-register-license` | core | 拡張機能ライブラリに接続するため、ドメインの API License（無料）を登録 |
 | `gp247:ext-publish` | core | インストール済みプラグイン／テンプレートの静的ファイル（CSS/JS/画像）を `public/` に再コピー |
-| `gp247:install` | core | 一括インストール（core [+front] [+shop] [+sample]） |
-| `gp247:update` | core | `composer update` 後の更新（core [+shop]、稼働中のサイトでも安全） |
+| `gp247:install` | core | 一括インストール（core [+front] [+shop] [+mcp] [+sample]） |
+| `gp247:update` | core | `composer update` 後の更新（core [+shop] [+mcp]、稼働中のサイトでも安全） |
 | `gp247:cache-rebuild` | core | route/config のキャッシュを再構築 |
 | `gp247:doctor` | core | 環境を確認（PHP／拡張モジュール／書き込み権限／DB） |
 | `gp247:info` | core | 状態を表示: バージョン、インストールのマーカー、拡張機能の数 |
@@ -646,11 +649,11 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | コマンド | 主なオプション | 機能 |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | システム全体の共通インストールコマンドです。存在するパッケージを**自動で検出**し、次の順にインストールします: `core-install` → （`front-install`） → （`shop-install`） → （`--sample` がある場合は `shop-sample`）。1 つの手順でエラーが出ると、0 以外の終了コードで停止します。**既定では確認が必須**です（下の安全上の注意を参照）。非対話でインストールするには `--force=1` を使います。`composer require` の直後から利用できます（プラットフォームがまだインストールされていない場合も含む）。パッケージの選択は完全に自動です — `--with-front` / `--with-shop` フラグは**ありません**。 |
-| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | 稼働中のサイト向けの、`composer update` 後の安全な更新です: `core-update`、次に `shop-update`（shop がインストール済みの場合のみ）、オプションで `language-update`（`--overwrite-lang`）、**拡張機能のデータ更新を適用する**手順（プラグイン、次にテンプレートに対して `ext-update --local --all`。エラーは警告だけで、後続の手順は止めません。2026-09-29 の更新から）、**任意の** アセット／view の再 publish 手順（`--publish=`、既定はオフ）、最後に `cache-rebuild`。データを壊す（再）インストールの手順は一切実行しません。各 `--publish` トークンの影響の大きさは、下の再 publish に関する注意を参照してください。 |
+| `gp247:install` | `--sample`, `--force=1` | システム全体の共通インストールコマンドです。存在するパッケージを**自動で検出**し、次の順にインストールします: `core-install` → （`front-install`） → （`shop-install`） → （`mcp-install`、データを壊さない） → （`--sample` がある場合は `shop-sample`）。1 つの手順でエラーが出ると、0 以外の終了コードで停止します。**既定では確認が必須**です（下の安全上の注意を参照）。非対話でインストールするには `--force=1` を使います。`composer require` の直後から利用できます（プラットフォームがまだインストールされていない場合も含む）。パッケージの選択は完全に自動です — `--with-front` / `--with-shop` フラグは**ありません**。 |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | 稼働中のサイト向けの、`composer update` 後の安全な更新です: `core-update`、次に `shop-update`（shop がインストール済みの場合のみ）、次に `mcp-update`（`gp247/mcp` パッケージがある場合）、オプションで `language-update`（`--overwrite-lang`）、**拡張機能のデータ更新を適用する**手順（プラグイン、次にテンプレートに対して `ext-update --local --all`。エラーは警告だけで、後続の手順は止めません。2026-09-29 の更新から）、**任意の** アセット／view の再 publish 手順（`--publish=`、既定はオフ）、最後に `cache-rebuild`。データを壊す（再）インストールの手順は一切実行しません。各 `--publish` トークンの影響の大きさは、下の再 publish に関する注意を参照してください。 |
 | `gp247:cache-rebuild` | — | route/config のキャッシュを再構築します（拡張機能の有効化／更新の後）。 |
 | `gp247:doctor` | `--json` | 環境を確認します: PHP ≥ 8.3、必須拡張モジュール、書き込み権限、DB 接続、インストールのマーカー、およびソースコードの衛生チェックの一部（下記参照）。**fail** の項目があると 0 以外で終了するため、CI／インストール前のゲートとして使えます。**warn** の項目では 0 以外で終了しません。 |
-| `gp247:info` | `--json` | 状態を表示します: インストール済みパッケージ（core/front/shop）のバージョン、インストールのマーカー、プラグイン／テンプレートの数、マーケットプレイス API のエンドポイント。読み取り専用です。 |
+| `gp247:info` | `--json` | 状態を表示します: インストール済みパッケージ（core/front/shop/mcp）のバージョン、インストールのマーカー、プラグイン／テンプレートの数、マーケットプレイス API のエンドポイント。読み取り専用です。 |
 
 ### `gp247:doctor` が確認する項目
 
@@ -683,7 +686,7 @@ php artisan gp247:ext-publish --type=plugin --all
 `doctor` が代わりに確認します。この項目は FAIL ではなく **WARN** です。整理は必要ですが、インストールや
 CI をブロックするほどではありません（特に、すぐには修正できないサードパーティのプラグインに BOM がある場合）。
 
-コマンドはこのサイトが実際に実行するコード（`app/GP247/**` と `vendor/gp247/{core,front,shop}/src/**`）をスキャンし、
+コマンドはこのサイトが実際に実行するコード（`app/GP247/**` と `vendor/gp247/{core,front,shop,mcp}/src/**`）をスキャンし、
 各ファイルの先頭 3 バイトだけを読むので、とても高速です（約 1,200 ファイルで約 1.2 秒。Laravel の起動時間を含む）。
 
 BOM の付いたファイルがある場合の結果:
@@ -877,6 +880,7 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | S-Cart に組み込まれた MCP サーバー（McpServer プラグインの後継）の `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` を追加。`gp247:install` と `gp247:update` が MCP の手順を実行し、`gp247:info` に `gp247/mcp` のバージョンを表示します。 |
 | 2026-09-29 |  | `gp247:ext-update` に `--local` / `--dry-run` を追加: `git pull`／Composer／手動コピーでファイルが置き換えられた拡張機能のデータ更新を実行します（GP247 がインストール済みのバージョンを記録）。`gp247:update` がプラグインとテンプレートに対してこの手順を実行します。`gp247:doctor` に `extension_data_pending` 項目を追加。 |
 | 2026-09-23 |  | `gp247:doctor` に `file_bom` 項目を追加: UTF-8 の BOM で始まる `.php`/`.blade.php` ファイルを報告します（WARN レベルで、コマンドは 0 以外で終了しません） |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` が、再 seed の**前に** **core のアップグレード用マイグレーション**（`Migrations/upgrade/`）を実行するようになりました — 以前は seed だけだったため、core のデータ構造の変更がインストール済みのサイトに届きませんでした。これは次のルールの一部です: 公開版 **v2.1** 以降、互換性を壊す変更にはすべて自動のマイグレーションが付き、`gp247:update` を通じて適用されます。 |
@@ -886,4 +890,4 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>

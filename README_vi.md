@@ -36,8 +36,8 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Ghi chú phát hành v3.0 — tiền của đơn hàng](./system/release-notes-3.0_vi.md) | Nâng cấp từ v2.1/v3.0: sổ thanh toán từng đơn, dòng tiền tính theo ngày thu, sửa trạng thái thanh toán lệch một bậc, **giảm giá trừ trước thuế**; ghi chú cho lập trình viên plugin | 2026-10-22 |
-| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info; `core-update` chạy migration nâng cấp (core 2.2) | 2026-10-22 |
-| [Hướng dẫn cập nhật GP247](./system/update-gp247_vi.md) | Cập nhật an toàn cho site đang chạy, ưu tiên lệnh chuẩn hóa `gp247:update`; dữ liệu tự chuyển đổi từ bản public v2.1; tùy chọn `--overwrite-lang`, `--publish`; áp dụng cập nhật dữ liệu extension sau `git pull` | 2026-10-22 |
+| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info; `core-update` chạy migration nâng cấp (core 2.2) | 2026-11-03 |
+| [Hướng dẫn cập nhật GP247](./system/update-gp247_vi.md) | Cập nhật an toàn cho site đang chạy, ưu tiên lệnh chuẩn hóa `gp247:update`; dữ liệu tự chuyển đổi từ bản public v2.1; tùy chọn `--overwrite-lang`, `--publish`; áp dụng cập nhật dữ liệu extension sau `git pull` | 2026-11-03 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-10-22 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-10-22 |
 | [Mã hoá dữ liệu nhạy cảm](./system/data-encryption_vi.md) | Mã hoá at-rest bí mật (SMTP/OAuth/license); khoá riêng `GP247_ENCRYPTION_KEY`; **các bước đổi khoá an toàn** bằng `gp247:encryption-key-rotate`; mã hoá cột bảng khác | 2026-10-22 |

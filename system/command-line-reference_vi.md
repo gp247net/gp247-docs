@@ -47,6 +47,9 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:shop-uninstall` | shop | Gỡ module shop (xóa bảng shop) |
 | `gp247:shop-sample` | shop | Tạo dữ liệu mẫu (⚠️ xóa dữ liệu shop hiện có) |
 | `gp247:shop-clear-cart` | shop | Xóa giỏ hàng / wishlist / so sánh đã hết hạn |
+| `gp247:mcp-install` | mcp | Tạo cấu hình, menu, quyền của MCP server (không phá dữ liệu; endpoint để tắt) |
+| `gp247:mcp-update` | mcp | Cập nhật dữ liệu MCP cho bản đang cài (chạy lại nhiều lần an toàn; chuyển dữ liệu từ plugin McpServer cũ) |
+| `gp247:mcp-uninstall` | mcp | Gỡ dữ liệu MCP và thu hồi mọi token MCP (hỏi xác nhận; `--force` cho script) |
 | `gp247:ext-list` | core | Liệt kê plugin/template local + trạng thái + bản cập nhật |
 | `gp247:ext-install` | core | Cài plugin/template từ file `.zip`, thư mục, hoặc marketplace |
 | `gp247:ext-enable` / `gp247:ext-disable` | core | Bật / tắt plugin/template đã cài |
@@ -57,8 +60,8 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:ext-license` | core | Đặt/xem/xóa license theo plugin của extension trả phí |
 | `gp247:ext-register-license` | core | Đăng ký API License (miễn phí) cho domain để kết nối thư viện extension |
 | `gp247:ext-publish` | core | Chép lại file tĩnh (CSS/JS/ảnh) của plugin/template đã cài ra `public/` |
-| `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+sample]) |
-| `gp247:update` | core | Làm mới sau `composer update` (core [+shop], an toàn cho site chạy) |
+| `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+mcp] [+sample]) |
+| `gp247:update` | core | Làm mới sau `composer update` (core [+shop] [+mcp], an toàn cho site chạy) |
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
 | `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) |
 | `gp247:info` | core | Xem trạng thái: version, marker cài đặt, số lượng extension |
@@ -647,11 +650,11 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` khi có `--sample`). Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
-| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), tùy chọn `language-update` (`--overwrite-lang`), bước **áp dụng cập nhật dữ liệu extension** (`ext-update --local --all` cho plugin rồi template — lỗi chỉ cảnh báo, không chặn các bước sau; có từ bản cập nhật ngày 2026-09-29), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
+| `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` khi có `--sample`). `mcp-install` không phá dữ liệu. Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), rồi `mcp-update` (khi có gói `gp247/mcp`), tùy chọn `language-update` (`--overwrite-lang`), bước **áp dụng cập nhật dữ liệu extension** (`ext-update --local --all` cho plugin rồi template — lỗi chỉ cảnh báo, không chặn các bước sau; có từ bản cập nhật ngày 2026-09-29), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
 | `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.3, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |
-| `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
+| `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop/mcp), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
 
 ### `gp247:doctor` kiểm những gì
 
@@ -684,7 +687,7 @@ Mở file lên thì **trông hoàn toàn bình thường**, diff cũng không hi
 được, nên `doctor` làm hộ bạn. Mục này là **WARN** chứ không phải FAIL: cần dọn, nhưng không đáng chặn việc
 cài đặt hay chặn CI (nhất là khi BOM nằm trong một plugin bên thứ ba bạn chưa sửa được ngay).
 
-Lệnh quét mã mà site này thực sự chạy — `app/GP247/**` và `vendor/gp247/{core,front,shop}/src/**` — và chỉ
+Lệnh quét mã mà site này thực sự chạy — `app/GP247/**` và `vendor/gp247/{core,front,shop,mcp}/src/**` — và chỉ
 đọc 3 byte đầu mỗi file, nên rất nhanh (khoảng 1,2 giây cho ~1.200 file, tính cả thời gian khởi động Laravel).
 
 Kết quả khi có file dính BOM:
@@ -878,6 +881,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Thêm `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` của MCP server có sẵn trong S-Cart (thay plugin McpServer); `gp247:install` và `gp247:update` tự gọi bước MCP; `gp247:info` hiện phiên bản `gp247/mcp`. |
 | 2026-09-29 |  | `gp247:ext-update` thêm `--local` / `--dry-run`: chạy phần cập nhật dữ liệu cho extension đã được thay file bằng `git pull`/Composer/chép tay (GP247 ghi nhớ phiên bản đã cài); `gp247:update` chạy bước này cho plugin và template; `gp247:doctor` thêm mục `extension_data_pending`. |
 | 2026-09-23 |  | `gp247:doctor` thêm mục `file_bom`: báo file `.php`/`.blade.php` bắt đầu bằng BOM UTF-8 (mức WARN, không làm lệnh thoát khác 0) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` nay chạy **migration nâng cấp của core** (`Migrations/upgrade/`) **trước** khi seed lại — trước đây lệnh chỉ seed, nên thay đổi cấu trúc dữ liệu của core không tới được site đã cài. Đây là một phần của quy tắc: từ bản public **v2.1** trở đi, mọi thay đổi phá vỡ đều kèm migration tự động, giao qua `gp247:update`. |
@@ -887,4 +891,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

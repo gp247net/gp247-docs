@@ -8,7 +8,7 @@ một cách **an toàn cho site đang chạy** — không mất dữ liệu, kh�
 Tài liệu dành cho người quản trị site, kể cả người không rành kỹ thuật: chỉ cần
 làm theo từng bước, copy đúng lệnh là được. Điểm cốt lõi: **ưu tiên bộ lệnh đã
 chuẩn hóa của GP247** (`gp247:update`, `gp247:info`, `gp247:doctor`) — bạn không
-cần nhớ nhiều lệnh lẻ cho từng gói (core/front/shop) nữa.
+cần nhớ nhiều lệnh lẻ cho từng gói (core/front/shop/mcp) nữa.
 
 > ℹ️ **Hai loại lệnh cần phân biệt:**
 > - **Lệnh chuẩn hóa (nên dùng):** `gp247:update` — một lệnh tự lo cập nhật cho
@@ -70,13 +70,19 @@ Một lần cập nhật GP247 luôn có **2 phần tách biệt**, phải làm 
 1. Vào thư mục gốc website trong Terminal.
 
 2. **Tải mã nguồn mới về** bằng Composer. Chạy đúng gói bạn đang dùng — nếu chưa
-   chắc, cứ chạy cả ba lệnh, gói nào không có sẽ được bỏ qua:
+   chắc, cứ chạy cả bốn lệnh, gói nào không có sẽ được bỏ qua:
 
    ```bash
    composer update gp247/core
    composer update gp247/front
    composer update gp247/shop
+   composer update gp247/mcp
    ```
+
+   Site cài từ S-Cart **trước 3.5** chưa có gói MCP server (`gp247/mcp`): chạy thêm **một lần**
+   `composer require gp247/mcp`. Nếu site đang dùng plugin McpServer cũ, bước 3 tự chuyển token, cấu hình
+   và quyền của plugin sang MCP có sẵn; sau đó xoá thư mục plugin còn sót bằng
+   `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`.
 
    Nếu thành công, Composer in ra danh sách các gói vừa được nâng cấp.
 
@@ -89,6 +95,7 @@ Một lần cập nhật GP247 luôn có **2 phần tách biệt**, phải làm 
    Lệnh này tự động làm tuần tự (an toàn, không phá dữ liệu):
    - Cập nhật **core**;
    - Nâng cấp cấu trúc dữ liệu **shop** — *chỉ khi* site có cài module shop;
+   - Cập nhật dữ liệu **MCP server** (cấu hình, menu, quyền) — *chỉ khi* có gói `gp247/mcp`;
    - Áp dụng **cập nhật dữ liệu của plugin/template** có file mới hơn dữ liệu đang dùng (ví dụ bạn vừa
      `git pull` một plugin) — xem mục C bên dưới;
    - Làm mới lại **cache** (route/config) để site nhận code mới.
@@ -269,4 +276,4 @@ cả lệnh artisan của GP247 kèm tùy chọn và ví dụ.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

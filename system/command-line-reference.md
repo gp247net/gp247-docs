@@ -47,6 +47,9 @@ and you can copy-paste and run them right away.
 | `gp247:shop-uninstall` | shop | Uninstall the shop module (drop shop tables) |
 | `gp247:shop-sample` | shop | Create sample data (⚠️ wipes existing shop data) |
 | `gp247:shop-clear-cart` | shop | Remove expired cart / wishlist / compare entries |
+| `gp247:mcp-install` | mcp | Create the MCP server settings, menu and permissions (non-destructive; endpoint stays off) |
+| `gp247:mcp-update` | mcp | Apply MCP data for the installed version (safe to re-run; moves data from the old McpServer plugin) |
+| `gp247:mcp-uninstall` | mcp | Remove MCP data and revoke every MCP token (asks for confirmation; `--force` for scripts) |
 | `gp247:ext-list` | core | List local plugins/templates + status + available updates |
 | `gp247:ext-install` | core | Install a plugin/template from a .zip, a directory, or the marketplace |
 | `gp247:ext-enable` / `gp247:ext-disable` | core | Enable / disable an installed plugin/template |
@@ -57,8 +60,8 @@ and you can copy-paste and run them right away.
 | `gp247:ext-license` | core | Set/show/remove the per-plugin license of a paid extension |
 | `gp247:ext-register-license` | core | Register the domain's (free) API License that connects the site to the extension library |
 | `gp247:ext-publish` | core | Copy the static files (CSS/JS/images) of installed plugins/templates to `public/` again |
-| `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+sample]) |
-| `gp247:update` | core | Post-`composer update` refresh (core [+shop], safe for live) |
+| `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+mcp] [+sample]) |
+| `gp247:update` | core | Post-`composer update` refresh (core [+shop] [+mcp], safe for live) |
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
 | `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) |
 | `gp247:info` | core | Show status: versions, install marker, extension counts |
@@ -666,11 +669,11 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | Command | Key options | What it does |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`shop-sample` when `--sample`). A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
-| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), optional `language-update` (`--overwrite-lang`), the **extension data update** step (`ext-update --local --all` for plugins then templates — a failure only warns and never blocks the following steps; available since the 2026-09-29 update), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
+| `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` when `--sample`). `mcp-install` is non-destructive. A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
+| `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), then `mcp-update` (when the `gp247/mcp` package is present), optional `language-update` (`--overwrite-lang`), the **extension data update** step (`ext-update --local --all` for plugins then templates — a failure only warns and never blocks the following steps; available since the 2026-09-29 update), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
 | `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.3, required extensions, write permissions, DB connectivity, install marker, plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |
-| `gp247:info` | `--json` | Show status: installed package versions (core/front/shop), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
+| `gp247:info` | `--json` | Show status: installed package versions (core/front/shop/mcp), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
 
 ### What `gp247:doctor` checks
 
@@ -705,7 +708,7 @@ blocking an install or a CI run over (especially when the BOM is inside a third-
 today).
 
 The scan covers the code this install actually runs — `app/GP247/**` and
-`vendor/gp247/{core,front,shop}/src/**` — and reads only the first 3 bytes of each file, so it is fast (about
+`vendor/gp247/{core,front,shop,mcp}/src/**` — and reads only the first 3 bytes of each file, so it is fast (about
 1.2 seconds for ~1,200 files, Laravel's own start-up included).
 
 What it looks like when a file is affected:
@@ -899,6 +902,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Added `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` for the MCP server built into S-Cart (replaces the McpServer plugin); `gp247:install` and `gp247:update` run the MCP step; `gp247:info` shows the `gp247/mcp` version. |
 | 2026-09-29 |  | `gp247:ext-update` gained `--local` / `--dry-run`: runs the data update of extensions whose files were replaced with `git pull`/Composer/a manual copy (GP247 now records the installed version); `gp247:update` runs this step for plugins and templates; `gp247:doctor` gained the `extension_data_pending` check. |
 | 2026-09-23 |  | `gp247:doctor` gained the `file_bom` check: reports `.php`/`.blade.php` files starting with a UTF-8 BOM (WARN — never changes the exit code) |
 | 2026-08-29 | gp247/core 2.2 | `gp247:core-update` now runs the **core upgrade migrations** (`Migrations/upgrade/`) **before** re-seeding — previously it only re-seeded, so a core data-structure change could not reach an installed site. Part of the rule that, from the public **v2.1** onward, every breaking change ships an automatic migration delivered by `gp247:update`. |
@@ -908,4 +912,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

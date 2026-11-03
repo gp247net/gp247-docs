@@ -149,7 +149,7 @@ có thêm công tắc **Đặt đơn qua API** dưới nhóm v2 front ([Đặt �
   ([Định dạng phản hồi, tham số danh sách & mã lỗi](./api-conventions_vi.md#định-dạng-phản-hồi-tham-số-danh-sách--mã-lỗi)) gửi đi các sự kiện của nhật ký này nên cũng cần công tắc này bật.
 - Biến môi trường `GP247_API_MODE=0` vẫn là **công tắc ở tầng máy chủ**: khi đó không có endpoint API nào và các công tắc
   trên màn bị khoá — dành cho đơn vị hosting/kỹ thuật muốn tắt hẳn API.
-- API của plugin dùng cơ chế riêng (ví dụ máy chủ MCP) **không** chịu các công tắc này và có công tắc riêng trên màn của plugin.
+- API dùng cơ chế riêng (ví dụ máy chủ MCP, `gp247/mcp`) **không** chịu công tắc v1 / v2 và có công tắc riêng trên màn của nó; công tắc tổng ở trên vẫn tắt luôn máy chủ MCP.
 - **Site có cache route** (`php artisan route:cache`): `php artisan gp247:update` tự dựng lại cache sau khi nâng cấp. Nếu bạn chỉ
   chạy `composer update`, công tắc có thể chưa có hiệu lực — `php artisan gp247:doctor` báo ở mục `api_route_gate`
   *(từ gp247/core 3.4.0)*; chạy `php artisan gp247:cache-rebuild` để sửa.
