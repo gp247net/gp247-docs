@@ -94,7 +94,7 @@ Steps to turn v1 back on:
 - Calling a group that is off → HTTP `404` with `"code": "api_disabled"` — even without a token *(since gp247/core 3.4.0;
   3.3.1 answers `401` when the token is missing)*.
 - The environment variable `GP247_API_MODE=0` turns every API off at server level and locks the switches on the screen.
-- Sites with a route cache: see the note in [Introduction to the API — section 5](./api-introduction.md#5-turning-the-api-on-and-off).
+- Sites with a route cache: see the note in [Turning the API on and off](./api-concepts.md#turning-the-api-on-and-off).
 
 > 💡 **Tip:** when no app calls v1 any more, turn the v1 groups off again — one less unused door into the site.
 
@@ -107,15 +107,15 @@ the details in the main document.
 
 | Topic | Same as v2 | Details |
 | --- | --- | --- |
-| Token login, `Authorization: Bearer …` header, scopes `admin` / `admin-supper` / `user` | Yes | [Introduction to the API — section 2](./api-introduction.md#2-authentication-logging-in-to-the-api) |
-| Login limits (5/min per account, 20/min per IP), general limit of 1000/min | Yes — the admin form, `api/core/login` and `api/v2/core/login` share one counter | [Introduction to the API — section 2](./api-introduction.md#2-authentication-logging-in-to-the-api) |
-| Admin-screen permissions, per-store data | Yes | [Introduction to the API — section 3](./api-introduction.md#3-permissions-and-data-scope-of-the-core-api) |
-| API Connection layer (`apiconnection` / `apikey`) | Yes | [Introduction to the API — section 4](./api-introduction.md#4-the-api-connection-protection-layer--optional) |
-| Error body `{"error": 1, "msg": "…", "code": "…"}` and meaningful HTTP codes | Yes | [Introduction to the API — section 6](./api-introduction.md#6-response-format-list-parameters--error-codes) |
-| `X-Request-Id` header on every response | Yes | [Introduction to the API — section 6](./api-introduction.md#6-response-format-list-parameters--error-codes) |
+| Token login, `Authorization: Bearer …` header, scopes `admin` / `admin-supper` / `user` | Yes | [Authentication (logging in to the API)](./api-authentication.md#authentication-logging-in-to-the-api) |
+| Login limits (5/min per account, 20/min per IP), general limit of 1000/min | Yes — the admin form, `api/core/login` and `api/v2/core/login` share one counter | [Authentication (logging in to the API)](./api-authentication.md#authentication-logging-in-to-the-api) |
+| Admin-screen permissions, per-store data | Yes | [Permissions and data scope of the Core API](./api-concepts.md#permissions-and-data-scope-of-the-core-api) |
+| API Connection layer (`apiconnection` / `apikey`) | Yes | [The API Connection protection layer — optional](./api-concepts.md#the-api-connection-protection-layer--optional) |
+| Error body `{"error": 1, "msg": "…", "code": "…"}` and meaningful HTTP codes | Yes | [Response format, list parameters & error codes](./api-conventions.md#response-format-list-parameters--error-codes) |
+| `X-Request-Id` header on every response | Yes | [Response format, list parameters & error codes](./api-conventions.md#response-format-list-parameters--error-codes) |
 | Public data limited to what the store is showing | Yes | section 5 |
-| Every admin API call (except `login`) written to the **Operation log** | Yes | [Introduction to the API — section 9.5](./api-introduction.md#95-admin-api-access-log) |
-| Changing / resetting a password ends every token | Yes — v1 tokens included | [Introduction to the API — section 2](./api-introduction.md#2-authentication-logging-in-to-the-api) |
+| Every admin API call (except `login`) written to the **Operation log** | Yes | [Admin API access log](./api-authentication.md#admin-api-access-log) |
+| Changing / resetting a password ends every token | Yes — v1 tokens included | [Authentication (logging in to the API)](./api-authentication.md#authentication-logging-in-to-the-api) |
 
 **What only v1 does** (reasons to move to v2):
 
@@ -382,4 +382,4 @@ table and checklist are in section 7.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-31 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

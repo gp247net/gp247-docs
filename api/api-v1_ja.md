@@ -94,7 +94,7 @@ v1 をオンに戻す手順：
 - オフのグループを呼ぶと → HTTP `404`、`"code": "api_disabled"` — トークンがなくても同じです *（gp247/core 3.4.0 から。
   3.3.1 ではトークンがないと `401` を返します）*。
 - 環境変数 `GP247_API_MODE=0` はサーバーレベルですべての API をオフにし、画面のスイッチをロックします。
-- ルートキャッシュを使うサイト：[API 入門のセクション 5](./api-introduction_ja.md#5-api-のオンオフ) の注意を参照してください。
+- ルートキャッシュを使うサイト：[API のオン／オフ](./api-concepts_ja.md#api-のオンオフ) の注意を参照してください。
 
 > 💡 **ヒント:** v1 を呼ぶアプリがなくなったら、v1 グループをオフに戻しましょう。使われていないサイトの入り口が 1 つ減ります。
 
@@ -107,15 +107,15 @@ v1 と v2 はサイトで**同じチェック**を通るため、ほとんどの
 
 | 項目 | v2 と同じ | 詳細 |
 | --- | --- | --- |
-| トークンによるログイン、`Authorization: Bearer …` ヘッダー、scope `admin` / `admin-supper` / `user` | はい | [API 入門のセクション 2](./api-introduction_ja.md#2-認証api-へのログイン) |
-| ログイン回数の制限（アカウントごと 5 回/分、IP ごと 20 回/分）、1 分あたり 1000 回の共通制限 | はい — 管理画面のフォーム、`api/core/login`、`api/v2/core/login` は同じカウンターを共有 | [API 入門のセクション 2](./api-introduction_ja.md#2-認証api-へのログイン) |
-| 管理画面ごとの権限、ストアごとのデータ | はい | [API 入門のセクション 3](./api-introduction_ja.md#3-core-api-の権限とデータの範囲) |
-| API Connection レイヤー（`apiconnection` / `apikey`） | はい | [API 入門のセクション 4](./api-introduction_ja.md#4-接続保護レイヤーapi-connection-任意) |
-| エラー本文 `{"error": 1, "msg": "…", "code": "…"}` と意味の正しい HTTP コード | はい | [API 入門のセクション 6](./api-introduction_ja.md#6-レスポンスの形式一覧のパラメーターエラーコード) |
-| すべてのレスポンスの `X-Request-Id` ヘッダー | はい | [API 入門のセクション 6](./api-introduction_ja.md#6-レスポンスの形式一覧のパラメーターエラーコード) |
+| トークンによるログイン、`Authorization: Bearer …` ヘッダー、scope `admin` / `admin-supper` / `user` | はい | [認証（API へのログイン）](./api-authentication_ja.md#認証api-へのログイン) |
+| ログイン回数の制限（アカウントごと 5 回/分、IP ごと 20 回/分）、1 分あたり 1000 回の共通制限 | はい — 管理画面のフォーム、`api/core/login`、`api/v2/core/login` は同じカウンターを共有 | [認証（API へのログイン）](./api-authentication_ja.md#認証api-へのログイン) |
+| 管理画面ごとの権限、ストアごとのデータ | はい | [Core API の権限とデータの範囲](./api-concepts_ja.md#core-api-の権限とデータの範囲) |
+| API Connection レイヤー（`apiconnection` / `apikey`） | はい | [接続保護レイヤー（API Connection）— 任意](./api-concepts_ja.md#接続保護レイヤーapi-connection-任意) |
+| エラー本文 `{"error": 1, "msg": "…", "code": "…"}` と意味の正しい HTTP コード | はい | [レスポンスの形式、一覧のパラメーター、エラーコード](./api-conventions_ja.md#レスポンスの形式一覧のパラメーターエラーコード) |
+| すべてのレスポンスの `X-Request-Id` ヘッダー | はい | [レスポンスの形式、一覧のパラメーター、エラーコード](./api-conventions_ja.md#レスポンスの形式一覧のパラメーターエラーコード) |
 | 公開データはストアが表示している内容だけ | はい | セクション 5 |
-| 管理 API の呼び出し（`login` を除く）を**操作ログ**に記録 | はい | [API 入門のセクション 9.5](./api-introduction_ja.md#95-管理-api-のアクセスログ) |
-| パスワードの変更／再設定ですべてのトークンが無効になる | はい — v1 のトークンも含む | [API 入門のセクション 2](./api-introduction_ja.md#2-認証api-へのログイン) |
+| 管理 API の呼び出し（`login` を除く）を**操作ログ**に記録 | はい | [管理 API のアクセスログ](./api-authentication_ja.md#管理-api-のアクセスログ) |
+| パスワードの変更／再設定ですべてのトークンが無効になる | はい — v1 のトークンも含む | [認証（API へのログイン）](./api-authentication_ja.md#認証api-へのログイン) |
 
 **v1 だけの点**（v2 に移行する理由）：
 
@@ -379,4 +379,4 @@ v1 の商品一覧の 1 ページの例（抜粋）：
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-31 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
