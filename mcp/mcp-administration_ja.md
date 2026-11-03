@@ -94,13 +94,13 @@ S-Cart **3.5 より前**からインストールしたサイトには、まだ M
 2. 次を実行します。
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
 3. 成功すると **システム設定 → MCP Server** メニューが表示されます。続きは[クイックスタート](./mcp-quickstart_ja.md)をご覧ください。
 
-> ⚠️ **注意:** `gp247/mcp` には **`gp247/core` 3.9 以上**が必要です。Composer が依存関係を解決できない場合は、先に core を更新してください（`composer update gp247/core`）。
+> ⚠️ **注意:** `gp247/mcp` には **`gp247/core` 3.9 以上**が必要です。`-W` を付けると、Composer が core（と他の GP247 パッケージ）を必要なバージョンまで同時に更新できます。`-W` がないと、core 3.8 のサイトでは依存関係を解決できません。
 
 ## 旧 McpServer プラグインからの移行
 
@@ -108,7 +108,7 @@ S-Cart 3.5 から、MCP は **McpServer** プラグインに代わってプラ�
 
 ```mermaid
 flowchart LR
-    P["McpServer プラグイン<br/>（動作中）"] -->|"composer require gp247/mcp<br/>gp247:update"| M["その場で<br/>データを移行"]
+    P["McpServer プラグイン<br/>（動作中）"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["その場で<br/>データを移行"]
     M --> N["組み込みの MCP が<br/>同じアドレスで応答"]
     N --> D["残ったプラグインの<br/>フォルダーを削除"]
 ```
@@ -131,7 +131,7 @@ flowchart LR
 2. 次を実行します。
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
@@ -169,7 +169,7 @@ flowchart LR
 
 **Q2: `composer require gp247/mcp` で依存関係のエラーが出ます。**
 
-→ `gp247/mcp` には `gp247/core` 3.9 以上が必要です。先に `composer update gp247/core gp247/front gp247/shop` を実行してから、もう一度コマンドを実行してください。
+→ `gp247/mcp` には `gp247/core` 3.9 以上が必要ですが、サイトの core が古いバージョンで固定されています。`-W` を付けて再実行してください：`composer require gp247/mcp -W`。
 
 **Q3: MCP Server の設定ボタンが見当たりません。**
 

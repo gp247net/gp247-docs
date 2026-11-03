@@ -154,7 +154,7 @@ default. See [Security & permissions](./mcp-security.md).
 
 **Q7: I use the old McpServer plugin — what now?**
 
-→ Update S-Cart as usual (`composer require gp247/mcp` once, then `php artisan gp247:update`). Tokens, settings and permissions move to the
+→ Update S-Cart as usual (`composer require gp247/mcp -W` once, then `php artisan gp247:update`). Tokens, settings and permissions move to the
 built-in MCP automatically, and agents need no new configuration. See [Administration & setup](./mcp-administration.md#moving-from-the-old-mcpserver-plugin).
 
 **Q8: Does MCP work on shared hosting?**

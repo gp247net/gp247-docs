@@ -176,7 +176,7 @@ S-Cart **3.5 より前**からインストールしたサイトには、まだ M
 2. サイトのルートフォルダー（`artisan` ファイルがあるフォルダー）で **ターミナル** を開き、順に実行します。
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 

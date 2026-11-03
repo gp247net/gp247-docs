@@ -39,7 +39,7 @@ flowchart TD
 | `recent_changes` says **not enabled** | The REST API event log is off | Turn it on on the API management screen ([Data sync](../api/api-sync.md)) |
 | The agent **stops working after a password change** | Changing the password revokes every MCP token of the account | Create a new token and put it into the agent |
 | Writes are always blocked | The site runs in read-only demo mode | Turn demo mode off if this is a real site |
-| `composer require gp247/mcp` reports a dependency error | Core older than 3.9 | `composer update gp247/core gp247/front gp247/shop`, then run it again |
+| `composer require gp247/mcp` reports a dependency error (*fixed to 3.8.x by a partial update*) | Core locked to a version older than 3.9 | Run it again with `-W` so Composer may upgrade the core: `composer require gp247/mcp -W` |
 
 ## Look up by error code
 

@@ -80,7 +80,7 @@ Một lần cập nhật GP247 luôn có **2 phần tách biệt**, phải làm 
    ```
 
    Site cài từ S-Cart **trước 3.5** chưa có gói MCP server (`gp247/mcp`): chạy thêm **một lần**
-   `composer require gp247/mcp`. Nếu site đang dùng plugin McpServer cũ, bước 3 tự chuyển token, cấu hình
+   `composer require gp247/mcp -W`. Nếu site đang dùng plugin McpServer cũ, bước 3 tự chuyển token, cấu hình
    và quyền của plugin sang MCP có sẵn; sau đó xoá thư mục plugin còn sót bằng
    `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`.
 

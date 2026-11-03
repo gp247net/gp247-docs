@@ -154,7 +154,7 @@ hàng, nhập/xuất kho) luôn qua bước xem trước — agent phải hỏi 
 
 **Câu 7: Tôi đang dùng plugin McpServer cũ thì sao?**
 
-→ Cập nhật S-Cart như thường lệ (`composer require gp247/mcp` một lần rồi `php artisan gp247:update`). Token, cấu hình và quyền tự chuyển sang
+→ Cập nhật S-Cart như thường lệ (`composer require gp247/mcp -W` một lần rồi `php artisan gp247:update`). Token, cấu hình và quyền tự chuyển sang
 MCP có sẵn, agent không phải cấu hình lại. Xem [Quản trị & cài đặt](./mcp-administration_vi.md#chuyển-từ-plugin-mcpserver-cũ).
 
 **Câu 8: MCP có dùng được trên shared hosting không?**

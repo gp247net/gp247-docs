@@ -4,22 +4,23 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.4.0** (2026-11-02).
+and how to update. Latest release: **S-Cart 3.5.0** (2026-11-03).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.6.0** | 3.8.0 |
-| gp247/front | **3.2.3** | 3.5.0 |
+| gp247/core | **3.6.0** | 3.9.0 |
+| gp247/front | **3.2.3** | 3.5.2 |
 | gp247/shop | **3.6.0** | 3.7.0 |
+| gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
 - **At or above it** → your site has all the important improvements, even if you have not reinstalled S-Cart.
 
-> ⚠️ **Note:** update **all three packages together**: `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7, `gp247/front` 3.2.3
-> needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
+> ⚠️ **Note:** update **all the packages together**: `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
+> `gp247/front` 3.2.3 needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
 
 ## Support lifecycle
 | Line | Platform | Status | Security fixes until |
@@ -34,18 +35,18 @@ Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each lin
   `php artisan gp247:update` — see the [v3.0 notes](../system/release-notes-3.0.md).
 
 ## Highlights
-- **Sell through your own app** — the store's app keeps the cart, places orders and pays online through the API *(S-Cart 3.4)*
-- **Customer accounts in the app** — sign up, password reset, profile, address book *(S-Cart 3.4)*
-- **Sync with ERP and warehouse software** — order status, shipments, prices, stock through the admin API *(S-Cart 3.4)*
-- **Event log and webhooks** — the ERP knows at once when orders, stock, products or customers change *(S-Cart 3.4)*
+- **MCP server built into S-Cart** — ask and manage your shop with the AI agent you already use *(S-Cart 3.5)*
+- **The agent looks things up for you** — sales, low stock, orders, customers, with the right permissions *(S-Cart 3.5)*
+- **Write actions are always confirmed** — preview before changing an order status or stock *(S-Cart 3.5)*
 
 ## How to update
 **Step 1 —** Back up the database and the site folder.
 
 **Step 2 —** Update the code:
 ```bash
-composer update gp247/core gp247/front gp247/shop
+composer update gp247/core gp247/front gp247/shop gp247/mcp
 ```
+A site installed before S-Cart 3.5.0 has no MCP server yet: run `composer require gp247/mcp -W` once instead of the command above.
 
 **Step 3 —** Apply data, configuration and cache updates:
 ```bash
@@ -59,6 +60,25 @@ Step-by-step details: [Updating GP247](https://gp247.net/en/docs/system/how-to-u
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.5.0 — 2026-11-03
+**Built-in MCP server: ask and manage your shop with the AI agent you already use.**
+
+**✨ New**
+- **MCP server built into S-Cart** — connect Claude, Cursor or VS Code to your shop and ask in plain language; off by default
+  ([docs](../mcp/mcp-introduction.md))
+- **The agent looks things up for you** — sales, low stock, orders, customers, recent changes; with the account's own permissions
+- **Write actions are always confirmed** — order status, shipping status, stock in/out: preview first, then confirm; off by default
+- **The extension library shows "Core X.Y+"** — see at once which core an extension needs
+- **For developers:** `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall`; `gp247:info` lists `gp247/mcp`;
+  the `minUpdateFrom` manifest key replaces `requireUpdateFrom` (the old key is still read)
+
+**📋 To do when updating**
+- *(Site installed before S-Cart 3.5.0)* run `composer require gp247/mcp -W` once, then `php artisan gp247:update`
+- *(Using the McpServer plugin)* `gp247:update` moves tokens, settings and permissions; then remove the plugin folder with
+  `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`; the MCP screens are now under **System config → MCP Server**
+
+<sub>Includes core 3.9.0 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.0)</sub>
 
 ### S-Cart 3.4.0 — 2026-11-02
 **Sell through your own app and sync with your ERP over the REST API.**
@@ -192,4 +212,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-02 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>

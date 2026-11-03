@@ -4,22 +4,23 @@
 
 ## Giới thiệu
 Trang này dành cho **chủ site và người vận hành** S-Cart (dòng 3.x): cho biết mỗi bản phát hành có gì mới, nên dùng phiên
-bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.4.0** (2026-11-02).
+bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.5.0** (2026-11-03).
 
 ## Phiên bản nên dùng
 Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từng dòng với cột **Tối thiểu khuyến nghị**:
 
 | Package | Tối thiểu khuyến nghị | Mới nhất |
 | --- | --- | --- |
-| gp247/core | **3.6.0** | 3.8.0 |
-| gp247/front | **3.2.3** | 3.5.0 |
+| gp247/core | **3.6.0** | 3.9.0 |
+| gp247/front | **3.2.3** | 3.5.2 |
 | gp247/shop | **3.6.0** | 3.7.0 |
+| gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Thấp hơn** cột "Tối thiểu khuyến nghị" → nên [cập nhật](#cập-nhật-thế-nào).
 - **Đã đạt** → site đã có đủ các cải tiến quan trọng, kể cả khi bạn chưa cài lại S-Cart.
 
-> ⚠️ **Lưu ý:** cập nhật **cả ba package cùng lúc**: `gp247/shop` 3.6.0 cần `gp247/core` ≥ 3.7, `gp247/front` 3.2.3 cần
-> `gp247/core` ≥ 3.2.3. Dòng nào còn được hỗ trợ: xem [Vòng đời hỗ trợ](#vòng-đời-hỗ-trợ).
+> ⚠️ **Lưu ý:** cập nhật **cả bộ package cùng lúc**: `gp247/mcp` 2.0.1 cần `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 cần `gp247/core` ≥ 3.7,
+> `gp247/front` 3.2.3 cần `gp247/core` ≥ 3.2.3. Dòng nào còn được hỗ trợ: xem [Vòng đời hỗ trợ](#vòng-đời-hỗ-trợ).
 
 ## Vòng đời hỗ trợ
 | Dòng | Nền tảng | Trạng thái | Vá bảo mật đến |
@@ -34,18 +35,18 @@ Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từ
   `php artisan gp247:update` — xem [ghi chú v3.0](../system/release-notes-3.0_vi.md).
 
 ## Điểm mới nổi bật
-- **Bán hàng qua ứng dụng riêng** — app của cửa hàng giữ giỏ, đặt đơn, thanh toán online qua API *(S-Cart 3.4)*
-- **Tài khoản khách trong ứng dụng** — đăng ký, quên mật khẩu, hồ sơ, sổ địa chỉ *(S-Cart 3.4)*
-- **Đồng bộ với ERP, phần mềm kho** — trạng thái đơn, vận đơn, giá, tồn kho qua API quản trị *(S-Cart 3.4)*
-- **Nhật ký sự kiện và webhook** — ERP biết ngay khi đơn, tồn, sản phẩm, khách thay đổi *(S-Cart 3.4)*
+- **MCP server có sẵn trong S-Cart** — hỏi và quản lý cửa hàng bằng AI agent bạn đang dùng *(S-Cart 3.5)*
+- **Agent tra cứu thay bạn** — doanh thu, hàng sắp hết, đơn, khách, đúng phân quyền *(S-Cart 3.5)*
+- **Thao tác ghi luôn có xác nhận** — xem trước rồi mới đổi trạng thái đơn, kho *(S-Cart 3.5)*
 
 ## Cập nhật thế nào
 **Bước 1 —** Sao lưu cơ sở dữ liệu và thư mục site.
 
 **Bước 2 —** Cập nhật code:
 ```bash
-composer update gp247/core gp247/front gp247/shop
+composer update gp247/core gp247/front gp247/shop gp247/mcp
 ```
+Site cài trước S-Cart 3.5.0 chưa có MCP server: chạy `composer require gp247/mcp -W` một lần thay cho lệnh trên.
 
 **Bước 3 —** Áp dụng cập nhật dữ liệu, cấu hình, cache:
 ```bash
@@ -59,6 +60,25 @@ Chi tiết từng bước: [Hướng dẫn cập nhật GP247](https://gp247.net
 
 ## Các bản phát hành
 Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z*** chỉ sửa lỗi.
+
+### S-Cart 3.5.0 — 2026-11-03
+**MCP server có sẵn: hỏi và quản lý cửa hàng bằng AI agent bạn đang dùng.**
+
+**✨ Mới**
+- **MCP server có sẵn trong S-Cart** — kết nối Claude, Cursor, VS Code với cửa hàng, hỏi bằng lời thường; tắt sẵn
+  ([tài liệu](../mcp/mcp-introduction_vi.md))
+- **Agent tra cứu thay bạn** — doanh thu, hàng sắp hết, đơn, khách, thay đổi gần đây; đúng phân quyền của tài khoản
+- **Thao tác ghi luôn có xác nhận** — đổi trạng thái đơn, giao hàng, nhập/xuất kho: xem trước rồi mới làm; tắt sẵn
+- **Thư viện extension ghi rõ "Core X.Y+"** — biết ngay extension cần core bản nào
+- **Cho lập trình viên:** lệnh `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall`; `gp247:info` hiện `gp247/mcp`;
+  khoá manifest `minUpdateFrom` thay `requireUpdateFrom` (khoá cũ vẫn đọc được)
+
+**📋 Cần làm khi cập nhật**
+- *(Site cài trước S-Cart 3.5.0)* chạy `composer require gp247/mcp -W` một lần rồi `php artisan gp247:update`
+- *(Đang dùng plugin McpServer)* `gp247:update` tự chuyển token, cấu hình, quyền; sau đó xoá thư mục plugin bằng
+  `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`; màn MCP nay ở **Cấu hình hệ thống → MCP Server**
+
+<sub>Gồm core 3.9.0 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.0)</sub>
 
 ### S-Cart 3.4.0 — 2026-11-02
 **Bán hàng qua ứng dụng riêng và đồng bộ với ERP qua REST API.**
@@ -191,4 +211,4 @@ trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-02 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>

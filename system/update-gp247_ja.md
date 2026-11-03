@@ -80,7 +80,7 @@ GP247 のアップデートには、必ず **2 つの独立した作業**があ�
    ```
 
    S-Cart **3.5 より前**からインストールしたサイトには、MCP サーバーのパッケージ（`gp247/mcp`）がまだありません。
-   `composer require gp247/mcp` を **1 回だけ** 実行してください。旧 McpServer プラグインを使っている場合、手順 3 で
+   `composer require gp247/mcp -W` を **1 回だけ** 実行してください。旧 McpServer プラグインを使っている場合、手順 3 で
    プラグインのトークン、設定、権限が組み込みの MCP に移行されます。その後、残っているプラグインのフォルダーを
    `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge` で削除してください。
 

@@ -94,13 +94,13 @@ Site cài từ S-Cart **trước 3.5** chưa có gói MCP, vì `composer update`
 2. Chạy:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
 3. Nếu thành công, menu **Cấu hình hệ thống → MCP Server** xuất hiện. Tiếp tục ở [Bắt đầu nhanh](./mcp-quickstart_vi.md).
 
-> ⚠️ **Lưu ý:** `gp247/mcp` cần **`gp247/core` 3.9 trở lên**. Composer báo không giải được phụ thuộc thì cập nhật core trước (`composer update gp247/core`).
+> ⚠️ **Lưu ý:** `gp247/mcp` cần **`gp247/core` 3.9 trở lên**. Cờ `-W` cho phép Composer nâng core (và các gói GP247 khác) lên bản đủ mới cùng lúc — thiếu `-W`, site còn core 3.8 sẽ báo không giải được phụ thuộc.
 
 ## Chuyển từ plugin McpServer cũ
 
@@ -108,7 +108,7 @@ Từ S-Cart 3.5, MCP là một phần của nền tảng, thay cho plugin **McpS
 
 ```mermaid
 flowchart LR
-    P["Plugin McpServer<br/>(đang chạy)"] -->|"composer require gp247/mcp<br/>gp247:update"| M["Chuyển dữ liệu<br/>tại chỗ"]
+    P["Plugin McpServer<br/>(đang chạy)"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["Chuyển dữ liệu<br/>tại chỗ"]
     M --> N["MCP có sẵn<br/>phục vụ cùng địa chỉ"]
     N --> D["Xoá thư mục<br/>plugin còn sót"]
 ```
@@ -131,7 +131,7 @@ Các bước:
 2. Chạy:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
@@ -169,7 +169,7 @@ Các bước:
 
 **Câu 2: `composer require gp247/mcp` báo lỗi phụ thuộc?**
 
-→ `gp247/mcp` cần `gp247/core` 3.9 trở lên. Chạy `composer update gp247/core gp247/front gp247/shop` trước, rồi chạy lại lệnh.
+→ `gp247/mcp` cần `gp247/core` 3.9 trở lên, mà core của site đang khoá ở bản cũ hơn. Chạy lại kèm `-W`: `composer require gp247/mcp -W`.
 
 **Câu 3: Tôi không thấy nút Cấu hình MCP Server?**
 

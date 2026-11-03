@@ -176,7 +176,7 @@ A site installed from S-Cart **before 3.5** does not have the MCP package yet. A
 2. Open a **Terminal** in the site's root folder (the folder with the `artisan` file) and run, one after the other:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 

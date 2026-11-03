@@ -95,13 +95,13 @@ A site installed from S-Cart **before 3.5** does not have the MCP package yet, b
 2. Run:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
 3. If it worked, the **System config → MCP Server** menu appears. Continue with [Quick start](./mcp-quickstart.md).
 
-> ⚠️ **Warning:** `gp247/mcp` needs **`gp247/core` 3.9 or later**. If Composer cannot resolve the dependencies, update the core first (`composer update gp247/core`).
+> ⚠️ **Warning:** `gp247/mcp` needs **`gp247/core` 3.9 or later**. The `-W` flag lets Composer upgrade the core (and the other GP247 packages) to a new enough version at the same time — without `-W`, a site still on core 3.8 cannot resolve the dependencies.
 
 ## Moving from the old McpServer plugin
 
@@ -109,7 +109,7 @@ From S-Cart 3.5, MCP is part of the platform, replacing the **McpServer** plugin
 
 ```mermaid
 flowchart LR
-    P["McpServer plugin<br/>(running)"] -->|"composer require gp247/mcp<br/>gp247:update"| M["Move data<br/>in place"]
+    P["McpServer plugin<br/>(running)"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["Move data<br/>in place"]
     M --> N["Built-in MCP<br/>serves the same address"]
     N --> D["Delete the leftover<br/>plugin folder"]
 ```
@@ -132,7 +132,7 @@ Steps:
 2. Run:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 
@@ -170,7 +170,7 @@ Steps:
 
 **Q2: `composer require gp247/mcp` reports a dependency error?**
 
-→ `gp247/mcp` needs `gp247/core` 3.9 or later. Run `composer update gp247/core gp247/front gp247/shop` first, then run the command again.
+→ `gp247/mcp` needs `gp247/core` 3.9 or later, and the site's core is locked to an older version. Run it again with `-W`: `composer require gp247/mcp -W`.
 
 **Q3: I cannot see the MCP Server settings button?**
 

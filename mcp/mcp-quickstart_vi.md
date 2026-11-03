@@ -176,7 +176,7 @@ Site cài từ S-Cart **trước 3.5** chưa có gói MCP. Thêm một lần (ng
 2. Mở **Terminal** tại thư mục gốc của site (thư mục có file `artisan`), chạy lần lượt:
 
    ```
-   composer require gp247/mcp
+   composer require gp247/mcp -W
    php artisan gp247:update
    ```
 

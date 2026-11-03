@@ -39,7 +39,7 @@ flowchart TD
 | `recent_changes` trả **chưa bật** | Nhật ký sự kiện của REST API đang tắt | Bật ở màn quản lý API ([Đồng bộ dữ liệu](../api/api-sync_vi.md)) |
 | Agent **ngừng chạy sau khi đổi mật khẩu** | Đổi mật khẩu thu hồi mọi token MCP của tài khoản | Tạo token mới, cập nhật vào agent |
 | Thao tác ghi luôn bị chặn | Site đang ở chế độ demo chỉ-đọc | Tắt chế độ demo nếu đây là site thật |
-| `composer require gp247/mcp` báo lỗi phụ thuộc | Core cũ hơn 3.9 | `composer update gp247/core gp247/front gp247/shop` rồi chạy lại |
+| `composer require gp247/mcp` báo lỗi phụ thuộc (*fixed to 3.8.x by a partial update*) | Core đang khoá ở bản cũ hơn 3.9 | Chạy lại kèm `-W` để Composer được nâng core: `composer require gp247/mcp -W` |
 
 ## Tra theo mã lỗi
 

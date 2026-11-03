@@ -39,7 +39,7 @@ flowchart TD
 | `recent_changes` が**オンになっていない**と返す | REST API のイベントログがオフ | API 管理画面でオン（[データ同期](../api/api-sync_ja.md)） |
 | **パスワード変更後にエージェントが動かない** | パスワード変更でそのアカウントのすべての MCP トークンが無効化された | 新しいトークンを作成し、エージェントに設定 |
 | 書き込みが常にブロックされる | サイトが読み取り専用のデモモード | 本番サイトならデモモードをオフ |
-| `composer require gp247/mcp` で依存関係のエラー | core が 3.9 より古い | `composer update gp247/core gp247/front gp247/shop` の後に再実行 |
+| `composer require gp247/mcp` で依存関係のエラー（*fixed to 3.8.x by a partial update*） | core が 3.9 より古いバージョンで固定されている | Composer が core を更新できるよう `-W` を付けて再実行：`composer require gp247/mcp -W` |
 
 ## エラーコードで調べる
 

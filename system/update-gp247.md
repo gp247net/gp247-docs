@@ -82,7 +82,7 @@ Updating GP247 always involves **2 distinct parts**, and you must do **both**:
    ```
 
    A site installed from S-Cart **before 3.5** does not have the MCP server package (`gp247/mcp`) yet: run
-   `composer require gp247/mcp` **once**. If the site uses the old McpServer plugin, step 3 moves the plugin's
+   `composer require gp247/mcp -W` **once**. If the site uses the old McpServer plugin, step 3 moves the plugin's
    tokens, settings and permissions to the built-in MCP; then remove the leftover plugin folder with
    `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`.
 

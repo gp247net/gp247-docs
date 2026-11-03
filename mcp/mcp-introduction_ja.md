@@ -154,7 +154,7 @@ MCP は公式ライブラリ `laravel/mcp` と、**セッションを持たな�
 
 **Q7: 旧 McpServer プラグインを使っている場合は？**
 
-→ いつもどおり S-Cart を更新してください（`composer require gp247/mcp` を 1 回、続けて `php artisan gp247:update`）。トークン、設定、権限は組み込みの MCP に
+→ いつもどおり S-Cart を更新してください（`composer require gp247/mcp -W` を 1 回、続けて `php artisan gp247:update`）。トークン、設定、権限は組み込みの MCP に
 自動で移行され、エージェントの再設定は不要です。[管理と設定](./mcp-administration_ja.md#旧-mcpserver-プラグインからの移行)を参照してください。
 
 **Q8: 共有ホスティングで使えますか？**
