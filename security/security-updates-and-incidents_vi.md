@@ -83,14 +83,20 @@ Dấu hiệu thường gặp: tài khoản quản trị lạ, thay đổi cấu 
 lừa đảo mang tên cửa hàng, file `.env` từng bị đưa lên Git hoặc tải được qua web. Làm theo thứ tự sau — **thứ tự quan trọng**.
 
 ```mermaid
-flowchart TD
-    A["1. Cô lập<br/>bảo trì, tắt API"] --> B["2. Sao lưu hiện trạng"]
-    B --> C["3. Đổi mật khẩu quản trị<br/>thu hồi token"]
-    C --> D["4. Đổi bí mật bên thứ ba<br/>SMTP, cổng thanh toán, DB"]
-    D --> E["5. Đổi khoá trong .env<br/>nếu .env bị lộ"]
-    E --> F["6. Điều tra<br/>nhật ký, tài khoản, file lạ"]
-    F --> G["7. Khôi phục bản sạch<br/>và cập nhật"]
-    G --> H["8. Mở lại, theo dõi"]
+flowchart TB
+    subgraph S1["Chặn thiệt hại"]
+        direction LR
+        A["1. Cô lập<br/>bảo trì, tắt API"] --> B["2. Sao lưu<br/>hiện trạng"]
+    end
+    subgraph S2["Đổi bí mật"]
+        direction LR
+        C["3. Đổi mật khẩu<br/>quản trị"] --> D["4. Đổi bí mật<br/>bên thứ ba"] --> E["5. Đổi khoá .env<br/>nếu .env bị lộ"]
+    end
+    subgraph S3["Làm sạch & mở lại"]
+        direction LR
+        F["6. Điều tra<br/>nhật ký, file lạ"] --> G["7. Khôi phục<br/>bản sạch"] --> H["8. Mở lại<br/>và theo dõi"]
+    end
+    S1 --> S2 --> S3
 ```
 
 1. **Cô lập.** Bật chế độ bảo trì ở màn **Thông tin website**, hoặc chạy `php artisan down`. Tắt công tắc tổng ở màn **Cấu hình API** (tắt luôn MCP).

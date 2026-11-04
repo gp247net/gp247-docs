@@ -13,14 +13,13 @@ owners who want to open the API to a partner. After reading, you understand why 
 A request passes four checks before it gets any data:
 
 ```mermaid
-flowchart LR
-    A["Request"] --> B{"API group<br/>turned on?"}
-    B -- "No" --> X1["404 api_disabled"]
-    B -- "Yes" --> C{"API Connection<br/>(if on) correct?"}
-    C -- "Wrong" --> X2["401 api_connection_invalid"]
-    C -- "Correct" --> D{"Token valid<br/>with permission?"}
-    D -- "No" --> X3["401 / 403"]
-    D -- "Yes" --> E["Data of<br/>the right store"]
+flowchart TB
+    A["Request"] --> S
+    subgraph S["Three checks, in order"]
+        direction LR
+        B["1. API group on?<br/>no: 404"] --> C["2. API Connection<br/>wrong: 401"] --> D["3. Token, permission<br/>wrong: 401 / 403"]
+    end
+    S --> E["Data of<br/>the right store"]
 ```
 
 - **API switches** are turned on/off by the site owner in the admin area — a group that is off answers `404 api_disabled`.
@@ -191,4 +190,4 @@ in-stock/out-of-stock `stock_status`). Internal apps that need these figures sho
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

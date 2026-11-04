@@ -20,12 +20,11 @@ document: go straight to [Introduction to the API](./api-introduction.md).
 An older app keeps working on v1 while the v1 group is on, as you gradually move to v2:
 
 ```mermaid
-flowchart LR
-    A["Older app<br/>calls api/core, api/front"] --> B{"v1 group on?"}
-    B -- "No" --> C["404 api_disabled"]
+flowchart TB
+    A["Older app<br/>api/core, api/front"] --> B{"v1 on?"}
+    B -- "No" --> C["404 api_disabled<br/>owner turns v1 on"]
     B -- "Yes" --> D["Works as before"]
-    C -.->|"site owner turns v1 on (section 2)"| D
-    D -.->|"plan it (section 7)"| E["Move to<br/>api/v2/..."]
+    D -.->|"plan it"| E["Move to<br/>api/v2/..."]
 ```
 
 - **Fresh installs turn v1 off** — calling a group that is off answers `404 api_disabled`; turn it back on on the API management screen (section 2).
@@ -382,4 +381,4 @@ table and checklist are in section 7.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

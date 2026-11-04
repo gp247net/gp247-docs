@@ -68,12 +68,12 @@ Recommended sync loop:
 
 ```mermaid
 flowchart TD
-    A["Mark = stored sync_until − 5 seconds"] --> B["Call list?updated_since=mark"]
-    B --> C["Write the records, de-duplicate by id"]
+    A["Mark = sync_until − 5 s"] --> B["list?updated_since=mark"]
+    B --> C["Write records<br/>de-duplicate by id"]
     C --> D{"has_more?"}
-    D -- "true" --> E["Call links.next<br/>(page[after] = next_after)"]
+    D -- "true" --> E["Call links.next<br/>page[after]"]
     E --> C
-    D -- "false" --> F["Store meta.sync_until<br/>for the next run"]
+    D -- "false" --> F["Store meta.sync_until<br/>for next run"]
 ```
 
 - Read every page (until `has_more = false`) before storing `meta.sync_until`; on the next run send `updated_since` =
@@ -156,17 +156,18 @@ Trimmed response:
 Recommended follow loop:
 
 ```mermaid
-flowchart TD
-    A["Turn the event log on<br/>on the API management screen"] --> B["First full sync<br/>through the updated_since lists"]
-    B --> C["GET events<br/>(first time without after)"]
-    C --> D["Handle the events, skip<br/>changes the app made itself"]
-    D --> E["Store meta.next_after"]
-    E --> F{"has_more?"}
-    F -- "true" --> G["GET events?after=next_after"]
-    F -- "false" --> H["Wait a while"]
-    H --> G
-    G --> D
-    G -- "410 cursor_expired" --> B
+flowchart TB
+    subgraph S1["Setup — once"]
+        direction LR
+        A["Turn the<br/>event log on"] --> B["Full sync<br/>updated_since"]
+    end
+    subgraph S2["Event reading loop"]
+        direction LR
+        C["GET events<br/>after=next_after"] --> D["Handle events<br/>store next_after"] --> F{"has_more?"}
+        F -- "true: call now<br/>false: wait, then call" --> C
+    end
+    S1 --> S2
+    S2 -.->|"410 cursor_expired"| X["Full sync<br/>again"]
 ```
 
 - **No event is skipped:** an event appears about **5 seconds** after it happened (environment variable
@@ -289,13 +290,13 @@ http_response_code(204);
 ### Answering and retries
 
 ```mermaid
-flowchart TD
-    A["Event recorded<br/>in the log"] --> B["Site finishes answering a request<br/>then POSTs to the webhook"]
-    B --> C{"ERP answers 2xx?"}
+flowchart LR
+    A["Event recorded<br/>in the log"] --> B["POST to<br/>the webhook"]
+    B --> C{"2xx?"}
     C -- "yes" --> D["Delivered"]
-    C -- "no" --> E["Wait for the next attempt:<br/>1 minute, 5 minutes, 30 minutes,<br/>2 hours, 12 hours"]
+    C -- "no" --> E["Retry after<br/>1 minute … 12 hours"]
     E --> B
-    C -- "6th attempt<br/>still fails" --> F["Given up — the ERP catches up<br/>with GET events"]
+    C -- "6th try fails" --> F["Given up — ERP<br/>uses GET events"]
 ```
 
 - Answer **any 2xx** quickly to acknowledge — store the event and handle it later. Any other answer, including a redirect
@@ -362,4 +363,4 @@ read the parameters, limits and error codes there.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

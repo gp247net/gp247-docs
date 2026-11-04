@@ -18,12 +18,11 @@ Mỗi khoá bảo vệ một nhóm dữ liệu khác nhau. Sơ đồ cho thấy 
 ```mermaid
 flowchart LR
     E[".env"] --> K1["APP_KEY"]
-    E --> K2["GP247_ENCRYPTION_KEY"]
-    K1 --> A1["Phiên đăng nhập, cookie"]
-    K1 --> A3["Secret ký webhook"]
-    K2 --> B1["Mật khẩu SMTP, secret captcha,<br/>OAuth, license"]
-    K2 --> B2["Mã link thanh toán"]
-    K2 -.->|"khi để trống"| K1
+    E --> K2["GP247_ENCRYPTION_KEY<br/>trống thì dùng APP_KEY"]
+    K1 --> A1["Phiên đăng nhập<br/>cookie"]
+    K1 --> A3["Secret ký<br/>webhook"]
+    K2 --> B1["Mật khẩu SMTP<br/>captcha, OAuth<br/>license"]
+    K2 --> B2["Mã link<br/>thanh toán"]
 ```
 
 - **Cả hai khoá nằm trong file `.env`** — sao lưu `.env` là sao lưu khoá. Không có bản sao lưu `.env` thì không có khoá dự phòng.

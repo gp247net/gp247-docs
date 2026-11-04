@@ -108,9 +108,9 @@ S-Cart 3.5 から、MCP は **McpServer** プラグインに代わってプラ�
 
 ```mermaid
 flowchart LR
-    P["McpServer プラグイン<br/>（動作中）"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["その場で<br/>データを移行"]
-    M --> N["組み込みの MCP が<br/>同じアドレスで応答"]
-    N --> D["残ったプラグインの<br/>フォルダーを削除"]
+    P["McpServer<br/>プラグイン<br/>（動作中）"] -->|"更新"| M["その場で<br/>データ移行"]
+    M --> N["組み込み MCP<br/>同じアドレス"]
+    N --> D["残った<br/>フォルダーを<br/>削除"]
 ```
 
 引き継がれるものと変わるもの：
@@ -199,4 +199,4 @@ flowchart LR
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

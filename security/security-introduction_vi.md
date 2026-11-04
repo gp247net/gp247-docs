@@ -20,18 +20,12 @@ con người là phần của bạn:
 ```mermaid
 flowchart TB
     subgraph B["👤 Phần của bạn"]
-        B1["Máy chủ & HTTPS"]
-        B2["File .env & khoá mã hoá"]
-        B3["Sao lưu & thử khôi phục"]
-        B4["Tài khoản & cấp quyền"]
-        B5["Cập nhật phần mềm"]
+        direction TB
+        B1["Máy chủ<br/>& HTTPS"] ~~~ B2["File .env<br/>& khoá mã hoá"] ~~~ B3["Sao lưu<br/>& thử khôi phục"] ~~~ B4["Tài khoản<br/>& cấp quyền"] ~~~ B5["Cập nhật<br/>phần mềm"]
     end
     subgraph G["✅ GP247 lo sẵn"]
-        G1["Giới hạn đăng nhập<br/>băm mật khẩu"]
-        G2["Phân quyền<br/>theo màn hình"]
-        G3["Mã hoá bí mật<br/>trong cơ sở dữ liệu"]
-        G4["Chống giả mạo form<br/>kiểm tra file tải lên"]
-        G5["Nhật ký thao tác"]
+        direction TB
+        G1["Giới hạn<br/>đăng nhập sai<br/>băm mật khẩu"] ~~~ G2["Phân quyền<br/>theo màn hình"] ~~~ G3["Mã hoá<br/>bí mật đã lưu"] ~~~ G4["Chống giả mạo<br/>form, kiểm tra<br/>file tải lên"] ~~~ G5["Nhật ký<br/>thao tác"]
     end
     B --> S["Site an toàn"]
     G --> S

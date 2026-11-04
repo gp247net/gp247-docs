@@ -13,14 +13,22 @@ technical staff and plugin developers. After reading it you will know which laye
 A request from a browser passes through several layers before it touches data. The diagram shows which layers belong to GP247 and which belong to your server:
 
 ```mermaid
-flowchart LR
-    U["Browser<br/>apps, AI agents"] --> W["Web server<br/>HTTPS 👤"]
-    W --> A["Sign-in<br/>attempt limits ✅"]
-    A --> P["Permissions<br/>per screen ✅"]
-    P --> I["Input checks<br/>forms, files ✅"]
-    I --> D["Database<br/>encrypted secrets ✅"]
-    P --> L["Activity log ✅"]
-    D --> K["Backup 👤"]
+flowchart TB
+    subgraph O["Way in"]
+        direction LR
+        U["Browser, apps<br/>AI agents"] --> W["Web server<br/>HTTPS 👤"]
+    end
+    subgraph APP["Inside GP247"]
+        direction LR
+        A["Sign-in<br/>attempt limits ✅"] --> P["Permissions<br/>per screen ✅"]
+        P --> I["Input checks<br/>forms, files ✅"]
+        P --> L["Activity log ✅"]
+    end
+    subgraph DATA["Data"]
+        direction LR
+        D["Database<br/>encrypted secrets ✅"] --> K["Backup 👤"]
+    end
+    O --> APP --> DATA
 ```
 
 - **✅ = GP247 does it, 👤 = you do it.** HTTPS and backups live outside the application, so GP247 cannot do them for you.

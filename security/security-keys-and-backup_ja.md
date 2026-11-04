@@ -18,12 +18,11 @@
 ```mermaid
 flowchart LR
     E[".env"] --> K1["APP_KEY"]
-    E --> K2["GP247_ENCRYPTION_KEY"]
-    K1 --> A1["ログインセッション、Cookie"]
-    K1 --> A3["Webhook の署名シークレット"]
-    K2 --> B1["SMTP パスワード、CAPTCHA のシークレット、<br/>OAuth、ライセンス"]
-    K2 --> B2["決済リンクのコード"]
-    K2 -.->|"空のとき"| K1
+    E --> K2["GP247_ENCRYPTION_KEY<br/>空なら APP_KEY を使用"]
+    K1 --> A1["ログイン<br/>セッション<br/>Cookie"]
+    K1 --> A3["Webhook の<br/>署名用<br/>シークレット"]
+    K2 --> B1["SMTP、CAPTCHA<br/>OAuth<br/>ライセンス"]
+    K2 --> B2["決済リンク<br/>のコード"]
 ```
 
 - **2 つのキーはどちらも `.env` ファイルにあります** — `.env` をバックアップすることがキーのバックアップです。`.env` のバックアップがなければ、予備のキーはありません。

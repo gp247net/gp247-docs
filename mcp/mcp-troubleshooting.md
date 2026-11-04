@@ -15,12 +15,12 @@ Most problems sit in one of four places — following this order is the fastest:
 ```mermaid
 flowchart TD
     S["The agent reports an error"] --> A{"Error code?"}
-    A -->|"404"| E["Endpoint or the API<br/>master switch is off"]
-    A -->|"401"| T{"Click Check connection"}
-    T -->|"red"| H["The web server drops<br/>the Authorization header"]
-    T -->|"green"| K["Token wrong / expired /<br/>revoked / account locked"]
-    A -->|"403"| P["No MCP permission, not an MCP<br/>token, or store scope"]
-    A -->|"no error, tool missing"| C["Tool off, token limited,<br/>or no admin screen permission"]
+    A -->|"404"| E["Endpoint or API<br/>master switch off"]
+    A -->|"401"| T["Click Check<br/>connection"]
+    T -->|"red"| H["Web server drops<br/>Authorization header"]
+    T -->|"green"| K["Token wrong, expired,<br/>revoked, account locked"]
+    A -->|"403"| P["No MCP permission,<br/>wrong token type<br/>or store"]
+    A -->|"tool missing"| C["Tool off,<br/>token limited<br/>or no permission"]
 ```
 
 - **The Check connection button** at the bottom of the **MCP Server** screen tells a web-server problem from a token problem.
@@ -135,4 +135,4 @@ token's account is locked, just changed its password, or whether the token expir
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

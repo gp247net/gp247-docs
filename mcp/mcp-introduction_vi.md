@@ -21,13 +21,19 @@ bạn biết MCP làm được gì, khác REST API ra sao, an toàn tới đâu 
 Bạn hỏi bằng lời thường; agent tự chọn công cụ, gọi vào site của bạn, và site chỉ trả về những gì tài khoản của bạn được xem:
 
 ```mermaid
-flowchart LR
-    U["Bạn hỏi agent<br/>bằng lời thường"] --> A["AI agent<br/>chọn công cụ"]
-    A -->|"HTTPS + token"| M["MCP server<br/>trên site của bạn"]
-    M --> G{"Kiểm tra<br/>5 lớp quyền"}
-    G -->|"được phép"| D["Dữ liệu cửa hàng<br/>đã che thông tin khách"]
-    G -.->|"không được phép"| X["Từ chối"]
-    D --> R["Agent trả lời bạn"]
+flowchart TB
+    subgraph Y["Phía bạn"]
+        direction LR
+        U["Bạn hỏi agent<br/>bằng lời thường"] --> A["AI agent<br/>chọn công cụ"]
+    end
+    subgraph S["Site của bạn"]
+        direction LR
+        M["MCP server"] --> G["Kiểm tra<br/>5 lớp quyền"]
+        G -->|"được phép"| D["Dữ liệu<br/>đã che<br/>thông tin khách"]
+        G -.->|"không"| X["Từ chối"]
+    end
+    Y -->|"HTTPS + token"| S
+    S --> R["Agent trả lời bạn"]
 ```
 
 - **Có sẵn, tắt sẵn** — MCP đi cùng S-Cart nhưng **tắt** cho tới khi bạn bật; không dùng thì không tốn gì, không cần cron hay dịch vụ chạy nền.
@@ -100,16 +106,13 @@ sequenceDiagram
     actor U as Bạn
     participant A as AI agent
     participant M as MCP server
-    participant S as Dữ liệu cửa hàng
-    U->>A: "Tuần này bán được bao nhiêu?"
+    U->>A: "Tuần này bán bao nhiêu?"
     A->>M: store_info
-    M->>S: đọc tên cửa hàng, tiền tệ, bảng mã trạng thái
-    M-->>A: kết quả
-    A->>M: sales_summary (từ thứ Hai tới hôm nay)
-    M->>M: kiểm 5 lớp quyền + ghi nhật ký
-    M->>S: đọc đơn Hoàn tất trong khoảng ngày
-    M-->>A: doanh thu theo từng tiền tệ, số đơn, sản phẩm bán chạy
-    A-->>U: "Tuần này: 12.450 USD từ 87 đơn…" (số ví dụ)
+    M-->>A: tên, tiền tệ, mã trạng thái
+    A->>M: sales_summary
+    M->>M: kiểm quyền, ghi nhật ký
+    M-->>A: doanh thu, số đơn, bán chạy
+    A-->>U: "12.450 USD, 87 đơn…" (ví dụ)
 ```
 
 - **`store_info` thường được gọi đầu tiên** — để agent biết tiền tệ và mã trạng thái của chính cửa hàng bạn.
@@ -169,4 +172,4 @@ mình và chỉ thấy dữ liệu cửa hàng đó. Không có hỗ trợ đó 
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

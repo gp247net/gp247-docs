@@ -20,12 +20,11 @@ tài liệu này: hãy đọc thẳng [Giới thiệu API](./api-introduction_vi
 Ứng dụng cũ chạy tiếp với v1 khi nhóm v1 được bật, trong lúc bạn chuyển dần sang v2:
 
 ```mermaid
-flowchart LR
-    A["Ứng dụng cũ<br/>gọi api/core, api/front"] --> B{"Nhóm v1 đang bật?"}
-    B -- "Không" --> C["404 api_disabled"]
+flowchart TB
+    A["Ứng dụng cũ<br/>api/core, api/front"] --> B{"v1 bật?"}
+    B -- "Không" --> C["404 api_disabled<br/>chủ site bật v1"]
     B -- "Có" --> D["Chạy như trước"]
-    C -.->|"chủ site bật v1 (mục 2)"| D
-    D -.->|"lên kế hoạch (mục 7)"| E["Chuyển sang<br/>api/v2/..."]
+    D -.->|"kế hoạch"| E["Chuyển sang<br/>api/v2/..."]
 ```
 
 - **Cài mới tắt v1** — gọi vào nhóm tắt nhận `404 api_disabled`; bật lại trên màn quản lý API (mục 2).
@@ -382,4 +381,4 @@ tra ở mục 7.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

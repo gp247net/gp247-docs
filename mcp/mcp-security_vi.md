@@ -13,18 +13,19 @@ viết bằng lời thường. Đọc xong, bạn biết vì sao agent **không 
 Một lần gọi công cụ chỉ chạy khi **cả năm lớp** cùng cho phép — thiếu một lớp là dừng:
 
 ```mermaid
-flowchart TD
-    R["Agent gọi một công cụ"] --> L1{"1. Site<br/>endpoint và công cụ đang bật?"}
-    L1 -->|"không"| X1["Không thấy công cụ / 404"]
-    L1 -->|"có"| L2{"2. Người dùng<br/>tài khoản hoạt động, có quyền MCP?"}
-    L2 -->|"không"| X2["Từ chối 401 / 403"]
-    L2 -->|"có"| L3{"3. Token<br/>còn hạn, đúng mức, công cụ được phép?"}
-    L3 -->|"không"| X3["Từ chối"]
-    L3 -->|"có"| L4{"4. Phân quyền quản trị<br/>có quyền ở màn tương ứng?"}
-    L4 -->|"không"| X4["Từ chối"]
-    L4 -->|"có"| L5{"5. Dữ liệu<br/>bản ghi thuộc cửa hàng của bạn?"}
-    L5 -->|"không"| X5["Không tìm thấy"]
-    L5 -->|"có"| OK["Chạy công cụ<br/>che thông tin khách, ghi nhật ký"]
+flowchart TB
+    R["Agent gọi một công cụ"] --> S1
+    subgraph S1["Được phép gọi không?"]
+        direction LR
+        L1["1. Site<br/>endpoint, công cụ bật"] --> L2["2. Người dùng<br/>hoạt động, có quyền MCP"] --> L3["3. Token<br/>còn hạn, đúng mức"]
+    end
+    subgraph S2["Được làm gì?"]
+        direction LR
+        L4["4. Phân quyền<br/>màn quản trị"] --> L5["5. Dữ liệu<br/>đúng cửa hàng"]
+    end
+    S1 --> S2 --> OK["Chạy công cụ<br/>che thông tin khách, ghi nhật ký"]
+    S1 -.->|"một lớp không đạt"| X["Từ chối<br/>404 / 401 / 403 / không thấy"]
+    S2 -.->|"một lớp không đạt"| X
 ```
 
 - **Agent không bao giờ vượt quyền chủ token** — lớp 4 dùng đúng phân quyền của trang quản trị.

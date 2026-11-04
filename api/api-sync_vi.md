@@ -68,12 +68,12 @@ Vòng đồng bộ khuyến nghị:
 
 ```mermaid
 flowchart TD
-    A["Mốc = sync_until đã lưu − 5 giây"] --> B["Gọi list?updated_since=mốc"]
-    B --> C["Ghi các bản ghi, gộp trùng theo id"]
+    A["Mốc = sync_until − 5 giây"] --> B["list?updated_since=mốc"]
+    B --> C["Ghi bản ghi<br/>gộp trùng theo id"]
     C --> D{"has_more?"}
-    D -- "true" --> E["Gọi links.next<br/>(page[after] = next_after)"]
+    D -- "true" --> E["Gọi links.next<br/>page[after]"]
     E --> C
-    D -- "false" --> F["Lưu meta.sync_until<br/>cho lần chạy sau"]
+    D -- "false" --> F["Lưu meta.sync_until<br/>cho lần sau"]
 ```
 
 - Đọc hết các trang (tới khi `has_more = false`) rồi mới lưu `meta.sync_until`; lần chạy sau gửi `updated_since` =
@@ -155,17 +155,18 @@ Phản hồi rút gọn:
 Vòng theo dõi khuyến nghị:
 
 ```mermaid
-flowchart TD
-    A["Bật nhật ký sự kiện<br/>trên màn quản lý API"] --> B["Đồng bộ toàn bộ lần đầu<br/>bằng danh sách updated_since"]
-    B --> C["GET events<br/>(lần đầu không gửi after)"]
-    C --> D["Xử lý sự kiện, bỏ qua<br/>thay đổi do chính ứng dụng tạo"]
-    D --> E["Lưu meta.next_after"]
-    E --> F{"has_more?"}
-    F -- "true" --> G["GET events?after=next_after"]
-    F -- "false" --> H["Chờ một lúc"]
-    H --> G
-    G --> D
-    G -- "410 cursor_expired" --> B
+flowchart TB
+    subgraph S1["Chuẩn bị — một lần"]
+        direction LR
+        A["Bật nhật ký<br/>sự kiện"] --> B["Tải toàn bộ<br/>updated_since"]
+    end
+    subgraph S2["Vòng đọc sự kiện"]
+        direction LR
+        C["GET events<br/>after=next_after"] --> D["Xử lý sự kiện<br/>lưu next_after"] --> F{"has_more?"}
+        F -- "true: gọi ngay<br/>false: chờ rồi gọi" --> C
+    end
+    S1 --> S2
+    S2 -.->|"410 cursor_expired"| X["Tải lại<br/>toàn bộ"]
 ```
 
 - **Không sót sự kiện:** một sự kiện chỉ xuất hiện khoảng **5 giây** sau khi xảy ra (biến môi trường
@@ -286,13 +287,13 @@ http_response_code(204);
 ### Trả lời và gửi lại
 
 ```mermaid
-flowchart TD
-    A["Sự kiện được ghi<br/>vào nhật ký"] --> B["Site trả lời xong một yêu cầu<br/>rồi gửi POST tới webhook"]
-    B --> C{"ERP trả 2xx?"}
+flowchart LR
+    A["Sự kiện vào<br/>nhật ký"] --> B["POST tới<br/>webhook"]
+    B --> C{"2xx?"}
     C -- "có" --> D["Đã gửi"]
-    C -- "không" --> E["Chờ lần thử kế tiếp:<br/>1 phút, 5 phút, 30 phút,<br/>2 giờ, 12 giờ"]
+    C -- "không" --> E["Thử lại sau<br/>1 phút … 12 giờ"]
     E --> B
-    C -- "lần thử thứ 6<br/>vẫn thất bại" --> F["Đã bỏ — ERP bù bằng<br/>GET events"]
+    C -- "lần 6 vẫn lỗi" --> F["Bỏ — ERP bù<br/>bằng GET events"]
 ```
 
 - Trả **bất kỳ mã 2xx** thật nhanh để xác nhận đã nhận — lưu sự kiện rồi xử lý sau. Mọi mã khác, kể cả chuyển hướng (site
@@ -355,4 +356,4 @@ giới hạn và mã lỗi đọc ở đó.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

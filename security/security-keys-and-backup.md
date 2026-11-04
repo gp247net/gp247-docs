@@ -18,12 +18,11 @@ Each key protects a different group of data. The diagram shows which key holds w
 ```mermaid
 flowchart LR
     E[".env"] --> K1["APP_KEY"]
-    E --> K2["GP247_ENCRYPTION_KEY"]
-    K1 --> A1["Sign-in sessions, cookies"]
-    K1 --> A3["Webhook signing secrets"]
-    K2 --> B1["SMTP password, captcha secret,<br/>OAuth, licenses"]
-    K2 --> B2["Payment link codes"]
-    K2 -.->|"when left empty"| K1
+    E --> K2["GP247_ENCRYPTION_KEY<br/>empty: uses APP_KEY"]
+    K1 --> A1["Sign-in sessions<br/>cookies"]
+    K1 --> A3["Webhook<br/>signing secrets"]
+    K2 --> B1["SMTP password<br/>captcha, OAuth<br/>licenses"]
+    K2 --> B2["Payment<br/>link codes"]
 ```
 
 - **Both keys live in the `.env` file** — backing up `.env` means backing up the keys. Without a `.env` backup there is no spare key.

@@ -108,8 +108,8 @@ Từ S-Cart 3.5, MCP là một phần của nền tảng, thay cho plugin **McpS
 
 ```mermaid
 flowchart LR
-    P["Plugin McpServer<br/>(đang chạy)"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["Chuyển dữ liệu<br/>tại chỗ"]
-    M --> N["MCP có sẵn<br/>phục vụ cùng địa chỉ"]
+    P["Plugin McpServer<br/>(đang chạy)"] -->|"cập nhật"| M["Chuyển dữ liệu<br/>tại chỗ"]
+    M --> N["MCP có sẵn<br/>cùng địa chỉ"]
     N --> D["Xoá thư mục<br/>plugin còn sót"]
 ```
 
@@ -199,4 +199,4 @@ rồi xoá thư mục `app/GP247/Plugins/McpServer` bằng trình quản lý fil
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

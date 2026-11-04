@@ -189,16 +189,13 @@ sequenceDiagram
     actor U as あなた
     participant A as AI エージェント
     participant M as MCP サーバー
-    participant O as 注文
-    U->>A: 「注文 OR-1024 を処理中にして」
-    A->>M: update_order_status（コードなし）
-    M->>O: 現在のステータスを読むだけ
+    U->>A: 「OR-1024 を処理中に」
+    A->>M: update_order_status
     M-->>A: プレビュー + 確認コード
-    A-->>U: 「OR-1024：新規 → 処理中。よろしいですか？」
+    A-->>U: 「新規 → 処理中。よろしい？」
     U->>A: 「はい」
-    A->>M: update_order_status + 確認コード
-    M->>M: 権限を再チェックし、コードを使用（1 回限り）
-    M->>O: 管理画面と同じ方法でステータスを変更
+    A->>M: update_order_status + コード
+    M->>M: 権限を再確認し変更
     M-->>A: 更新完了
     A-->>U: 「OR-1024 を処理中にしました」
 ```
@@ -264,4 +261,4 @@ sequenceDiagram
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

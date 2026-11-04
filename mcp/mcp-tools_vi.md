@@ -189,18 +189,15 @@ sequenceDiagram
     actor U as Bạn
     participant A as AI agent
     participant M as MCP server
-    participant O as Đơn hàng
-    U->>A: "Chuyển đơn OR-1024 sang Đang xử lý"
-    A->>M: update_order_status (chưa có mã)
-    M->>O: chỉ đọc trạng thái hiện tại
-    M-->>A: bản xem trước + mã xác nhận
-    A-->>U: "OR-1024: Mới → Đang xử lý. Đồng ý không?"
+    U->>A: "Chuyển OR-1024 sang Đang xử lý"
+    A->>M: update_order_status
+    M-->>A: xem trước + mã xác nhận
+    A-->>U: "Mới → Đang xử lý. Đồng ý?"
     U->>A: "Đồng ý"
-    A->>M: update_order_status + mã xác nhận
-    M->>M: kiểm lại quyền, dùng mã (một lần)
-    M->>O: đổi trạng thái như trang quản trị
+    A->>M: update_order_status + mã
+    M->>M: kiểm lại quyền, đổi trạng thái
     M-->>A: đã cập nhật
-    A-->>U: "Đã chuyển OR-1024 sang Đang xử lý"
+    A-->>U: "Đã chuyển OR-1024"
 ```
 
 - **Lần gọi đầu không đổi gì** — chỉ trả bản xem trước (cũ → mới) và mã xác nhận.
@@ -264,4 +261,4 @@ có quyền ở màn quản trị tương ứng không (ví dụ màn Khách hà
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

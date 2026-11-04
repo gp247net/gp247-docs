@@ -15,38 +15,27 @@ Front API は 2 種類のデータを扱います。**公開データ**（ログ
 **顧客個人のデータ**（ログイン必要 — 注文、プロフィール、住所録）です。
 
 下の図は Front API の 2 つの使い方を示しています。ログインなしで公開データを読む方法と、顧客がログインして自分の
-注文を見る方法です。
+注文を見る方法です。図の手順の前に、すべてのリクエストは API スイッチ、API Connection（オンの場合）、回数制限を通過しています
+（[ひと目でわかる](./api-concepts_ja.md#ひと目でわかる)）。
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant K as 顧客向けアプリ
-    participant M as GP247 API<br/>(共通チェック)
-    participant S as Sanctum<br/>(トークン)
-    participant D as データベース
-    Note over K,M: すべてのリクエスト: API スイッチ (オフのグループ: 404 api_disabled) → JSON を強制 → API Connection (オンの場合) → 回数制限
-    K->>M: GET /api/v2/front/product/list (トークン不要)
-    M->>D: このドメインのストアが表示しているものだけ<br/>(販売中、承認済み、ストアが有効)
-    D-->>M: データ
-    M-->>K: 200 {data, meta, links} — 公開項目のみ (原価・在庫・仕入先なし)
-    K->>M: POST /api/v2/front/login {email, password, remember_me?, with_refresh?}
-    alt ログイン回数の上限
-        M-->>K: 429 too_many_attempts + Retry-After
-    else パスワード誤り、または顧客アカウントがロック中
-        M-->>K: 401 unauthenticated
+    participant K as 顧客向け<br/>アプリ
+    participant M as GP247 API
+    K->>M: GET product/list（トークン不要）
+    M-->>K: 200 販売中の商品・公開項目
+    K->>M: POST login
+    alt 誤り・ロック中・回数超過
+        M-->>K: 401 / 429
     else 正しい
-        M->>S: トークン作成 (スコープ user)
-        S-->>M: access_token
-        M-->>K: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>K: 200 access_token
     end
-    K->>M: GET /api/v2/front/member/order/list<br/>Authorization: Bearer access_token
-    M->>S: トークン確認: 期限内、スコープ user、アカウントがロックされていない
-    alt トークンが無効、またはアカウントがロック中
-        M-->>K: 401 unauthenticated (種類の違うトークン: 403 forbidden)
+    K->>M: GET member/order/list + トークン
+    alt トークン無効・期限切れ・ロック中
+        M-->>K: 401 / 403
     else 有効
-        M->>D: この顧客自身の注文だけ
-        D-->>M: データ
-        M-->>K: 200 — IP やユーザーエージェントなし (他人の注文: 404 not_found)
+        M-->>K: 200 この顧客の注文だけ
     end
 ```
 
@@ -166,14 +155,15 @@ curl -X GET "https://shop.example.com/api/v2/front/member/order/list" \
 カートが誰のものになるかは、顧客がログインしているかどうかで決まります。
 
 ```mermaid
-flowchart LR
-  A[アプリが商品を追加] --> B{顧客はログイン済み?}
-  B -- はい: Bearer トークン --> C[アカウントのカート — ウェブサイトと共通]
-  B -- いいえ --> D{ストアはゲスト購入可?}
-  D -- いいえ --> E[401 login_required]
-  D -- はい --> F[初回: X-Cart-Token を受け取る]
-  F --> G[以降の呼び出しで X-Cart-Token を送る]
-  G --> H[X-Cart-Token 付きでログイン: アカウントのカートに統合]
+flowchart TB
+  A[アプリが<br/>商品を追加] --> B{ログイン済み?}
+  B -- はい: Bearer トークン --> C[アカウントの<br/>カート<br/>サイトと共通]
+  B -- いいえ --> V
+  subgraph V[ゲスト — ストアが許可する場合]
+    direction LR
+    F[初回:<br/>X-Cart-Token<br/>を受け取る] --> G[以降も<br/>トークンを送る] --> H[トークン付きで<br/>ログイン:<br/>カートを統合]
+  end
+  V -. "ストアが不許可" .-> E[401 login_required]
 ```
 
 - **ログイン済みの顧客** は他の顧客 API と同じくトークンを送ります。カートは **アカウントのカート** です。アプリで追加すると
@@ -207,13 +197,17 @@ flowchart LR
 呼び出しの間で保持されます — **ウェブサイトと同じルール** です。
 
 ```mermaid
-flowchart LR
-  A[PUT checkout/address] --> B[GET checkout/shipping-methods]
-  B --> C[PUT checkout/shipping-method]
-  C --> D[GET checkout/payment-methods]
-  D --> E[PUT checkout/payment-method]
-  E --> F[GET checkout/totals]
-  P[POST cart/promotions/key] -.-> F
+flowchart TB
+  subgraph SHIP["配送"]
+    direction LR
+    A[PUT<br/>checkout/address] --> B[GET checkout/<br/>shipping-methods] --> C[PUT checkout/<br/>shipping-method]
+  end
+  subgraph PAY["支払い"]
+    direction LR
+    D[GET checkout/<br/>payment-methods] --> E[PUT checkout/<br/>payment-method]
+  end
+  SHIP --> PAY --> F[GET<br/>checkout/totals]
+  P[POST cart/<br/>promotions/key] -.-> F
 ```
 
 - **住所**（`PUT checkout/address`）: ウェブサイトのフォームと同じ必須項目（ストアの顧客設定どおり）。または顧客自身の住所録の住所を
@@ -296,14 +290,14 @@ sequenceDiagram
 sequenceDiagram
   participant App
   participant API
-  participant GW as 決済ゲートウェイ
-  App->>API: POST checkout/place + return_url
-  API-->>App: 201 {order, access_token?, payment: {type: hosted, url}}
-  App->>GW: payment.url を開く（ブラウザ / WebView）
-  GW->>API: 署名付き Webhook — 入金を記録
-  GW-->>App: サイトの支払いページへ戻る ⇒ return_url へ転送（許可時）
-  App->>API: GET member/orders/{id}/payment （または orders/{id}/payment + X-Order-Access）
-  API-->>App: {payment: {status: paid}}
+  participant GW as 決済<br/>ゲートウェイ
+  App->>API: POST checkout/place
+  API-->>App: 201 order + payment.url
+  App->>GW: payment.url を開く
+  GW->>API: Webhook — 入金を記録
+  GW-->>App: return_url へ戻る
+  App->>API: GET …/payment
+  API-->>App: status: paid
 ```
 
 **許可リスト** はサイトの `.env` にカンマ区切りで設定します。
@@ -407,4 +401,4 @@ v2 の商品（`product/list`、`product/detail/{id}`）には、アプリがバ
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

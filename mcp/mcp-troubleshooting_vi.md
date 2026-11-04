@@ -15,12 +15,12 @@ Phần lớn sự cố nằm ở một trong bốn chỗ — đi theo thứ tự
 ```mermaid
 flowchart TD
     S["Agent báo lỗi"] --> A{"Mã lỗi?"}
-    A -->|"404"| E["Endpoint hoặc công tắc<br/>tổng API đang tắt"]
-    A -->|"401"| T{"Bấm Kiểm tra kết nối"}
-    T -->|"đỏ"| H["Máy chủ web làm mất<br/>header Authorization"]
-    T -->|"xanh"| K["Token sai / hết hạn /<br/>thu hồi / tài khoản khoá"]
-    A -->|"403"| P["Thiếu quyền MCP, token không phải<br/>token MCP, hoặc phạm vi cửa hàng"]
-    A -->|"không lỗi, thiếu công cụ"| C["Công cụ tắt, token giới hạn,<br/>hoặc thiếu quyền màn quản trị"]
+    A -->|"404"| E["Endpoint hoặc<br/>công tắc API tắt"]
+    A -->|"401"| T["Bấm Kiểm tra<br/>kết nối"]
+    T -->|"đỏ"| H["Web server mất<br/>header Authorization"]
+    T -->|"xanh"| K["Token sai, hết hạn,<br/>thu hồi, tài khoản khoá"]
+    A -->|"403"| P["Thiếu quyền MCP,<br/>sai loại token<br/>hoặc cửa hàng"]
+    A -->|"thiếu công cụ"| C["Công cụ tắt,<br/>token giới hạn<br/>hoặc thiếu quyền"]
 ```
 
 - **Nút Kiểm tra kết nối** ở cuối màn **MCP Server** phân biệt được lỗi do máy chủ web hay do token.
@@ -135,4 +135,4 @@ khoá, vừa đổi mật khẩu, hay token đã hết hạn / bị thu hồi.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

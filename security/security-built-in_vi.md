@@ -13,14 +13,22 @@ phụ trách kỹ thuật và lập trình viên plugin. Đọc xong bạn biế
 Một yêu cầu từ trình duyệt đi qua nhiều lớp trước khi chạm dữ liệu. Sơ đồ cho thấy lớp nào thuộc GP247, lớp nào thuộc máy chủ của bạn:
 
 ```mermaid
-flowchart LR
-    U["Trình duyệt<br/>ứng dụng, AI agent"] --> W["Web server<br/>HTTPS 👤"]
-    W --> A["Đăng nhập<br/>giới hạn số lần ✅"]
-    A --> P["Phân quyền<br/>theo màn hình ✅"]
-    P --> I["Kiểm tra dữ liệu vào<br/>form, file ✅"]
-    I --> D["Cơ sở dữ liệu<br/>bí mật mã hoá ✅"]
-    P --> L["Nhật ký thao tác ✅"]
-    D --> K["Sao lưu 👤"]
+flowchart TB
+    subgraph O["Đường vào"]
+        direction LR
+        U["Trình duyệt, app<br/>AI agent"] --> W["Web server<br/>HTTPS 👤"]
+    end
+    subgraph APP["Bên trong GP247"]
+        direction LR
+        A["Đăng nhập<br/>giới hạn số lần ✅"] --> P["Phân quyền<br/>theo màn hình ✅"]
+        P --> I["Kiểm tra dữ liệu<br/>form, file ✅"]
+        P --> L["Nhật ký<br/>thao tác ✅"]
+    end
+    subgraph DATA["Dữ liệu"]
+        direction LR
+        D["Cơ sở dữ liệu<br/>bí mật mã hoá ✅"] --> K["Sao lưu 👤"]
+    end
+    O --> APP --> DATA
 ```
 
 - **✅ = GP247 làm sẵn, 👤 = bạn làm.** HTTPS và sao lưu nằm ngoài ứng dụng nên GP247 không làm thay được.

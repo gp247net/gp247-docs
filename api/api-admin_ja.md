@@ -12,46 +12,29 @@
 ## Core API（管理）の処理の流れ
 
 下の図は、管理アプリがログインしてから Core API でデータを読む順序を示しています。すべてのリクエストは図の順に
-チェックを通り、どこかで拒否されるとその場でエラーを返し、先へは進みません。
+チェックを通り、どこかで拒否されるとその場でエラーを返し、先へは進みません。図の手順の前に、すべてのリクエスト（ログインを含む）は
+API スイッチ、API Connection（オンの場合）、回数制限を通過しています（[ひと目でわかる](./api-concepts_ja.md#ひと目でわかる)）。
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant A as 管理アプリ
-    participant M as GP247 API<br/>(共通チェック)
-    participant S as Sanctum<br/>(トークン)
-    participant Q as 権限<br/>(管理画面 + ストア)
-    participant D as データベース
-    Note over A,M: ログインを含むすべてのリクエスト: API スイッチ (オフのグループ: 404 api_disabled) → JSON を強制<br/>→ API Connection (オンの場合: apiconnection + apikey ヘッダー、誤りは 401) → 回数制限
-    A->>M: POST /api/v2/core/login {username, password, remember_me?, with_refresh?}
-    alt ログイン回数の上限 (アカウントごと 5 回/分、IP ごと 20 回/分)
-        M-->>A: 429 too_many_attempts + Retry-After
-    else パスワード誤り、または管理者アカウントが無効
-        M-->>A: 401 unauthenticated
-    else 追加の確認ステップが必要なアカウント (プラグインによる二要素認証（MFA）)
-        M-->>A: 401 challenge_required + challenge
+    participant M as GP247 API
+    participant Q as 権限
+    A->>M: POST login
+    alt 誤り・回数超過・MFA 必要
+        M-->>A: 401 / 429
     else 正しい
-        M->>S: トークン作成 (スコープ admin / admin-supper)
-        S-->>M: access_token
-        M-->>A: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>A: 200 access_token
     end
-    A->>M: GET /api/v2/core/order/list<br/>Authorization: Bearer access_token
-    M->>S: トークン確認: 期限内、管理者用トークン
-    alt トークンなし・誤り・期限切れ、または管理者が無効
-        M-->>A: 401 unauthenticated
-    else トークンは有効
-        M->>Q: 「注文一覧」画面を開く権限は? 正しいストアのドメインか?
-        alt 権限なし、またはストアのドメインが違う
-            M-->>A: 403 forbidden
-        else 許可
-            Q-->>M: アカウントのストア
-            M->>D: そのストアの中だけを検索
-            D-->>M: データ
-            M-->>A: 200 {data, meta, links} — 見られないレコードは 404 not_found
-        end
+    A->>M: GET order/list + トークン
+    M->>Q: この画面の権限は? どのストア?
+    alt 不可
+        M-->>A: 401 / 403
+    else 許可
+        Q-->>M: アカウントのストア
+        M-->>A: 200 そのストアのデータ
     end
-    A->>M: POST /api/v2/core/logout
-    M-->>A: 200 — セッションをサインアウト
 ```
 
 ポイント: トークンがあるだけではデータを読めません。対応する管理画面を開く権限が必要で、見えるのは自分のストアの
@@ -391,4 +374,4 @@ sequenceDiagram
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

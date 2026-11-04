@@ -14,18 +14,19 @@ to do to stay safe.
 A tool call only runs when **all five layers** allow it — one missing layer stops it:
 
 ```mermaid
-flowchart TD
-    R["The agent calls a tool"] --> L1{"1. Site<br/>endpoint and tool turned on?"}
-    L1 -->|"no"| X1["Tool not visible / 404"]
-    L1 -->|"yes"| L2{"2. User<br/>account active, has the MCP permission?"}
-    L2 -->|"no"| X2["Refused 401 / 403"]
-    L2 -->|"yes"| L3{"3. Token<br/>valid, right level, tool allowed?"}
-    L3 -->|"no"| X3["Refused"]
-    L3 -->|"yes"| L4{"4. Admin permissions<br/>access to the matching screen?"}
-    L4 -->|"no"| X4["Refused"]
-    L4 -->|"yes"| L5{"5. Data<br/>record belongs to your store?"}
-    L5 -->|"no"| X5["Not found"]
-    L5 -->|"yes"| OK["Run the tool<br/>mask customer details, write the log"]
+flowchart TB
+    R["The agent calls a tool"] --> S1
+    subgraph S1["May it call at all?"]
+        direction LR
+        L1["1. Site<br/>endpoint, tool on"] --> L2["2. User<br/>active, MCP permission"] --> L3["3. Token<br/>valid, right level"]
+    end
+    subgraph S2["What may it do?"]
+        direction LR
+        L4["4. Admin<br/>screen permission"] --> L5["5. Data<br/>your store only"]
+    end
+    S1 --> S2 --> OK["Run the tool<br/>mask customers, write log"]
+    S1 -.->|"any layer fails"| X["Refused<br/>404 / 401 / 403 / not found"]
+    S2 -.->|"any layer fails"| X
 ```
 
 - **The agent never exceeds the token owner** — layer 4 uses exactly the admin panel's permissions.

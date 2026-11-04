@@ -190,18 +190,15 @@ sequenceDiagram
     actor U as You
     participant A as AI agent
     participant M as MCP server
-    participant O as Order
-    U->>A: "Move order OR-1024 to Processing"
-    A->>M: update_order_status (no code yet)
-    M->>O: only read the current status
+    U->>A: "Move OR-1024 to Processing"
+    A->>M: update_order_status
     M-->>A: preview + confirm code
-    A-->>U: "OR-1024: New → Processing. OK?"
+    A-->>U: "New → Processing. OK?"
     U->>A: "OK"
-    A->>M: update_order_status + confirm code
-    M->>M: re-check permissions, use the code (once)
-    M->>O: change the status like the admin panel does
+    A->>M: update_order_status + code
+    M->>M: re-check, change the status
     M-->>A: updated
-    A-->>U: "OR-1024 is now Processing"
+    A-->>U: "OR-1024 is Processing"
 ```
 
 - **The first call changes nothing** — it only returns a preview (old → new) and a confirm code.
@@ -265,4 +262,4 @@ the matching admin screen (e.g. the Customers screen for `search_customers`).
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

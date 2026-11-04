@@ -12,46 +12,30 @@ details of each endpoint are in [Reference — Admin](./api-reference-admin.md).
 ## Core API workflow (Admin)
 
 The diagram below shows a management app signing in and then reading data through the Core API. Every request
-goes through the checks in the order shown; the first check that refuses answers with an error straight away.
+goes through the checks in the order shown; the first check that refuses answers with an error straight away. Before the
+steps in the diagram, every request (login included) has already passed the API switch, API Connection (if enabled) and
+the rate limit ([At a glance](./api-concepts.md#at-a-glance)).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant A as Management app
-    participant M as GP247 API<br/>(shared checks)
-    participant S as Sanctum<br/>(tokens)
-    participant Q as Permissions<br/>(admin screen + store)
-    participant D as Database
-    Note over A,M: Every request, login included: API switch (group turned off: 404 api_disabled) → force JSON<br/>→ API Connection (if enabled: apiconnection + apikey headers, wrong = 401) → rate limit
-    A->>M: POST /api/v2/core/login {username, password, remember_me?, with_refresh?}
-    alt Login limit reached (5/min per account, 20/min per IP)
-        M-->>A: 429 too_many_attempts + Retry-After
-    else Wrong password or admin account disabled
-        M-->>A: 401 unauthenticated
-    else The account needs an extra verification step (Two-factor authentication (MFA) through a plugin)
-        M-->>A: 401 challenge_required + challenge
+    participant A as Management<br/>app
+    participant M as GP247 API
+    participant Q as Permissions
+    A->>M: POST login
+    alt Wrong, too many tries, MFA needed
+        M-->>A: 401 / 429
     else Valid
-        M->>S: Create token (scope admin / admin-supper)
-        S-->>M: access_token
-        M-->>A: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>A: 200 access_token
     end
-    A->>M: GET /api/v2/core/order/list<br/>Authorization: Bearer access_token
-    M->>S: Check token: not expired, admin token type
-    alt Missing, wrong or expired token, or admin disabled
-        M-->>A: 401 unauthenticated
-    else Valid token
-        M->>Q: Allowed to open the "Order list" screen? Right store domain?
-        alt No permission or wrong store domain
-            M-->>A: 403 forbidden
-        else Allowed
-            Q-->>M: Store of the account
-            M->>D: Query only inside that store
-            D-->>M: Data
-            M-->>A: 200 {data, meta, links} — a record you cannot see answers 404 not_found
-        end
+    A->>M: GET order/list + token
+    M->>Q: this screen allowed? which store?
+    alt Not allowed
+        M-->>A: 401 / 403
+    else Allowed
+        Q-->>M: store of the account
+        M-->>A: 200 data of that store
     end
-    A->>M: POST /api/v2/core/logout
-    M-->>A: 200 — session signed out
 ```
 
 Takeaway: a token is **not enough** to read data — the account also needs permission to open the matching admin
@@ -395,4 +379,4 @@ the top administrator account.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

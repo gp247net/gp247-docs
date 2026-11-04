@@ -12,46 +12,30 @@ chi tiết từng endpoint ở [Tham chiếu — Admin](./api-reference-admin_vi
 ## Luồng làm việc API Core (Admin)
 
 Sơ đồ dưới đây mô tả trình tự một ứng dụng quản trị đăng nhập rồi đọc dữ liệu qua API Core. Mỗi yêu cầu đi
-qua các lớp kiểm tra theo đúng thứ tự trong sơ đồ; lớp nào từ chối thì trả lỗi ngay, không đi tiếp.
+qua các lớp kiểm tra theo đúng thứ tự trong sơ đồ; lớp nào từ chối thì trả lỗi ngay, không đi tiếp. Trước các bước trong sơ đồ,
+mọi yêu cầu (kể cả đăng nhập) đã qua công tắc API, API Connection (nếu bật) và giới hạn tần suất
+([Nhìn nhanh](./api-concepts_vi.md#nhìn-nhanh)).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant A as Ứng dụng quản trị
-    participant M as API GP247<br/>(lớp kiểm tra chung)
-    participant S as Sanctum<br/>(token)
-    participant Q as Phân quyền<br/>(màn admin + cửa hàng)
-    participant D as Cơ sở dữ liệu
-    Note over A,M: Mọi yêu cầu, kể cả login: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON<br/>→ API Connection (nếu bật: header apiconnection + apikey, sai thì 401) → giới hạn tần suất
-    A->>M: POST /api/v2/core/login {username, password, remember_me?, with_refresh?}
-    alt Vượt giới hạn đăng nhập (5 lần/phút mỗi tài khoản, 20 lần/phút mỗi IP)
-        M-->>A: 429 too_many_attempts + Retry-After
-    else Sai mật khẩu hoặc tài khoản admin bị tắt
-        M-->>A: 401 unauthenticated
-    else Tài khoản cần bước xác thực thêm (Xác thực hai lớp (MFA) qua plugin)
-        M-->>A: 401 challenge_required + challenge
+    participant A as Ứng dụng<br/>quản trị
+    participant M as API GP247
+    participant Q as Phân quyền
+    A->>M: POST login
+    alt Sai, quá số lần, cần MFA
+        M-->>A: 401 / 429
     else Hợp lệ
-        M->>S: Tạo token (scope admin / admin-supper)
-        S-->>M: access_token
-        M-->>A: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>A: 200 access_token
     end
-    A->>M: GET /api/v2/core/order/list<br/>Authorization: Bearer access_token
-    M->>S: Kiểm token: còn hạn, đúng loại token admin
-    alt Thiếu, sai, hết hạn token hoặc admin đã bị tắt
-        M-->>A: 401 unauthenticated
-    else Token hợp lệ
-        M->>Q: Có quyền màn "Danh sách đơn hàng"? Đúng tên miền cửa hàng?
-        alt Không có quyền hoặc sai tên miền cửa hàng
-            M-->>A: 403 forbidden
-        else Được phép
-            Q-->>M: Cửa hàng của tài khoản
-            M->>D: Truy vấn chỉ trong cửa hàng đó
-            D-->>M: Dữ liệu
-            M-->>A: 200 {data, meta, links} — chi tiết không thấy thì 404 not_found
-        end
+    A->>M: GET order/list + token
+    M->>Q: quyền màn này? cửa hàng nào?
+    alt Không đạt
+        M-->>A: 401 / 403
+    else Được phép
+        Q-->>M: cửa hàng của tài khoản
+        M-->>A: 200 dữ liệu cửa hàng đó
     end
-    A->>M: POST /api/v2/core/logout
-    M-->>A: 200 — phiên bị đăng xuất
 ```
 
 Điểm rút ra: có token **chưa đủ** để đọc dữ liệu — tài khoản còn phải có quyền mở màn hình quản trị tương ứng, và
@@ -389,4 +373,4 @@ tài khoản quản trị cao nhất.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

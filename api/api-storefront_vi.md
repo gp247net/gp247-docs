@@ -15,38 +15,27 @@ API Front phục vụ hai loại dữ liệu: **dữ liệu công khai** (không
 phẩm, danh mục…) và **dữ liệu riêng của khách** (cần đăng nhập — đơn hàng, hồ sơ, sổ địa chỉ).
 
 Sơ đồ dưới đây mô tả hai cách dùng API Front: đọc dữ liệu công khai không cần đăng nhập, và khách đăng nhập để
-xem đơn hàng của mình.
+xem đơn hàng của mình. Trước các bước trong sơ đồ, mọi yêu cầu đã qua công tắc API, API Connection (nếu bật) và giới hạn
+tần suất ([Nhìn nhanh](./api-concepts_vi.md#nhìn-nhanh)).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant K as Ứng dụng của khách
-    participant M as API GP247<br/>(lớp kiểm tra chung)
-    participant S as Sanctum<br/>(token)
-    participant D as Cơ sở dữ liệu
-    Note over K,M: Mọi yêu cầu: công tắc API (nhóm đang tắt: 404 api_disabled) → ép JSON → API Connection (nếu bật) → giới hạn tần suất
-    K->>M: GET /api/v2/front/product/list (không cần token)
-    M->>D: Chỉ những gì cửa hàng của tên miền này đang hiển thị<br/>(đang bán, đã duyệt, cửa hàng hoạt động)
-    D-->>M: Dữ liệu
-    M-->>K: 200 {data, meta, links} — chỉ trường công khai (không giá vốn, tồn kho, nhà cung cấp)
-    K->>M: POST /api/v2/front/login {email, password, remember_me?, with_refresh?}
-    alt Vượt giới hạn đăng nhập
-        M-->>K: 429 too_many_attempts + Retry-After
-    else Sai mật khẩu hoặc tài khoản khách bị khoá
-        M-->>K: 401 unauthenticated
+    participant K as Ứng dụng<br/>của khách
+    participant M as API GP247
+    K->>M: GET product/list (không token)
+    M-->>K: 200 hàng đang bán, trường công khai
+    K->>M: POST login
+    alt Sai, bị khoá, quá số lần
+        M-->>K: 401 / 429
     else Hợp lệ
-        M->>S: Tạo token (scope user)
-        S-->>M: access_token
-        M-->>K: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>K: 200 access_token
     end
-    K->>M: GET /api/v2/front/member/order/list<br/>Authorization: Bearer access_token
-    M->>S: Kiểm token: còn hạn, scope user, tài khoản chưa bị khoá
-    alt Token không hợp lệ hoặc tài khoản đã bị khoá
-        M-->>K: 401 unauthenticated (token sai loại: 403 forbidden)
+    K->>M: GET member/order/list + token
+    alt Token sai, hết hạn, tài khoản khoá
+        M-->>K: 401 / 403
     else Hợp lệ
-        M->>D: Chỉ đơn hàng của chính khách này
-        D-->>M: Dữ liệu
-        M-->>K: 200 — không kèm IP, user agent… (đơn của người khác: 404 not_found)
+        M-->>K: 200 chỉ đơn của chính khách
     end
 ```
 
@@ -167,14 +156,15 @@ phụ phí thuộc tính do máy chủ tính, luật số lượng (số dương
 Giỏ thuộc về ai tuỳ theo khách đã đăng nhập hay chưa:
 
 ```mermaid
-flowchart LR
-  A[App thêm sản phẩm] --> B{Khách đã đăng nhập?}
-  B -- Có: Bearer token --> C[Giỏ của tài khoản — dùng chung với website]
-  B -- Không --> D{Cửa hàng cho khách vãng lai?}
-  D -- Không --> E[401 login_required]
-  D -- Có --> F[Lần đầu: nhận X-Cart-Token]
-  F --> G[Gửi lại X-Cart-Token ở các lần sau]
-  G --> H[Đăng nhập kèm X-Cart-Token: gộp vào giỏ tài khoản]
+flowchart TB
+  A[App thêm sản phẩm] --> B{Đăng nhập?}
+  B -- Có: Bearer token --> C[Giỏ tài khoản<br/>chung với website]
+  B -- Không --> V
+  subgraph V[Khách vãng lai — nếu cửa hàng cho phép]
+    direction LR
+    F[Lần đầu: nhận<br/>X-Cart-Token] --> G[Gửi lại token<br/>các lần sau] --> H[Đăng nhập kèm token:<br/>gộp vào giỏ tài khoản]
+  end
+  V -. "cửa hàng không cho" .-> E[401 login_required]
 ```
 
 - **Khách đã đăng nhập** gửi token như mọi API khách. Giỏ là **giỏ của tài khoản** — thêm trên app, mở website đăng nhập
@@ -208,13 +198,17 @@ Sau khi có giỏ, ứng dụng đi các bước checkout cho **một cửa hàn
 với website**.
 
 ```mermaid
-flowchart LR
-  A[PUT checkout/address] --> B[GET checkout/shipping-methods]
-  B --> C[PUT checkout/shipping-method]
-  C --> D[GET checkout/payment-methods]
-  D --> E[PUT checkout/payment-method]
-  E --> F[GET checkout/totals]
-  P[POST cart/promotions/key] -.-> F
+flowchart TB
+  subgraph SHIP["Giao hàng"]
+    direction LR
+    A[PUT<br/>checkout/address] --> B[GET checkout/<br/>shipping-methods] --> C[PUT checkout/<br/>shipping-method]
+  end
+  subgraph PAY["Thanh toán"]
+    direction LR
+    D[GET checkout/<br/>payment-methods] --> E[PUT checkout/<br/>payment-method]
+  end
+  SHIP --> PAY --> F[GET<br/>checkout/totals]
+  P[POST cart/<br/>promotions/key] -.-> F
 ```
 
 - **Địa chỉ** (`PUT checkout/address`): cùng trường bắt buộc như form website (theo cài đặt khách hàng của cửa hàng); hoặc gửi
@@ -296,14 +290,14 @@ Phương thức có `type: "hosted"` (ví dụ Stripe, PayPal) thu tiền qua **
 sequenceDiagram
   participant App
   participant API
-  participant Cổng as Cổng thanh toán
-  App->>API: POST checkout/place + return_url
-  API-->>App: 201 {order, access_token?, payment: {type: hosted, url}}
-  App->>Cổng: mở payment.url (trình duyệt / webview)
-  Cổng->>API: webhook có chữ ký — ghi nhận tiền
-  Cổng-->>App: về trang thanh toán của site ⇒ chuyển tiếp tới return_url (nếu được phép)
-  App->>API: GET member/orders/{id}/payment (hoặc orders/{id}/payment + X-Order-Access)
-  API-->>App: {payment: {status: paid}}
+  participant Cổng as Cổng<br/>thanh toán
+  App->>API: POST checkout/place
+  API-->>App: 201 order + payment.url
+  App->>Cổng: mở payment.url
+  Cổng->>API: webhook — ghi nhận tiền
+  Cổng-->>App: về return_url
+  App->>API: GET …/payment
+  API-->>App: status: paid
 ```
 
 **Danh sách cho phép** khai trong `.env` của site, cách nhau bằng dấu phẩy:
@@ -404,4 +398,4 @@ hủy đơn.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

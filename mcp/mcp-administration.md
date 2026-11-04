@@ -109,9 +109,9 @@ From S-Cart 3.5, MCP is part of the platform, replacing the **McpServer** plugin
 
 ```mermaid
 flowchart LR
-    P["McpServer plugin<br/>(running)"] -->|"composer require gp247/mcp -W<br/>gp247:update"| M["Move data<br/>in place"]
-    M --> N["Built-in MCP<br/>serves the same address"]
-    N --> D["Delete the leftover<br/>plugin folder"]
+    P["McpServer plugin<br/>(running)"] -->|"update"| M["Move data<br/>in place"]
+    M --> N["Built-in MCP<br/>same address"]
+    N --> D["Delete leftover<br/>plugin folder"]
 ```
 
 What is kept and what changes:
@@ -200,4 +200,4 @@ and delete the `app/GP247/Plugins/McpServer` folder with your hosting file manag
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

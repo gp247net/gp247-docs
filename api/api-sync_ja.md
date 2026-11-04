@@ -68,12 +68,12 @@ curl -G "https://shop.example.com/api/v2/core/product/list" \
 
 ```mermaid
 flowchart TD
-    A["基準 = 保存した sync_until − 5 秒"] --> B["list?updated_since=基準 を呼ぶ"]
-    B --> C["レコードを書き込み、id で重複を除く"]
+    A["基準 =<br/>sync_until − 5 秒"] --> B["list?updated_since<br/>=基準"]
+    B --> C["書き込み<br/>id で重複除去"]
     C --> D{"has_more?"}
-    D -- "true" --> E["links.next を呼ぶ<br/>(page[after] = next_after)"]
+    D -- "true" --> E["links.next<br/>を呼ぶ<br/>page[after]"]
     E --> C
-    D -- "false" --> F["次回用に meta.sync_until<br/>を保存"]
+    D -- "false" --> F["meta.sync_until<br/>を保存"]
 ```
 
 - すべてのページを読み終えてから（`has_more = false` まで）`meta.sync_until` を保存します。次回は `updated_since` =
@@ -157,17 +157,18 @@ curl -G "https://shop.example.com/api/v2/core/events" \
 推奨する追従ループ:
 
 ```mermaid
-flowchart TD
-    A["API 管理画面で<br/>イベントログをオン"] --> B["updated_since の一覧で<br/>最初の全件同期"]
-    B --> C["GET events<br/>(初回は after なし)"]
-    C --> D["イベントを処理し、アプリ自身の<br/>変更はスキップ"]
-    D --> E["meta.next_after を保存"]
-    E --> F{"has_more?"}
-    F -- "true" --> G["GET events?after=next_after"]
-    F -- "false" --> H["しばらく待つ"]
-    H --> G
-    G --> D
-    G -- "410 cursor_expired" --> B
+flowchart TB
+    subgraph S1["準備 — 1 回だけ"]
+        direction LR
+        A["イベントログ<br/>をオン"] --> B["全件同期<br/>updated_since"]
+    end
+    subgraph S2["イベント読み取りループ"]
+        direction LR
+        C["GET events<br/>after=next_after"] --> D["イベント処理<br/>next_after<br/>を保存"] --> F{"has_more?"}
+        F -- "true: すぐ呼ぶ<br/>false: 待って呼ぶ" --> C
+    end
+    S1 --> S2
+    S2 -.->|"410 cursor_expired"| X["全件同期を<br/>やり直す"]
 ```
 
 - **イベントを取りこぼさない:** イベントは発生から約 **5 秒**後に現れます（環境変数 `GP247_API_EVENT_SETTLE_SECONDS`）。
@@ -290,13 +291,13 @@ http_response_code(204);
 ### 応答と再送
 
 ```mermaid
-flowchart TD
-    A["イベントが<br/>ログに記録される"] --> B["サイトがリクエストへの応答を終えた後<br/>Webhook へ POST"]
-    B --> C{"ERP が 2xx を返す?"}
+flowchart LR
+    A["イベントを<br/>ログに記録"] --> B["Webhook へ<br/>POST"]
+    B --> C{"2xx?"}
     C -- "はい" --> D["送信済み"]
-    C -- "いいえ" --> E["次の試行まで待つ:<br/>1 分、5 分、30 分、<br/>2 時間、12 時間"]
+    C -- "いいえ" --> E["再試行<br/>1 分 … 12 時間"]
     E --> B
-    C -- "6 回目の試行も<br/>失敗" --> F["断念 — ERP は<br/>GET events で補完"]
+    C -- "6 回目も失敗" --> F["断念 — ERP は<br/>GET events<br/>で補完"]
 ```
 
 - 受け取ったことを知らせるため、**任意の 2xx** をすぐに返してください — イベントを保存し、処理は後で行います。それ以外の応答は、
@@ -358,4 +359,4 @@ ERP や同期ツール向けの短いチェックリストです。上から順�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>

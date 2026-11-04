@@ -20,18 +20,12 @@ people are your part:
 ```mermaid
 flowchart TB
     subgraph B["👤 Your part"]
-        B1["Server & HTTPS"]
-        B2[".env file & encryption key"]
-        B3["Backup & test restore"]
-        B4["Accounts & permissions"]
-        B5["Software updates"]
+        direction TB
+        B1["Server<br/>& HTTPS"] ~~~ B2[".env file<br/>& encryption key"] ~~~ B3["Backup<br/>& test restore"] ~~~ B4["Accounts<br/>& permissions"] ~~~ B5["Software<br/>updates"]
     end
     subgraph G["✅ GP247 handles"]
-        G1["Sign-in limits<br/>password hashing"]
-        G2["Permissions<br/>per screen"]
-        G3["Encrypted secrets<br/>in the database"]
-        G4["Form forgery protection<br/>upload checks"]
-        G5["Activity log"]
+        direction TB
+        G1["Sign-in limits<br/>password hashing"] ~~~ G2["Permissions<br/>per screen"] ~~~ G3["Encrypted<br/>stored secrets"] ~~~ G4["Form forgery<br/>protection<br/>upload checks"] ~~~ G5["Activity log"]
     end
     B --> S["Safe site"]
     G --> S

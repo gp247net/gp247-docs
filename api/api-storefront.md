@@ -15,38 +15,27 @@ The Front API serves two kinds of data: **public data** (no login needed — pro
 categories…) and **customer-private data** (login required — orders, profile, address book).
 
 The diagram below shows the two ways to use the Front API: reading public data without signing in, and a customer
-signing in to see their own orders.
+signing in to see their own orders. Before the steps in the diagram, every request has already passed the API switch,
+API Connection (if enabled) and the rate limit ([At a glance](./api-concepts.md#at-a-glance)).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant K as Customer app
-    participant M as GP247 API<br/>(shared checks)
-    participant S as Sanctum<br/>(tokens)
-    participant D as Database
-    Note over K,M: Every request: API switch (group turned off: 404 api_disabled) → force JSON → API Connection (if enabled) → rate limit
-    K->>M: GET /api/v2/front/product/list (no token needed)
-    M->>D: Only what the store of this domain shows<br/>(on sale, approved, store active)
-    D-->>M: Data
-    M-->>K: 200 {data, meta, links} — public fields only (no cost price, stock or supplier)
-    K->>M: POST /api/v2/front/login {email, password, remember_me?, with_refresh?}
-    alt Login limit reached
-        M-->>K: 429 too_many_attempts + Retry-After
-    else Wrong password or customer account locked
-        M-->>K: 401 unauthenticated
+    participant K as Customer<br/>app
+    participant M as GP247 API
+    K->>M: GET product/list (no token)
+    M-->>K: 200 items on sale, public fields
+    K->>M: POST login
+    alt Wrong, locked, too many tries
+        M-->>K: 401 / 429
     else Valid
-        M->>S: Create token (scope user)
-        S-->>M: access_token
-        M-->>K: 200 {data: {access_token, token_type, scopes, expires_at, …}}
+        M-->>K: 200 access_token
     end
-    K->>M: GET /api/v2/front/member/order/list<br/>Authorization: Bearer access_token
-    M->>S: Check token: not expired, scope user, account not locked
-    alt Invalid token or account locked
-        M-->>K: 401 unauthenticated (wrong token type: 403 forbidden)
+    K->>M: GET member/order/list + token
+    alt Token wrong, expired, account locked
+        M-->>K: 401 / 403
     else Valid
-        M->>D: Only this customer's own orders
-        D-->>M: Data
-        M-->>K: 200 — without IP, user agent… (someone else's order: 404 not_found)
+        M-->>K: 200 only this customer's orders
     end
 ```
 
@@ -168,14 +157,15 @@ attribute surcharges computed by the server, the quantity rules (positive, decim
 Whose cart it is depends on whether the customer is signed in:
 
 ```mermaid
-flowchart LR
-  A[App adds a product] --> B{Customer signed in?}
-  B -- Yes: Bearer token --> C[Account cart — shared with the website]
-  B -- No --> D{Store sells to guests?}
-  D -- No --> E[401 login_required]
-  D -- Yes --> F[First time: receive X-Cart-Token]
-  F --> G[Send X-Cart-Token on later calls]
-  G --> H[Sign in with X-Cart-Token: merged into the account cart]
+flowchart TB
+  A[App adds a product] --> B{Signed in?}
+  B -- Yes: Bearer token --> C[Account cart<br/>shared with website]
+  B -- No --> V
+  subgraph V[Guest — when the store allows it]
+    direction LR
+    F[First time: get<br/>X-Cart-Token] --> G[Send the token<br/>on later calls] --> H[Sign in with token:<br/>merged into account cart]
+  end
+  V -. "store does not allow" .-> E[401 login_required]
 ```
 
 - **Signed-in customers** send their token as for any customer API. The cart is the **account cart** — add in the app,
@@ -211,13 +201,17 @@ stores; choosing another store starts the choices again). Every choice is kept b
 token) — **with the website's rules**.
 
 ```mermaid
-flowchart LR
-  A[PUT checkout/address] --> B[GET checkout/shipping-methods]
-  B --> C[PUT checkout/shipping-method]
-  C --> D[GET checkout/payment-methods]
-  D --> E[PUT checkout/payment-method]
-  E --> F[GET checkout/totals]
-  P[POST cart/promotions/key] -.-> F
+flowchart TB
+  subgraph SHIP["Shipping"]
+    direction LR
+    A[PUT<br/>checkout/address] --> B[GET checkout/<br/>shipping-methods] --> C[PUT checkout/<br/>shipping-method]
+  end
+  subgraph PAY["Payment"]
+    direction LR
+    D[GET checkout/<br/>payment-methods] --> E[PUT checkout/<br/>payment-method]
+  end
+  SHIP --> PAY --> F[GET<br/>checkout/totals]
+  P[POST cart/<br/>promotions/key] -.-> F
 ```
 
 - **Address** (`PUT checkout/address`): the same required fields as the website form (the store's customer settings); or send
@@ -303,14 +297,14 @@ A method with `type: "hosted"` (for example Stripe, PayPal) collects through the
 sequenceDiagram
   participant App
   participant API
-  participant GW as Payment gateway
-  App->>API: POST checkout/place + return_url
-  API-->>App: 201 {order, access_token?, payment: {type: hosted, url}}
-  App->>GW: open payment.url (browser / webview)
-  GW->>API: signed webhook — money recorded
-  GW-->>App: back to the site's pay page ⇒ forwarded to return_url (when allowed)
-  App->>API: GET member/orders/{id}/payment (or orders/{id}/payment + X-Order-Access)
-  API-->>App: {payment: {status: paid}}
+  participant GW as Payment<br/>gateway
+  App->>API: POST checkout/place
+  API-->>App: 201 order + payment.url
+  App->>GW: open payment.url
+  GW->>API: webhook — money recorded
+  GW-->>App: back to return_url
+  App->>API: GET …/payment
+  API-->>App: status: paid
 ```
 
 The **allowed list** is set in the site's `.env`, comma separated:
@@ -416,4 +410,4 @@ cancel the order.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>

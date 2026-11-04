@@ -83,14 +83,20 @@ Common signs: unknown admin accounts, payment config changes no one owns up to, 
 in the shop's name, a `.env` file that was pushed to Git or could be downloaded from the web. Follow this order — **the order matters**.
 
 ```mermaid
-flowchart TD
-    A["1. Isolate<br/>maintenance, API off"] --> B["2. Back up current state"]
-    B --> C["3. Change admin passwords<br/>revoke tokens"]
-    C --> D["4. Change third-party secrets<br/>SMTP, payment gateway, DB"]
-    D --> E["5. Change keys in .env<br/>if .env leaked"]
-    E --> F["6. Investigate<br/>logs, accounts, unknown files"]
-    F --> G["7. Restore a clean copy<br/>and update"]
-    G --> H["8. Reopen, monitor"]
+flowchart TB
+    subgraph S1["Contain"]
+        direction LR
+        A["1. Isolate<br/>maintenance, API off"] --> B["2. Back up<br/>current state"]
+    end
+    subgraph S2["Change secrets"]
+        direction LR
+        C["3. Change<br/>admin passwords"] --> D["4. Change<br/>third-party secrets"] --> E["5. Change .env keys<br/>if .env leaked"]
+    end
+    subgraph S3["Clean up & reopen"]
+        direction LR
+        F["6. Investigate<br/>logs, unknown files"] --> G["7. Restore<br/>a clean copy"] --> H["8. Reopen<br/>and monitor"]
+    end
+    S1 --> S2 --> S3
 ```
 
 1. **Isolate.** Turn on maintenance mode on the **Website information** screen, or run `php artisan down`. Turn off the master switch on the **API config** screen (this also turns off MCP).

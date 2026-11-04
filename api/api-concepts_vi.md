@@ -13,14 +13,13 @@ site muốn mở API cho đối tác. Đọc xong, bạn hiểu vì sao cùng m�
 Một yêu cầu đi qua bốn lớp kiểm tra trước khi có dữ liệu:
 
 ```mermaid
-flowchart LR
-    A["Yêu cầu"] --> B{"Nhóm API<br/>đang bật?"}
-    B -- "Không" --> X1["404 api_disabled"]
-    B -- "Có" --> C{"API Connection<br/>(nếu bật) đúng?"}
-    C -- "Sai" --> X2["401 api_connection_invalid"]
-    C -- "Đúng" --> D{"Token hợp lệ<br/>và đủ quyền?"}
-    D -- "Không" --> X3["401 / 403"]
-    D -- "Có" --> E["Dữ liệu của<br/>đúng cửa hàng"]
+flowchart TB
+    A["Yêu cầu"] --> S
+    subgraph S["Ba lớp kiểm tra, theo thứ tự"]
+        direction LR
+        B["1. Nhóm API bật?<br/>không: 404"] --> C["2. API Connection<br/>sai: 401"] --> D["3. Token, quyền<br/>sai: 401 / 403"]
+    end
+    S --> E["Dữ liệu của<br/>đúng cửa hàng"]
 ```
 
 - **Công tắc API** do chủ site bật/tắt trên trang quản trị — nhóm tắt trả `404 api_disabled`.
@@ -184,4 +183,4 @@ tài khoản có quyền.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>

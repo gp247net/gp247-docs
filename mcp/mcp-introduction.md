@@ -21,13 +21,19 @@ reading it, you know what MCP can do, how it differs from the REST API, how safe
 You ask in plain language; the agent picks a tool, calls your site, and the site only returns what your account is allowed to see:
 
 ```mermaid
-flowchart LR
-    U["You ask the agent<br/>in plain language"] --> A["AI agent<br/>picks a tool"]
-    A -->|"HTTPS + token"| M["MCP server<br/>on your site"]
-    M --> G{"Check<br/>5 permission layers"}
-    G -->|"allowed"| D["Shop data<br/>customer details masked"]
-    G -.->|"not allowed"| X["Refused"]
-    D --> R["The agent answers you"]
+flowchart TB
+    subgraph Y["Your side"]
+        direction LR
+        U["You ask the agent<br/>in plain language"] --> A["AI agent<br/>picks a tool"]
+    end
+    subgraph S["Your site"]
+        direction LR
+        M["MCP server"] --> G["Check 5<br/>permission layers"]
+        G -->|"allowed"| D["Shop data<br/>customer details<br/>masked"]
+        G -.->|"no"| X["Refused"]
+    end
+    Y -->|"HTTPS + token"| S
+    S --> R["The agent answers you"]
 ```
 
 - **Built in, off by default** — MCP ships with S-Cart but stays **off** until you turn it on; unused it costs nothing, no cron or background service needed.
@@ -100,16 +106,13 @@ sequenceDiagram
     actor U as You
     participant A as AI agent
     participant M as MCP server
-    participant S as Shop data
-    U->>A: "How much did we sell this week?"
+    U->>A: "How much this week?"
     A->>M: store_info
-    M->>S: read shop name, currency, status codes
-    M-->>A: result
-    A->>M: sales_summary (from Monday to today)
-    M->>M: check 5 permission layers + write the log
-    M->>S: read Done orders in the date range
-    M-->>A: revenue per currency, order counts, best sellers
-    A-->>U: "This week: 12,450 USD from 87 orders…" (sample figures)
+    M-->>A: name, currency, status codes
+    A->>M: sales_summary
+    M->>M: check permissions, write log
+    M-->>A: revenue, orders, best sellers
+    A-->>U: "12,450 USD, 87 orders…" (sample)
 ```
 
 - **`store_info` is usually called first** — so the agent knows the currency and status codes of your own shop.
@@ -169,4 +172,4 @@ store's domain and only sees that store's data. Without that support, only the t
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
