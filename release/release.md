@@ -4,20 +4,21 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.5.0** (2026-11-03).
+and how to update. Latest release: **S-Cart 3.5.1** (2026-11-05).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.6.0** | 3.9.0 |
+| gp247/core | **3.10.2** | 3.10.2 |
 | gp247/front | **3.2.3** | 3.5.2 |
 | gp247/shop | **3.6.0** | 3.7.0 |
 | gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
 - **At or above it** → your site has all the important improvements, even if you have not reinstalled S-Cart.
+- **Third-party libraries** → also run `composer audit`; see [Third-party libraries](#third-party-libraries).
 
 > ⚠️ **Note:** update **all the packages together**: `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
@@ -35,6 +36,7 @@ Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each lin
   `php artisan gp247:update` — see the [v3.0 notes](../system/release-notes-3.0.md).
 
 ## Highlights
+- **System alerts** — the admin flags unsafe settings by itself *(S-Cart 3.5.1)*
 - **MCP server built into S-Cart** — ask and manage your shop with the AI agent you already use *(S-Cart 3.5)*
 - **The agent looks things up for you** — sales, low stock, orders, customers, with the right permissions *(S-Cart 3.5)*
 - **Write actions are always confirmed** — preview before changing an order status or stock *(S-Cart 3.5)*
@@ -60,6 +62,30 @@ Step-by-step details: [Updating GP247](https://gp247.net/en/docs/system/how-to-u
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.5.1 — 2026-11-05
+**The admin now flags unsafe settings; the web installer is simpler.**
+
+**✨ New**
+- **System alerts** — the dashboard summarises unsafe settings (debug, HTTPS, default admin password, MFA…) with a detail
+  page and fix guides; Administrators only ([docs](../security/security-built-in.md))
+- **Web install finishes in one run** — choose the admin username; the account entered in the installer replaces the default one
+- **Tidier two-column forms** — "+ Create new" in the form header while editing; the list keeps its page and keyword *(core
+  admin screens)*
+- **For developers:** `gp247:doctor` runs the same security checks (WARN/PASS, exit code unchanged); other packages can add
+  checks
+
+**🛡️ Third-party libraries:** Livewire 4.4.8 and symfony/mime 7.4.22 fix 2 published flaws — [see details](#third-party-libraries).
+**Update now.**
+
+**🔧 Improvements:** `gp247:update` keeps a single "System alerts" block; the Remove button now clears leftover extension
+folders; searchable selects stay closed while you edit another row
+
+**📋 To do when updating**
+- Run `composer update` (pulls Livewire ≥ 4.4.8, symfony/mime ≥ 7.4.22), then `php artisan gp247:update`
+- *(Sites whose `SESSION_DRIVER` is not `file`)* every user signs in again once after the update
+
+<sub>Includes core 3.10.2 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.1)</sub>
 
 ### S-Cart 3.5.0 — 2026-11-03
 **Built-in MCP server: ask and manage your shop with the AI agent you already use.**
@@ -94,7 +120,7 @@ Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release o
 - **For developers:** an extension point for two-factor authentication (MFA) on API sign-in; `Idempotency-Key` against
   duplicate writes; an API deprecation policy; generate a TypeScript client from `openapi.json`
 
-**🐞 Fixes:** out-of-stock products still showed the buy button; sign-up and password change accepted an empty password; the
+**🔧 Improvements:** out-of-stock products still showed the buy button; sign-up and password change accepted an empty password; the
 API answered 500 without an `Accept` header
 
 **📋 To do when updating**
@@ -117,7 +143,7 @@ API answered 500 without an `Accept` header
 - **For developers:** REST API v2 for products, orders, banners and pages (with filters and final price); every API response
   carries a request id for log lookups
 
-**🐞 Fixes:** the social sharing image (og:image) used the wrong picture for a page; the admin order API answered 500; the web
+**🔧 Improvements:** the social sharing image (og:image) used the wrong picture for a page; the admin order API answered 500; the web
 server follows the stable nginx channel and unused PHP features are turned off *(running with Docker)*
 
 **📋 To do when updating**
@@ -146,7 +172,7 @@ server follows the stable nginx channel and unused PHP features are turned off *
 - **For developers:** plugins can add storefront blocks and extension points without owning a template; a "Check before use"
   box tells what a plugin still needs configured
 
-**🐞 Fixes:** wishlist/compare buttons on product cards were not visible; "too many redirects" when removing from the
+**🔧 Improvements:** wishlist/compare buttons on product cards were not visible; "too many redirects" when removing from the
 wishlist; page links stacked vertically
 
 **📋 To do when updating**
@@ -155,31 +181,10 @@ wishlist; page links stacked vertically
 
 <sub>Includes core 3.2.0 · front 3.2.0 · shop 3.2.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.2)</sub>
 
-### S-Cart 3.1 — 2026-10-03
-**Payment requests outside the cart, and stored passwords and payment keys encrypted.**
-
-**✨ New**
-- **Payment requests** — send online payment links, record money in/out by hand, refund, with no order needed
-  ([docs](../s-cart/order-processing/payment-request.md))
-- **SMTP passwords and payment gateway keys encrypted** in the database, with a key rotation command
-  ([docs](../system/data-encryption.md))
-- **Plugins per store** — configure and enable them separately *(multi-store sites)*
-  ([docs](../multi-store/multi-store.md))
-- **Admin action log** — see who changed what
-- **For developers:** `gp247:doctor` reports PHP files with a BOM; error reports say which site they came from
-
-**🐞 Fixes:** Email/SMTP settings did not always save; customers without an email were reported as duplicates; order-total
-promotion codes were not applied
-
-**📋 To do when updating**
-- Run `php artisan gp247:update`
-- *(Running with Docker)* the production stack refuses to start while `.env` still holds the sample passwords
-
-<sub>Includes core 3.1.0 · front 3.0.0 · shop 3.1.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.1)</sub>
-
 ### Older releases
 | Release | Date | Summary |
 | --- | --- | --- |
+| [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Payment requests outside the cart; stored passwords and payment keys encrypted |
 | [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Old `sc:*` commands removed, use the `gp247:*` commands — [command list](../system/command-line-reference.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Start of the 3.x line: a payment ledger per order, discounts taken before tax — [v3.0 notes](../system/release-notes-3.0.md) |
 
@@ -209,10 +214,23 @@ Flaws in PHP and the web server are fixed by their own vendors, not by a GP247 r
 - **Running with Docker:** follow "Security updates" in
   [DOCKER.md](https://github.com/gp247net/s-cart/blob/master/DOCKER.md).
 
+## Third-party libraries
+Flaws in libraries GP247 uses (Livewire, Symfony…) are fixed by their own maintainers; GP247 raises its minimum when needed.
+GP247's own code does not use the affected features of the two flaws below, but third-party plugins may — update anyway.
+
+| Issue | Severity | Fixed in |
+| --- | --- | --- |
+| **Livewire** — authorization bypass (GHSA-mhf7-xp6r-6qrc) | Medium | livewire/livewire 4.4.8 (required by core 3.10.2) |
+| **symfony/mime** — email header injection (CVE-2026-45070) | Medium | symfony/mime 7.4.22 |
+
+**What to do**
+- **Update:** `composer update`, then check with `composer show livewire/livewire symfony/mime`.
+- **Check every library at once:** `composer audit` lists the libraries on your site that have a published flaw.
+
 ## Reporting a vulnerability
 If you find a vulnerability, please email **support@gp247.net** — **do not** open a public GitHub issue, so the problem is not
 exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-05 · ✍️ **Author:** GP247</sub>

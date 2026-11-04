@@ -4,20 +4,21 @@
 
 ## Giới thiệu
 Trang này dành cho **chủ site và người vận hành** S-Cart (dòng 3.x): cho biết mỗi bản phát hành có gì mới, nên dùng phiên
-bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.5.0** (2026-11-03).
+bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.5.1** (2026-11-05).
 
 ## Phiên bản nên dùng
 Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từng dòng với cột **Tối thiểu khuyến nghị**:
 
 | Package | Tối thiểu khuyến nghị | Mới nhất |
 | --- | --- | --- |
-| gp247/core | **3.6.0** | 3.9.0 |
+| gp247/core | **3.10.2** | 3.10.2 |
 | gp247/front | **3.2.3** | 3.5.2 |
 | gp247/shop | **3.6.0** | 3.7.0 |
 | gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Thấp hơn** cột "Tối thiểu khuyến nghị" → nên [cập nhật](#cập-nhật-thế-nào).
 - **Đã đạt** → site đã có đủ các cải tiến quan trọng, kể cả khi bạn chưa cài lại S-Cart.
+- **Thư viện bên thứ ba** → chạy thêm `composer audit` để kiểm, xem [Thư viện bên thứ ba](#thư-viện-bên-thứ-ba).
 
 > ⚠️ **Lưu ý:** cập nhật **cả bộ package cùng lúc**: `gp247/mcp` 2.0.1 cần `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 cần `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 cần `gp247/core` ≥ 3.2.3. Dòng nào còn được hỗ trợ: xem [Vòng đời hỗ trợ](#vòng-đời-hỗ-trợ).
@@ -35,6 +36,7 @@ Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từ
   `php artisan gp247:update` — xem [ghi chú v3.0](../system/release-notes-3.0_vi.md).
 
 ## Điểm mới nổi bật
+- **Cảnh báo hệ thống** — trang quản trị tự báo cấu hình chưa an toàn *(S-Cart 3.5.1)*
 - **MCP server có sẵn trong S-Cart** — hỏi và quản lý cửa hàng bằng AI agent bạn đang dùng *(S-Cart 3.5)*
 - **Agent tra cứu thay bạn** — doanh thu, hàng sắp hết, đơn, khách, đúng phân quyền *(S-Cart 3.5)*
 - **Thao tác ghi luôn có xác nhận** — xem trước rồi mới đổi trạng thái đơn, kho *(S-Cart 3.5)*
@@ -60,6 +62,30 @@ Chi tiết từng bước: [Hướng dẫn cập nhật GP247](https://gp247.net
 
 ## Các bản phát hành
 Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z*** chỉ sửa lỗi.
+
+### S-Cart 3.5.1 — 2026-11-05
+**Trang quản trị tự báo cấu hình chưa an toàn; cài đặt qua web gọn hơn.**
+
+**✨ Mới**
+- **Cảnh báo hệ thống** — dashboard tóm tắt cấu hình chưa an toàn (debug, HTTPS, mật khẩu admin mặc định, MFA…) kèm trang
+  chi tiết và hướng dẫn sửa; chỉ Administrator thấy ([tài liệu](../security/security-built-in_vi.md))
+- **Cài đặt qua web xong trong một lượt** — chọn tên đăng nhập admin; tài khoản nhập ở trình cài thay tài khoản mặc định
+- **Form 2 cột gọn hơn** — nút "+ Tạo mới" ở đầu form khi đang sửa, danh sách giữ nguyên trang và từ khoá *(màn quản trị
+  của core)*
+- **Cho lập trình viên:** `gp247:doctor` chạy cùng bộ kiểm tra bảo mật (WARN/PASS, mã thoát không đổi); package khác thêm
+  được mục kiểm tra
+
+**🛡️ Thư viện bên thứ ba:** Livewire 4.4.8 và symfony/mime 7.4.22 vá 2 lỗi đã công bố — [xem chi tiết](#thư-viện-bên-thứ-ba).
+**Nên cập nhật ngay.**
+
+**🔧 Cải thiện:** `gp247:update` giữ đúng một block "Cảnh báo hệ thống"; nút Gỡ bỏ nay xoá được thư mục extension còn sót;
+ô chọn có tìm kiếm không tự mở khi sửa dòng khác
+
+**📋 Cần làm khi cập nhật**
+- Chạy `composer update` (kéo Livewire ≥ 4.4.8, symfony/mime ≥ 7.4.22) rồi `php artisan gp247:update`
+- *(Site có `SESSION_DRIVER` khác `file`)* mọi người dùng phải đăng nhập lại một lần sau khi cập nhật
+
+<sub>Gồm core 3.10.2 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.1)</sub>
 
 ### S-Cart 3.5.0 — 2026-11-03
 **MCP server có sẵn: hỏi và quản lý cửa hàng bằng AI agent bạn đang dùng.**
@@ -94,7 +120,7 @@ Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z***
 - **Cho lập trình viên:** điểm cắm xác thực hai lớp (MFA) cho đăng nhập API; `Idempotency-Key` chống ghi trùng; chính sách
   ngừng hỗ trợ API; sinh client TypeScript từ `openapi.json`
 
-**🐞 Sửa lỗi:** sản phẩm hết hàng vẫn hiện nút mua; đăng ký và đổi mật khẩu chấp nhận mật khẩu rỗng; API lỗi 500 khi thiếu
+**🔧 Cải thiện:** sản phẩm hết hàng vẫn hiện nút mua; đăng ký và đổi mật khẩu chấp nhận mật khẩu rỗng; API lỗi 500 khi thiếu
 header `Accept`
 
 **📋 Cần làm khi cập nhật**
@@ -117,7 +143,7 @@ header `Accept`
 - **Cho lập trình viên:** REST API v2 cho sản phẩm, đơn hàng, banner, trang (có bộ lọc, giá cuối); mỗi phản hồi API có mã
   yêu cầu để tra log
 
-**🐞 Sửa lỗi:** ảnh chia sẻ mạng xã hội (og:image) sai ảnh của trang; API đơn hàng quản trị lỗi 500; web server theo kênh
+**🔧 Cải thiện:** ảnh chia sẻ mạng xã hội (og:image) sai ảnh của trang; API đơn hàng quản trị lỗi 500; web server theo kênh
 nginx ổn định, tắt tính năng PHP không dùng *(chạy bằng Docker)*
 
 **📋 Cần làm khi cập nhật**
@@ -146,7 +172,7 @@ nginx ổn định, tắt tính năng PHP không dùng *(chạy bằng Docker)*
 - **Cho lập trình viên:** plugin thêm được khối và điểm cắm vào storefront mà không cần sở hữu template; ô "Kiểm tra trước khi
   dùng" báo plugin còn thiếu cấu hình gì
 
-**🐞 Sửa lỗi:** nút yêu thích/so sánh trên thẻ sản phẩm không hiện; lỗi "too many redirects" khi bỏ yêu thích; phân trang
+**🔧 Cải thiện:** nút yêu thích/so sánh trên thẻ sản phẩm không hiện; lỗi "too many redirects" khi bỏ yêu thích; phân trang
 bị xếp dọc
 
 **📋 Cần làm khi cập nhật**
@@ -155,30 +181,10 @@ bị xếp dọc
 
 <sub>Gồm core 3.2.0 · front 3.2.0 · shop 3.2.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.2)</sub>
 
-### S-Cart 3.1 — 2026-10-03
-**Yêu cầu thanh toán ngoài giỏ hàng và mã hoá mật khẩu, khoá thanh toán đã lưu.**
-
-**✨ Mới**
-- **Yêu cầu thanh toán** — gửi link thanh toán online, ghi tay khoản thu/chi, hoàn tiền mà không cần tạo đơn
-  ([tài liệu](../s-cart/order-processing/payment-request_vi.md))
-- **Mã hoá mật khẩu SMTP và khoá cổng thanh toán** trong cơ sở dữ liệu, có lệnh đổi khoá
-  ([tài liệu](../system/data-encryption_vi.md))
-- **Plugin theo từng cửa hàng** — cấu hình và bật/tắt riêng *(site đa cửa hàng)*
-  ([tài liệu](../multi-store/multi-store_vi.md))
-- **Nhật ký thao tác quản trị** — biết ai đã đổi gì
-- **Cho lập trình viên:** `gp247:doctor` báo file PHP có BOM; báo cáo lỗi ghi rõ đến từ site nào
-
-**🐞 Sửa lỗi:** lưu cài đặt Email/SMTP không ổn định; khách không có email bị báo trùng; mã khuyến mãi tổng đơn không được áp
-
-**📋 Cần làm khi cập nhật**
-- Chạy `php artisan gp247:update`
-- *(Chạy bằng Docker)* môi trường production không khởi động nếu `.env` còn mật khẩu mẫu
-
-<sub>Gồm core 3.1.0 · front 3.0.0 · shop 3.1.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.1)</sub>
-
 ### Các bản cũ hơn
 | Bản | Ngày | Tóm tắt |
 | --- | --- | --- |
+| [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Yêu cầu thanh toán ngoài giỏ hàng; mã hoá mật khẩu, khoá thanh toán đã lưu |
 | [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Gỡ lệnh `sc:*` cũ, dùng lệnh `gp247:*` — [danh sách lệnh](../system/command-line-reference_vi.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Mở đầu dòng 3.x: sổ thanh toán từng đơn, giảm giá trừ trước thuế — [ghi chú v3.0](../system/release-notes-3.0_vi.md) |
 
@@ -208,10 +214,23 @@ Lỗi của PHP và web server do chính nhà phát hành của chúng vá, khô
 - **Chạy bằng Docker:** làm theo mục "Cập nhật bản vá bảo mật" trong
   [DOCKER_vi.md](https://github.com/gp247net/s-cart/blob/master/DOCKER_vi.md).
 
+## Thư viện bên thứ ba
+Lỗi của thư viện mà GP247 dùng (Livewire, Symfony…) do chính nhà phát hành thư viện vá; GP247 nâng mức tối thiểu khi cần.
+Mã của GP247 không dùng tính năng bị ảnh hưởng của hai lỗi dưới đây, nhưng plugin bên thứ ba có thể dùng — vẫn nên cập nhật.
+
+| Sự cố | Mức độ | Đã vá ở |
+| --- | --- | --- |
+| **Livewire** — vượt kiểm tra quyền (GHSA-mhf7-xp6r-6qrc) | Trung bình | livewire/livewire 4.4.8 (core 3.10.2 yêu cầu bản này) |
+| **symfony/mime** — chèn header email (CVE-2026-45070) | Trung bình | symfony/mime 7.4.22 |
+
+**Cần làm gì**
+- **Cập nhật:** `composer update`, rồi kiểm bằng `composer show livewire/livewire symfony/mime`.
+- **Kiểm mọi thư viện cùng lúc:** `composer audit` liệt kê các thư viện trong site đang có lỗi đã công bố.
+
 ## Báo lỗ hổng bảo mật
 Phát hiện lỗ hổng, vui lòng gửi email tới **support@gp247.net** — **không** mở issue công khai trên GitHub để tránh lộ lỗi
 trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-05 · ✍️ **Tác giả (Author):** GP247</sub>
