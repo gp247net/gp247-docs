@@ -100,7 +100,7 @@ Docker and cron can rely on it:
 **Feature:** First-time installation of the whole GP247 platform. It runs the database migrations,
 seeds the default data (admin, store, languages), publishes core and laravel-filemanager assets,
 creates the `storage` symbolic link, and writes the installed marker
-(`storage/app/gp247-installed.txt`).
+(`storage/app/private/gp247-installed.txt`).
 
 **Options:**
 
@@ -127,7 +127,7 @@ the default account `admin/admin`.
 - It is the **first step** after downloading the source, creating the `.env` file, and configuring
   the database connection.
 - If `APP_KEY` is missing, the command calls `key:generate` for you.
-- To **reinstall**: delete `storage/app/gp247-installed.txt` then run it again (or use `--force=1`).
+- To **reinstall**: delete `storage/app/private/gp247-installed.txt` then run it again (or use `--force=1`).
 - It is usually followed by `gp247:front-install` and/or `gp247:shop-install` (see "Full install
   scenario" at the end).
 
@@ -860,7 +860,7 @@ description.
 
 **Q2: `gp247:core-install` prints "GP247 has been installed" — what now?**
 
-→ It means it's already installed (the `storage/app/gp247-installed.txt` file exists). To reinstall,
+→ It means it's already installed (the `storage/app/private/gp247-installed.txt` file exists). To reinstall,
 delete that file then run again, or use `php artisan gp247:core-install --force=1`.
 
 **Q3: What's the difference between `gp247:core-update` and `gp247:language-update`?**

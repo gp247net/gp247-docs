@@ -99,7 +99,7 @@ Docker và cron tin cậy được:
 
 **Chức năng:** Cài đặt toàn bộ nền tảng GP247 lần đầu. Lệnh sẽ chạy migrate cơ sở dữ liệu, seed
 dữ liệu mặc định (admin, store, ngôn ngữ), publish asset của core và của laravel-filemanager, tạo
-symbolic link `storage`, và ghi dấu đã cài (`storage/app/gp247-installed.txt`).
+symbolic link `storage`, và ghi dấu đã cài (`storage/app/private/gp247-installed.txt`).
 
 **Tham số:**
 
@@ -125,7 +125,7 @@ tài khoản mặc định `admin/admin`.
 **Trường hợp sử dụng & kết hợp:**
 - Là **bước đầu tiên** sau khi tải mã nguồn, tạo file `.env` và cấu hình kết nối database.
 - Nếu chưa có `APP_KEY`, lệnh tự gọi `key:generate` giúp bạn.
-- Muốn **cài lại**: xóa file `storage/app/gp247-installed.txt` rồi chạy lại (hoặc dùng `--force=1`).
+- Muốn **cài lại**: xóa file `storage/app/private/gp247-installed.txt` rồi chạy lại (hoặc dùng `--force=1`).
 - Sau lệnh này thường chạy tiếp `gp247:front-install` và/hoặc `gp247:shop-install` (xem "Kịch bản
   cài đặt đầy đủ" ở cuối).
 
@@ -838,7 +838,7 @@ Và đặt cron dọn giỏ hàng hết hạn: `php artisan gp247:shop-clear-car
 
 **Câu 2: Chạy `gp247:core-install` báo "GP247 has been installed" thì sao?**
 
-→ Nghĩa là đã cài rồi (có file `storage/app/gp247-installed.txt`). Nếu muốn cài lại, xóa file đó rồi
+→ Nghĩa là đã cài rồi (có file `storage/app/private/gp247-installed.txt`). Nếu muốn cài lại, xóa file đó rồi
 chạy lại, hoặc dùng `php artisan gp247:core-install --force=1`.
 
 **Câu 3: Khác nhau giữa `gp247:core-update` và `gp247:language-update`?**

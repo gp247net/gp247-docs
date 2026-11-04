@@ -99,7 +99,7 @@ Docker、cron から安心して利用できます。
 
 **機能:** GP247 プラットフォーム全体を初めてインストールします。このコマンドは、データベースの migrate、
 既定データ（管理者、ストア、言語）の seed、core と laravel-filemanager のアセットの publish、
-`storage` のシンボリックリンクの作成、インストール済みマーカー（`storage/app/gp247-installed.txt`）の書き込みを行います。
+`storage` のシンボリックリンクの作成、インストール済みマーカー（`storage/app/private/gp247-installed.txt`）の書き込みを行います。
 
 **オプション:**
 
@@ -125,7 +125,7 @@ php artisan gp247:core-install --force=1
 **使用場面と組み合わせ:**
 - ソースコードをダウンロードし、`.env` ファイルを作成してデータベース接続を設定した後の**最初の手順**です。
 - `APP_KEY` がまだない場合は、コマンドが自動で `key:generate` を呼び出します。
-- **再インストール**したい場合: `storage/app/gp247-installed.txt` ファイルを削除してから再実行します（または `--force=1` を使います）。
+- **再インストール**したい場合: `storage/app/private/gp247-installed.txt` ファイルを削除してから再実行します（または `--force=1` を使います）。
 - このコマンドの後には、通常 `gp247:front-install` と／または `gp247:shop-install` を続けて実行します（末尾の
   「完全なインストールの手順」を参照）。
 
@@ -838,7 +838,7 @@ php artisan gp247:shop-update   # shop モジュールを使っている場合�
 
 **Q2: `gp247:core-install` を実行すると「GP247 has been installed」と表示されました。どうすればよいですか？**
 
-→ すでにインストール済みという意味です（`storage/app/gp247-installed.txt` ファイルがあります）。再インストールしたい場合は、そのファイルを削除して
+→ すでにインストール済みという意味です（`storage/app/private/gp247-installed.txt` ファイルがあります）。再インストールしたい場合は、そのファイルを削除して
 再実行するか、`php artisan gp247:core-install --force=1` を使います。
 
 **Q3: `gp247:core-update` と `gp247:language-update` の違いは何ですか？**
