@@ -129,6 +129,9 @@ This layer reduces the damage when configuration is set wrong by mistake.
 | **Debug turns off automatically** | When `APP_ENV=production`, GP247 forces debug off whatever `APP_DEBUG` says | Only applies when `APP_ENV` is exactly `production` |
 | **Environment label** | The admin header shows the running environment and a red "DEBUG ON" label (`GP247_ENV_BADGE`) | If you see it, you must fix it |
 | **Docker production** | `docker-compose.prod.yml` pins `APP_ENV=production`, `APP_DEBUG=false` for every service; refuses to start while the sample passwords from `.env.example` remain; turns off unused PHP features; nginx blocks hidden files and internal folders | Turn on HTTPS at the proxy in front; update images regularly |
+| **System alerts** | A **System alerts** block at the top of the admin dashboard sums up, in one line, the most severe level and how many items need work; a shield icon in the header counts the critical items. The **System alerts** page (menu **System config** → **Security**, or click the shield / the button on the block) lists each item: debug turned on, the site not on HTTPS or the sign-in cookie not marked `Secure`, the `admin` account still on the default password, a minimum password length under 12 characters, no dedicated encryption key, secrets that cannot be decrypted, MFA not turned on, the API turned on, the version line close to or past the end of support, extensions whose data update has not run or whose static files are missing. Each item shows technical detail and links to a guide; once fixed, the alert clears by itself (or click **Check again** on the page). `gp247:doctor` reports the same items | Only the **Administrator** role sees the block, the page and the menu item. It checks only when someone opens the admin, and sends no email. It does not check the site from the outside for you (whether `.env` can be downloaded, whether `http://` redirects to `https://`) |
+
+> ℹ️ **Available since:** gp247/core 3.10.0 (the System alerts block and page, the security checks of `gp247:doctor`)
 
 ## Install & update
 
@@ -147,7 +150,8 @@ The tasks below are **not** in GP247 — if you do not do them, no one will:
 - **Does not turn on HTTPS, does not send HSTS / CSP headers** — configure these in the web server or proxy.
 - **Does not back up the database, `.env` or uploaded images** — see [Encryption keys & backup](./security-keys-and-backup.md).
 - **Does not force you to replace the default admin account** — see [Accounts & permissions](./security-accounts-and-access.md).
-- **Does not check `APP_DEBUG` or HTTPS with `gp247:doctor`** — check them yourself with [Production config](./security-production-config.md).
+- **Does not send alerts when nobody opens the admin** — the System alerts block and page only check when someone opens the admin; visit the admin regularly.
+- **Does not check the site from the outside** — whether `.env` can be downloaded, whether `http://` redirects to `https://`: check these yourself with [Production config](./security-production-config.md#self-check-in-5-minutes).
 - **Does not announce platform security patches inside the admin** — follow the [release page](../release/release.md).
 - **Does not patch PHP, the web server or the operating system** — that is your job or your hosting provider's.
 
@@ -186,6 +190,10 @@ The tasks below are **not** in GP247 — if you do not do them, no one will:
 **Q7: Why does the doc mention "limits" on every row?**
 
 → So you do not wrongly think "there is a protection layer, so I need to do nothing". The "what you do" part is what decides whether the site is safe.
+
+**Q8: Why can my staff not see the System alerts?**
+
+→ The block is shown only to the **Administrator** role. A list of the site's weak points is what an attacker looks for, so other roles (including **View.all**) see neither the block, the shield icon nor the menu item, and opening the page address directly is refused.
 
 ---
 

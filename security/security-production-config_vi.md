@@ -128,7 +128,7 @@ mục "Cập nhật bản vá bảo mật" của [DOCKER_vi.md](https://github.c
 
 Làm lần lượt; mỗi bước có kết quả đúng để đối chiếu.
 
-1. **Trang quản trị**: đăng nhập, nhìn header — phải thấy nhãn môi trường là production, **không** có nhãn đỏ "DEBUG ON".
+1. **Trang quản trị**: đăng nhập, nhìn header — phải thấy nhãn môi trường là production, **không** có nhãn đỏ "DEBUG ON". Với tài khoản Administrator, block **Cảnh báo hệ thống** ở đầu dashboard không được báo lỗi **nghiêm trọng** (chi tiết ở trang **Cảnh báo hệ thống**).
 2. **Trình duyệt**: mở `http://ten-mien-cua-ban` — phải tự chuyển sang `https://`.
 3. **Trình duyệt**: mở `https://ten-mien-cua-ban/.env` — phải là lỗi 404 hoặc 403.
 4. **Trình duyệt**: mở `https://ten-mien-cua-ban/install` — site đã cài thì phải chuyển sang trang đăng nhập.
@@ -140,8 +140,12 @@ Làm lần lượt; mỗi bước có kết quả đúng để đối chiếu.
 
    Chú ý dòng `encryption_key_dedicated` và `secret_decryptable` — xem [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md).
 
-> ℹ️ **Thông tin:** `gp247:doctor` kiểm môi trường PHP, quyền ghi, khoá mã hoá, cơ sở dữ liệu. Lệnh **không** kiểm `APP_DEBUG`, HTTPS hay
-> cookie — các bước 1–3 ở trên làm việc đó.
+> ℹ️ **Thông tin:** `gp247:doctor` kiểm môi trường PHP, quyền ghi, khoá mã hoá, cơ sở dữ liệu, và (site đã cài) cùng các mục với block
+> Cảnh báo hệ thống: debug bật (`app_debug`), `APP_URL` không bắt đầu bằng `https://` hoặc `SESSION_SECURE_COOKIE` chưa bật (`https`),
+> mật khẩu mặc định của `admin`, MFA, hạn hỗ trợ của dòng phiên bản. Lệnh **đọc cấu hình, không mở site qua mạng**, nên không biết
+> `http://` có tự chuyển sang `https://` hay `.env` có tải được — các bước 2–3 ở trên làm việc đó.
+>
+> ℹ️ **Có từ:** gp247/core 3.10.0 (block và trang Cảnh báo hệ thống, các mục bảo mật của `gp247:doctor`)
 
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 

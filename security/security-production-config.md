@@ -128,7 +128,7 @@ the "Security updates" section of [DOCKER.md](https://github.com/gp247net/s-cart
 
 Do these in order; each step has a correct result to compare against.
 
-1. **Admin**: sign in and look at the header — the environment label must be production, with **no** red "DEBUG ON" label.
+1. **Admin**: sign in and look at the header — the environment label must be production, with **no** red "DEBUG ON" label. On an Administrator account, the **System alerts** block at the top of the dashboard must report no **critical** issue (details on the **System alerts** page).
 2. **Browser**: open `http://your-domain` — it must redirect to `https://`.
 3. **Browser**: open `https://your-domain/.env` — it must be a 404 or 403 error.
 4. **Browser**: open `https://your-domain/install` — on an installed site it must redirect to the sign-in page.
@@ -140,8 +140,12 @@ Do these in order; each step has a correct result to compare against.
 
    Pay attention to the `encryption_key_dedicated` and `secret_decryptable` lines — see [Encryption keys & backup](./security-keys-and-backup.md).
 
-> ℹ️ **Info:** `gp247:doctor` checks the PHP environment, write permissions, the encryption key and the database. It does **not** check `APP_DEBUG`, HTTPS or
-> cookies — steps 1–3 above do that.
+> ℹ️ **Info:** `gp247:doctor` checks the PHP environment, write permissions, the encryption key, the database and (on an installed site) the same
+> items as the System alerts block: debug turned on (`app_debug`), `APP_URL` not starting with `https://` or `SESSION_SECURE_COOKIE` not turned on
+> (`https`), the default `admin` password, MFA, the support end date of the version line. The command **reads the configuration and does not open
+> the site over the network**, so it cannot tell whether `http://` redirects to `https://` or whether `.env` can be downloaded — steps 2–3 above do that.
+>
+> ℹ️ **Available since:** gp247/core 3.10.0 (the System alerts block and page, the security checks of `gp247:doctor`)
 
 ## Conditions & Rules (know before you act)
 

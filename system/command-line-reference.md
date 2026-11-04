@@ -63,7 +63,7 @@ and you can copy-paste and run them right away.
 | `gp247:install` | core | Install end-to-end (core [+front] [+shop] [+mcp] [+sample]) |
 | `gp247:update` | core | Post-`composer update` refresh (core [+shop] [+mcp], safe for live) |
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
-| `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) |
+| `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) and security configuration |
 | `gp247:info` | core | Show status: versions, install marker, extension counts |
 
 ---
@@ -672,12 +672,16 @@ php artisan gp247:ext-publish --type=plugin --all
 | `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` when `--sample`). `mcp-install` is non-destructive. A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), then `mcp-update` (when the `gp247/mcp` package is present), optional `language-update` (`--overwrite-lang`), the **extension data update** step (`ext-update --local --all` for plugins then templates — a failure only warns and never blocks the following steps; available since the 2026-09-29 update), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
-| `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.3, required extensions, write permissions, DB connectivity, install marker, plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |
+| `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.3, required extensions, write permissions, DB connectivity, install marker, security configuration (on an installed site), plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |
 | `gp247:info` | `--json` | Show status: installed package versions (core/front/shop/mcp), install marker, plugin/template counts, marketplace API endpoint. Read-only. |
 
 ### What `gp247:doctor` checks
 
-> ℹ️ `gp247:doctor` does not check `APP_DEBUG`, HTTPS or cookies. How to check those yourself: [Secure production configuration](../security/security-production-config.md) in the [Security](../security/security-introduction.md) documentation.
+> ℹ️ When the site is installed and the database is reachable, `gp247:doctor` also checks the security configuration — the same items the
+> **System alerts** page shows to the Administrator. These items are only **PASS** or **WARN** (even when the dashboard
+> rates them critical), so they never make the command exit non-zero. The command reads the configuration and does not open the site over the
+> network: whether `http://` redirects to `https://` or whether `.env` can be downloaded is still yours to check with
+> [Secure production configuration](../security/security-production-config.md) in the [Security](../security/security-introduction.md) documentation.
 
 Every row comes back as one of three states: **PASS** (fine), **WARN** (worth cleaning up, but nothing is
 blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop CI or an install).
@@ -693,8 +697,15 @@ blocked), **FAIL** (must be fixed — the command exits non-zero, enough to stop
 | `file_bom` | Any `.php` / `.blade.php` file starting with a **UTF-8 BOM** |
 | `extension_assets` | **Installed** plugins/templates missing static files in `public/GP247/...` (their CSS/JS/images answer 404). **WARN**, with the `gp247:ext-publish` fix |
 | `extension_data_pending` | **Installed** plugins/templates whose files are newer than the version GP247 recorded (just `git pull`ed / copied over), so their data update has not run yet. **WARN**, with the list and the `gp247:ext-update --local --all` fix |
+| `app_debug` | Debug is on (`APP_DEBUG`). **WARN** |
+| `https` | `APP_URL` does not start with `https://`, or `SESSION_SECURE_COOKIE` is not turned on. **WARN** when `APP_ENV=production`; in other environments PASS with a note |
+| `default_admin_password` | An active `admin` account still uses the default password. **WARN** |
+| `password_policy` | The minimum admin password length is under 12 characters. **WARN** |
+| `mfa_enabled` | The two-factor authentication plugin **MFA** is not installed or not turned on. **WARN** |
+| `api_exposure` | The REST API (and MCP, when present) is turned on — for your information, **PASS** |
+| `support_line` | The version line in use has less than 6 months of security support left, or none. **WARN** |
 
-> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check); the 2026-09-27 update (the `extension_assets` check); the 2026-09-29 update (the `extension_data_pending` check)
+> ℹ️ **Available since:** the 2026-09-23 update (the `file_bom` check); the 2026-09-27 update (the `extension_assets` check); the 2026-09-29 update (the `extension_data_pending` check); gp247/core 3.10.0 (the `app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line` checks)
 
 **Why `file_bom` is worth checking.** A BOM (Byte Order Mark) is **three invisible bytes** (`EF BB BF`) that
 many Windows editors add to the front of a file when saving as "UTF-8". Those bytes sit **outside** the
@@ -904,6 +915,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` adds 7 security configuration checks (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), shared with the System alerts block on the dashboard; they are only PASS/WARN, so the exit code does not change. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Added `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` for the MCP server built into S-Cart (replaces the McpServer plugin); `gp247:install` and `gp247:update` run the MCP step; `gp247:info` shows the `gp247/mcp` version. |
 | 2026-09-29 |  | `gp247:ext-update` gained `--local` / `--dry-run`: runs the data update of extensions whose files were replaced with `git pull`/Composer/a manual copy (GP247 now records the installed version); `gp247:update` runs this step for plugins and templates; `gp247:doctor` gained the `extension_data_pending` check. |
 | 2026-09-23 |  | `gp247:doctor` gained the `file_bom` check: reports `.php`/`.blade.php` files starting with a UTF-8 BOM (WARN — never changes the exit code) |

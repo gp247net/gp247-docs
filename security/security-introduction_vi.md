@@ -56,7 +56,7 @@ Bảng dưới chia việc theo lĩnh vực. Cột "Bạn làm" là những vi�
 
 | Lĩnh vực | ✅ GP247 làm sẵn | 👤 Bạn phải làm | Đọc chi tiết |
 | --- | --- | --- | --- |
-| **Cấu hình máy chủ** | Tự tắt debug khi `APP_ENV=production`; header trang quản trị hiện nhãn môi trường và "DEBUG ON" | Bật HTTPS; document root trỏ vào `public/`; `APP_DEBUG=false`; cài bản không có gói dev | [Cấu hình production](./security-production-config_vi.md) |
+| **Cấu hình máy chủ** | Tự tắt debug khi `APP_ENV=production`; header trang quản trị hiện nhãn môi trường và "DEBUG ON"; block **Cảnh báo hệ thống** trên dashboard và trang cùng tên báo cấu hình chưa an toàn cho Administrator (từ gp247/core 3.10.0) | Bật HTTPS; document root trỏ vào `public/`; `APP_DEBUG=false`; cài bản không có gói dev | [Cấu hình production](./security-production-config_vi.md) |
 | **Khoá & sao lưu** | Mã hoá bí mật (mật khẩu SMTP, secret, license); giữ bản sao plugin/template trước khi cập nhật chúng | Sao lưu `.env`, cơ sở dữ liệu, ảnh tải lên; thử khôi phục; không tạo lại khoá trên site đang chạy | [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md) |
 | **Tài khoản & quyền** | Giới hạn số lần đăng nhập sai; băm mật khẩu; phân quyền theo màn hình; nhật ký thao tác | Đổi tài khoản mặc định; đặt chính sách mật khẩu; cấp quyền tối thiểu; khoá tài khoản người nghỉ việc | [Tài khoản & phân quyền](./security-accounts-and-access_vi.md) |
 | **Cập nhật** | Phát hành bản vá; lệnh cập nhật an toàn; kiểm tra gói plugin tải về | Theo dõi trang phát hành; cập nhật GP247, PHP, web server; chỉ cài plugin từ nguồn tin cậy | [Cập nhật & xử lý sự cố](./security-updates-and-incidents_vi.md) |
@@ -129,11 +129,15 @@ Nếu bạn phát hiện một lỗ hổng trong GP247, hãy gửi email tới *
 
 **Câu 4: Làm sao biết site đang bật debug?**
 
-→ Đăng nhập trang quản trị: header hiện nhãn môi trường, kèm nhãn đỏ "DEBUG ON" khi debug đang bật. Cách tắt ở [Cấu hình production](./security-production-config_vi.md).
+→ Đăng nhập trang quản trị: header hiện nhãn môi trường, kèm nhãn đỏ "DEBUG ON" khi debug đang bật; với Administrator, block **Cảnh báo hệ thống** trên dashboard cũng báo mục này. Cách tắt ở [Cấu hình production](./security-production-config_vi.md).
 
-**Câu 5: Có lệnh nào tự kiểm tra site không?**
+**Câu 5: Có cách nào tự kiểm tra site không?**
 
-→ Có: `php artisan gp247:doctor` kiểm môi trường, quyền ghi, khoá mã hoá, bí mật còn giải mã được hay không. Lệnh này **không** kiểm HTTPS hay `APP_DEBUG`; hai việc đó tự kiểm theo [Cấu hình production](./security-production-config_vi.md).
+→ Có hai cách, cùng một danh sách kiểm tra (từ gp247/core 3.10.0):
+- **Không cần dòng lệnh**: đăng nhập bằng tài khoản Administrator — block **Cảnh báo hệ thống** ở đầu dashboard cho biết mức nặng nhất và số mục cần xử lý; bấm **Xem tất cả cảnh báo** (hoặc menu **Cấu hình hệ thống** → **Bảo mật** → **Cảnh báo hệ thống**) để xem từng mục — debug, HTTPS, tài khoản `admin` mặc định, chính sách mật khẩu, MFA, khoá mã hoá, hạn hỗ trợ của phiên bản. Mỗi mục có link hướng dẫn sửa.
+- **Có dòng lệnh**: `php artisan gp247:doctor` kiểm các mục trên, cộng môi trường PHP và quyền ghi thư mục.
+
+Cả hai đọc cấu hình của site, không mở site từ bên ngoài: việc `.env` có tải được qua trình duyệt hay không vẫn tự kiểm theo [Cấu hình production](./security-production-config_vi.md#tự-kiểm-trong-5-phút).
 
 **Câu 6: Tôi dùng shared hosting, không có quyền dòng lệnh thì sao?**
 

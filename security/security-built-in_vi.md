@@ -129,6 +129,9 @@ Lớp này giảm thiệt hại khi cấu hình lỡ sai.
 | **Tự tắt debug** | Khi `APP_ENV=production`, GP247 ép tắt debug dù `APP_DEBUG` đặt gì | Chỉ áp khi `APP_ENV` đúng là `production` |
 | **Nhãn môi trường** | Header trang quản trị hiện môi trường đang chạy và nhãn đỏ "DEBUG ON" (`GP247_ENV_BADGE`) | Nhìn thấy thì phải xử lý |
 | **Docker production** | `docker-compose.prod.yml` ghim `APP_ENV=production`, `APP_DEBUG=false` cho mọi dịch vụ; từ chối khởi động khi còn mật khẩu mẫu của `.env.example`; tắt các tính năng PHP không dùng; nginx chặn file ẩn và thư mục nội bộ | Bật HTTPS ở proxy phía trước; cập nhật image định kỳ |
+| **Cảnh báo hệ thống** | Block **Cảnh báo hệ thống** ở đầu dashboard quản trị tóm tắt trong một dòng mức nặng nhất và số mục cần xử lý; biểu tượng khiên trên header đếm số mục nghiêm trọng. Trang **Cảnh báo hệ thống** (menu **Cấu hình hệ thống** → **Bảo mật**, hoặc bấm khiên / nút ở block) liệt kê từng mục: debug đang bật, site chưa chạy HTTPS hoặc cookie đăng nhập chưa bật `Secure`, tài khoản `admin` còn mật khẩu mặc định, mật khẩu tối thiểu dưới 12 ký tự, chưa đặt khoá mã hoá riêng, có bí mật không giải mã được, chưa bật MFA, API đang bật, dòng phiên bản sắp hết hoặc đã hết hỗ trợ, extension chưa cập nhật dữ liệu hoặc thiếu file tĩnh. Mỗi mục có chi tiết kỹ thuật và link hướng dẫn; sửa xong thì cảnh báo tự hết (hoặc bấm **Kiểm tra lại** trên trang). `gp247:doctor` báo cùng các mục này | Chỉ vai trò **Administrator** thấy block, trang và mục menu. Chỉ kiểm khi có người mở trang quản trị, không gửi email. Không kiểm thay bạn từ trình duyệt (file `.env` có tải được không, `http://` có tự chuyển sang `https://` không) |
+
+> ℹ️ **Có từ:** gp247/core 3.10.0 (block và trang Cảnh báo hệ thống, các mục bảo mật của `gp247:doctor`)
 
 ## Cài đặt & cập nhật
 
@@ -147,7 +150,8 @@ Các việc dưới đây **không có** trong GP247 — nếu bạn không làm
 - **Không bật HTTPS, không gửi header HSTS / CSP** — cấu hình ở web server hoặc proxy.
 - **Không sao lưu cơ sở dữ liệu, `.env`, ảnh tải lên** — xem [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md).
 - **Không buộc đổi tài khoản quản trị mặc định** — xem [Tài khoản & phân quyền](./security-accounts-and-access_vi.md).
-- **Không kiểm `APP_DEBUG`, HTTPS bằng `gp247:doctor`** — tự kiểm theo [Cấu hình production](./security-production-config_vi.md).
+- **Không gửi cảnh báo khi không ai vào trang quản trị** — block và trang Cảnh báo hệ thống chỉ kiểm khi có người mở trang quản trị; hãy vào trang quản trị định kỳ.
+- **Không kiểm site từ bên ngoài** — `.env` có tải được không, `http://` có tự chuyển sang `https://` không: tự kiểm theo [Cấu hình production](./security-production-config_vi.md#tự-kiểm-trong-5-phút).
 - **Không báo bản vá bảo mật của nền tảng ngay trong trang quản trị** — theo dõi [trang phát hành](../release/release_vi.md).
 - **Không vá PHP, web server, hệ điều hành** — đó là việc của bạn hoặc nhà cung cấp hosting.
 
@@ -186,6 +190,10 @@ Các việc dưới đây **không có** trong GP247 — nếu bạn không làm
 **Câu 7: Vì sao tài liệu nói "giới hạn" ở mọi dòng?**
 
 → Để bạn không tưởng nhầm "đã có lớp bảo vệ thì khỏi làm gì". Phần "bạn làm" mới là phần quyết định site có an toàn hay không.
+
+**Câu 8: Vì sao nhân viên của tôi không thấy Cảnh báo hệ thống?**
+
+→ Block chỉ hiện với vai trò **Administrator**. Danh sách điểm yếu của site là thông tin kẻ tấn công cần, nên vai trò khác (kể cả **View.all**) không thấy block, biểu tượng khiên hay mục menu, và mở thẳng địa chỉ trang cũng bị từ chối.
 
 ---
 

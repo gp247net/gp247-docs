@@ -63,7 +63,7 @@ GP247 サイトの開発者と管理者向けのドキュメントです。読�
 | `gp247:install` | core | 一括インストール（core [+front] [+shop] [+mcp] [+sample]） |
 | `gp247:update` | core | `composer update` 後の更新（core [+shop] [+mcp]、稼働中のサイトでも安全） |
 | `gp247:cache-rebuild` | core | route/config のキャッシュを再構築 |
-| `gp247:doctor` | core | 環境を確認（PHP／拡張モジュール／書き込み権限／DB） |
+| `gp247:doctor` | core | 環境を確認（PHP／拡張モジュール／書き込み権限／DB）とセキュリティ設定 |
 | `gp247:info` | core | 状態を表示: バージョン、インストールのマーカー、拡張機能の数 |
 
 ---
@@ -652,12 +652,16 @@ php artisan gp247:ext-publish --type=plugin --all
 | `gp247:install` | `--sample`, `--force=1` | システム全体の共通インストールコマンドです。存在するパッケージを**自動で検出**し、次の順にインストールします: `core-install` → （`front-install`） → （`shop-install`） → （`mcp-install`、データを壊さない） → （`--sample` がある場合は `shop-sample`）。1 つの手順でエラーが出ると、0 以外の終了コードで停止します。**既定では確認が必須**です（下の安全上の注意を参照）。非対話でインストールするには `--force=1` を使います。`composer require` の直後から利用できます（プラットフォームがまだインストールされていない場合も含む）。パッケージの選択は完全に自動です — `--with-front` / `--with-shop` フラグは**ありません**。 |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | 稼働中のサイト向けの、`composer update` 後の安全な更新です: `core-update`、次に `shop-update`（shop がインストール済みの場合のみ）、次に `mcp-update`（`gp247/mcp` パッケージがある場合）、オプションで `language-update`（`--overwrite-lang`）、**拡張機能のデータ更新を適用する**手順（プラグイン、次にテンプレートに対して `ext-update --local --all`。エラーは警告だけで、後続の手順は止めません。2026-09-29 の更新から）、**任意の** アセット／view の再 publish 手順（`--publish=`、既定はオフ）、最後に `cache-rebuild`。データを壊す（再）インストールの手順は一切実行しません。各 `--publish` トークンの影響の大きさは、下の再 publish に関する注意を参照してください。 |
 | `gp247:cache-rebuild` | — | route/config のキャッシュを再構築します（拡張機能の有効化／更新の後）。 |
-| `gp247:doctor` | `--json` | 環境を確認します: PHP ≥ 8.3、必須拡張モジュール、書き込み権限、DB 接続、インストールのマーカー、およびソースコードの衛生チェックの一部（下記参照）。**fail** の項目があると 0 以外で終了するため、CI／インストール前のゲートとして使えます。**warn** の項目では 0 以外で終了しません。 |
+| `gp247:doctor` | `--json` | 環境を確認します: PHP ≥ 8.3、必須拡張モジュール、書き込み権限、DB 接続、インストールのマーカー、セキュリティ設定（インストール済みのサイト）、およびソースコードの衛生チェックの一部（下記参照）。**fail** の項目があると 0 以外で終了するため、CI／インストール前のゲートとして使えます。**warn** の項目では 0 以外で終了しません。 |
 | `gp247:info` | `--json` | 状態を表示します: インストール済みパッケージ（core/front/shop/mcp）のバージョン、インストールのマーカー、プラグイン／テンプレートの数、マーケットプレイス API のエンドポイント。読み取り専用です。 |
 
 ### `gp247:doctor` が確認する項目
 
-> ℹ️ `gp247:doctor` は `APP_DEBUG`、HTTPS、Cookie を確認しません。これらを自分で確認する方法は、[セキュリティ](../security/security-introduction_ja.md) ドキュメントの [本番環境の安全な設定](../security/security-production-config_ja.md) を参照してください。
+> ℹ️ サイトがインストール済みでデータベースに接続できるとき、`gp247:doctor` はセキュリティ設定も確認します — 
+> **システムアラート** ページが Administrator に表示するのと同じ項目です。これらの項目は **PASS** か **WARN** のみ（ダッシュボードで
+> 重大とされる場合も同じ）なので、コマンドが 0 以外で終了することはありません。このコマンドは設定を読むだけで、ネットワーク経由で
+> サイトを開きません。`http://` が `https://` に転送されるか、`.env` をダウンロードできないかは、[セキュリティ](../security/security-introduction_ja.md)
+> ドキュメントの [本番環境の安全な設定](../security/security-production-config_ja.md) に沿って自分で確認してください。
 
 結果の各行は、次の 3 つの状態のいずれかになります: **PASS**（問題なし）、**WARN**（整理すべきだがブロックしない）、**FAIL**
 （修正が必要 — コマンドは 0 以外で終了し、CI やインストールをブロックできます）。
@@ -673,8 +677,15 @@ php artisan gp247:ext-publish --type=plugin --all
 | `file_bom` | **UTF-8 の BOM** で始まる `.php` / `.blade.php` ファイル |
 | `extension_assets` | `public/GP247/...` に静的ファイルが不足している**インストール済み**のプラグイン／テンプレート（CSS/JS/画像が 404 になる）。**WARN**。修正用の `gp247:ext-publish` コマンドを併記 |
 | `extension_data_pending` | GP247 が記録したバージョンより新しいファイルを持つ（`git pull`／上書きコピーした直後の）、データ更新がまだ実行されていない**インストール済み**のプラグイン／テンプレート。**WARN**。一覧と `gp247:ext-update --local --all` コマンドを併記 |
+| `app_debug` | デバッグが有効（`APP_DEBUG`）。**WARN** |
+| `https` | `APP_URL` が `https://` で始まらない、または `SESSION_SECURE_COOKIE` が無効。`APP_ENV=production` のとき **WARN**、ほかの環境では注記付きの PASS |
+| `default_admin_password` | 有効な `admin` アカウントが初期パスワードのまま。**WARN** |
+| `password_policy` | 管理者パスワードの最小文字数が 12 未満。**WARN** |
+| `mfa_enabled` | 二要素認証プラグイン **MFA** が未インストールまたは無効。**WARN** |
+| `api_exposure` | REST API（存在すれば MCP も）が有効 — 参考情報、**PASS** |
+| `support_line` | 利用中のバージョン系列のセキュリティサポート残りが 6 か月未満、または終了済み。**WARN** |
 
-> ℹ️ **対応バージョン:** 2026-09-23 の更新（`file_bom` 項目）、2026-09-27 の更新（`extension_assets` 項目）、2026-09-29 の更新（`extension_data_pending` 項目）
+> ℹ️ **対応バージョン:** 2026-09-23 の更新（`file_bom` 項目）、2026-09-27 の更新（`extension_assets` 項目）、2026-09-29 の更新（`extension_data_pending` 項目）、gp247/core 3.10.0（`app_debug`、`https`、`default_admin_password`、`password_policy`、`mfa_enabled`、`api_exposure`、`support_line` 項目）
 
 **`file_bom` を確認する理由。** BOM（Byte Order Mark）は、Windows の多くのエディターが「UTF-8」で保存するときに
 ファイルの先頭に自動で付ける**目に見えない 3 バイト**（`EF BB BF`）です。この 3 バイトは `<?php ?>` タグの**外側**に
@@ -882,6 +893,7 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` にセキュリティ設定の 7 項目（`app_debug`、`https`、`default_admin_password`、`password_policy`、`mfa_enabled`、`api_exposure`、`support_line`）を追加。ダッシュボードのシステムアラート ブロックと共通で、PASS／WARN のみのため終了コードは変わりません。 |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | S-Cart に組み込まれた MCP サーバー（McpServer プラグインの後継）の `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` を追加。`gp247:install` と `gp247:update` が MCP の手順を実行し、`gp247:info` に `gp247/mcp` のバージョンを表示します。 |
 | 2026-09-29 |  | `gp247:ext-update` に `--local` / `--dry-run` を追加: `git pull`／Composer／手動コピーでファイルが置き換えられた拡張機能のデータ更新を実行します（GP247 がインストール済みのバージョンを記録）。`gp247:update` がプラグインとテンプレートに対してこの手順を実行します。`gp247:doctor` に `extension_data_pending` 項目を追加。 |
 | 2026-09-23 |  | `gp247:doctor` に `file_bom` 項目を追加: UTF-8 の BOM で始まる `.php`/`.blade.php` ファイルを報告します（WARN レベルで、コマンドは 0 以外で終了しません） |

@@ -63,7 +63,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:install` | core | Cài trọn bộ (core [+front] [+shop] [+mcp] [+sample]) |
 | `gp247:update` | core | Làm mới sau `composer update` (core [+shop] [+mcp], an toàn cho site chạy) |
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
-| `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) |
+| `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) và cấu hình bảo mật |
 | `gp247:info` | core | Xem trạng thái: version, marker cài đặt, số lượng extension |
 
 ---
@@ -653,12 +653,15 @@ php artisan gp247:ext-publish --type=plugin --all
 | `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` khi có `--sample`). `mcp-install` không phá dữ liệu. Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), rồi `mcp-update` (khi có gói `gp247/mcp`), tùy chọn `language-update` (`--overwrite-lang`), bước **áp dụng cập nhật dữ liệu extension** (`ext-update --local --all` cho plugin rồi template — lỗi chỉ cảnh báo, không chặn các bước sau; có từ bản cập nhật ngày 2026-09-29), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
-| `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.3, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |
+| `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.3, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, cấu hình bảo mật (khi site đã cài) và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |
 | `gp247:info` | `--json` | Xem trạng thái: version package đã cài (core/front/shop/mcp), marker cài đặt, số lượng plugin/template, endpoint API marketplace. Chỉ đọc. |
 
 ### `gp247:doctor` kiểm những gì
 
-> ℹ️ `gp247:doctor` không kiểm `APP_DEBUG`, HTTPS hay cookie. Cách tự kiểm các mục đó: [Cấu hình production an toàn](../security/security-production-config_vi.md) trong bộ tài liệu [Bảo mật](../security/security-introduction_vi.md).
+> ℹ️ Khi site đã cài và kết nối được database, `gp247:doctor` kiểm cả cấu hình bảo mật — cùng các mục mà trang **Cảnh báo hệ thống**
+> hiện cho Administrator. Các mục này chỉ là **PASS** hoặc **WARN** (kể cả khi dashboard xếp mức nghiêm trọng), nên
+> không làm lệnh thoát khác 0. Lệnh đọc cấu hình, không mở site qua mạng: việc `http://` tự chuyển sang `https://` hay `.env` không tải
+> được vẫn tự kiểm theo [Cấu hình production an toàn](../security/security-production-config_vi.md) trong bộ tài liệu [Bảo mật](../security/security-introduction_vi.md).
 
 Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WARN** (nên dọn, nhưng không chặn), **FAIL**
 (phải sửa — lệnh thoát khác 0, đủ để chặn CI hoặc chặn cài đặt).
@@ -674,8 +677,15 @@ Mỗi dòng kết quả có một trong ba trạng thái: **PASS** (ổn), **WAR
 | `file_bom` | File `.php` / `.blade.php` nào bắt đầu bằng **BOM UTF-8** |
 | `extension_assets` | Plugin/template **đã cài** nào thiếu file tĩnh trong `public/GP247/...` (CSS/JS/ảnh sẽ báo 404). **WARN**, kèm lệnh vá `gp247:ext-publish` |
 | `extension_data_pending` | Plugin/template **đã cài** có file mới hơn phiên bản GP247 ghi nhớ (vừa `git pull`/chép đè) nên chưa chạy phần cập nhật dữ liệu. **WARN**, kèm danh sách và lệnh `gp247:ext-update --local --all` |
+| `app_debug` | Debug đang bật (`APP_DEBUG`). **WARN** |
+| `https` | `APP_URL` không bắt đầu bằng `https://` hoặc `SESSION_SECURE_COOKIE` chưa bật. **WARN** khi `APP_ENV=production`, môi trường khác là PASS kèm ghi chú |
+| `default_admin_password` | Tài khoản `admin` đang hoạt động vẫn dùng mật khẩu mặc định. **WARN** |
+| `password_policy` | Độ dài mật khẩu tối thiểu của quản trị viên dưới 12 ký tự. **WARN** |
+| `mfa_enabled` | Plugin xác thực hai lớp **MFA** chưa cài hoặc chưa bật. **WARN** |
+| `api_exposure` | REST API (và MCP nếu có) đang bật — chỉ để biết, **PASS** |
+| `support_line` | Dòng phiên bản đang dùng còn dưới 6 tháng hỗ trợ bảo mật, hoặc đã hết. **WARN** |
 
-> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`); bản cập nhật ngày 2026-09-27 (mục `extension_assets`); bản cập nhật ngày 2026-09-29 (mục `extension_data_pending`)
+> ℹ️ **Có từ:** bản cập nhật ngày 2026-09-23 (mục `file_bom`); bản cập nhật ngày 2026-09-27 (mục `extension_assets`); bản cập nhật ngày 2026-09-29 (mục `extension_data_pending`); gp247/core 3.10.0 (các mục `app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`)
 
 **Vì sao `file_bom` đáng kiểm.** BOM (Byte Order Mark) là **3 byte vô hình** (`EF BB BF`) mà nhiều trình soạn
 thảo trên Windows tự thêm vào đầu file khi lưu "UTF-8". Ba byte đó nằm **ngoài** cặp thẻ `<?php ?>`, nên PHP
@@ -883,6 +893,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` thêm 7 mục cấu hình bảo mật (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), dùng chung với block Cảnh báo hệ thống trên dashboard; các mục này chỉ PASS/WARN nên mã thoát không đổi. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Thêm `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` của MCP server có sẵn trong S-Cart (thay plugin McpServer); `gp247:install` và `gp247:update` tự gọi bước MCP; `gp247:info` hiện phiên bản `gp247/mcp`. |
 | 2026-09-29 |  | `gp247:ext-update` thêm `--local` / `--dry-run`: chạy phần cập nhật dữ liệu cho extension đã được thay file bằng `git pull`/Composer/chép tay (GP247 ghi nhớ phiên bản đã cài); `gp247:update` chạy bước này cho plugin và template; `gp247:doctor` thêm mục `extension_data_pending`. |
 | 2026-09-23 |  | `gp247:doctor` thêm mục `file_bom`: báo file `.php`/`.blade.php` bắt đầu bằng BOM UTF-8 (mức WARN, không làm lệnh thoát khác 0) |

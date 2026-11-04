@@ -56,7 +56,7 @@ The table below splits the work by area. The "You must do" column lists the task
 
 | Area | ✅ GP247 does | 👤 You must do | Read more |
 | --- | --- | --- | --- |
-| **Server configuration** | Turns debug off automatically when `APP_ENV=production`; the admin header shows the environment label and "DEBUG ON" | Turn on HTTPS; point the document root to `public/`; `APP_DEBUG=false`; install without dev packages | [Production config](./security-production-config.md) |
+| **Server configuration** | Turns debug off automatically when `APP_ENV=production`; the admin header shows the environment label and "DEBUG ON"; the **System alerts** block on the dashboard and the page of the same name report unsafe settings to the Administrator (since gp247/core 3.10.0) | Turn on HTTPS; point the document root to `public/`; `APP_DEBUG=false`; install without dev packages | [Production config](./security-production-config.md) |
 | **Keys & backup** | Encrypts secrets (SMTP password, secrets, licenses); keeps a copy of plugins/templates before updating them | Back up `.env`, the database and uploaded images; test a restore; never regenerate the key on a running site | [Encryption keys & backup](./security-keys-and-backup.md) |
 | **Accounts & permissions** | Limits failed sign-in attempts; hashes passwords; permissions per screen; activity log | Replace the default account; set a password policy; grant the least permission needed; lock the accounts of people who leave | [Accounts & permissions](./security-accounts-and-access.md) |
 | **Updates** | Releases security patches; safe update command; checks downloaded plugin packages | Follow the release page; update GP247, PHP and the web server; install plugins only from trusted sources | [Updates & incidents](./security-updates-and-incidents.md) |
@@ -129,11 +129,15 @@ so the bug is not exposed before a patch exists. Patches are announced on the [r
 
 **Q4: How do I know if the site has debug turned on?**
 
-→ Sign in to the admin: the header shows the environment label, plus a red "DEBUG ON" label when debug is on. How to turn it off: [Production config](./security-production-config.md).
+→ Sign in to the admin: the header shows the environment label, plus a red "DEBUG ON" label when debug is on; for the Administrator, the **System alerts** block on the dashboard reports it too. How to turn it off: [Production config](./security-production-config.md).
 
-**Q5: Is there a command that checks the site for me?**
+**Q5: Is there a way to check the site for me?**
 
-→ Yes: `php artisan gp247:doctor` checks the environment, write permissions, the encryption key, and whether secrets can still be decrypted. It does **not** check HTTPS or `APP_DEBUG`; check those two yourself with [Production config](./security-production-config.md).
+→ Yes, two ways, with the same list of checks (since gp247/core 3.10.0):
+- **No command line needed**: sign in with an Administrator account — the **System alerts** block at the top of the dashboard shows the most severe level and how many items need work; click **View all alerts** (or the menu **System config** → **Security** → **System alerts**) to see each item — debug, HTTPS, the default `admin` account, the password policy, MFA, the encryption key, the support end date of your version. Each item links to a guide for fixing it.
+- **With a command line**: `php artisan gp247:doctor` checks the items above, plus the PHP environment and folder write permissions.
+
+Both read the site's configuration and do not open the site from the outside: whether `.env` can be downloaded through a browser is still yours to check with [Production config](./security-production-config.md#self-check-in-5-minutes).
 
 **Q6: I use shared hosting and have no command-line access. What then?**
 
