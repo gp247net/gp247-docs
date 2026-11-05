@@ -125,7 +125,7 @@ The **Log access** screen (Security menu) records administrators' actions: who, 
 
 - **On by default** (`GP247_ADMIN_LOG=1`). Passwords, secrets, tokens and licenses are masked before logging; to mask more fields, list them in `GP247_ADMIN_LOG_EXCEPT`.
 - **Actions through the admin API and through AI agents (MCP)** are logged too.
-- **Failed sign-ins are not logged**, and **old records are not deleted automatically** — review regularly (every week or every month) and clean up when the list gets too long.
+- Failed sign-ins are recorded on their own **Login failures** screen (see **Built-in protections**); the activity log **does not delete old records automatically** — review regularly (every week or every month) and clean up when the list gets too long.
 - **Warning signs**: actions at odd hours, unknown IPs, accounts that should have been disabled, changes on the **Users** / **Roles** screens or the payment config that no one owns up to.
 
 ## Customer accounts

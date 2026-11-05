@@ -104,7 +104,7 @@ flowchart TB
 3. **Change the password of every admin account** on the **Users** screen (changing a password signs out every session and REST API token of the account). Revoke every token on the **MCP Server** screen. Disable unknown accounts.
 4. **Change third-party secrets right at the provider**: database password, SMTP password, payment gateway API keys, OAuth client secret. Then enter the new values in GP247. Changing the encryption key alone does **not** make leaked secrets stop working.
 5. **If the `.env` file leaked**: set a new `APP_KEY` (everyone is signed out — which is what you want), create new secrets on the **Webhook** screen, and change `GP247_ENCRYPTION_KEY` following the [key change procedure](../system/data-encryption.md).
-6. **Investigate**: the **Log access** screen (unusual actions, unknown IPs), the **Users** and **Roles** screens (new accounts, new permissions), the **Extension** screen (unknown plugins), new files in `public/` and `app/GP247/`, the web server log.
+6. **Investigate**: the **Log access** screen (unusual actions, unknown IPs), the **Login failures** screen (addresses and usernames tried most; the `login_failures` item on **System alerts**), the **Users** and **Roles** screens (new accounts, new permissions), the **Extension** screen (unknown plugins), new files in `public/` and `app/GP247/`, the web server log.
 7. **Restore**: if there is unknown code, restore the code from a clean copy (Git or a backup from before the incident) and reinstall `vendor/` with Composer; update to the recommended version.
 8. **Reopen** (`php artisan up` or turn off maintenance), run `php artisan gp247:doctor`, and watch the log for a few days.
 

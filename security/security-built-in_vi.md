@@ -125,7 +125,8 @@ Lớp này giúp bạn biết ai đã làm gì, khi nào.
 
 | Cơ chế | GP247 làm gì | Giới hạn — bạn làm |
 | --- | --- | --- |
-| **Nhật ký thao tác quản trị** | Ghi mỗi lượt quản trị viên mở màn, lưu, thao tác Livewire, gọi API quản trị, gọi MCP (`GP247_ADMIN_LOG=1`). Che mật khẩu, secret, token, license trong dữ liệu ghi | **Không ghi lần đăng nhập sai**; không tự xoá bản ghi cũ — thỉnh thoảng xem và dọn ở màn **Nhật ký truy cập** |
+| **Nhật ký thao tác quản trị** | Ghi mỗi lượt quản trị viên mở màn, lưu, thao tác Livewire, gọi API quản trị, gọi MCP (`GP247_ADMIN_LOG=1`). Che mật khẩu, secret, token, license trong dữ liệu ghi | Lần đăng nhập sai nằm ở màn **Đăng nhập sai** (dòng dưới); nhật ký thao tác không tự xoá bản ghi cũ — thỉnh thoảng xem và dọn ở màn **Nhật ký truy cập** |
+| **Nhật ký đăng nhập sai** | Ghi mỗi lần đăng nhập sai và mỗi đợt bị chặn vì thử quá nhiều (web và API) vào màn **Đăng nhập sai**, chỉ quản trị viên cấp cao xem; không lưu mật khẩu; giữ 30 ngày (`GP247_LOGIN_FAILURE_KEEP_DAYS`), tự dọn. **Cảnh báo hệ thống** báo khi có dấu hiệu dò mật khẩu trong 24 giờ | Mặc định chỉ ghi tài khoản quản trị — bật thêm khách hàng / người bán trên màn này nếu cần; xem màn khi có cảnh báo |
 | **File log ứng dụng** | Ghi lỗi vào `storage/logs/gp247.log`, một file mỗi ngày, giữ 14 ngày (`LOG_DAILY_DAYS`) | Đặt `LOG_LEVEL` phù hợp khi chạy thật; không để thư mục `storage/` truy cập được từ web |
 
 ## Cấu hình chạy thật & Docker
@@ -179,7 +180,7 @@ Các việc dưới đây **không có** trong GP247 — nếu bạn không làm
 
 **Câu 2: Nhật ký có ghi ai đăng nhập sai không?**
 
-→ Không. Nhật ký ghi thao tác của người đã đăng nhập. Lần đăng nhập sai chỉ bị giới hạn số lần, không được ghi lại.
+→ Có, ở một màn riêng. **Nhật ký thao tác** ghi việc của người đã đăng nhập; **lần đăng nhập sai** được ghi ở màn **Đăng nhập sai** (menu Bảo mật, chỉ quản trị viên cấp cao xem): tên đăng nhập đã gõ, IP, trình duyệt, kênh (web/API), thời điểm — **không bao giờ lưu mật khẩu**. Mặc định chỉ ghi tài khoản quản trị; có thể bật thêm khách hàng hoặc người bán trên chính màn đó. Lưu 30 ngày (`GP247_LOGIN_FAILURE_KEEP_DAYS`), tự dọn, không cần cron. Trang **Cảnh báo hệ thống** báo khi có dấu hiệu dò mật khẩu trong 24 giờ.
 
 **Câu 3: Người lấy được bản sao cơ sở dữ liệu đọc được mật khẩu SMTP không?**
 

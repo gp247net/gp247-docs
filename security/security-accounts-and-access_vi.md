@@ -123,7 +123,7 @@ Màn **Nhật ký truy cập** (menu Bảo mật) ghi lại thao tác của qu�
 
 - **Bật mặc định** (`GP247_ADMIN_LOG=1`). Mật khẩu, secret, token, license được che trước khi ghi; muốn che thêm trường nào, khai trong `GP247_ADMIN_LOG_EXCEPT`.
 - **Thao tác qua API quản trị và qua AI agent (MCP)** cũng được ghi.
-- **Không ghi lần đăng nhập sai**, và **không tự xoá bản ghi cũ** — xem định kỳ (mỗi tuần hoặc mỗi tháng) và dọn bớt khi danh sách quá dài.
+- Lần đăng nhập sai được ghi ở màn riêng **Đăng nhập sai** (xem trang **Cơ chế bảo vệ có sẵn**); nhật ký thao tác **không tự xoá bản ghi cũ** — xem định kỳ (mỗi tuần hoặc mỗi tháng) và dọn bớt khi danh sách quá dài.
 - **Dấu hiệu cần chú ý**: thao tác vào giờ lạ, IP lạ, tài khoản lẽ ra đã tắt, thay đổi ở màn **Người dùng** / **Nhóm quyền** / cấu hình thanh toán mà không ai nhận.
 
 ## Tài khoản khách hàng

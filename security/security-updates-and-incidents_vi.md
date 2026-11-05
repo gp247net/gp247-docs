@@ -104,7 +104,7 @@ flowchart TB
 3. **Đổi mật khẩu mọi tài khoản quản trị** ở màn **Người dùng** (đổi mật khẩu đăng xuất mọi phiên và token REST API của tài khoản). Thu hồi mọi token ở màn **MCP Server**. Tắt tài khoản lạ.
 4. **Đổi bí mật bên thứ ba ngay tại nhà cung cấp**: mật khẩu cơ sở dữ liệu, mật khẩu SMTP, khoá API cổng thanh toán, OAuth client secret. Rồi nhập giá trị mới vào GP247. Chỉ đổi khoá mã hoá **không** làm bí mật đã lộ hết hiệu lực.
 5. **Nếu file `.env` bị lộ**: đặt `APP_KEY` mới (mọi người bị đăng xuất — đúng điều cần), tạo lại secret ở màn **Webhook**, đổi `GP247_ENCRYPTION_KEY` theo [quy trình đổi khoá](../system/data-encryption_vi.md).
-6. **Điều tra**: màn **Nhật ký truy cập** (thao tác lạ, IP lạ), màn **Người dùng** và **Nhóm quyền** (tài khoản, quyền mới), màn **Phần mở rộng** (plugin lạ), file mới trong `public/` và `app/GP247/`, log của web server.
+6. **Điều tra**: màn **Nhật ký truy cập** (thao tác lạ, IP lạ), màn **Đăng nhập sai** (IP và tên đăng nhập bị thử nhiều; mục `login_failures` trên **Cảnh báo hệ thống**), màn **Người dùng** và **Nhóm quyền** (tài khoản, quyền mới), màn **Phần mở rộng** (plugin lạ), file mới trong `public/` và `app/GP247/`, log của web server.
 7. **Khôi phục**: có mã lạ thì khôi phục mã từ bản sạch (Git hoặc bản sao lưu trước sự cố), cài lại `vendor/` bằng Composer; cập nhật lên phiên bản nên dùng.
 8. **Mở lại** (`php artisan up` hoặc tắt bảo trì), chạy `php artisan gp247:doctor`, theo dõi nhật ký vài ngày.
 

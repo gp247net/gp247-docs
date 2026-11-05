@@ -125,7 +125,8 @@ This layer helps you know who did what, and when.
 
 | Mechanism | What GP247 does | Limits — what you do |
 | --- | --- | --- |
-| **Admin activity log** | Records each time an administrator opens a screen, saves, runs a Livewire action, calls the admin API or calls MCP (`GP247_ADMIN_LOG=1`). Passwords, secrets, tokens and licenses are masked in the logged data | **Failed sign-ins are not logged**; old records are not deleted automatically — review and clean up from time to time on the **Log access** screen |
+| **Admin activity log** | Records each time an administrator opens a screen, saves, runs a Livewire action, calls the admin API or calls MCP (`GP247_ADMIN_LOG=1`). Passwords, secrets, tokens and licenses are masked in the logged data | Failed sign-ins are on the **Login failures** screen (next row); old activity records are not deleted automatically — review and clean up from time to time on the **Log access** screen |
+| **Failed sign-in log** | Records every failed sign-in and every block for too many tries (web and API) on the **Login failures** screen, administrators only; the password is never stored; kept 30 days (`GP247_LOGIN_FAILURE_KEEP_DAYS`), removed automatically. **System alerts** warns on signs of password guessing in the last 24 hours | Only admin accounts by default — add customers / sellers on that screen if needed; open it when an alert shows |
 | **Application log file** | Writes errors to `storage/logs/gp247.log`, one file per day, kept for 14 days (`LOG_DAILY_DAYS`) | Set a suitable `LOG_LEVEL` for production; do not let the `storage/` folder be reachable from the web |
 
 ## Production config & Docker
@@ -179,7 +180,7 @@ The tasks below are **not** in GP247 — if you do not do them, no one will:
 
 **Q2: Does the log record who failed to sign in?**
 
-→ No. The log records actions by people who have signed in. Failed sign-ins are only limited in number, not recorded.
+→ Yes, on its own screen. The **activity log** records what signed-in people do; **failed sign-ins** are recorded on the **Login failures** screen (Security menu, administrators only): the username typed, IP, browser, channel (web/API) and time — **the password is never stored**. Only admin accounts are recorded by default; customers or sellers can be added on that same screen. Rows are kept 30 days (`GP247_LOGIN_FAILURE_KEEP_DAYS`) and removed automatically, no cron needed. The **System alerts** page warns when there are signs of password guessing in the last 24 hours.
 
 **Q3: Can someone with a copy of the database read the SMTP password?**
 
