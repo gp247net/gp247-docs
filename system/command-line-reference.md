@@ -120,8 +120,15 @@ Unattended install (automation):
 php artisan gp247:core-install --force=1
 ```
 
-On success the terminal prints the GP247 logo with a `Welcome to GP247` line, the admin path, and
-the default account `admin/admin`.
+Choose the admin account password yourself (12–64 characters; otherwise the command stops before installing):
+
+```bash
+php artisan gp247:core-install --force=1 --admin-password="your-password"
+```
+
+On success the terminal prints the GP247 logo with a `Welcome to GP247` line, the admin path, the username
+and — when `--admin-password` is not passed — **a random password shown only once**: copy it right away, then change it in the admin.
+`gp247:install` takes the same `--admin-password` option.
 
 **Use cases & combinations:**
 - It is the **first step** after downloading the source, creating the `.env` file, and configuring
@@ -669,7 +676,7 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | Command | Key options | What it does |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` when `--sample`). `mcp-install` is non-destructive. A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. |
+| `gp247:install` | `--sample`, `--force=1`, `--admin-password=` | The common install entry point for the whole ecosystem. **Auto-detects** which packages are present and installs them in order: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` when `--sample`). `mcp-install` is non-destructive. A failing step aborts with a non-zero exit. **Requires confirmation by default** (see the safety note below); pass `--force=1` for unattended installs. Available immediately after `composer require` — even before the platform is installed. Package selection is fully automatic — there are **no** `--with-front` / `--with-shop` flags. Without `--admin-password` the admin account gets a random password printed once at the end. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Safe post-`composer update` refresh for a live site: `core-update`, then `shop-update` (only if the shop is installed), then `mcp-update` (when the `gp247/mcp` package is present), optional `language-update` (`--overwrite-lang`), the **extension data update** step (`ext-update --local --all` for plugins then templates — a failure only warns and never blocks the following steps; available since the 2026-09-29 update), an **opt-in** asset/view re-publish (`--publish=`, off by default), then `cache-rebuild`. Never runs a destructive (re)install. See the re-publish note below for the impact of each `--publish` token. |
 | `gp247:cache-rebuild` | — | Rebuild route/config caches (after enabling/updating extensions). |
 | `gp247:doctor` | `--json` | Check the environment: PHP ≥ 8.3, required extensions, write permissions, DB connectivity, install marker, security configuration (on an installed site), plus a few source-hygiene checks (see below). Exits non-zero if any check **fails** — usable as a CI/pre-install gate; a **warn** never changes the exit code. |

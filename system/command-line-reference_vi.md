@@ -119,8 +119,15 @@ Cài không cần hỏi (tự động hoá):
 php artisan gp247:core-install --force=1
 ```
 
-Nếu thành công, terminal in ra logo GP247 kèm dòng `Welcome to GP247`, đường dẫn trang admin và
-tài khoản mặc định `admin/admin`.
+Tự đặt mật khẩu tài khoản quản trị (12–64 ký tự; sai thì lệnh dừng trước khi cài):
+
+```bash
+php artisan gp247:core-install --force=1 --admin-password="mat-khau-cua-ban"
+```
+
+Nếu thành công, terminal in ra logo GP247 kèm dòng `Welcome to GP247`, đường dẫn trang admin, tên đăng nhập
+và — khi không truyền `--admin-password` — **mật khẩu ngẫu nhiên in một lần duy nhất**: chép lại ngay rồi đổi trong trang admin.
+`gp247:install` nhận cùng tuỳ chọn `--admin-password`.
 
 **Trường hợp sử dụng & kết hợp:**
 - Là **bước đầu tiên** sau khi tải mã nguồn, tạo file `.env` và cấu hình kết nối database.
@@ -650,7 +657,7 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | Lệnh | Option chính | Chức năng |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` khi có `--sample`). `mcp-install` không phá dữ liệu. Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. |
+| `gp247:install` | `--sample`, `--force=1`, `--admin-password=` | Lệnh cài đặt chung của toàn hệ. **Tự phát hiện** các package đang có và cài theo thứ tự: `core-install` → (`front-install`) → (`shop-install`) → (`mcp-install`) → (`shop-sample` khi có `--sample`). `mcp-install` không phá dữ liệu. Một bước lỗi thì dừng với mã thoát khác 0. **Mặc định yêu cầu xác nhận** (xem lưu ý an toàn bên dưới); dùng `--force=1` để cài không tương tác. Khả dụng ngay sau `composer require` — kể cả khi nền tảng chưa được cài. Việc chọn package hoàn toàn tự động — **không có** flag `--with-front` / `--with-shop`. Không truyền `--admin-password` thì tài khoản quản trị nhận mật khẩu ngẫu nhiên in một lần cuối lệnh. |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | Làm mới an toàn sau `composer update` cho site đang chạy: `core-update`, rồi `shop-update` (chỉ khi shop đã cài), rồi `mcp-update` (khi có gói `gp247/mcp`), tùy chọn `language-update` (`--overwrite-lang`), bước **áp dụng cập nhật dữ liệu extension** (`ext-update --local --all` cho plugin rồi template — lỗi chỉ cảnh báo, không chặn các bước sau; có từ bản cập nhật ngày 2026-09-29), một bước **tùy chọn** re-publish asset/view (`--publish=`, mặc định tắt), rồi `cache-rebuild`. Không bao giờ chạy bước (re)install phá dữ liệu. Xem lưu ý re-publish bên dưới để biết mức độ ảnh hưởng của từng token `--publish`. |
 | `gp247:cache-rebuild` | — | Rebuild cache route/config (sau khi bật/cập nhật extension). |
 | `gp247:doctor` | `--json` | Kiểm tra môi trường: PHP ≥ 8.3, extension bắt buộc, quyền ghi, kết nối DB, marker cài đặt, cấu hình bảo mật (khi site đã cài) và một số kiểm tra vệ sinh mã nguồn (xem bên dưới). Thoát khác 0 nếu có mục **fail** — dùng làm cổng CI/tiền-cài-đặt; mục **warn** không làm thoát khác 0. |

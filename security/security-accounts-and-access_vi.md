@@ -20,15 +20,29 @@ flowchart LR
     D --> E["Nghỉ việc:<br/>khoá + thu hồi token"]
 ```
 
-- **Việc số 1 sau khi cài**: thay tài khoản quản trị mặc định `admin` (mật khẩu mặc định ai cũng biết).
-- **Chính sách mật khẩu mặc định rất lỏng** (tối thiểu 6 ký tự) — nâng lên ở màn **Chính sách mật khẩu**.
+- **Việc số 1 sau khi cài**: đăng nhập bằng tài khoản quản trị bạn vừa đặt (hoặc mật khẩu lệnh cài in ra) và cất mật khẩu vào nơi an toàn.
+  Site cài từ bản cũ có thể vẫn còn tài khoản `admin` / `admin` — thay ngay.
+- **Một màn cho mọi loại tài khoản**: **Chính sách mật khẩu** đặt độ mạnh mật khẩu cho quản trị viên, khách hàng (khi có cửa hàng) và
+  loại tài khoản do plugin thêm vào. Site cài từ bản cũ có thể còn mức 6 ký tự — nên nâng.
 - **Xác thực hai lớp** có qua plugin miễn phí **MFA** — nên bật cho mọi tài khoản quản trị.
 - **Ít người giữ Administrator nhất có thể**; người chỉ cần xem thì dùng vai trò **View.all**.
 
-## Thay tài khoản quản trị mặc định
+## Tài khoản quản trị đầu tiên
 
-Mỗi bản cài mới có sẵn tài khoản `admin`, mật khẩu `admin`, email `admin@gp247.local`. Ai cũng biết thông tin này, nên đây là thứ
-máy dò tự động thử đầu tiên. Làm ngay sau khi cài:
+Bản cài mới không còn mật khẩu mặc định ai cũng biết:
+
+| Cách cài | Tài khoản quản trị đầu tiên |
+| --- | --- |
+| Trình cài đặt trên web | Tên đăng nhập và mật khẩu bạn nhập ở bước 3 (mật khẩu 12–64 ký tự) |
+| `php artisan gp247:install` | Mật khẩu ngẫu nhiên **in ra một lần** cuối lệnh — chép lại ngay. Muốn tự đặt: thêm `--admin-password="..."` |
+
+Sau khi cài, đăng nhập bằng tài khoản đó, đổi email sang email thật (**Thiết lập tài khoản** ở góc trên) và cất mật khẩu vào trình quản
+lý mật khẩu.
+
+### Site cài từ bản cũ: thay tài khoản `admin` / `admin`
+
+Site cài trước đây có thể vẫn còn tài khoản `admin`, mật khẩu `admin`, email `admin@gp247.local`. Ai cũng biết thông tin này, nên đây là
+thứ máy dò tự động thử đầu tiên; trang **Cảnh báo hệ thống** báo khi còn tài khoản như vậy. Làm ngay:
 
 1. Đăng nhập trang quản trị bằng tài khoản mặc định.
 2. Vào **Người dùng**, tạo một tài khoản mới cho chính bạn: tên đăng nhập riêng, email thật, mật khẩu mạnh, vai trò **Administrator**.
@@ -43,13 +57,19 @@ Nếu thành công, đăng nhập bằng `admin` / `admin` bị từ chối.
 
 ## Đặt chính sách mật khẩu
 
-Màn **Chính sách mật khẩu** (menu Bảo mật) quyết định mật khẩu quản trị phải mạnh tới đâu. Giá trị mặc định chỉ đủ cho máy thử.
+Màn **Chính sách mật khẩu** (menu Bảo mật) quyết định mật khẩu phải mạnh tới đâu. Màn có **một khối cho mỗi loại tài khoản**:
+**Quản trị viên** luôn có, **Khách hàng** khi site có cửa hàng, và khối của plugin có tài khoản riêng (ví dụ tài khoản người bán).
+Chính sách áp cho **mọi chỗ** loại tài khoản đó đặt mật khẩu: tạo tài khoản, đăng ký, đổi mật khẩu, quên mật khẩu, ứng dụng qua API.
 
-| Mục | Mặc định | Nên đặt |
-| --- | --- | --- |
-| Độ dài tối thiểu | 6 | 12 trở lên |
-| Độ dài tối đa | 16 | 64 — để dùng được cụm mật khẩu dài |
-| Bắt buộc chữ cái / chữ hoa và thường / số / ký tự đặc biệt | Tắt | Bật ít nhất chữ hoa-thường và số; hoặc chỉ cần mật khẩu dài |
+| Mục | Quản trị viên (cài mới) | Khách hàng (cài mới) | Nên đặt |
+| --- | --- | --- | --- |
+| Độ dài tối thiểu | 12 | 8 | Quản trị viên 12 trở lên; khách hàng 8 trở lên |
+| Độ dài tối đa | 64 | 64 | 64 — để dùng được cụm mật khẩu dài |
+| Bắt buộc chữ cái / chữ hoa và thường / số / ký tự đặc biệt | Tắt | Tắt | Ưu tiên mật khẩu dài; bật chữ và số nếu quy định bạn phải tuân yêu cầu |
+
+- **Site cài từ bản cũ** giữ nguyên giá trị đang chạy (thường 6–16 ký tự cho cả quản trị viên lẫn khách hàng) để không đổi trải nghiệm
+  của ai — hãy tự nâng theo bảng trên. Trang **Cảnh báo hệ thống** nhắc khi độ dài tối thiểu của quản trị viên dưới 12.
+- Màn từ chối lưu khi tối thiểu dưới 6, tối đa trên 72, hoặc tối thiểu lớn hơn tối đa.
 
 - **Mật khẩu dài dễ nhớ tốt hơn mật khẩu ngắn khó nhớ**: một cụm 4–5 từ ngẫu nhiên mạnh hơn `P@ss123`.
 - **Mỗi người một tài khoản** — không dùng chung tài khoản quản trị, nếu không nhật ký không cho biết ai đã làm gì.

@@ -119,8 +119,15 @@ php artisan gp247:core-install
 php artisan gp247:core-install --force=1
 ```
 
-成功すると、ターミナルに GP247 のロゴと `Welcome to GP247` の行、管理画面のパス、
-既定のアカウント `admin/admin` が表示されます。
+管理者アカウントのパスワードを自分で決める場合（12〜64 文字。条件を満たさないとインストール前に停止します）:
+
+```bash
+php artisan gp247:core-install --force=1 --admin-password="your-password"
+```
+
+成功すると、ターミナルに GP247 のロゴと `Welcome to GP247` の行、管理画面のパス、ユーザー名、
+そして `--admin-password` を渡さなかった場合は**一度だけ表示されるランダムなパスワード**が表示されます。すぐに控え、管理画面で変更してください。
+`gp247:install` も同じ `--admin-password` オプションを受け付けます。
 
 **使用場面と組み合わせ:**
 - ソースコードをダウンロードし、`.env` ファイルを作成してデータベース接続を設定した後の**最初の手順**です。
@@ -649,7 +656,7 @@ php artisan gp247:ext-publish --type=plugin --all
 
 | コマンド | 主なオプション | 機能 |
 | --- | --- | --- |
-| `gp247:install` | `--sample`, `--force=1` | システム全体の共通インストールコマンドです。存在するパッケージを**自動で検出**し、次の順にインストールします: `core-install` → （`front-install`） → （`shop-install`） → （`mcp-install`、データを壊さない） → （`--sample` がある場合は `shop-sample`）。1 つの手順でエラーが出ると、0 以外の終了コードで停止します。**既定では確認が必須**です（下の安全上の注意を参照）。非対話でインストールするには `--force=1` を使います。`composer require` の直後から利用できます（プラットフォームがまだインストールされていない場合も含む）。パッケージの選択は完全に自動です — `--with-front` / `--with-shop` フラグは**ありません**。 |
+| `gp247:install` | `--sample`, `--force=1`, `--admin-password=` | システム全体の共通インストールコマンドです。存在するパッケージを**自動で検出**し、次の順にインストールします: `core-install` → （`front-install`） → （`shop-install`） → （`mcp-install`、データを壊さない） → （`--sample` がある場合は `shop-sample`）。1 つの手順でエラーが出ると、0 以外の終了コードで停止します。**既定では確認が必須**です（下の安全上の注意を参照）。非対話でインストールするには `--force=1` を使います。`composer require` の直後から利用できます（プラットフォームがまだインストールされていない場合も含む）。パッケージの選択は完全に自動です — `--with-front` / `--with-shop` フラグは**ありません**。 `--admin-password` を渡さない場合、管理者アカウントには最後に一度だけ表示されるランダムなパスワードが設定されます。 |
 | `gp247:update` | `--overwrite-lang`, `--publish=<tokens>` | 稼働中のサイト向けの、`composer update` 後の安全な更新です: `core-update`、次に `shop-update`（shop がインストール済みの場合のみ）、次に `mcp-update`（`gp247/mcp` パッケージがある場合）、オプションで `language-update`（`--overwrite-lang`）、**拡張機能のデータ更新を適用する**手順（プラグイン、次にテンプレートに対して `ext-update --local --all`。エラーは警告だけで、後続の手順は止めません。2026-09-29 の更新から）、**任意の** アセット／view の再 publish 手順（`--publish=`、既定はオフ）、最後に `cache-rebuild`。データを壊す（再）インストールの手順は一切実行しません。各 `--publish` トークンの影響の大きさは、下の再 publish に関する注意を参照してください。 |
 | `gp247:cache-rebuild` | — | route/config のキャッシュを再構築します（拡張機能の有効化／更新の後）。 |
 | `gp247:doctor` | `--json` | 環境を確認します: PHP ≥ 8.3、必須拡張モジュール、書き込み権限、DB 接続、インストールのマーカー、セキュリティ設定（インストール済みのサイト）、およびソースコードの衛生チェックの一部（下記参照）。**fail** の項目があると 0 以外で終了するため、CI／インストール前のゲートとして使えます。**warn** の項目では 0 以外で終了しません。 |

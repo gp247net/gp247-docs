@@ -20,15 +20,29 @@ flowchart LR
     D --> E["Leaving:<br/>lock + revoke tokens"]
 ```
 
-- **Task number 1 after install**: replace the default admin account `admin` (everyone knows the default password).
-- **The default password policy is very loose** (minimum 6 characters) — raise it on the **Password policy** screen.
+- **Task number 1 after install**: sign in with the admin account you just set (or the password the install command printed) and keep the password somewhere safe.
+  A site installed from an older version may still have the account `admin` / `admin` — replace it right away.
+- **One screen for every kind of account**: **Password policy** sets password strength for administrators, customers (when the site has a shop)
+  and account types a plugin adds. A site installed from an older version may still be at 6 characters — raise it.
 - **Two-factor authentication** comes with the free **MFA** plugin — turn it on for every admin account.
 - **As few people as possible should hold Administrator**; people who only need to view should get the **View.all** role.
 
-## Replace the default admin account
+## The first admin account
 
-Every new install comes with the account `admin`, password `admin`, email `admin@gp247.local`. Everyone knows this, so it is the first thing
-automated scanners try. Do this right after install:
+A new install no longer has a default password everyone knows:
+
+| How you install | First admin account |
+| --- | --- |
+| Web installer | The username and password you enter in step 3 (password 12–64 characters) |
+| `php artisan gp247:install` | A random password **printed once** at the end of the command — copy it right away. To choose it yourself: add `--admin-password="..."` |
+
+After installing, sign in with that account, change its email to a real one (**Setting account** at the top) and keep the password in a
+password manager.
+
+### Site installed from an older version: replace the `admin` / `admin` account
+
+A site installed earlier may still have the account `admin`, password `admin`, email `admin@gp247.local`. Everyone knows this, so it is the
+first thing automated scanners try; the **System alerts** page warns while such an account exists. Do this right away:
 
 1. Sign in to the admin with the default account.
 2. Go to **Users** and create a new account for yourself: your own username, a real email, a strong password, the **Administrator** role.
@@ -43,13 +57,21 @@ If it worked, signing in with `admin` / `admin` is refused.
 
 ## Set a password policy
 
-The **Password policy** screen (Security menu) decides how strong admin passwords must be. The default values are only good enough for a test machine.
+The **Password policy** screen (Security menu) decides how strong passwords must be. It has **one block per kind of account**:
+**Administrators** always, **Customers** when the site has a shop, and a block for each plugin with its own accounts (for example seller accounts).
+The policy applies **everywhere** that kind of account sets a password: creating the account, signing up, changing the password,
+forgotten password, apps through the API.
 
-| Item | Default | Recommended |
-| --- | --- | --- |
-| Minimum length | 6 | 12 or more |
-| Maximum length | 16 | 64 — so long passphrases can be used |
-| Require letters / upper and lower case / digits / special characters | Off | Turn on at least upper-lower case and digits; or just require long passwords |
+| Item | Administrators (new install) | Customers (new install) | Recommended |
+| --- | --- | --- | --- |
+| Minimum length | 12 | 8 | Administrators 12 or more; customers 8 or more |
+| Maximum length | 64 | 64 | 64 — so long passphrases can be used |
+| Require letters / upper and lower case / digits / special characters | Off | Off | Prefer long passwords; turn on letters and digits if a rule you must follow asks for it |
+
+- **A site installed from an older version** keeps the values it runs with (usually 6–16 characters for both administrators and customers) so
+  nobody's experience changes — raise them yourself following the table above. The **System alerts** page reminds you while the administrator
+  minimum is below 12.
+- The screen refuses to save a minimum below 6, a maximum above 72, or a minimum greater than the maximum.
 
 - **A long, easy-to-remember password beats a short, hard-to-remember one**: a phrase of 4–5 random words is stronger than `P@ss123`.
 - **One account per person** — do not share an admin account, or the log cannot tell you who did what.
