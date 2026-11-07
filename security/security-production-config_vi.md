@@ -32,6 +32,7 @@ flowchart LR
 - [Bảng biến môi trường cho production](#bảng-biến-môi-trường-cho-production) — giá trị đúng và hậu quả khi sai
 - [Vì sao không được bật debug trên site thật](#vì-sao-không-được-bật-debug-trên-site-thật)
 - [HTTPS và cookie](#https-và-cookie)
+- [Site chạy sau proxy hoặc CDN](#site-chạy-sau-proxy-hoặc-cdn) — `TRUSTED_PROXIES` theo cách chạy site
 - [Thư mục gốc của web và quyền thư mục](#thư-mục-gốc-của-web-và-quyền-thư-mục)
 - [Cài mã nguồn cho production](#cài-mã-nguồn-cho-production)
 - [Chạy bằng Docker](#chạy-bằng-docker)
@@ -52,6 +53,7 @@ Bảng này liệt kê các biến liên quan bảo mật, giá trị nên đặ
 | `SESSION_SECURE_COOKIE` | `true` (khi đã có HTTPS) | (không đặt) | Cookie đăng nhập có thể bị gửi qua kết nối không mã hoá |
 | `GP247_ADMIN_PREFIX` | Một đường dẫn riêng, vd `quan-tri-7k2` | `gp247_admin` | Đường dẫn mặc định bị máy quét tự động tìm ra trước |
 | `GP247_FINGERPRINT` | `false` nếu không muốn quảng bá nền tảng | `true` | Site trả header và thẻ meta cho biết dùng GP247 |
+| `TRUSTED_PROXIES` | Trống, hoặc dải IP của proxy phía trước | (trống) | `REMOTE_ADDR` hay `*` thì ai cũng giả được IP; thiếu khi có proxy thì mọi khách cùng một IP — xem [Site chạy sau proxy hoặc CDN](#site-chạy-sau-proxy-hoặc-cdn) |
 | `DB_PASSWORD` | Mật khẩu mạnh, riêng cho site này | `password` | Mật khẩu mẫu ai cũng biết |
 | `GP247_API_MODE` | `0` nếu không dùng REST API lẫn MCP | `1` | Không phải lỗi — nhưng tắt hẳn phần không dùng là bớt một cửa |
 
@@ -91,8 +93,23 @@ GP247 không tự bật HTTPS — phải bật ở hosting hoặc web server.
 
 Nếu thành công, mở site bằng `http://` sẽ tự chuyển sang `https://` và trình duyệt hiện biểu tượng ổ khoá.
 
-> ⚠️ **Lưu ý:** site chạy sau proxy hoặc CDN (Cloudflare, load balancer) phải khai `TRUSTED_PROXIES` đúng địa chỉ proxy, nếu không
-> GP247 thấy mọi khách cùng một IP và giới hạn đăng nhập theo IP mất tác dụng. Không đặt `*` khi không cần.
+## Site chạy sau proxy hoặc CDN
+
+GP247 chỉ nhận IP và giao thức (`https`) từ header chuyển tiếp khi request đến từ proxy bạn khai trong `TRUSTED_PROXIES`.
+Tên miền trong link luôn lấy từ header `Host` thật — GP247 không bao giờ dùng `X-Forwarded-Host`.
+
+| Cách chạy site | `TRUSTED_PROXIES` |
+| --- | --- |
+| Hosting / VPS, web server nhận khách trực tiếp | Để trống |
+| Sau Cloudflare / load balancer | Dải IP của Cloudflare / load balancer (mẫu sẵn trong `.env.example`) |
+| Docker, không có gì phía trước | Để trống |
+| Docker sau nginx / Caddy / Traefik trên cùng máy chủ | `172.16.0.0/12`, kèm `SC_DOCKER_APP_PORT=127.0.0.1:8000` |
+
+- **Không bao giờ** dùng `REMOTE_ADDR` hay `*`: khi web server nói chuyện với PHP qua FastCGI (gồm nginx trong bộ Docker), `REMOTE_ADDR`
+  chính là địa chỉ của khách, nên ai cũng giả được IP. Trang **Cảnh báo hệ thống** và `php artisan gp247:doctor` báo mục `trusted_proxies`
+  khi gặp các giá trị này.
+- Proxy phía trước phải **giữ header `Host`** (nginx: `proxy_set_header Host $host;`).
+- Khai thiếu khi có proxy: mọi khách hiện cùng một IP (giới hạn đăng nhập dùng chung một bộ đếm) và link sinh ra là `http://`.
 
 ## Thư mục gốc của web và quyền thư mục
 
@@ -122,7 +139,8 @@ Bộ Docker của S-Cart có sẵn vài lớp bảo vệ cho production:
 
 Phần bạn làm: đặt **HTTPS ở proxy phía trước** container (nginx trong bộ chỉ nghe cổng 80), đổi mọi mật khẩu mẫu, cập nhật image theo
 mục "Cập nhật bản vá bảo mật" của [DOCKER_vi.md](https://github.com/gp247net/s-cart/blob/master/DOCKER_vi.md). Không chạy
-`docker compose down -v` trên máy production — lệnh đó **xoá volume chứa cơ sở dữ liệu**.
+`docker compose down -v` trên máy production — lệnh đó **xoá volume chứa cơ sở dữ liệu**. Proxy HTTPS trên cùng máy chủ thì khai
+`TRUSTED_PROXIES` theo mục [Site chạy sau proxy hoặc CDN](#site-chạy-sau-proxy-hoặc-cdn).
 
 ## Tự kiểm trong 5 phút
 
@@ -187,8 +205,8 @@ Làm lần lượt; mỗi bước có kết quả đúng để đối chiếu.
 
 **Câu 8: Vì sao không đặt `TRUSTED_PROXIES=*` cho nhanh?**
 
-→ Khi đó ai cũng giả được địa chỉ IP qua header, làm giới hạn đăng nhập theo IP và nhật ký IP mất giá trị. Chỉ khai đúng địa chỉ proxy thật.
+→ Khi đó ai cũng giả được địa chỉ IP qua header, làm giới hạn đăng nhập theo IP và nhật ký IP mất giá trị. `REMOTE_ADDR` cũng vậy khi PHP chạy qua FastCGI. Chỉ khai dải IP của proxy thật.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>

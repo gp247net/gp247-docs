@@ -138,8 +138,10 @@ This layer reduces the damage when configuration is set wrong by mistake.
 | **Environment label** | The admin header shows the running environment and a red "DEBUG ON" label (`GP247_ENV_BADGE`) | If you see it, you must fix it |
 | **Docker production** | `docker-compose.prod.yml` pins `APP_ENV=production`, `APP_DEBUG=false` for every service; refuses to start while the sample passwords from `.env.example` remain; turns off unused PHP features; nginx blocks hidden files and internal folders | Turn on HTTPS at the proxy in front; update images regularly |
 | **System alerts** | A **System alerts** block at the top of the admin dashboard sums up, in one line, the most severe level and how many items need work; a shield icon in the header counts the critical items. The **System alerts** page (menu **System config** → **Security**, or click the shield / the button on the block) lists each item: debug turned on, the site not on HTTPS or the sign-in cookie not marked `Secure`, the `admin` account still on the default password, a minimum password length under 12 characters, no dedicated encryption key, secrets that cannot be decrypted, MFA not turned on, the API turned on, the version line close to or past the end of support, extensions whose data update has not run or whose static files are missing. Each item shows technical detail and links to a guide; once fixed, the alert clears by itself (or click **Check again** on the page). `gp247:doctor` reports the same items | Only the **Administrator** role sees the block, the page and the menu item. It checks only when someone opens the admin, and sends no email. It does not check the site from the outside for you (whether `.env` can be downloaded, whether `http://` redirects to `https://`) |
+| **IP and scheme behind a proxy** | Takes the IP / `https` from forwarded headers only when the request comes from a proxy in `TRUSTED_PROXIES`; never takes the domain from `X-Forwarded-Host`; the Docker stack trusts no proxy by default and its nginx does not pass a visitor's `X-Forwarded-Host`; the `trusted_proxies` item of System alerts warns when the setting trusts every visitor | List the IP ranges of the proxy in front; the proxy must keep the `Host` header — see [Production configuration](./security-production-config.md) |
+| **Links in e-mails** | Password-reset links (administrators, customers) and e-mail verification links always point at the configured domain (`APP_URL`, or the store's own domain), never at the domain of the request | `APP_URL` and store domains must be correct |
 
-> ℹ️ **Available since:** gp247/core 3.10.0 (the System alerts block and page, the security checks of `gp247:doctor`)
+> ℹ️ **Available since:** gp247/core 3.10.0 (the System alerts block and page, the security checks of `gp247:doctor`); gp247/core 3.10.3 + gp247/shop 3.8.1 (IP and scheme behind a proxy, links in e-mails, the `trusted_proxies` item)
 
 ## Install & update
 
@@ -205,4 +207,4 @@ The tasks below are **not** in GP247 — if you do not do them, no one will:
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

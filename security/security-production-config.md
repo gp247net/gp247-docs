@@ -32,6 +32,7 @@ flowchart LR
 - [Environment variables for production](#environment-variables-for-production) — correct values and what happens when they are wrong
 - [Why debug must never be on for a live site](#why-debug-must-never-be-on-for-a-live-site)
 - [HTTPS and cookies](#https-and-cookies)
+- [Site behind a proxy or CDN](#site-behind-a-proxy-or-cdn) — `TRUSTED_PROXIES` for each way of running the site
 - [Web root and folder permissions](#web-root-and-folder-permissions)
 - [Installing the code for production](#installing-the-code-for-production)
 - [Running with Docker](#running-with-docker)
@@ -52,6 +53,7 @@ This table lists the security-related variables, the value to set for a live sit
 | `SESSION_SECURE_COOKIE` | `true` (once HTTPS is on) | (not set) | The sign-in cookie may be sent over an unencrypted connection |
 | `GP247_ADMIN_PREFIX` | Your own path, e.g. `admin-7k2` | `gp247_admin` | Automated scanners find the default path first |
 | `GP247_FINGERPRINT` | `false` if you do not want to advertise the platform | `true` | The site returns a header and a meta tag saying it uses GP247 |
+| `TRUSTED_PROXIES` | Empty, or the IP ranges of the proxy in front | (empty) | `REMOTE_ADDR` or `*` lets anyone fake their IP; missing while a proxy is in front makes every visitor the same IP — see [Site behind a proxy or CDN](#site-behind-a-proxy-or-cdn) |
 | `DB_PASSWORD` | A strong password, unique to this site | `password` | A sample password everyone knows |
 | `GP247_API_MODE` | `0` if you use neither the REST API nor MCP | `1` | Not an error — but turning off unused parts closes one more door |
 
@@ -91,8 +93,23 @@ GP247 does not turn on HTTPS by itself — you must turn it on in your hosting o
 
 If it worked, opening the site with `http://` redirects to `https://` and the browser shows a padlock icon.
 
-> ⚠️ **Note:** a site behind a proxy or CDN (Cloudflare, load balancer) must set `TRUSTED_PROXIES` to the correct proxy address. Otherwise
-> GP247 sees every visitor as the same IP and the per-IP sign-in limit stops working. Do not set `*` unless you need to.
+## Site behind a proxy or CDN
+
+GP247 takes the IP and the scheme (`https`) from forwarded headers only when the request comes from a proxy listed in `TRUSTED_PROXIES`.
+The domain in links always comes from the real `Host` header — GP247 never uses `X-Forwarded-Host`.
+
+| How the site runs | `TRUSTED_PROXIES` |
+| --- | --- |
+| Hosting / VPS, the web server receives visitors directly | Leave empty |
+| Behind Cloudflare / a load balancer | Its IP ranges (presets in `.env.example`) |
+| Docker, nothing in front | Leave empty |
+| Docker behind nginx / Caddy / Traefik on the same server | `172.16.0.0/12`, plus `SC_DOCKER_APP_PORT=127.0.0.1:8000` |
+
+- **Never** use `REMOTE_ADDR` or `*`: when the web server talks to PHP over FastCGI (including the nginx of the Docker stack),
+  `REMOTE_ADDR` is the visitor's own address, so anyone can fake their IP. The **System alerts** page and `php artisan gp247:doctor`
+  report the `trusted_proxies` item for these values.
+- The proxy in front must **keep the `Host` header** (nginx: `proxy_set_header Host $host;`).
+- Missing while a proxy is in front: every visitor shows the same IP (the sign-in limit shares one counter) and links are generated as `http://`.
 
 ## Web root and folder permissions
 
@@ -122,7 +139,8 @@ The S-Cart Docker setup has a few built-in protections for production:
 
 Your part: put **HTTPS at the proxy in front of** the containers (the bundled nginx only listens on port 80), change every sample password, and update images following
 the "Security updates" section of [DOCKER.md](https://github.com/gp247net/s-cart/blob/master/DOCKER.md). Never run
-`docker compose down -v` on a production machine — that command **deletes the volume that holds the database**.
+`docker compose down -v` on a production machine — that command **deletes the volume that holds the database**. With an HTTPS proxy on the
+same server, set `TRUSTED_PROXIES` as in [Site behind a proxy or CDN](#site-behind-a-proxy-or-cdn).
 
 ## Self-check in 5 minutes
 
@@ -187,8 +205,8 @@ Do these in order; each step has a correct result to compare against.
 
 **Q8: Why not just set `TRUSTED_PROXIES=*` to save time?**
 
-→ Then anyone can fake their IP address through a header, which makes the per-IP sign-in limit and the IP log worthless. Only list the real proxy address.
+→ Then anyone can fake their IP address through a header, which makes the per-IP sign-in limit and the IP log worthless. `REMOTE_ADDR` does the same when PHP runs over FastCGI. Only list the IP ranges of the real proxy.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
