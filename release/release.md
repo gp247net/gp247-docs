@@ -4,23 +4,23 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.5.1** (2026-11-05).
+and how to update. Latest release: **S-Cart 3.5.2** (2026-11-07).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.10.2** | 3.10.2 |
+| gp247/core | **3.10.3** | 3.10.3 |
 | gp247/front | **3.2.3** | 3.5.2 |
-| gp247/shop | **3.6.0** | 3.7.0 |
+| gp247/shop | **3.8.1** | 3.8.1 |
 | gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
 - **At or above it** → your site has all the important improvements, even if you have not reinstalled S-Cart.
 - **Third-party libraries** → also run `composer audit`; see [Third-party libraries](#third-party-libraries).
 
-> ⚠️ **Note:** update **all the packages together**: `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
+> ⚠️ **Note:** update **all the packages together**: `gp247/shop` 3.8.1 needs `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
 
 ## Support lifecycle
@@ -62,6 +62,28 @@ Step-by-step details: [Updating GP247](https://gp247.net/en/docs/system/how-to-u
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.5.2 — 2026-11-07
+An improvement release worth installing now, especially for sites on Docker or behind a proxy / CDN.
+
+**✨ New**
+- **`TRUSTED_PROXIES` alert** — the System alerts page and `gp247:doctor` warn when the proxy setting trusts every visitor
+  ([docs](../security/security-production-config.md))
+
+**🔧 Improvements:** password-reset and e-mail verification links always point at the store's configured domain; the visitor
+IP and domain are only taken from a declared proxy; the Docker stack trusts no proxy by default *(Docker)*
+
+**📋 To do when updating**
+- Run `composer update`, then `php artisan gp247:update`
+- Check that `APP_URL` in `.env` is your real domain (`https://…`) — e-mail links use it
+- *(Behind a proxy / CDN)* the proxy must keep the `Host` header; GP247 no longer reads `X-Forwarded-Host` / `X-Forwarded-Prefix`
+- *(Docker behind nginx / Caddy / Traefik on the same server)* `composer update` does not change your site files: take the new
+  `docker-compose*.yml` and `docker/nginx/default.conf`, set `TRUSTED_PROXIES=172.16.0.0/12` and
+  `SC_DOCKER_APP_PORT=127.0.0.1:8000` in `.env`, then run `docker compose up -d`
+- *(`TRUSTED_PROXIES` contains `REMOTE_ADDR` or `*`)* replace it with your real proxy's IP ranges, or leave it empty
+- *(Sites using the CheckIP plugin)* update CheckIP to 2.1.7 or later
+
+<sub>Includes core 3.10.3 · front 3.5.2 · shop 3.8.1 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.2)</sub>
 
 ### S-Cart 3.5.1 — 2026-11-05
 **The admin now flags unsafe settings; the web installer is simpler.**
@@ -156,34 +178,10 @@ server follows the stable nginx channel and unused PHP features are turned off *
 
 <sub>Includes core 3.5.0 · front 3.3.0 · shop 3.3.1 · also covers 3.3.0 (2026-10-28) · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.3.1)</sub>
 
-### S-Cart 3.2 — 2026-10-23
-**Japanese, standard shipping with shipments, and a storefront theme that updates with the package.**
-
-**✨ New**
-- **Standard shipping** — carriers, shipments, wards; track deliveries right in the order
-  ([docs](../s-cart/shipping/shipping.md))
-- **Japanese and the Japanese yen (JPY)** ready on a fresh install — sell to the Japanese market
-  ([docs](../system/language-system.md))
-- **The GP247Front theme runs straight from the package** — `composer update` brings the new look, publish only the files you
-  want to change ([docs](../extension/create-template.md))
-- **Payment instructions at checkout** — customers know how to pay by bank transfer
-  ([docs](../s-cart/payment/payment.md))
-- **Wishlist and compare** right on the product page
-- **For developers:** plugins can add storefront blocks and extension points without owning a template; a "Check before use"
-  box tells what a plugin still needs configured
-
-**🔧 Improvements:** wishlist/compare buttons on product cards were not visible; "too many redirects" when removing from the
-wishlist; page links stacked vertically
-
-**📋 To do when updating**
-- Sites that published the whole theme can run `php artisan gp247:template-prune GP247Front --dry-run` to hand unchanged
-  files back to the package
-
-<sub>Includes core 3.2.0 · front 3.2.0 · shop 3.2.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.2)</sub>
-
 ### Older releases
 | Release | Date | Summary |
 | --- | --- | --- |
+| [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Japanese, standard shipping with shipments, storefront theme that updates with the package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Payment requests outside the cart; stored passwords and payment keys encrypted |
 | [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Old `sc:*` commands removed, use the `gp247:*` commands — [command list](../system/command-line-reference.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Start of the 3.x line: a payment ledger per order, discounts taken before tax — [v3.0 notes](../system/release-notes-3.0.md) |
@@ -233,4 +231,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-05 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

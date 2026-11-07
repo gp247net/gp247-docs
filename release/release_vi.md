@@ -4,23 +4,23 @@
 
 ## Giới thiệu
 Trang này dành cho **chủ site và người vận hành** S-Cart (dòng 3.x): cho biết mỗi bản phát hành có gì mới, nên dùng phiên
-bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.5.1** (2026-11-05).
+bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.5.2** (2026-11-07).
 
 ## Phiên bản nên dùng
 Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từng dòng với cột **Tối thiểu khuyến nghị**:
 
 | Package | Tối thiểu khuyến nghị | Mới nhất |
 | --- | --- | --- |
-| gp247/core | **3.10.2** | 3.10.2 |
+| gp247/core | **3.10.3** | 3.10.3 |
 | gp247/front | **3.2.3** | 3.5.2 |
-| gp247/shop | **3.6.0** | 3.7.0 |
+| gp247/shop | **3.8.1** | 3.8.1 |
 | gp247/mcp | **2.0.1** | 2.0.1 |
 
 - **Thấp hơn** cột "Tối thiểu khuyến nghị" → nên [cập nhật](#cập-nhật-thế-nào).
 - **Đã đạt** → site đã có đủ các cải tiến quan trọng, kể cả khi bạn chưa cài lại S-Cart.
 - **Thư viện bên thứ ba** → chạy thêm `composer audit` để kiểm, xem [Thư viện bên thứ ba](#thư-viện-bên-thứ-ba).
 
-> ⚠️ **Lưu ý:** cập nhật **cả bộ package cùng lúc**: `gp247/mcp` 2.0.1 cần `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 cần `gp247/core` ≥ 3.7,
+> ⚠️ **Lưu ý:** cập nhật **cả bộ package cùng lúc**: `gp247/shop` 3.8.1 cần `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 cần `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 cần `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 cần `gp247/core` ≥ 3.2.3. Dòng nào còn được hỗ trợ: xem [Vòng đời hỗ trợ](#vòng-đời-hỗ-trợ).
 
 ## Vòng đời hỗ trợ
@@ -62,6 +62,28 @@ Chi tiết từng bước: [Hướng dẫn cập nhật GP247](https://gp247.net
 
 ## Các bản phát hành
 Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z*** chỉ sửa lỗi.
+
+### S-Cart 3.5.2 — 2026-11-07
+Bản cải tiến nên cập nhật ngay, nhất là site chạy Docker hoặc đứng sau proxy / CDN.
+
+**✨ Mới**
+- **Cảnh báo `TRUSTED_PROXIES`** — trang Cảnh báo hệ thống và `gp247:doctor` nhắc khi cấu hình proxy tin mọi người truy cập
+  ([tài liệu](../security/security-production-config_vi.md))
+
+**🔧 Cải thiện:** link đặt lại mật khẩu và xác minh email luôn trỏ về tên miền đã cấu hình của cửa hàng; IP và tên miền chỉ
+lấy từ proxy đã khai báo; bộ Docker mặc định không tin proxy nào *(chạy bằng Docker)*
+
+**📋 Cần làm khi cập nhật**
+- Chạy `composer update` rồi `php artisan gp247:update`
+- Kiểm `APP_URL` trong `.env` đúng tên miền thật (`https://…`) — link trong email lấy theo giá trị này
+- *(Site sau proxy / CDN)* proxy phải giữ header `Host`; GP247 không còn đọc `X-Forwarded-Host` / `X-Forwarded-Prefix`
+- *(Chạy bằng Docker sau nginx / Caddy / Traefik trên cùng máy chủ)* `composer update` không sửa file của site: lấy
+  `docker-compose*.yml` và `docker/nginx/default.conf` mới, đặt `TRUSTED_PROXIES=172.16.0.0/12` và
+  `SC_DOCKER_APP_PORT=127.0.0.1:8000` trong `.env`, rồi chạy `docker compose up -d`
+- *(`TRUSTED_PROXIES` đang có `REMOTE_ADDR` hoặc `*`)* thay bằng dải IP của proxy thật hoặc để trống
+- *(Site dùng plugin CheckIP)* cập nhật CheckIP ≥ 2.1.7
+
+<sub>Gồm core 3.10.3 · front 3.5.2 · shop 3.8.1 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.2)</sub>
 
 ### S-Cart 3.5.1 — 2026-11-05
 **Trang quản trị tự báo cấu hình chưa an toàn; cài đặt qua web gọn hơn.**
@@ -156,34 +178,10 @@ nginx ổn định, tắt tính năng PHP không dùng *(chạy bằng Docker)*
 
 <sub>Gồm core 3.5.0 · front 3.3.0 · shop 3.3.1 · gộp cả bản 3.3.0 (2026-10-28) · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.3.1)</sub>
 
-### S-Cart 3.2 — 2026-10-23
-**Thêm tiếng Nhật, vận chuyển chuẩn có vận đơn, giao diện tự cập nhật theo package.**
-
-**✨ Mới**
-- **Vận chuyển chuẩn** — nhà vận chuyển, vận đơn, phường/xã; theo dõi giao hàng ngay trong đơn
-  ([tài liệu](../s-cart/shipping/shipping_vi.md))
-- **Tiếng Nhật và đồng Yên (JPY)** có sẵn khi cài mới — bán hàng cho thị trường Nhật
-  ([tài liệu](../system/language-system_vi.md))
-- **Giao diện GP247Front chạy thẳng từ package** — `composer update` là nhận giao diện mới, chỉ publish file muốn sửa
-  ([tài liệu](../extension/create-template_vi.md))
-- **Hướng dẫn thanh toán ở trang thanh toán** — khách biết cần chuyển khoản thế nào
-  ([tài liệu](../s-cart/payment/payment_vi.md))
-- **Yêu thích và so sánh** ngay trên trang sản phẩm
-- **Cho lập trình viên:** plugin thêm được khối và điểm cắm vào storefront mà không cần sở hữu template; ô "Kiểm tra trước khi
-  dùng" báo plugin còn thiếu cấu hình gì
-
-**🔧 Cải thiện:** nút yêu thích/so sánh trên thẻ sản phẩm không hiện; lỗi "too many redirects" khi bỏ yêu thích; phân trang
-bị xếp dọc
-
-**📋 Cần làm khi cập nhật**
-- Site đã publish cả cây giao diện có thể chạy `php artisan gp247:template-prune GP247Front --dry-run` để trả file chưa sửa
-  về package
-
-<sub>Gồm core 3.2.0 · front 3.2.0 · shop 3.2.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.2)</sub>
-
 ### Các bản cũ hơn
 | Bản | Ngày | Tóm tắt |
 | --- | --- | --- |
+| [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Thêm tiếng Nhật, vận chuyển chuẩn có vận đơn, giao diện tự cập nhật theo package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Yêu cầu thanh toán ngoài giỏ hàng; mã hoá mật khẩu, khoá thanh toán đã lưu |
 | [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Gỡ lệnh `sc:*` cũ, dùng lệnh `gp247:*` — [danh sách lệnh](../system/command-line-reference_vi.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Mở đầu dòng 3.x: sổ thanh toán từng đơn, giảm giá trừ trước thuế — [ghi chú v3.0](../system/release-notes-3.0_vi.md) |
@@ -233,4 +231,4 @@ trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-05 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
