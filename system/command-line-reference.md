@@ -65,6 +65,15 @@ and you can copy-paste and run them right away.
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
 | `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) and security configuration |
 | `gp247:info` | core | Show status: versions, install marker, extension counts |
+| `gp247:backup-run` | core | Make an encrypted backup and check it (`--kind`, `--group`, `--exclude-logs`, `--scheduled`) |
+| `gp247:backup-list` | core | List backups |
+| `gp247:backup-verify` | core | Check a backup's integrity again |
+| `gp247:backup-pin` | core | Pin / unpin a backup |
+| `gp247:backup-delete` | core | Delete a backup (type its id again to confirm) |
+| `gp247:backup-restore` | core | Restore data / files from a backup (preview, undo, post-incident mode) |
+| `gp247:backup-import` | core | Bring a `.gp247bak` file into the list after checking it |
+| `gp247:backup-export-sql` | core | Export a backup's data as an unencrypted `.sql` file |
+| `gp247:backup-offsite` | core | External destination: test, list, copy out, bring back |
 
 ---
 
@@ -799,6 +808,12 @@ php artisan gp247:info --json
 
 ---
 
+## Backup & restore — `gp247:backup-*`
+
+The `gp247:backup-*` commands do everything the **Backup & restore** screen does, on a VPS or in a script. Commands that need the backup password ask for it while running (or read one line of standard input with `--secret-stdin`), never as an argument. Full usage: [Backup & restore](../backup/backup-and-restore.md#command-line-for-people-with-cli-access), [Restore by situation](../backup/restore-guide.md#restore-from-the-command-line), [External destination](../backup/backup-offsite.md).
+
+---
+
 ## Frequently paired `vendor:publish` commands
 
 These are standard Laravel commands (not GP247-specific), but they commonly accompany installation
@@ -922,6 +937,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-07 | core (release with backup & restore) | Added the `gp247:backup-*` commands (create, list, check, pin, delete, restore, import, `.sql` export, external destination) — see the Backup & restore section. |
 | 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` adds 7 security configuration checks (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), shared with the System alerts block on the dashboard; they are only PASS/WARN, so the exit code does not change. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Added `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` for the MCP server built into S-Cart (replaces the McpServer plugin); `gp247:install` and `gp247:update` run the MCP step; `gp247:info` shows the `gp247/mcp` version. |
 | 2026-09-29 |  | `gp247:ext-update` gained `--local` / `--dry-run`: runs the data update of extensions whose files were replaced with `git pull`/Composer/a manual copy (GP247 now records the installed version); `gp247:update` runs this step for plugins and templates; `gp247:doctor` gained the `extension_data_pending` check. |
@@ -933,4 +949,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

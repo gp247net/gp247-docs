@@ -65,6 +65,15 @@ GP247 サイトの開発者と管理者向けのドキュメントです。読�
 | `gp247:cache-rebuild` | core | route/config のキャッシュを再構築 |
 | `gp247:doctor` | core | 環境を確認（PHP／拡張モジュール／書き込み権限／DB）とセキュリティ設定 |
 | `gp247:info` | core | 状態を表示: バージョン、インストールのマーカー、拡張機能の数 |
+| `gp247:backup-run` | core | 暗号化したバックアップを作成し検証（`--kind`、`--group`、`--exclude-logs`、`--scheduled`） |
+| `gp247:backup-list` | core | バックアップの一覧 |
+| `gp247:backup-verify` | core | バックアップの完全性を再検証 |
+| `gp247:backup-pin` | core | バックアップの固定 / 解除 |
+| `gp247:backup-delete` | core | バックアップを削除（確認のため ID を再入力） |
+| `gp247:backup-restore` | core | バックアップからデータ / ファイルを復元（プレビュー、元に戻す、インシデント後モード） |
+| `gp247:backup-import` | core | `.gp247bak` ファイルを検証して一覧に取り込む |
+| `gp247:backup-export-sql` | core | バックアップのデータを暗号化されていない `.sql` ファイルとして書き出す |
+| `gp247:backup-offsite` | core | 外部の保存先：接続テスト、一覧、コピー、取り戻し |
 
 ---
 
@@ -777,6 +786,12 @@ php artisan gp247:info --json
 
 ---
 
+## バックアップと復元 — `gp247:backup-*`
+
+`gp247:backup-*` コマンドで、**バックアップと復元**画面の操作をすべて VPS 上やスクリプトから行えます。バックアップ用パスワードが必要なコマンドは実行中に入力を求め（または `--secret-stdin` で標準入力の 1 行を読み取り）、引数では受け取りません。詳しい使い方：[バックアップと復元](../backup/backup-and-restore_ja.md#コマンドラインcli-を使える方向け)、[状況別の復元ガイド](../backup/restore-guide_ja.md#コマンドラインからの復元)、[外部の保存先](../backup/backup-offsite_ja.md)。
+
+---
+
 ## よく一緒に使う `vendor:publish` コマンド
 
 これらは Laravel の標準コマンドです（GP247 独自のコマンドではありません）が、インストール時や
@@ -900,6 +915,7 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-07 | core（バックアップと復元を含むリリース） | `gp247:backup-*` コマンド（作成、一覧、検証、固定、削除、復元、取り込み、`.sql` 書き出し、外部の保存先）を追加 — 「バックアップと復元」のセクションを参照。 |
 | 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` にセキュリティ設定の 7 項目（`app_debug`、`https`、`default_admin_password`、`password_policy`、`mfa_enabled`、`api_exposure`、`support_line`）を追加。ダッシュボードのシステムアラート ブロックと共通で、PASS／WARN のみのため終了コードは変わりません。 |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | S-Cart に組み込まれた MCP サーバー（McpServer プラグインの後継）の `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` を追加。`gp247:install` と `gp247:update` が MCP の手順を実行し、`gp247:info` に `gp247/mcp` のバージョンを表示します。 |
 | 2026-09-29 |  | `gp247:ext-update` に `--local` / `--dry-run` を追加: `git pull`／Composer／手動コピーでファイルが置き換えられた拡張機能のデータ更新を実行します（GP247 がインストール済みのバージョンを記録）。`gp247:update` がプラグインとテンプレートに対してこの手順を実行します。`gp247:doctor` に `extension_data_pending` 項目を追加。 |
@@ -911,4 +927,4 @@ view／テンプレートのトークンは、カスタマイズした view を�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-07 · ✍️ **作成者 (Author):** GP247</sub>

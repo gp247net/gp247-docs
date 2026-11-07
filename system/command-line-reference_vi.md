@@ -65,6 +65,15 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
 | `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) và cấu hình bảo mật |
 | `gp247:info` | core | Xem trạng thái: version, marker cài đặt, số lượng extension |
+| `gp247:backup-run` | core | Tạo bản sao lưu đã mã hoá rồi tự kiểm (`--kind`, `--group`, `--exclude-logs`, `--scheduled`) |
+| `gp247:backup-list` | core | Liệt kê bản sao lưu |
+| `gp247:backup-verify` | core | Kiểm lại toàn vẹn một bản |
+| `gp247:backup-pin` | core | Ghim / bỏ ghim một bản |
+| `gp247:backup-delete` | core | Xoá một bản (gõ lại mã để xác nhận) |
+| `gp247:backup-restore` | core | Phục hồi dữ liệu / file từ một bản (xem trước, hoàn tác, chế độ sau sự cố) |
+| `gp247:backup-import` | core | Đưa file `.gp247bak` vào danh sách sau khi kiểm |
+| `gp247:backup-export-sql` | core | Xuất dữ liệu của một bản thành file `.sql` không mã hoá |
+| `gp247:backup-offsite` | core | Đích ngoài: kiểm kết nối, liệt kê, chép ra, kéo về |
 
 ---
 
@@ -777,6 +786,12 @@ php artisan gp247:info --json
 
 ---
 
+## Sao lưu & phục hồi — `gp247:backup-*`
+
+Các lệnh `gp247:backup-*` làm được mọi việc của màn **Sao lưu & phục hồi** trên VPS hoặc trong script. Lệnh cần mật khẩu sao lưu thì hỏi khi chạy (hoặc đọc một dòng từ đầu vào chuẩn với `--secret-stdin`), không nhận qua tham số. Cách dùng đầy đủ: [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md#dòng-lệnh-cho-người-có-quyền-cli), [Phục hồi theo tình huống](../backup/restore-guide_vi.md#phục-hồi-bằng-dòng-lệnh), [Đích ngoài](../backup/backup-offsite_vi.md).
+
+---
+
 ## Lệnh `vendor:publish` hay dùng kèm
 
 Đây là các lệnh chuẩn của Laravel (không phải lệnh riêng của GP247) nhưng thường đi cùng khi cài
@@ -900,6 +915,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-07 | core (bản có sao lưu & phục hồi) | Thêm họ lệnh `gp247:backup-*` (tạo, liệt kê, kiểm, ghim, xoá, phục hồi, đưa vào, xuất `.sql`, đích ngoài) — xem mục Sao lưu & phục hồi. |
 | 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` thêm 7 mục cấu hình bảo mật (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), dùng chung với block Cảnh báo hệ thống trên dashboard; các mục này chỉ PASS/WARN nên mã thoát không đổi. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Thêm `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` của MCP server có sẵn trong S-Cart (thay plugin McpServer); `gp247:install` và `gp247:update` tự gọi bước MCP; `gp247:info` hiện phiên bản `gp247/mcp`. |
 | 2026-09-29 |  | `gp247:ext-update` thêm `--local` / `--dry-run`: chạy phần cập nhật dữ liệu cho extension đã được thay file bằng `git pull`/Composer/chép tay (GP247 ghi nhớ phiên bản đã cài); `gp247:update` chạy bước này cho plugin và template; `gp247:doctor` thêm mục `extension_data_pending`. |
@@ -911,4 +927,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>

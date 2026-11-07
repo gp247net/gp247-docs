@@ -5,7 +5,7 @@
 ## Introduction
 
 This page explains the two most important keys of a GP247 site (`APP_KEY` and `GP247_ENCRYPTION_KEY`): what each key protects, and
-what you lose if one is lost or changed by mistake. The page also lists **what you must back up**, what GP247 backs up by itself (very little), and how to
+what you lose if one is lost or changed by mistake. The page also lists **what you must back up**, which part GP247's built-in [Backup & restore](../backup/backup-and-restore.md) takes care of, and how to
 move servers or clone a site without breaking data. The page is for site owners and technical staff.
 
 > ⚠️ **The two hardest disasters to recover from:** (1) losing the encryption key — the saved SMTP password, payment gateway secrets and licenses all become
@@ -27,7 +27,7 @@ flowchart LR
 
 - **Both keys live in the `.env` file** — backing up `.env` means backing up the keys. Without a `.env` backup there is no spare key.
 - **Never run `php artisan key:generate` on a running site** — that command replaces `APP_KEY` with a new key.
-- **GP247 does not back up the database, `.env` or uploaded images** — that is your job.
+- **The [Backup & restore](../backup/backup-and-restore.md) feature backs up the database, uploaded images, extensions and `.env` (encrypted)** — once you set a backup password. Backups sit on the server itself, so still copy them to an [external destination](../backup/backup-offsite.md).
 - **A backup is only worth something once a restore has been tested successfully.**
 
 ## The two keys: what they protect, what happens if changed or lost
@@ -48,10 +48,10 @@ This section lists the data of a GP247 site, where it lives, and who backs it up
 
 | Data | Where it lives | Who backs it up |
 | --- | --- | --- |
-| **Database** (products, orders, customers, config, encrypted secrets) | MySQL / MariaDB; Docker: the MySQL volume | 👤 You |
-| **The `.env` file** (holds both keys and the database password) | The site's root folder | 👤 You — **store it separately**, see below |
-| **Uploaded images and files** | `storage/app/public/` | 👤 You |
-| **Plugins, templates, custom code** | `app/GP247/`, `resources/views/vendor/`, `public/GP247/` (if edited) | 👤 You (or Git if you manage your code with Git) |
+| **Database** (products, orders, customers, config, encrypted secrets) | MySQL / MariaDB; Docker: the MySQL volume | ✅ GP247 [Backup & restore](../backup/backup-and-restore.md), once you set it up |
+| **The `.env` file** (holds both keys and the database password) | The site's root folder | ✅ GP247 in a **Full backup** (encrypted) + 👤 you **keep a separate copy**, see below |
+| **Uploaded images and files** | `storage/app/public/` | ✅ GP247 in a **Full backup** |
+| **Plugins, templates, custom code** | `app/GP247/`, `resources/views/vendor/`, `public/GP247/` (if edited) | ✅ GP247 takes `app/GP247/` in a **Full backup**; the rest 👤 you (or Git) |
 | **The "installed" marker and the system's private files** | `storage/app/private/` | 👤 You |
 | **Old copies of plugins / templates before an update** | `storage/backups/extensions/` | ✅ GP247 keeps the last few copies, only when you update plugins/templates |
 | **GP247 source code** (`vendor/`) | Can be reinstalled with Composer | Not needed — as long as you have `composer.json` and `composer.lock` |
@@ -116,7 +116,7 @@ This section helps you move the site to a new server, or create a copy (staging)
 
 **Q2: Does GP247 back up the database by itself?**
 
-→ No. Use your hosting's backup feature, your database server's tools, or a volume backup schedule if you run Docker.
+→ Yes, once you set a backup password: by default the site backs itself up every 24 hours, see [Backup & restore](../backup/backup-and-restore.md). Your hosting's backups or Docker volume backups remain useful as an extra layer.
 
 **Q3: I only back up the database. Is that enough?**
 
@@ -144,4 +144,4 @@ This section helps you move the site to a new server, or create a copy (staging)
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

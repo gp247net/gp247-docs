@@ -34,6 +34,7 @@ GP247 **tự đăng ký sẵn** tác vụ `queue:work` vào bộ lịch. Nhờ �
 
 - **Chỉ tự đăng ký khi** hàng đợi là thật (`QUEUE_CONNECTION` khác `sync`) **và** flag bật.
 - **Flag tắt (opt-out):** đặt `GP247_SCHEDULE_QUEUE_WORK=false` trong `.env` nếu bạn **tự chạy worker riêng** bằng supervisor (thường trên VPS) — để tránh chạy dư.
+- **Sao lưu theo lịch** dùng chung dòng cron này khi bạn chọn chế độ **Vào giờ cố định** ở **Cài đặt sao lưu**; không có cron thì chọn **Khi quản trị viên mở trang quản trị** — xem [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md#sao-lưu-tự-động-theo-lịch).
 
 ## Cài đặt theo môi trường
 
@@ -117,4 +118,4 @@ GP247 **tự đăng ký sẵn** tác vụ `queue:work` vào bộ lịch. Nhờ �
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>

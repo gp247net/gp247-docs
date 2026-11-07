@@ -5,7 +5,7 @@
 ## Giới thiệu
 
 Trang này giải thích hai khoá quan trọng nhất của site GP247 (`APP_KEY` và `GP247_ENCRYPTION_KEY`): mỗi khoá bảo vệ gì, và
-mất hay đổi nhầm thì mất gì. Trang cũng liệt kê **những gì phải sao lưu**, những gì GP247 tự sao lưu (rất ít), và cách
+mất hay đổi nhầm thì mất gì. Trang cũng liệt kê **những gì phải sao lưu**, phần nào chức năng [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md) có sẵn của GP247 lo cho bạn, và cách
 chuyển máy chủ hay nhân bản site mà không hỏng dữ liệu. Trang dành cho chủ site và người phụ trách kỹ thuật.
 
 > ⚠️ **Hai thảm hoạ khó cứu nhất:** (1) mất khoá mã hoá — mật khẩu SMTP, secret cổng thanh toán, license đã lưu đều thành
@@ -27,7 +27,7 @@ flowchart LR
 
 - **Cả hai khoá nằm trong file `.env`** — sao lưu `.env` là sao lưu khoá. Không có bản sao lưu `.env` thì không có khoá dự phòng.
 - **Không bao giờ chạy `php artisan key:generate` trên site đang chạy** — lệnh đó thay `APP_KEY` bằng khoá mới.
-- **GP247 không sao lưu cơ sở dữ liệu, `.env` hay ảnh tải lên** — đó là việc của bạn.
+- **Chức năng [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md) sao lưu cơ sở dữ liệu, ảnh tải lên, extension và `.env` (đã mã hoá)** — sau khi bạn đặt mật khẩu sao lưu. Bản nằm trên chính máy chủ, nên vẫn cần chép ra [đích ngoài](../backup/backup-offsite_vi.md).
 - **Bản sao lưu chỉ có giá trị khi đã thử khôi phục thành công.**
 
 ## Hai khoá: bảo vệ gì, đổi hay mất thì sao
@@ -48,10 +48,10 @@ Mục này liệt kê dữ liệu của một site GP247, nơi nó nằm, và ai
 
 | Dữ liệu | Nằm ở đâu | Ai sao lưu |
 | --- | --- | --- |
-| **Cơ sở dữ liệu** (sản phẩm, đơn hàng, khách, cấu hình, bí mật đã mã hoá) | MySQL / MariaDB; Docker: volume MySQL | 👤 Bạn |
-| **File `.env`** (chứa cả hai khoá và mật khẩu cơ sở dữ liệu) | Thư mục gốc site | 👤 Bạn — **cất riêng**, xem bên dưới |
-| **Ảnh và file tải lên** | `storage/app/public/` | 👤 Bạn |
-| **Plugin, giao diện, mã tuỳ biến** | `app/GP247/`, `resources/views/vendor/`, `public/GP247/` (nếu có sửa) | 👤 Bạn (hoặc Git nếu bạn quản lý mã bằng Git) |
+| **Cơ sở dữ liệu** (sản phẩm, đơn hàng, khách, cấu hình, bí mật đã mã hoá) | MySQL / MariaDB; Docker: volume MySQL | ✅ GP247 [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md), sau khi bạn thiết lập |
+| **File `.env`** (chứa cả hai khoá và mật khẩu cơ sở dữ liệu) | Thư mục gốc site | ✅ GP247 trong bản **Toàn bộ** (mã hoá) + 👤 bạn **cất riêng một bản**, xem bên dưới |
+| **Ảnh và file tải lên** | `storage/app/public/` | ✅ GP247 trong bản **Toàn bộ** |
+| **Plugin, giao diện, mã tuỳ biến** | `app/GP247/`, `resources/views/vendor/`, `public/GP247/` (nếu có sửa) | ✅ GP247 lấy `app/GP247/` trong bản **Toàn bộ**; phần còn lại 👤 bạn (hoặc Git) |
 | **Dấu hiệu "đã cài đặt" và file riêng của hệ thống** | `storage/app/private/` | 👤 Bạn |
 | **Bản cũ của plugin / template trước khi cập nhật** | `storage/backups/extensions/` | ✅ GP247 tự giữ vài bản gần nhất, chỉ khi bạn cập nhật plugin/template |
 | **Mã nguồn GP247** (`vendor/`) | Cài lại được bằng Composer | Không cần — miễn có `composer.json` và `composer.lock` |
@@ -116,7 +116,7 @@ Mục này giúp bạn chuyển site sang máy chủ mới, hoặc tạo bản s
 
 **Câu 2: GP247 có tự sao lưu cơ sở dữ liệu không?**
 
-→ Không. Dùng tính năng sao lưu của hosting, công cụ của máy chủ cơ sở dữ liệu, hoặc lịch sao lưu volume nếu chạy Docker.
+→ Có, khi bạn đã thiết lập mật khẩu sao lưu: mặc định site tự sao lưu mỗi 24 giờ, xem [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md). Sao lưu của hosting hoặc của volume Docker vẫn hữu ích như một lớp thêm.
 
 **Câu 3: Tôi chỉ sao lưu cơ sở dữ liệu, có đủ không?**
 
@@ -144,4 +144,4 @@ Mục này giúp bạn chuyển site sang máy chủ mới, hoặc tạo bản s
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>

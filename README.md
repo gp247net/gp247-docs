@@ -32,6 +32,13 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | --- | --- | --- |
 | [GP247 system security](./security/security-introduction.md) | Entry page of the Security documentation: what GP247 handles and what you must do — production configuration, encryption keys & backups, accounts & permissions, updates & incident response, checklist and common mistakes | 2026-11-04 |
 
+### Backup & restore
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [Backup & restore](./backup/backup-and-restore.md) | Backup password and recovery key, three ways to make a backup, automatic schedule for any hosting (no cron needed), snapshot before a change, rights and command line | 2026-11-07 |
+| [External destination](./backup/backup-offsite.md) | Copy backups to S3-compatible storage or SFTP / NAS, write-only credentials + Object Lock, bring a backup back | 2026-11-07 |
+| [Restore by situation](./backup/restore-guide.md) | Choose the restore level, steps on the screen, 24-hour undo, file restore, after a security incident, backups from another site | 2026-11-07 |
+
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
 | --- | --- | --- |

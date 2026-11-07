@@ -34,6 +34,7 @@ GP247 **auto-registers** the `queue:work` task in its scheduler. Thanks to this,
 
 - **Only auto-registers when** the queue is real (`QUEUE_CONNECTION` other than `sync`) **and** the flag is on.
 - **Opt-out flag:** set `GP247_SCHEDULE_QUEUE_WORK=false` in `.env` if you **run your own worker** via supervisor (typically on a VPS) — to avoid a redundant process.
+- **Scheduled backups** use this same cron line when you choose **At a fixed hour** in **Backup settings**; without cron, choose **When an administrator opens the admin** — see [Backup & restore](../backup/backup-and-restore.md#scheduled-backups).
 
 ## Setup by environment
 
@@ -117,4 +118,4 @@ GP247 **auto-registers** the `queue:work` task in its scheduler. Thanks to this,
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

@@ -32,6 +32,13 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | --- | --- | --- |
 | [Bảo mật hệ thống GP247](./security/security-introduction_vi.md) | Trang chính của bộ tài liệu Bảo mật: GP247 tự lo gì, bạn phải làm gì — cấu hình production, khoá mã hoá & sao lưu, tài khoản & phân quyền, cập nhật & xử lý sự cố, checklist và những lỗi hay gặp | 2026-11-04 |
 
+### Sao lưu & phục hồi
+| Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
+| --- | --- | --- |
+| [Sao lưu & phục hồi](./backup/backup-and-restore_vi.md) | Thiết lập mật khẩu sao lưu và recovery key, ba cách tạo bản, lịch tự động theo hosting (không cần cron), bản chụp trước thay đổi, quyền và dòng lệnh | 2026-11-07 |
+| [Đích ngoài](./backup/backup-offsite_vi.md) | Chép bản sao lưu ra S3-compatible hoặc SFTP / NAS, credential chỉ-ghi + Object Lock, kéo bản về | 2026-11-07 |
+| [Phục hồi theo tình huống](./backup/restore-guide_vi.md) | Chọn mức phục hồi, các bước trên màn, hoàn tác 24 giờ, phục hồi file, sau sự cố bảo mật, dùng bản từ site khác | 2026-11-07 |
+
 ### Mở rộng (Plugin)
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
