@@ -93,7 +93,7 @@ Some topics already have their own pages. This doc set only summarizes them and 
 | Sign-in, tokens and limits of the REST API | [Sign-in, tokens and customer accounts through the API](../api/api-authentication.md) |
 | Tokens, permissions and logs of MCP (AI agents) | [MCP security & permissions](../mcp/mcp-security.md) |
 | Recommended versions, support lifecycle, PHP / web server patches | [S-Cart releases and security](../release/release.md) |
-| Updating GP247 on a running site | [How to update GP247](../system/update-gp247.md) |
+| Updating GP247 on a running site | [Updating GP247 and S-Cart](../install-upgrade/update.md) |
 | The `gp247:doctor` diagnostic command | [CLI command reference](../system/command-line-reference.md) |
 
 ## Reporting a security vulnerability

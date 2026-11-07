@@ -32,8 +32,8 @@ Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each lin
 - **New features** go into the newest line only.
 - **When a new line ships:** the previous line gets critical bug fixes for 6 more months and security fixes until the time in
   the table — never past the security support of the Laravel version that line runs on.
-- **Sites still on 2.x or earlier:** they keep running but receive no more fixes. Move to 3.x with `composer update` and
-  `php artisan gp247:update` — see the [v3.0 notes](../system/release-notes-3.0.md).
+- **Sites still on 2.x or earlier:** they keep running but receive no more fixes. 2.1 / 2.2 sites move to 3.x with
+  `composer require … -W` and `php artisan gp247:update` — see [Upgrading to the 3.x line](../install-upgrade/upgrade.md).
 
 ## Highlights
 - **System alerts** — the admin flags unsafe settings by itself *(S-Cart 3.5.1)*
@@ -58,7 +58,7 @@ php artisan gp247:update
 **Step 4 —** Check the versions again with `php artisan gp247:info`.
 
 A release may need extra steps — see its **📋 To do when updating** below.
-Step-by-step details: [Updating GP247](https://gp247.net/en/docs/system/how-to-update-gp247.html).
+Step-by-step details: [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.

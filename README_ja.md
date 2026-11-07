@@ -8,6 +8,13 @@
 
 ## ドキュメント一覧
 
+### インストールと更新
+| ドキュメント | 概要 | 最終更新 |
+| --- | --- | --- |
+| [GP247 と S-Cart のインストール](./install-upgrade/install_ja.md) | 新しいサイト：インストールセットの選択（S-Cart、GP247 CMS、core のみ、Laravel プロジェクトへの組み込み）；Composer、Git、Docker、コマンドラインのないホスティング；既存サイトへの front/shop 追加；インストール直後のセキュリティ対応 | 2026-11-07 |
+| [GP247 と S-Cart の更新](./install-upgrade/update_ja.md) | 3.x 系サイトを新しいリリースへ：パッケージセットごとの `composer update` + `gp247:update`；Docker、コマンドラインのないホスティング；`--overwrite-lang`、`--publish`；`git pull` で更新したプラグイン | 2026-11-07 |
+| [3.x 系へのアップグレード](./install-upgrade/upgrade_ja.md) | 2.1/2.2 のサイトを `composer require … -W` で 3.x へ；プラグインの確認、コピーでの試行、ロールバック；1.x/2.0 のサイト | 2026-11-07 |
+
 ### API
 | ドキュメント | 概要 | 最終更新 |
 | --- | --- | --- |
@@ -47,7 +54,6 @@
 | --- | --- | --- |
 | [リリースノート v3.0 — 注文の金額](./system/release-notes-3.0_ja.md) | v2.1／v3.0 からのアップグレード：注文ごとの支払台帳、入金日基準のキャッシュフロー、一段ずれた支払ステータスの修正、**割引は税の前に差し引き**；プラグイン開発者向けの注意点 | 2026-10-22 |
 | [CLI コマンド一覧](./system/command-line-reference_ja.md) | GP247 のすべての CLI コマンドのリファレンス：`--json` 出力と終了コードの約束、`gp247:ext-*` のライフサイクル、install／update／doctor／info；`core-update` はアップグレード用マイグレーションを実行（core 2.2） | 2026-11-04 |
-| [GP247 の更新ガイド](./system/update-gp247_ja.md) | 稼働中サイトの安全な更新、標準化コマンド `gp247:update` を優先；公開版 v2.1 からデータを自動変換；オプション `--overwrite-lang`、`--publish`；`git pull` 後に拡張機能のデータ更新を適用 | 2026-11-03 |
 | [多言語システム](./system/language-system_ja.md) | GP247 での言語／i18n の使い方 | 2026-10-22 |
 | [メール送信システム](./system/mail-system_ja.md) | メール送信の流れ（図付き）、SMTP 設定、送信チャネルの選択 | 2026-10-22 |
 | [機密データの暗号化](./system/data-encryption_ja.md) | 秘密情報（SMTP／OAuth／ライセンス）の保存時暗号化；専用キー `GP247_ENCRYPTION_KEY`；`gp247:encryption-key-rotate` による**安全なキー変更の手順**；他テーブルの列の暗号化 | 2026-11-04 |
@@ -87,4 +93,4 @@
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-07 · ✍️ **作成者 (Author):** GP247</sub>

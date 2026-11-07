@@ -8,6 +8,13 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ## Document list
 
+### Installing & updating
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [Installing GP247 and S-Cart](./install-upgrade/install.md) | New site: choose a package set (S-Cart, GP247 CMS, core only, inside a Laravel project); Composer, Git, Docker, hosting without a command line; adding front/shop to an existing site; security tasks right after installing | 2026-11-07 |
+| [Updating GP247 and S-Cart](./install-upgrade/update.md) | 3.x site to a newer release: `composer update` per package set + `gp247:update`; Docker, hosting without a command line; `--overwrite-lang`, `--publish`; plugins updated with `git pull` | 2026-11-07 |
+| [Upgrading to the 3.x line](./install-upgrade/upgrade.md) | 2.1/2.2 site to 3.x with `composer require … -W`; checking plugins, testing on a copy, rolling back; 1.x/2.0 sites | 2026-11-07 |
+
 ### API
 | Document | Summary | Last updated |
 | --- | --- | --- |
@@ -47,7 +54,6 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | --- | --- | --- |
 | [GP247 v3.0 release notes — order money](./system/release-notes-3.0.md) | Upgrading from v2.1/v3.0: payment ledger per order, cash flow counted by receipt date, payment status off-by-one fixed, **discount taken before tax**; note for plugin developers | 2026-10-22 |
 | [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for all GP247 CLI commands: `--json`/exit-code output contract, `gp247:ext-*` lifecycle, install/update/doctor/info; `core-update` runs the upgrade migrations (core 2.2) | 2026-11-04 |
-| [How to update GP247](./system/update-gp247.md) | Safe update for a live site, prioritizing the standardized `gp247:update`; automatic data conversion since the public v2.1; `--overwrite-lang`, `--publish` options; applies extension data updates after `git pull` | 2026-11-03 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-10-22 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-10-22 |
 | [Sensitive data encryption](./system/data-encryption.md) | At-rest secret encryption (SMTP/OAuth/license); dedicated `GP247_ENCRYPTION_KEY`; **safe key-change steps** with `gp247:encryption-key-rotate`; encrypting custom columns | 2026-11-04 |
@@ -87,4 +93,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>

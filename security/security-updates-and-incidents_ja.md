@@ -33,7 +33,7 @@ GP247 は S-Cart のリリースでパッチを公開します。確認するの
 
 ## GP247 を安全に更新する
 
-この項目は手順の要約です。各オプションの詳細は [GP247 アップデートガイド](../system/update-gp247_ja.md)にあります。
+この項目は手順の要約です。各オプションの詳細は [GP247 と S-Cart の更新](../install-upgrade/update_ja.md)にあります。
 
 1. データベース、`.env`、`storage/app/`、`app/GP247/` を**バックアップ**します（[暗号化キーとバックアップ](./security-keys-and-backup_ja.md)を参照）。
 2. サイトのルートフォルダで、コードを更新します：
@@ -131,7 +131,7 @@ flowchart TB
 
 **Q2: コマンドラインのない共有ホスティングでは、どうやって更新しますか？**
 
-→ 技術担当者またはホスティング事業者に、`composer update` と `php artisan gp247:update` の実行を依頼してください。[GP247 アップデートガイド](../system/update-gp247_ja.md)を参照してください。
+→ 技術担当者またはホスティング事業者に、`composer update` と `php artisan gp247:update` の実行を依頼してください。[GP247 と S-Cart の更新](../install-upgrade/update_ja.md)を参照してください。
 
 **Q3: 誤って `.env` ファイルを GitHub に入れてしまいました。コミットを削除すれば済みますか？**
 

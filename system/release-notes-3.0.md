@@ -18,10 +18,12 @@ for plugin developers.
 2. Open a **Terminal** ("Command Prompt" on Windows), go to your website's root folder and type:
 
    ```
-   composer update
+   composer require "gp247/core:^3.0" "gp247/front:^3.0" "gp247/shop:^3.0" -W
    ```
 
-   This only downloads the new source code; it does **not** touch your data yet.
+   This only downloads the new source code; it does **not** touch your data yet. Running `composer update` alone is **not**
+   enough: a 2.x site pins `^2.1`, so Composer will not move to 3.0 by itself. Full guide (checking plugins, testing on a copy,
+   rolling back): [Upgrading to the 3.x line](../install-upgrade/upgrade.md).
 
 3. Then type the following and press Enter:
 

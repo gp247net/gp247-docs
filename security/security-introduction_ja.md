@@ -93,7 +93,7 @@ flowchart TB
 | REST API のログイン、トークン、制限 | [API によるログイン、トークン、顧客アカウント](../api/api-authentication_ja.md) |
 | MCP（AI エージェント）のトークン、権限、ログ | [MCP のセキュリティと権限](../mcp/mcp-security_ja.md) |
 | 推奨バージョン、サポート期間、PHP／Web サーバーのパッチ | [S-Cart のリリースとセキュリティ](../release/release_ja.md) |
-| 稼働中のサイトでの GP247 の更新 | [GP247 アップデートガイド](../system/update-gp247_ja.md) |
+| 稼働中のサイトでの GP247 の更新 | [GP247 と S-Cart の更新](../install-upgrade/update_ja.md) |
 | 診断コマンド `gp247:doctor` | [GP247 システムのコマンドライン（CLI）一覧](../system/command-line-reference_ja.md) |
 
 ## 脆弱性の報告

@@ -159,7 +159,7 @@ folder replaces the **files** only; the new release's **data update** has not ru
 After copying, open the **Plugins** (or **Templates**) list again: the extension carries a yellow
 **"Data update pending: x → y"** badge in the Version column. Click its **Apply data update** button
 (database icon), or run `php artisan gp247:update`. Details:
-[How to update GP247 — section C](../system/update-gp247.md).
+[Updating GP247 and S-Cart — section C](../install-upgrade/update.md).
 
 ---
 

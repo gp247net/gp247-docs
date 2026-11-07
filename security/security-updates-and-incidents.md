@@ -33,7 +33,7 @@ GP247 ships patches in S-Cart releases. You only need to follow one place:
 
 ## Updating GP247 safely
 
-This section summarizes the process; details of each option are in [How to update GP247](../system/update-gp247.md).
+This section summarizes the process; details of each option are in [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 1. **Back up** the database, `.env`, `storage/app/` and `app/GP247/` (see [Encryption keys & backup](./security-keys-and-backup.md)).
 2. In the site's root folder, update the code:
@@ -131,7 +131,7 @@ how to reproduce it. **Do not** open a public issue on GitHub, so the bug cannot
 
 **Q2: How do I update on shared hosting without a command line?**
 
-→ Ask your technical staff or hosting provider to run `composer update` and `php artisan gp247:update`. See [How to update GP247](../system/update-gp247.md).
+→ Ask your technical staff or hosting provider to run `composer update` and `php artisan gp247:update`. See [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 **Q3: I pushed the `.env` file to GitHub by mistake. Is deleting the commit enough?**
 

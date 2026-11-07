@@ -33,7 +33,7 @@ GP247 phát hành bản vá trong các bản S-Cart. Bạn chỉ cần theo dõi
 
 ## Cập nhật GP247 an toàn
 
-Mục này tóm tắt quy trình; chi tiết từng tuỳ chọn ở [Hướng dẫn cập nhật GP247](../system/update-gp247_vi.md).
+Mục này tóm tắt quy trình; chi tiết từng tuỳ chọn ở [Cập nhật GP247 và S-Cart](../install-upgrade/update_vi.md).
 
 1. **Sao lưu** cơ sở dữ liệu, `.env`, `storage/app/`, `app/GP247/` (xem [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md)).
 2. Ở thư mục gốc site, cập nhật mã:
@@ -131,7 +131,7 @@ cách tái hiện. **Không** mở issue công khai trên GitHub để lỗi kh�
 
 **Câu 2: Shared hosting không có dòng lệnh thì cập nhật thế nào?**
 
-→ Nhờ người phụ trách kỹ thuật hoặc nhà cung cấp hosting chạy `composer update` và `php artisan gp247:update`. Xem [Hướng dẫn cập nhật GP247](../system/update-gp247_vi.md).
+→ Nhờ người phụ trách kỹ thuật hoặc nhà cung cấp hosting chạy `composer update` và `php artisan gp247:update`. Xem [Cập nhật GP247 và S-Cart](../install-upgrade/update_vi.md).
 
 **Câu 3: Tôi lỡ đưa file `.env` lên GitHub, xoá commit là xong?**
 

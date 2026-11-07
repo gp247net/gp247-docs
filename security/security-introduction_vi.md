@@ -93,7 +93,7 @@ Một số chủ đề đã có trang riêng. Bộ tài liệu này chỉ tóm t
 | Đăng nhập, token và giới hạn của REST API | [Đăng nhập, token và tài khoản khách qua API](../api/api-authentication_vi.md) |
 | Token, phân quyền và nhật ký của MCP (AI agent) | [An toàn & phân quyền của MCP](../mcp/mcp-security_vi.md) |
 | Phiên bản nên dùng, vòng đời hỗ trợ, bản vá PHP / web server | [Phát hành và bảo mật S-Cart](../release/release_vi.md) |
-| Cập nhật GP247 trên site đang chạy | [Hướng dẫn cập nhật GP247](../system/update-gp247_vi.md) |
+| Cập nhật GP247 trên site đang chạy | [Cập nhật GP247 và S-Cart](../install-upgrade/update_vi.md) |
 | Lệnh chẩn đoán `gp247:doctor` | [Danh sách lệnh CLI](../system/command-line-reference_vi.md) |
 
 ## Báo lỗ hổng bảo mật

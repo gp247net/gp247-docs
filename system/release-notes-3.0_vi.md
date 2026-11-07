@@ -17,10 +17,12 @@ mục riêng cho lập trình viên plugin.
 2. Mở **Terminal** (trên Windows là "Command Prompt"), vào thư mục gốc của website, gõ:
 
    ```
-   composer update
+   composer require "gp247/core:^3.0" "gp247/front:^3.0" "gp247/shop:^3.0" -W
    ```
 
-   Lệnh này chỉ tải mã nguồn mới về, **chưa** đụng gì tới dữ liệu.
+   Lệnh này chỉ tải mã nguồn mới về, **chưa** đụng gì tới dữ liệu. Chỉ chạy `composer update` là **không** đủ: site 2.x có
+   ràng buộc `^2.1` nên Composer không tự lên 3.0. Hướng dẫn đầy đủ (kiểm plugin, thử trên bản sao, quay lui):
+   [Nâng cấp lên dòng 3.x](../install-upgrade/upgrade_vi.md).
 
 3. Gõ tiếp lệnh sau rồi nhấn Enter:
 

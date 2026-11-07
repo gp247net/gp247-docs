@@ -32,8 +32,8 @@ Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từ
 - **Tính năng mới** chỉ vào dòng mới nhất.
 - **Khi có dòng mới:** dòng trước được sửa lỗi nghiêm trọng thêm 6 tháng và vá bảo mật tới thời điểm ở bảng — không quá hạn
   hỗ trợ bảo mật của bản Laravel mà dòng đó dùng.
-- **Site còn chạy 2.x trở xuống:** vẫn chạy được nhưng không còn nhận bản sửa nào. Nâng lên 3.x bằng `composer update` và
-  `php artisan gp247:update` — xem [ghi chú v3.0](../system/release-notes-3.0_vi.md).
+- **Site còn chạy 2.x trở xuống:** vẫn chạy được nhưng không còn nhận bản sửa nào. Site 2.1 / 2.2 nâng lên 3.x bằng
+  `composer require … -W` và `php artisan gp247:update` — xem [Nâng cấp lên dòng 3.x](../install-upgrade/upgrade_vi.md).
 
 ## Điểm mới nổi bật
 - **Cảnh báo hệ thống** — trang quản trị tự báo cấu hình chưa an toàn *(S-Cart 3.5.1)*
@@ -58,7 +58,7 @@ php artisan gp247:update
 **Bước 4 —** Kiểm tra lại phiên bản bằng `php artisan gp247:info`.
 
 Mỗi bản phát hành có thể có thêm việc riêng — xem mục **📋 Cần làm khi cập nhật** của bản đó bên dưới.
-Chi tiết từng bước: [Hướng dẫn cập nhật GP247](https://gp247.net/vi/docs/system/how-to-update-gp247.html).
+Chi tiết từng bước: [Cập nhật GP247 và S-Cart](../install-upgrade/update_vi.md).
 
 ## Các bản phát hành
 Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z*** chỉ sửa lỗi.

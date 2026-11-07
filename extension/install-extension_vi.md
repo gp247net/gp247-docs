@@ -155,7 +155,7 @@ phần **cập nhật dữ liệu** của bản mới chưa chạy.
 Sau khi chép, mở lại danh sách **Plugin** (hoặc **Template**): extension có nhãn vàng **"Chờ cập nhật dữ
 liệu: x → y"** ở cột Phiên bản. Bấm nút **Áp dụng cập nhật dữ liệu** (biểu tượng cơ sở dữ liệu) bên cạnh
 nó, hoặc chạy `php artisan gp247:update`. Chi tiết:
-[Hướng dẫn cập nhật GP247 — mục C](../system/update-gp247_vi.md).
+[Cập nhật GP247 và S-Cart — mục C](../install-upgrade/update_vi.md#c-plugintemplate-cập-nhật-bằng-git-pull-composer-hoặc-chép-tay).
 
 ---
 
