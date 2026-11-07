@@ -350,7 +350,7 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
       [Cấu hình production](../security/security-production-config_vi.md).
 - [ ] **Thay tài khoản `admin` / `admin`** — tạo tài khoản Administrator riêng (email thật, mật khẩu mạnh cất trong trình quản
       lý mật khẩu), đăng nhập lại bằng tài khoản mới, rồi tắt hoặc xoá `admin`; bật xác thực hai lớp nếu có:
-      [Thay tài khoản `admin` / `admin`](../security/security-accounts-and-access_vi.md#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin).
+      [Thay tài khoản `admin` / `admin`](../security/security-accounts-and-access_vi.md).
 - [ ] **Sao lưu khoá mã hoá** — chép `APP_KEY` và `GP247_ENCRYPTION_KEY` ra nơi an toàn; mất khoá là mất các mật khẩu đã lưu
       (SMTP, cổng thanh toán): [Khoá mã hoá & sao lưu](../security/security-keys-and-backup_vi.md).
 - [ ] **Gửi mail** — [Hệ thống gửi mail](../system/mail-system_vi.md).
@@ -370,7 +370,7 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 | Trang quản trị báo 403 | `GP247_ADMIN_PREFIX` trùng tên thư mục trong `public/` (`vendor`, `GP247`) | Đặt tên khác trong `.env` |
 | Lỗi 500 ngay sau khi cài | Thiếu quyền ghi thư mục, thiếu extension, sai thông tin CSDL | Chạy `php artisan gp247:doctor`, xem `storage/logs/laravel.log` |
 | `gp247:install` từ chối chạy | Chạy trong script / CI nên không hỏi xác nhận được | Chạy trong Terminal thường; cài tự động thì thêm `--force=1` |
-| Khối **Cảnh báo hệ thống** báo mật khẩu quản trị mặc định | Tài khoản `admin` / `admin` vẫn còn | Thay tài khoản theo [hướng dẫn](../security/security-accounts-and-access_vi.md#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin) |
+| Khối **Cảnh báo hệ thống** báo mật khẩu quản trị mặc định | Tài khoản `admin` / `admin` vẫn còn | Thay tài khoản theo [hướng dẫn](../security/security-accounts-and-access_vi.md) |
 
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 

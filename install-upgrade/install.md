@@ -354,7 +354,7 @@ The freshly installed site already works, but go through this whole list **befor
       [Safe production configuration](../security/security-production-config.md).
 - [ ] **Replace the `admin` / `admin` account** — create your own Administrator account (real email, strong password kept in a
       password manager), log in again with it, then disable or delete `admin`; turn on two-factor authentication if available:
-      [Replace the `admin` / `admin` account](../security/security-accounts-and-access.md#site-installed-from-an-older-version-replace-the-admin--admin-account).
+      [Replace the `admin` / `admin` account](../security/security-accounts-and-access.md).
 - [ ] **Back up the encryption keys** — copy `APP_KEY` and `GP247_ENCRYPTION_KEY` somewhere safe; losing them means losing the
       stored passwords (SMTP, payment gateways): [Encryption keys & backup](../security/security-keys-and-backup.md).
 - [ ] **Email sending** — [Mail system](../system/mail-system.md).
@@ -374,7 +374,7 @@ The freshly installed site already works, but go through this whole list **befor
 | The admin returns 403 | `GP247_ADMIN_PREFIX` matches a folder name in `public/` (`vendor`, `GP247`) | Choose another name in `.env` |
 | Error 500 right after installing | Missing write permission, missing extension, wrong database details | Run `php artisan gp247:doctor`, read `storage/logs/laravel.log` |
 | `gp247:install` refuses to run | Run from a script / CI, so it cannot ask for confirmation | Run it in a normal Terminal; for an unattended install add `--force=1` |
-| The **System alerts** block reports the default admin password | The `admin` / `admin` account is still there | Replace it following [the guide](../security/security-accounts-and-access.md#site-installed-from-an-older-version-replace-the-admin--admin-account) |
+| The **System alerts** block reports the default admin password | The `admin` / `admin` account is still there | Replace it following [the guide](../security/security-accounts-and-access.md) |
 
 ## Conditions & Rules (know before you act)
 

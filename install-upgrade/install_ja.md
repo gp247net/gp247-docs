@@ -355,7 +355,7 @@ flowchart TB
       [安全な本番環境の設定](../security/security-production-config_ja.md)。
 - [ ] **アカウント `admin` / `admin` を置き換える** — 自分用の Administrator アカウント（実際のメールアドレス、パスワード
       マネージャーに保存した強いパスワード）を作成し、新しいアカウントでログインし直してから、`admin` を無効化または削除します。
-      可能なら二要素認証も有効にします: [アカウント `admin` / `admin` の置き換え](../security/security-accounts-and-access_ja.md#旧バージョンからインストールしたサイトアカウント-admin--admin-を置き換える)。
+      可能なら二要素認証も有効にします: [アカウント `admin` / `admin` の置き換え](../security/security-accounts-and-access_ja.md)。
 - [ ] **暗号化キーのバックアップ** — `APP_KEY` と `GP247_ENCRYPTION_KEY` を安全な場所に控えます。鍵を失うと、保存済みのパスワード
       （SMTP、決済ゲートウェイ）も失われます: [暗号化キーとバックアップ](../security/security-keys-and-backup_ja.md)。
 - [ ] **メール送信** — [メール送信システム](../system/mail-system_ja.md)。
@@ -375,7 +375,7 @@ flowchart TB
 | 管理画面が 403 になる | `GP247_ADMIN_PREFIX` が `public/` 内のフォルダ名（`vendor`、`GP247`）と同じ | `.env` で別の名前を設定 |
 | インストール直後に 500 エラー | フォルダの書き込み権限不足、拡張モジュール不足、DB 情報の誤り | `php artisan gp247:doctor` を実行し、`storage/logs/laravel.log` を確認 |
 | `gp247:install` が実行を拒否する | スクリプト／CI で実行していて確認に答えられない | 通常のターミナルで実行。自動インストールなら `--force=1` を付ける |
-| 「**システムアラート**」ブロックが既定の管理者パスワードを警告する | アカウント `admin` / `admin` が残っている | [手順](../security/security-accounts-and-access_ja.md#旧バージョンからインストールしたサイトアカウント-admin--admin-を置き換える)に沿って置き換える |
+| 「**システムアラート**」ブロックが既定の管理者パスワードを警告する | アカウント `admin` / `admin` が残っている | [手順](../security/security-accounts-and-access_ja.md)に沿って置き換える |
 
 ## 条件と制約（操作の前に確認）
 

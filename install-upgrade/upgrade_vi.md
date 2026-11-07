@@ -41,9 +41,9 @@ theo bộ gói của site:
 ```bash
 php artisan gp247:info
 
-composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" "gp247/mcp:^2.0.1" -W   # S-Cart
-composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" -W                                        # GP247 CMS
-composer require "gp247/core:^3.10.2" -W                                                             # chỉ core
+composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" "gp247/mcp:^2.0.1" -W # S-Cart
+composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" -W                                        # GP247 CMS
+composer require "gp247/core:^3.10.3" -W                                                             # chỉ core
 
 php artisan gp247:update
 php artisan gp247:info
@@ -118,15 +118,15 @@ Plugin khai báo bản core mà nó chạy được; plugin viết cho core 2.x 
 
    | Site của bạn | Lệnh |
    | --- | --- |
-   | S-Cart | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" "gp247/mcp:^2.0.1" -W` |
-   | GP247 CMS (core + front) | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" -W` |
-   | Core + front + shop, không cần MCP | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" -W` |
-   | Chỉ core | `composer require "gp247/core:^3.10.2" -W` |
+   | S-Cart | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" "gp247/mcp:^2.0.1" -W` |
+   | GP247 CMS (core + front) | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" -W` |
+   | Core + front + shop, không cần MCP | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" -W` |
+   | Chỉ core | `composer require "gp247/core:^3.10.3" -W` |
 
    Lệnh sửa `composer.json` của site sang dòng 3.x và tải bản mới; `-W` cho phép nâng cả các thư viện đi kèm. Thành công thì
    Composer in danh sách gói đã đổi, trong đó `gp247/core` lên `3.x`. Dòng S-Cart thêm luôn gói MCP server (có từ S-Cart 3.5).
 
-   > ℹ️ **Thông tin:** các số trên là mức tối thiểu của S-Cart 3.5.1. Bản S-Cart mới hơn có thể nâng mức này — đối chiếu
+   > ℹ️ **Thông tin:** các số trên là mức tối thiểu của S-Cart 3.5.2. Bản S-Cart mới hơn có thể nâng mức này — đối chiếu
    > [`composer.json` của S-Cart mới nhất](https://github.com/gp247net/s-cart/blob/master/composer.json).
 
 4. **Chuyển đổi dữ liệu sang dòng 3.x**:

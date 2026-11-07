@@ -41,9 +41,9 @@ flowchart LR
 ```bash
 php artisan gp247:info
 
-composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" "gp247/mcp:^2.0.1" -W   # S-Cart
-composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" -W                                        # GP247 CMS
-composer require "gp247/core:^3.10.2" -W                                                             # core のみ
+composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" "gp247/mcp:^2.0.1" -W # S-Cart
+composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" -W                                        # GP247 CMS
+composer require "gp247/core:^3.10.3" -W                                                             # core のみ
 
 php artisan gp247:update
 php artisan gp247:info
@@ -123,16 +123,16 @@ php artisan gp247:info
 
    | お使いのサイト | コマンド |
    | --- | --- |
-   | S-Cart | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" "gp247/mcp:^2.0.1" -W` |
-   | GP247 CMS（core + front） | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" -W` |
-   | core + front + shop、MCP 不要 | `composer require "gp247/core:^3.10.2" "gp247/front:^3.5.2" "gp247/shop:^3.7" -W` |
-   | core のみ | `composer require "gp247/core:^3.10.2" -W` |
+   | S-Cart | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" "gp247/mcp:^2.0.1" -W` |
+   | GP247 CMS（core + front） | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" -W` |
+   | core + front + shop、MCP 不要 | `composer require "gp247/core:^3.10.3" "gp247/front:^3.5.2" "gp247/shop:^3.8.1" -W` |
+   | core のみ | `composer require "gp247/core:^3.10.3" -W` |
 
    このコマンドはサイトの `composer.json` を 3.x 系に書き換え、新しいバージョンを取得します。`-W` は依存ライブラリの更新も許可します。
    成功すると、Composer が変更されたパッケージの一覧を表示し、`gp247/core` が `3.x` になっています。S-Cart の行は MCP サーバーの
    パッケージ（S-Cart 3.5 から）も追加します。
 
-   > ℹ️ **情報:** 上の番号は S-Cart 3.5.1 の最低バージョンです。より新しい S-Cart ではこの値が上がることがあります —
+   > ℹ️ **情報:** 上の番号は S-Cart 3.5.2 の最低バージョンです。より新しい S-Cart ではこの値が上がることがあります —
    > [最新の S-Cart の `composer.json`](https://github.com/gp247net/s-cart/blob/master/composer.json) と照らし合わせてください。
 
 4. **データを 3.x 系に変換**します。
