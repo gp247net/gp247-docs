@@ -182,7 +182,7 @@ nginx の安定版チャネルに変更し、使っていない PHP の機能を
 | --- | --- | --- |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | 日本語対応、送り状付きの標準配送、パッケージと一緒に更新されるストアフロントテーマ |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | カート外の支払い依頼、保存済みパスワード・決済キーの暗号化 |
-| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | 旧 `sc:*` コマンドを削除、`gp247:*` コマンドを使用 — [コマンド一覧](../system/command-line-reference_ja.md) |
+| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | 旧 `sc:*` コマンドを削除、`gp247:*` コマンドを使用 — [コマンド一覧](../cli/cli-introduction_ja.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | 3.x 系の最初のリリース: 注文ごとの支払台帳、割引は税の前に差し引き — [リリースノート v3.0](../system/release-notes-3.0_ja.md) |
 
 ## セキュリティ
@@ -230,4 +230,4 @@ GP247 が使うライブラリ（Livewire、Symfony など）の不具合は各�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-07 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>

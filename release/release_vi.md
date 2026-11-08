@@ -183,7 +183,7 @@ nginx ổn định, tắt tính năng PHP không dùng *(chạy bằng Docker)*
 | --- | --- | --- |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Thêm tiếng Nhật, vận chuyển chuẩn có vận đơn, giao diện tự cập nhật theo package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Yêu cầu thanh toán ngoài giỏ hàng; mã hoá mật khẩu, khoá thanh toán đã lưu |
-| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Gỡ lệnh `sc:*` cũ, dùng lệnh `gp247:*` — [danh sách lệnh](../system/command-line-reference_vi.md) |
+| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Gỡ lệnh `sc:*` cũ, dùng lệnh `gp247:*` — [danh sách lệnh](../cli/cli-introduction_vi.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Mở đầu dòng 3.x: sổ thanh toán từng đơn, giảm giá trừ trước thuế — [ghi chú v3.0](../system/release-notes-3.0_vi.md) |
 
 ## Bảo mật
@@ -231,4 +231,4 @@ trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

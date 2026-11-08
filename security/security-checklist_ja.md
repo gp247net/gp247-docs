@@ -32,7 +32,7 @@ flowchart LR
 - [ ] 専用の `GP247_ENCRYPTION_KEY` を設定し、`php artisan config:clear` を実行する — [GP247 の機密データの暗号化](../system/data-encryption_ja.md)
 - [ ] `.env` ファイルをサーバー外の安全な場所にバックアップする — [暗号化キーとバックアップ](./security-keys-and-backup_ja.md)
 - [ ] パスワードポリシーを引き上げる（最小 12 文字、最大 64 文字） — [アカウントと権限](./security-accounts-and-access_ja.md#パスワードポリシーを設定する)
-- [ ] `php artisan gp247:doctor` を実行し、FAIL の行をすべて解消する — [GP247 システムのコマンドライン（CLI）一覧](../system/command-line-reference_ja.md)
+- [ ] `php artisan gp247:doctor` を実行し、FAIL の行をすべて解消する — [点検と診断のコマンド](../cli/cli-diagnostics_ja.md)
 
 ## 販売開始前
 

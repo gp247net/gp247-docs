@@ -245,7 +245,7 @@ Notes:
   command exits non-zero if any item failed. Install a **paid** extension one key at a time.
 - **Re-running is safe**: `ext-install` refuses an already-installed extension (use `ext-update` to
   update, `ext-uninstall` to reinstall).
-- Full reference: [command-line-reference.md](../system/command-line-reference.md).
+- Full reference: [Plugin and template (extension) commands](../cli/cli-extensions.md).
 
 ---
 
@@ -397,4 +397,4 @@ action. To actually remove it, take its name out of the corresponding `.env` var
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

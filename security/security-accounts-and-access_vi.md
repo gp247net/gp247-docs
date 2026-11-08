@@ -80,7 +80,7 @@ Chính sách áp cho **mọi chỗ** loại tài khoản đó đặt mật khẩ
 ## Giới hạn đăng nhập và quên mật khẩu
 
 GP247 tự chặn đoán mật khẩu bằng cách giới hạn số lần đăng nhập sai.
-- **Mất mật khẩu mà Quên mật khẩu không dùng được** (tài khoản còn email lúc cài, site chưa gửi được mail): người có quyền vào máy chủ chạy `php artisan gp247:admin-password <tên-đăng-nhập>` để đặt mật khẩu mới — lệnh theo chính sách mật khẩu và thu hồi mọi phiên API của tài khoản — có từ gp247/core 3.11.0 ([cách dùng](../system/command-line-reference_vi.md#tài-khoản-quản-trị--gp247admin-password)).
+- **Mất mật khẩu mà Quên mật khẩu không dùng được** (tài khoản còn email lúc cài, site chưa gửi được mail): người có quyền vào máy chủ chạy `php artisan gp247:admin-password <tên-đăng-nhập>` để đặt mật khẩu mới — lệnh theo chính sách mật khẩu và thu hồi mọi phiên API của tài khoản — có từ gp247/core 3.11.0 ([cách dùng](../cli/cli-maintenance_vi.md#đặt-lại-mật-khẩu-quản-trị)).
 
 - **Mặc định**: 5 lần mỗi phút cho mỗi tài khoản + IP (`GP247_LOGIN_THROTTLE=5,1`), 20 lần mỗi phút cho mỗi IP (`GP247_LOGIN_IP_THROTTLE=20,1`). Trang đăng nhập quản trị và đăng nhập qua API dùng chung bộ đếm.
 - **Muốn chặt hơn**: giảm số lần trong `.env`, rồi chạy `php artisan config:clear`.

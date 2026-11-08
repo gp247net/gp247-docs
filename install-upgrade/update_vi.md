@@ -179,7 +179,7 @@ php artisan gp247:update --publish=all                         # làm mới TẤ
 | `all` | Tất cả các token trên | ⚠️ Không |
 
 Giao diện mặc định `GP247Front` được nạp thẳng từ package, nên file bạn **chưa** publish tự nhận bản mới mà không cần token nào.
-Từng token chạm thư mục nào: mục "`gp247:update`" trong [Danh sách lệnh CLI](../system/command-line-reference_vi.md).
+Từng token chạm thư mục nào: [Làm mới file đã publish (`--publish`)](../cli/cli-install-update_vi.md#làm-mới-file-đã-publish---publish).
 
 ### C. Plugin/template cập nhật bằng `git pull`, Composer hoặc chép tay
 
@@ -257,7 +257,7 @@ thể lỗi.
 
 **Câu 7: Xem đầy đủ mọi lệnh GP247 và tùy chọn ở đâu?**
 
-→ [Danh sách lệnh CLI](../system/command-line-reference_vi.md).
+→ [Dòng lệnh GP247 (CLI)](../cli/cli-introduction_vi.md) — bảng tra mọi lệnh theo việc cần làm.
 
 ## Lịch sử thay đổi
 <!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. -->
@@ -270,4 +270,4 @@ thể lỗi.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

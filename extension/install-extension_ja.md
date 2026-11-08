@@ -233,7 +233,7 @@ php artisan gp247:ext-license --type=plugin --key=ProPlugin --license=XXItXX
   **有料**の拡張機能は 1 つの key ずつインストールしてください。
 - **再実行しても安全**：`ext-install` はインストール済みの拡張機能を拒否します（アップデートには `ext-update`、
   再インストールには `ext-uninstall` を使います）。
-- 詳しいリファレンス：[command-line-reference_ja.md](../system/command-line-reference_ja.md)。
+- 詳しいリファレンス：[プラグインとテンプレートのコマンド](../cli/cli-extensions_ja.md)。
 
 ---
 
@@ -375,4 +375,4 @@ GP247_PROTECTED_TEMPLATES="GP247Front"
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>

@@ -82,7 +82,7 @@ forgotten password, apps through the API.
 ## Sign-in limits and forgotten passwords
 
 GP247 blocks password guessing by itself by limiting the number of failed sign-ins.
-- **Lost password and Forgot password cannot help** (the account still has the install email, the site cannot send mail yet): someone with access to the server runs `php artisan gp247:admin-password <user-name>` to set a new password — the command follows the password policy and revokes every API session of the account — available since gp247/core 3.11.0 ([how to](../system/command-line-reference.md#admin-account--gp247admin-password)).
+- **Lost password and Forgot password cannot help** (the account still has the install email, the site cannot send mail yet): someone with access to the server runs `php artisan gp247:admin-password <user-name>` to set a new password — the command follows the password policy and revokes every API session of the account — available since gp247/core 3.11.0 ([how to](../cli/cli-maintenance.md#reset-an-administrator-password)).
 
 - **Default**: 5 attempts per minute per account + IP (`GP247_LOGIN_THROTTLE=5,1`), 20 attempts per minute per IP (`GP247_LOGIN_IP_THROTTLE=20,1`). The admin sign-in page and sign-in through the API share the same counter.
 - **Want it stricter**: lower the numbers in `.env`, then run `php artisan config:clear`.

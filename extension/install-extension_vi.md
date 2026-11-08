@@ -238,7 +238,7 @@ Ghi chú:
   fail. Extension **trả phí** cài từng key một.
 - **Chạy lại an toàn**: `ext-install` từ chối extension đã cài (dùng `ext-update` để cập nhật,
   `ext-uninstall` để cài lại).
-- Tài liệu đầy đủ: [command-line-reference_vi.md](../system/command-line-reference_vi.md).
+- Tài liệu đầy đủ: [Lệnh quản lý plugin và template](../cli/cli-extensions_vi.md).
 
 ---
 
@@ -384,4 +384,4 @@ extension đó khỏi biến `.env` tương ứng rồi thử lại.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

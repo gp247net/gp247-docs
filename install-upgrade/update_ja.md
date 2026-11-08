@@ -185,7 +185,7 @@ php artisan gp247:update --publish=all                         # すべてを更
 
 既定のテンプレート `GP247Front` はパッケージから直接読み込まれるため、**公開していない**ファイルはトークンなしで自動的に新しい
 バージョンになります。各トークンがどのフォルダに影響するかは、
-[コマンドラインリファレンス](../system/command-line-reference_ja.md)の「`gp247:update`」の項を参照してください。
+[公開済みファイルの更新（`--publish`）](../cli/cli-install-update_ja.md#公開済みファイルの更新--publish)を参照してください。
 
 ### C. `git pull`、Composer、手動コピーでプラグイン／テンプレートを更新した場合
 
@@ -268,7 +268,7 @@ php artisan gp247:ext-update --local --type=plugin --key=InOut       # または
 
 **Q7: GP247 のすべてのコマンドとオプションは、どこで確認できますか？**
 
-→ [コマンドラインリファレンス](../system/command-line-reference_ja.md)を参照してください。
+→ [GP247 のコマンドライン（CLI）](../cli/cli-introduction_ja.md) の全コマンド一覧を参照してください。
 
 ## 変更履歴
 <!-- ロジック／動作に変更があった場合のみ記録します。最新の行を一番上にします。 -->
@@ -281,4 +281,4 @@ php artisan gp247:ext-update --local --type=plugin --key=InOut       # または
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-07 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>

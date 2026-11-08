@@ -183,7 +183,7 @@ server follows the stable nginx channel and unused PHP features are turned off *
 | --- | --- | --- |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Japanese, standard shipping with shipments, storefront theme that updates with the package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Payment requests outside the cart; stored passwords and payment keys encrypted |
-| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Old `sc:*` commands removed, use the `gp247:*` commands — [command list](../system/command-line-reference.md) |
+| [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Old `sc:*` commands removed, use the `gp247:*` commands — [command list](../cli/cli-introduction.md) |
 | [S-Cart 3.0](https://github.com/gp247net/s-cart/releases/tag/3.0) | 2026-08-30 | Start of the 3.x line: a payment ledger per order, discounts taken before tax — [v3.0 notes](../system/release-notes-3.0.md) |
 
 ## Security
@@ -231,4 +231,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

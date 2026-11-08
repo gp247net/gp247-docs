@@ -12,8 +12,13 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Cài đặt GP247 và S-Cart](./install-upgrade/install_vi.md) | Site mới: chọn bộ cài (S-Cart, GP247 CMS, chỉ core, ghép vào dự án Laravel); Composer, Git, Docker, hosting không có dòng lệnh; thêm front/shop vào site đang có; việc bảo mật ngay sau khi cài | 2026-11-08 |
-| [Cập nhật GP247 và S-Cart](./install-upgrade/update_vi.md) | Site dòng 3.x lên bản mới: `composer update` theo bộ gói + `gp247:update`; Docker, hosting không có dòng lệnh; `--overwrite-lang`, `--publish`; plugin cập nhật bằng `git pull` | 2026-11-07 |
+| [Cập nhật GP247 và S-Cart](./install-upgrade/update_vi.md) | Site dòng 3.x lên bản mới: `composer update` theo bộ gói + `gp247:update`; Docker, hosting không có dòng lệnh; `--overwrite-lang`, `--publish`; plugin cập nhật bằng `git pull` | 2026-11-08 |
 | [Nâng cấp lên dòng 3.x](./install-upgrade/upgrade_vi.md) | Site 2.1/2.2 lên 3.x bằng `composer require … -W`; kiểm plugin, thử trên bản sao, quay lui; site 1.x/2.0 | 2026-11-07 |
+
+### Dòng lệnh (CLI)
+| Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
+| --- | --- | --- |
+| [Dòng lệnh GP247 (CLI)](./cli/cli-introduction_vi.md) | Bộ 7 trang về lệnh `php artisan gp247:*`: tra theo việc cần làm, mức an toàn từng lệnh; cài đặt & cập nhật, extension, template, `gp247:doctor`, bảo trì (mật khẩu quản trị, khoá mã hoá, sao lưu), dùng trong script/CI/Docker (`--json`, mã lỗi) | 2026-11-08 |
 
 ### API
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -30,7 +35,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Bảo mật
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Bảo mật hệ thống GP247](./security/security-introduction_vi.md) | Trang chính của bộ tài liệu Bảo mật: GP247 tự lo gì, bạn phải làm gì — cấu hình production, khoá mã hoá & sao lưu, tài khoản & phân quyền, cập nhật & xử lý sự cố, checklist và những lỗi hay gặp | 2026-11-04 |
+| [Bảo mật hệ thống GP247](./security/security-introduction_vi.md) | Trang chính của bộ tài liệu Bảo mật: GP247 tự lo gì, bạn phải làm gì — cấu hình production, khoá mã hoá & sao lưu, tài khoản & phân quyền, cập nhật & xử lý sự cố, checklist và những lỗi hay gặp | 2026-11-08 |
 
 ### Sao lưu & phục hồi
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -48,19 +53,18 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | [Plugin an toàn khi cập nhật](./extension/create-plugin-update-safety_vi.md) | Cập nhật chạy thế nào, 6 quy tắc, hook `update()`, bảng dữ liệu riêng | 2026-11-03 |
 | [Plugin nâng cao](./extension/create-plugin-advanced_vi.md) | Cấu hình theo cửa hàng, khoá bí mật, trang / khối / điểm cắm storefront, mã giảm giá, menu | 2026-10-22 |
 | [Hướng dẫn tạo Template (giao diện)](./extension/create-template_vi.md) | Tạo template storefront mới; cơ chế fallback view của gp247/shop | 2026-11-03 |
-| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-10-22 |
+| [Cài đặt Plugin & Template](./extension/install-extension_vi.md) | 4 cách cài: online (thư viện), import (.zip), thủ công, CLI (`gp247:ext-*`) | 2026-11-08 |
 | [Chuyển đổi Plugin v1 lên v2](./extension/convert-plugin-v1-to-v2_vi.md) | Nâng cấp plugin từ Core 1.x lên Core 2.0 | 2026-11-03 |
 
 ### Phát hành
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Phát hành và bảo mật S-Cart](./release/release_vi.md) | Phiên bản nên dùng (tối thiểu từng package); điểm mới nổi bật; cách cập nhật; các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bảo mật và báo lỗ hổng | 2026-11-07 |
+| [Phát hành và bảo mật S-Cart](./release/release_vi.md) | Phiên bản nên dùng (tối thiểu từng package); điểm mới nổi bật; cách cập nhật; các bản S-Cart (mỗi bản gom core/front/shop): có gì mới, sửa lỗi, cần làm khi cập nhật; bảo mật và báo lỗ hổng | 2026-11-08 |
 
 ### Hệ thống
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Ghi chú phát hành v3.0 — tiền của đơn hàng](./system/release-notes-3.0_vi.md) | Nâng cấp từ v2.1/v3.0: sổ thanh toán từng đơn, dòng tiền tính theo ngày thu, sửa trạng thái thanh toán lệch một bậc, **giảm giá trừ trước thuế**; ghi chú cho lập trình viên plugin | 2026-10-22 |
-| [Danh sách lệnh CLI](./system/command-line-reference_vi.md) | Tham chiếu mọi lệnh CLI của GP247: hợp đồng output `--json`/mã thoát, vòng đời `gp247:ext-*`, install/update/doctor/info; `core-update` chạy migration nâng cấp (core 2.2) | 2026-11-08 |
 | [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-10-22 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-10-22 |
 | [Mã hoá dữ liệu nhạy cảm](./system/data-encryption_vi.md) | Mã hoá at-rest bí mật (SMTP/OAuth/license); khoá riêng `GP247_ENCRYPTION_KEY`; **các bước đổi khoá an toàn** bằng `gp247:encryption-key-rotate`; mã hoá cột bảng khác | 2026-11-04 |

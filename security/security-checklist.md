@@ -32,7 +32,7 @@ flowchart LR
 - [ ] Set a dedicated `GP247_ENCRYPTION_KEY` and then run `php artisan config:clear` — [Sensitive data encryption](../system/data-encryption.md)
 - [ ] Back up the `.env` file to a safe place off the server — [Encryption keys & backup](./security-keys-and-backup.md)
 - [ ] Raise the password policy (minimum 12, maximum 64 characters) — [Accounts & permissions](./security-accounts-and-access.md#set-a-password-policy)
-- [ ] Run `php artisan gp247:doctor` and fix every FAIL line — [CLI command reference](../system/command-line-reference.md)
+- [ ] Run `php artisan gp247:doctor` and fix every FAIL line — [Check and diagnostic commands](../cli/cli-diagnostics.md)
 
 ## Before you start selling
 

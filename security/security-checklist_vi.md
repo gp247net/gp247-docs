@@ -32,7 +32,7 @@ flowchart LR
 - [ ] Đặt `GP247_ENCRYPTION_KEY` riêng rồi chạy `php artisan config:clear` — [Mã hoá dữ liệu nhạy cảm](../system/data-encryption_vi.md)
 - [ ] Sao lưu file `.env` ra nơi an toàn ngoài máy chủ — [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md)
 - [ ] Nâng chính sách mật khẩu (tối thiểu 12, tối đa 64 ký tự) — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#đặt-chính-sách-mật-khẩu)
-- [ ] Chạy `php artisan gp247:doctor`, xử lý mọi dòng FAIL — [Danh sách lệnh CLI](../system/command-line-reference_vi.md)
+- [ ] Chạy `php artisan gp247:doctor`, xử lý mọi dòng FAIL — [Lệnh kiểm tra và chẩn đoán](../cli/cli-diagnostics_vi.md)
 
 ## Trước khi mở bán
 

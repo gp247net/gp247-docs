@@ -94,7 +94,7 @@ flowchart TB
 | MCP（AI エージェント）のトークン、権限、ログ | [MCP のセキュリティと権限](../mcp/mcp-security_ja.md) |
 | 推奨バージョン、サポート期間、PHP／Web サーバーのパッチ | [S-Cart のリリースとセキュリティ](../release/release_ja.md) |
 | 稼働中のサイトでの GP247 の更新 | [GP247 と S-Cart の更新](../install-upgrade/update_ja.md) |
-| 診断コマンド `gp247:doctor` | [GP247 システムのコマンドライン（CLI）一覧](../system/command-line-reference_ja.md) |
+| 診断コマンド `gp247:doctor` | [点検と診断のコマンド](../cli/cli-diagnostics_ja.md) |
 
 ## 脆弱性の報告
 
@@ -147,4 +147,4 @@ GP247 の脆弱性を見つけた場合は、**support@gp247.net** にメール�
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>

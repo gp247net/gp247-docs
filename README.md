@@ -12,8 +12,13 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | Document | Summary | Last updated |
 | --- | --- | --- |
 | [Installing GP247 and S-Cart](./install-upgrade/install.md) | New site: choose a package set (S-Cart, GP247 CMS, core only, inside a Laravel project); Composer, Git, Docker, hosting without a command line; adding front/shop to an existing site; security tasks right after installing | 2026-11-08 |
-| [Updating GP247 and S-Cart](./install-upgrade/update.md) | 3.x site to a newer release: `composer update` per package set + `gp247:update`; Docker, hosting without a command line; `--overwrite-lang`, `--publish`; plugins updated with `git pull` | 2026-11-07 |
+| [Updating GP247 and S-Cart](./install-upgrade/update.md) | 3.x site to a newer release: `composer update` per package set + `gp247:update`; Docker, hosting without a command line; `--overwrite-lang`, `--publish`; plugins updated with `git pull` | 2026-11-08 |
 | [Upgrading to the 3.x line](./install-upgrade/upgrade.md) | 2.1/2.2 site to 3.x with `composer require … -W`; checking plugins, testing on a copy, rolling back; 1.x/2.0 sites | 2026-11-07 |
+
+### Command line (CLI)
+| Document | Summary | Last updated |
+| --- | --- | --- |
+| [GP247 command line (CLI)](./cli/cli-introduction.md) | A 7-page set on the `php artisan gp247:*` commands: look up by job, safety level of each command; install & update, extensions, templates, `gp247:doctor`, maintenance (admin password, encryption key, backups), use in scripts/CI/Docker (`--json`, error codes) | 2026-11-08 |
 
 ### API
 | Document | Summary | Last updated |
@@ -30,7 +35,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Security
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 system security](./security/security-introduction.md) | Entry page of the Security documentation: what GP247 handles and what you must do — production configuration, encryption keys & backups, accounts & permissions, updates & incident response, checklist and common mistakes | 2026-11-04 |
+| [GP247 system security](./security/security-introduction.md) | Entry page of the Security documentation: what GP247 handles and what you must do — production configuration, encryption keys & backups, accounts & permissions, updates & incident response, checklist and common mistakes | 2026-11-08 |
 
 ### Backup & restore
 | Document | Summary | Last updated |
@@ -48,19 +53,18 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | [Update-safe plugins](./extension/create-plugin-update-safety.md) | How updates run, 6 rules, the `update()` hook, own data tables | 2026-11-03 |
 | [Advanced plugins](./extension/create-plugin-advanced.md) | Per-store settings, secret keys, storefront pages / blocks / hooks, coupons, menus | 2026-10-22 |
 | [Creating a Template (storefront theme)](./extension/create-template.md) | Build a new storefront template; the gp247/shop view fallback mechanism | 2026-11-03 |
-| [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-10-22 |
+| [Installing Plugins & Templates](./extension/install-extension.md) | 4 methods: online (library), import (.zip), manual, CLI (`gp247:ext-*`) | 2026-11-08 |
 | [Converting a Plugin from v1 to v2](./extension/convert-plugin-v1-to-v2.md) | Upgrade a plugin from Core 1.x to Core 2.0 | 2026-11-03 |
 
 ### Releases
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [S-Cart releases and security](./release/release.md) | Recommended versions (minimum per package); highlights; how to update; S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security and reporting a vulnerability | 2026-11-07 |
+| [S-Cart releases and security](./release/release.md) | Recommended versions (minimum per package); highlights; how to update; S-Cart releases (each bundling core/front/shop): what is new, bug fixes, what to do when updating; security and reporting a vulnerability | 2026-11-08 |
 
 ### System
 | Document | Summary | Last updated |
 | --- | --- | --- |
 | [GP247 v3.0 release notes — order money](./system/release-notes-3.0.md) | Upgrading from v2.1/v3.0: payment ledger per order, cash flow counted by receipt date, payment status off-by-one fixed, **discount taken before tax**; note for plugin developers | 2026-10-22 |
-| [Command-Line (CLI) Reference](./system/command-line-reference.md) | Reference for all GP247 CLI commands: `--json`/exit-code output contract, `gp247:ext-*` lifecycle, install/update/doctor/info; `core-update` runs the upgrade migrations (core 2.2) | 2026-11-08 |
 | [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-10-22 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-10-22 |
 | [Sensitive data encryption](./system/data-encryption.md) | At-rest secret encryption (SMTP/OAuth/license); dedicated `GP247_ENCRYPTION_KEY`; **safe key-change steps** with `gp247:encryption-key-rotate`; encrypting custom columns | 2026-11-04 |

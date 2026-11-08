@@ -94,7 +94,7 @@ Some topics already have their own pages. This doc set only summarizes them and 
 | Tokens, permissions and logs of MCP (AI agents) | [MCP security & permissions](../mcp/mcp-security.md) |
 | Recommended versions, support lifecycle, PHP / web server patches | [S-Cart releases and security](../release/release.md) |
 | Updating GP247 on a running site | [Updating GP247 and S-Cart](../install-upgrade/update.md) |
-| The `gp247:doctor` diagnostic command | [CLI command reference](../system/command-line-reference.md) |
+| The `gp247:doctor` diagnostic command | [Check and diagnostic commands](../cli/cli-diagnostics.md) |
 
 ## Reporting a security vulnerability
 
@@ -147,4 +147,4 @@ Both read the site's configuration and do not open the site from the outside: wh
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

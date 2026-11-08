@@ -185,8 +185,8 @@ php artisan gp247:update --publish=all                         # refresh EVERYTH
 | `all` | All of the tokens above | ⚠️ No |
 
 The default `GP247Front` template is loaded straight from the package, so files you have **not** published get the new version
-without any token. Which folders each token touches: the "`gp247:update`" section of the
-[Command line reference](../system/command-line-reference.md).
+without any token. Which folders each token touches:
+[Refresh published files (`--publish`)](../cli/cli-install-update.md#refresh-published-files---publish).
 
 ### C. Plugins/templates updated with `git pull`, Composer or by copying files
 
@@ -269,7 +269,7 @@ tokens other than `core-public`, `front-public`).
 
 **Q7: Where can I see every GP247 command and its options?**
 
-→ [Command line reference](../system/command-line-reference.md).
+→ [GP247 command line (CLI)](../cli/cli-introduction.md) — the table of every command, by job.
 
 ## Change history
 <!-- Only record changes in logic/behavior. Newest row on top. -->
@@ -282,4 +282,4 @@ tokens other than `core-public`, `front-public`).
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
