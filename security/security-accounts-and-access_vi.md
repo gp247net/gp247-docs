@@ -35,6 +35,8 @@ Bản cài mới không còn mật khẩu mặc định ai cũng biết:
 | --- | --- |
 | Trình cài đặt trên web | Tên đăng nhập và mật khẩu bạn nhập ở bước 3 (mật khẩu 12–64 ký tự) |
 | `php artisan gp247:install` | Mật khẩu ngẫu nhiên **in ra một lần** cuối lệnh — chép lại ngay. Muốn tự đặt: thêm `--admin-password="..."` |
+> ℹ️ **Có từ:** gp247/core 3.11.0 — cài bằng bản cũ hơn thì tài khoản đầu tiên là `admin` / `admin` (xem mục dưới).
+
 
 Sau khi cài, đăng nhập bằng tài khoản đó, đổi email sang email thật (**Thiết lập tài khoản** ở góc trên) và cất mật khẩu vào trình quản
 lý mật khẩu.
@@ -78,6 +80,7 @@ Chính sách áp cho **mọi chỗ** loại tài khoản đó đặt mật khẩ
 ## Giới hạn đăng nhập và quên mật khẩu
 
 GP247 tự chặn đoán mật khẩu bằng cách giới hạn số lần đăng nhập sai.
+- **Mất mật khẩu mà Quên mật khẩu không dùng được** (tài khoản còn email lúc cài, site chưa gửi được mail): người có quyền vào máy chủ chạy `php artisan gp247:admin-password <tên-đăng-nhập>` để đặt mật khẩu mới — lệnh theo chính sách mật khẩu và thu hồi mọi phiên API của tài khoản — có từ gp247/core 3.11.0 ([cách dùng](../system/command-line-reference_vi.md#tài-khoản-quản-trị--gp247admin-password)).
 
 - **Mặc định**: 5 lần mỗi phút cho mỗi tài khoản + IP (`GP247_LOGIN_THROTTLE=5,1`), 20 lần mỗi phút cho mỗi IP (`GP247_LOGIN_IP_THROTTLE=20,1`). Trang đăng nhập quản trị và đăng nhập qua API dùng chung bộ đếm.
 - **Muốn chặt hơn**: giảm số lần trong `.env`, rồi chạy `php artisan config:clear`.
@@ -178,4 +181,4 @@ Khách đăng ký trên cửa hàng cũng cần được bảo vệ:
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -74,7 +74,8 @@ php artisan gp247:install
 php artisan gp247:doctor
 ```
 
-- **The first admin account is `admin` / `admin`** — everyone knows it, so replace it in stage 4.
+- **The first admin account is `admin` with a random password** — the password is **shown only once**, at the end of
+  `gp247:install`. Copy it right away: once the Terminal is closed it cannot be shown again.
 - **Stage 4 still matters** — check and secure the site before opening it to users.
 
 ## On this page
@@ -150,11 +151,16 @@ The full online store: core + front + shop + MCP server.
    php artisan gp247:install
    ```
 
-   The command shows the steps it will run and asks for confirmation — type `yes`. When it finishes, the screen prints the
-   **admin path** and the login **`admin` / `admin`**.
+   The command shows the steps it will run and asks for confirmation — type `yes`. When the install finishes, the **last block**
+   on the screen prints the **admin path**, the user name **`admin`** and a **random password**.
 
-   > ⚠️ **Warning:** everyone knows `admin` / `admin`. Replace this account right after your first login — see
-   > [Check the result and secure the site](#check-the-result-and-secure-the-site).
+   > ⚠️ **Warning:** this password is **shown only once**, right after a successful install. GP247 keeps no readable copy and
+   > never prints it again. Save it in a password manager **before** you close the Terminal, then continue with
+   > [Check the result and secure the site](#check-the-result-and-secure-the-site). To choose the password yourself
+   > (12–64 characters), run `php artisan gp247:install --admin-password="..."` — remember the Terminal keeps this command in
+   > its history.
+
+   > ℹ️ **Available since:** gp247/core 3.11.0 — older versions create the account `admin` / `admin`.
 
 5. *(Optional — test sites only)* load sample products, categories and articles:
 
@@ -352,9 +358,9 @@ The freshly installed site already works, but go through this whole list **befor
       **System alerts** block listing unsafe settings (visible to Administrators only).
 - [ ] **Production configuration** — `APP_ENV=production`, `APP_DEBUG=false`, HTTPS:
       [Safe production configuration](../security/security-production-config.md).
-- [ ] **Replace the `admin` / `admin` account** — create your own Administrator account (real email, strong password kept in a
-      password manager), log in again with it, then disable or delete `admin`; turn on two-factor authentication if available:
-      [Replace the `admin` / `admin` account](../security/security-accounts-and-access.md).
+- [ ] **Keep the admin account safe** — sign in with `admin` and the password the install just printed, change the email to a
+      real one (**Setting account** at the top), keep the password in a password manager; turn on two-factor authentication if
+      available: [The first admin account](../security/security-accounts-and-access.md#the-first-admin-account).
 - [ ] **Back up the encryption keys** — copy `APP_KEY` and `GP247_ENCRYPTION_KEY` somewhere safe; losing them means losing the
       stored passwords (SMTP, payment gateways): [Encryption keys & backup](../security/security-keys-and-backup.md).
 - [ ] **Email sending** — [Mail system](../system/mail-system.md).
@@ -374,7 +380,8 @@ The freshly installed site already works, but go through this whole list **befor
 | The admin returns 403 | `GP247_ADMIN_PREFIX` matches a folder name in `public/` (`vendor`, `GP247`) | Choose another name in `.env` |
 | Error 500 right after installing | Missing write permission, missing extension, wrong database details | Run `php artisan gp247:doctor`, read `storage/logs/laravel.log` |
 | `gp247:install` refuses to run | Run from a script / CI, so it cannot ask for confirmation | Run it in a normal Terminal; for an unattended install add `--force=1` |
-| The **System alerts** block reports the default admin password | The `admin` / `admin` account is still there | Replace it following [the guide](../security/security-accounts-and-access.md) |
+| You did not copy the admin password after installing | The password is printed only once, at the end of `gp247:install`, and cannot be shown again | Freshly installed site with no data yet: run `php artisan gp247:install` again to get a new password (the command re-creates the tables). Account already moved to a real email and the site can send mail: use **Forgot password** on the sign-in page. Otherwise: `php artisan gp247:admin-password admin` ([how to](../system/command-line-reference.md#admin-account--gp247admin-password)) |
+| The **System alerts** block reports the default admin password | A site installed with an older version still has the `admin` / `admin` account | Replace it following [the guide](../security/security-accounts-and-access.md#site-installed-from-an-older-version-replace-the-admin--admin-account) |
 
 ## Conditions & Rules (know before you act)
 
@@ -385,8 +392,9 @@ The freshly installed site already works, but go through this whole list **befor
   after adding the package.
 - **No silent run when it cannot ask** (scripts, CI, `--json`) — `gp247:install` refuses instead of installing over a site.
   `--force=1` means you deliberately accept losing data.
-- **An `admin` / `admin` account is always created** — every command-line install has it; the **System alerts** block keeps
-  reminding you until you replace it.
+- **The admin password is shown only once** — the `admin` account gets a random password, printed in the last block of the
+  command (even when a later step fails). No command prints it again. A site installed with an older version may still have
+  `admin` / `admin`; the **System alerts** block keeps reminding you until you replace it.
 
 **When combining packages**
 
@@ -430,5 +438,12 @@ only exists in the backup.
 → Follow [Updating GP247 and S-Cart](./update.md): `composer update`, then `php artisan gp247:update`. Never reinstall.
 
 ---
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-11-08 | gp247/core 3.11.0 | The first admin account gets a random password, printed once in the last block of `gp247:install` (instead of `admin` / `admin`); if it is lost, use `gp247:admin-password`. |
+
+
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

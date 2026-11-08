@@ -27,7 +27,7 @@ flowchart LR
 
 ## Ngay sau khi cài
 
-- [ ] Thay tài khoản quản trị mặc định `admin`; thử đăng nhập `admin` / `admin` phải bị từ chối — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#thay-tài-khoản-quản-trị-mặc-định)
+- [ ] Chép mật khẩu quản trị mà lệnh cài in ra (chỉ hiện một lần) và đổi email tài khoản sang email thật; site cài từ bản cũ thì thay tài khoản `admin` — thử đăng nhập `admin` / `admin` phải bị từ chối — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#tài-khoản-quản-trị-đầu-tiên)
 - [ ] Mở `/install` — phải chuyển sang trang đăng nhập — [Cấu hình production](./security-production-config_vi.md#tự-kiểm-trong-5-phút)
 - [ ] Đặt `GP247_ENCRYPTION_KEY` riêng rồi chạy `php artisan config:clear` — [Mã hoá dữ liệu nhạy cảm](../system/data-encryption_vi.md)
 - [ ] Sao lưu file `.env` ra nơi an toàn ngoài máy chủ — [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md)
@@ -90,7 +90,7 @@ Mười lỗi dưới đây gây phần lớn sự cố trên site thật. Mỗi
 | 4 | **Dùng nguyên `.env.example`** | `APP_ENV=local`, `LOG_LEVEL=debug`, mật khẩu cơ sở dữ liệu mẫu | Sửa theo bảng biến production — [chi tiết](./security-production-config_vi.md#bảng-biến-môi-trường-cho-production) |
 | 5 | **Sửa `.env` mà quên `php artisan config:clear`** | Site vẫn chạy cấu hình cũ, kể cả debug cũ | Chạy `php artisan config:clear` sau mỗi lần sửa — [chi tiết](./security-production-config_vi.md#cài-mã-nguồn-cho-production) |
 | 6 | **Đưa `.env` lên Git hoặc document root sai** | Mọi bí mật lộ | `.gitignore` có `.env`; document root là `public/` — [chi tiết](./security-production-config_vi.md#thư-mục-gốc-của-web-và-quyền-thư-mục) |
-| 7 | **Giữ tài khoản `admin` / `admin`** | Bị chiếm trang quản trị trong vài phút | Thay ngay sau khi cài — [chi tiết](./security-accounts-and-access_vi.md#thay-tài-khoản-quản-trị-mặc-định) |
+| 7 | **Giữ tài khoản `admin` / `admin`** (site cài từ bản cũ) | Bị chiếm trang quản trị trong vài phút | Thay ngay — [chi tiết](./security-accounts-and-access_vi.md#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin) |
 | 8 | **Có sao lưu nhưng chưa từng thử khôi phục** | Tới lúc cần mới biết bản sao lưu thiếu hoặc hỏng | Thử khôi phục mỗi quý — [chi tiết](./security-keys-and-backup_vi.md#thử-khôi-phục--bước-nhiều-người-bỏ-qua) |
 | 9 | **`docker compose down -v` trên production** | Xoá volume chứa cơ sở dữ liệu | Chỉ dùng `docker compose down` (không `-v`) — [chi tiết](./security-keys-and-backup_vi.md) |
 | 10 | **Cài plugin không rõ nguồn** | Plugin đọc được `.env` và cơ sở dữ liệu | Chỉ cài từ thư viện GP247 hoặc tác giả tin cậy — [chi tiết](./security-updates-and-incidents_vi.md#plugin-và-giao-diện-chỉ-cài-từ-nguồn-tin-cậy) |
@@ -125,4 +125,4 @@ Mười lỗi dưới đây gây phần lớn sự cố trên site thật. Mỗi
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

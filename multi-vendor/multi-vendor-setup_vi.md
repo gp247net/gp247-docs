@@ -46,7 +46,8 @@ Bỏ qua bước này nếu website S-Cart 3.x của bạn đã chạy.
    php artisan gp247:install
    ```
 
-   Làm theo các câu hỏi trên màn hình. Nếu thành công, lệnh in ra đường dẫn khu admin và tài khoản đăng nhập — hãy lưu lại.
+   Làm theo các câu hỏi trên màn hình. Nếu thành công, khối cuối cùng của lệnh in ra đường dẫn khu admin, tên đăng nhập `admin` và
+   mật khẩu — **mật khẩu chỉ hiện một lần**, hãy chép lại ngay trước khi đóng Terminal.
 
 5. (Tùy chọn) Nạp dữ liệu mẫu cho cửa hàng để có sản phẩm thử:
 
@@ -258,4 +259,4 @@ Muốn đổi chữ hiển thị, nội dung email, giao diện trang gian hàng
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

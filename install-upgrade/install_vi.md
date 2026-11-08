@@ -74,7 +74,8 @@ php artisan gp247:install
 php artisan gp247:doctor
 ```
 
-- **Tài khoản quản trị đầu tiên là `admin` / `admin`** — ai cũng biết, nên thay ngay ở chặng 4.
+- **Tài khoản quản trị đầu tiên là `admin` với mật khẩu ngẫu nhiên** — mật khẩu **chỉ hiện một lần**, ở cuối lệnh
+  `gp247:install`. Chép lại ngay, vì đóng Terminal là không xem lại được.
 - **Cài xong còn chặng 4** — kiểm tra và bảo mật, trước khi mở site cho người dùng.
 
 ## Trong trang này
@@ -149,11 +150,15 @@ Cửa hàng online đầy đủ: core + front + shop + MCP server.
    php artisan gp247:install
    ```
 
-   Lệnh hiện các bước sẽ chạy và hỏi xác nhận — gõ `yes`. Khi xong, màn hình in **đường dẫn quản trị** và tài khoản đăng nhập
-   **`admin` / `admin`**.
+   Lệnh hiện các bước sẽ chạy và hỏi xác nhận — gõ `yes`. Khi cài xong, **khối cuối cùng** trên màn hình in **đường dẫn quản
+   trị**, tên đăng nhập **`admin`** và một **mật khẩu ngẫu nhiên**.
 
-   > ⚠️ **Lưu ý:** `admin` / `admin` là thông tin ai cũng biết. Thay tài khoản này ngay sau lần đăng nhập đầu — xem
-   > [Kiểm tra kết quả và bảo mật](#kiểm-tra-kết-quả-và-bảo-mật).
+   > ⚠️ **Lưu ý:** mật khẩu này **chỉ hiện một lần**, ngay khi cài thành công. GP247 không lưu bản đọc được ở đâu và không in
+   > lại. Chép vào trình quản lý mật khẩu **trước khi** đóng Terminal, rồi làm tiếp
+   > [Kiểm tra kết quả và bảo mật](#kiểm-tra-kết-quả-và-bảo-mật). Muốn tự chọn mật khẩu (12–64 ký tự) thì chạy
+   > `php artisan gp247:install --admin-password="..."` — nhớ rằng Terminal lưu lại lệnh này trong lịch sử.
+
+   > ℹ️ **Có từ:** gp247/core 3.11.0 — bản cũ hơn tạo tài khoản `admin` / `admin`.
 
 5. *(Tuỳ chọn — chỉ cho site thử)* nạp sản phẩm, danh mục, bài viết mẫu:
 
@@ -348,9 +353,9 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
       **Cảnh báo hệ thống** liệt kê cấu hình chưa an toàn (chỉ Administrator thấy).
 - [ ] **Cấu hình production** — `APP_ENV=production`, `APP_DEBUG=false`, chạy HTTPS:
       [Cấu hình production](../security/security-production-config_vi.md).
-- [ ] **Thay tài khoản `admin` / `admin`** — tạo tài khoản Administrator riêng (email thật, mật khẩu mạnh cất trong trình quản
-      lý mật khẩu), đăng nhập lại bằng tài khoản mới, rồi tắt hoặc xoá `admin`; bật xác thực hai lớp nếu có:
-      [Thay tài khoản `admin` / `admin`](../security/security-accounts-and-access_vi.md).
+- [ ] **Giữ an toàn tài khoản quản trị** — đăng nhập bằng `admin` và mật khẩu lệnh cài vừa in ra, đổi email sang email thật
+      (**Thiết lập tài khoản** ở góc trên), cất mật khẩu vào trình quản lý mật khẩu; bật xác thực hai lớp nếu có:
+      [Tài khoản quản trị đầu tiên](../security/security-accounts-and-access_vi.md#tài-khoản-quản-trị-đầu-tiên).
 - [ ] **Sao lưu khoá mã hoá** — chép `APP_KEY` và `GP247_ENCRYPTION_KEY` ra nơi an toàn; mất khoá là mất các mật khẩu đã lưu
       (SMTP, cổng thanh toán): [Khoá mã hoá & sao lưu](../security/security-keys-and-backup_vi.md).
 - [ ] **Gửi mail** — [Hệ thống gửi mail](../system/mail-system_vi.md).
@@ -370,7 +375,8 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 | Trang quản trị báo 403 | `GP247_ADMIN_PREFIX` trùng tên thư mục trong `public/` (`vendor`, `GP247`) | Đặt tên khác trong `.env` |
 | Lỗi 500 ngay sau khi cài | Thiếu quyền ghi thư mục, thiếu extension, sai thông tin CSDL | Chạy `php artisan gp247:doctor`, xem `storage/logs/laravel.log` |
 | `gp247:install` từ chối chạy | Chạy trong script / CI nên không hỏi xác nhận được | Chạy trong Terminal thường; cài tự động thì thêm `--force=1` |
-| Khối **Cảnh báo hệ thống** báo mật khẩu quản trị mặc định | Tài khoản `admin` / `admin` vẫn còn | Thay tài khoản theo [hướng dẫn](../security/security-accounts-and-access_vi.md) |
+| Không kịp chép mật khẩu quản trị sau khi cài | Mật khẩu chỉ in một lần ở cuối lệnh `gp247:install`, không xem lại được | Site vừa cài, chưa có dữ liệu: chạy lại `php artisan gp247:install` để nhận mật khẩu mới (lệnh tạo lại bảng). Tài khoản đã đổi sang email thật và site gửi được mail: dùng **Quên mật khẩu** ở trang đăng nhập. Còn lại: `php artisan gp247:admin-password admin` ([cách dùng](../system/command-line-reference_vi.md#tài-khoản-quản-trị--gp247admin-password)) |
+| Khối **Cảnh báo hệ thống** báo mật khẩu quản trị mặc định | Site cài bằng bản cũ hơn vẫn còn tài khoản `admin` / `admin` | Thay tài khoản theo [hướng dẫn](../security/security-accounts-and-access_vi.md#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin) |
 
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 
@@ -380,8 +386,9 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
   "không") và cảnh báo khi site **đã được cài**; lệnh cài từng phần chỉ dùng **một lần** khi vừa thêm gói.
 - **Không tự chạy khi không hỏi được** (script, CI, `--json`) — `gp247:install` từ chối thay vì cài đè. `--force=1` nghĩa là bạn
   chủ động chấp nhận mất dữ liệu.
-- **Luôn tạo tài khoản `admin` / `admin`** — site cài bằng dòng lệnh nào cũng có tài khoản này; khối **Cảnh báo hệ thống** nhắc
-  cho tới khi bạn thay.
+- **Mật khẩu quản trị chỉ hiện một lần** — tài khoản `admin` nhận mật khẩu ngẫu nhiên, in ở khối cuối cùng của lệnh (kể cả khi
+  một bước sau đó lỗi). Không có lệnh nào in lại. Site cài bằng bản cũ hơn có thể vẫn còn `admin` / `admin`; khối
+  **Cảnh báo hệ thống** nhắc cho tới khi bạn thay.
 
 **Khi ghép gói**
 
@@ -423,5 +430,12 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 → Theo [Cập nhật GP247 và S-Cart](./update_vi.md): `composer update` rồi `php artisan gp247:update`. Không bao giờ cài lại.
 
 ---
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-11-08 | gp247/core 3.11.0 | Tài khoản quản trị đầu tiên nhận mật khẩu ngẫu nhiên, in một lần ở khối cuối cùng của `gp247:install` (thay cho `admin` / `admin`); mất mật khẩu thì dùng `gp247:admin-password`. |
+
+
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

@@ -65,6 +65,7 @@ and you can copy-paste and run them right away.
 | `gp247:cache-rebuild` | core | Rebuild route/config caches |
 | `gp247:doctor` | core | Check the environment (PHP/ext/permissions/DB) and security configuration |
 | `gp247:info` | core | Show status: versions, install marker, extension counts |
+| `gp247:admin-password` | core | Reset the password of an admin account when it is lost (follows the password policy, revokes API sessions) |
 | `gp247:backup-run` | core | Make an encrypted backup and check it (`--kind`, `--group`, `--exclude-logs`, `--scheduled`) |
 | `gp247:backup-list` | core | List backups |
 | `gp247:backup-verify` | core | Check a backup's integrity again |
@@ -808,6 +809,46 @@ php artisan gp247:info --json
 
 ---
 
+## Admin account — `gp247:admin-password`
+
+**What it does:** sets a new password for an admin account when you have lost it (for example you did not copy the password printed
+once at install) and **Forgot password** cannot help — the account still has the install email `admin@gp247.local`, or the site
+cannot send mail yet. Only someone with access to the server can run it.
+
+> ℹ️ **Available since:** gp247/core 3.11.0
+
+| Parameter | Value | Meaning |
+| --- | --- | --- |
+| `username` | required | User name of the account (usually `admin`) |
+| `--password` | optional | The new password you choose — it must meet the **admin password policy currently set** on the **Password policy** screen. Leave it out to get a random password. A value typed here stays in the Terminal history |
+| `--force` | `0` (default) or `1` | `1`: no confirmation — required in scripts and with `--json` |
+
+```bash
+php artisan gp247:admin-password admin
+```
+
+The command asks for confirmation (default **no**). If you agree, the last block prints the user name and **the new password — shown
+only once**; copy it right away. With `--json`, a generated password is only in `data.password`; a password you chose is never
+printed back.
+
+After the reset:
+
+- Every app using the REST API and every MCP token of the account is **revoked**; browsers that "remember me" must sign in again.
+  A browser session that is open (not remembered) ends when the session expires.
+- A locked account still gets the password, but the command does **not** unlock it — unlock it on the **Users** screen.
+- The command writes one line to the site log (the user name, never the password).
+
+| Error code (`--json`) | When |
+| --- | --- |
+| `user_not_found` | No admin account has that user name |
+| `invalid_password` | The `--password` value does not meet the policy (the message does not repeat it) |
+| `confirmation_required` | Run in a script or with `--json` without `--force=1` |
+
+Hosting without a command line cannot run this command — so right after installing, change the account email to a real one so that
+**Forgot password** works.
+
+---
+
 ## Backup & restore — `gp247:backup-*`
 
 The `gp247:backup-*` commands do everything the **Backup & restore** screen does, on a VPS or in a script. Commands that need the backup password ask for it while running (or read one line of standard input with `--secret-stdin`), never as an argument. Full usage: [Backup & restore](../backup/backup-and-restore.md#command-line-for-people-with-cli-access), [Restore by situation](../backup/restore-guide.md#restore-from-the-command-line), [External destination](../backup/backup-offsite.md).
@@ -937,6 +978,7 @@ reports its own error and is logged, without breaking the data update.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-08 | gp247/core 3.11.0 | Added `gp247:admin-password` (reset the password of an admin account); `gp247:install` / `gp247:core-install` no longer create `admin` / `admin` — a random password is printed once in the last block of the command (or use `--admin-password`). |
 | 2026-11-07 | core (release with backup & restore) | Added the `gp247:backup-*` commands (create, list, check, pin, delete, restore, import, `.sql` export, external destination) — see the Backup & restore section. |
 | 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` adds 7 security configuration checks (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), shared with the System alerts block on the dashboard; they are only PASS/WARN, so the exit code does not change. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Added `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` for the MCP server built into S-Cart (replaces the McpServer plugin); `gp247:install` and `gp247:update` run the MCP step; `gp247:info` shows the `gp247/mcp` version. |
@@ -949,4 +991,4 @@ reports its own error and is logged, without breaking the data update.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

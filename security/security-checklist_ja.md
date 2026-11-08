@@ -27,7 +27,7 @@ flowchart LR
 
 ## インストール直後
 
-- [ ] 初期の管理者アカウント `admin` を置き換える。`admin` / `admin` でのログインが拒否されることを確認する — [アカウントと権限](./security-accounts-and-access_ja.md#デフォルトの管理者アカウントを置き換える)
+- [ ] インストール時に表示された管理者パスワード（一度だけ表示）を控え、アカウントのメールを実際のアドレスに変更する。旧バージョンでインストールしたサイトではアカウント `admin` を置き換え、`admin` / `admin` でのログインが拒否されることを確認する — [アカウントと権限](./security-accounts-and-access_ja.md#最初の管理者アカウント)
 - [ ] `/install` を開く — ログインページに切り替わることを確認する — [本番環境の設定](./security-production-config_ja.md#5-分でできるセルフチェック)
 - [ ] 専用の `GP247_ENCRYPTION_KEY` を設定し、`php artisan config:clear` を実行する — [GP247 の機密データの暗号化](../system/data-encryption_ja.md)
 - [ ] `.env` ファイルをサーバー外の安全な場所にバックアップする — [暗号化キーとバックアップ](./security-keys-and-backup_ja.md)
@@ -90,7 +90,7 @@ flowchart LR
 | 4 | **`.env.example` をそのまま使う** | `APP_ENV=local`、`LOG_LEVEL=debug`、サンプルのデータベースパスワード | 本番環境の変数一覧に沿って修正する — [詳細](./security-production-config_ja.md#本番環境の環境変数一覧) |
 | 5 | **`.env` を編集して `php artisan config:clear` を忘れる** | サイトが古い設定のまま動く。古いデバッグ設定も含む | 編集するたびに `php artisan config:clear` を実行する — [詳細](./security-production-config_ja.md#本番環境向けのソースコードのインストール) |
 | 6 | **`.env` を Git に入れる、またはドキュメントルートの誤り** | すべての秘密情報が漏れる | `.gitignore` に `.env` を入れる。ドキュメントルートは `public/` — [詳細](./security-production-config_ja.md#web-のドキュメントルートとフォルダの権限) |
-| 7 | **アカウント `admin` / `admin` を残す** | 数分で管理画面を乗っ取られる | インストール直後に置き換える — [詳細](./security-accounts-and-access_ja.md#デフォルトの管理者アカウントを置き換える) |
+| 7 | **アカウント `admin` / `admin` を残す**（旧バージョンでインストールしたサイト） | 数分で管理画面を乗っ取られる | すぐに置き換える — [詳細](./security-accounts-and-access_ja.md#旧バージョンからインストールしたサイトアカウント-admin--admin-を置き換える) |
 | 8 | **バックアップはあるが一度も復元を試していない** | 必要になって初めて、バックアップの不足や破損に気づく | 四半期ごとに復元を試す — [詳細](./security-keys-and-backup_ja.md#復元テスト--多くの人が飛ばす手順) |
 | 9 | **本番環境で `docker compose down -v`** | データベースを含むボリュームが削除される | `docker compose down`（`-v` なし）だけを使う — [詳細](./security-keys-and-backup_ja.md) |
 | 10 | **出所のわからないプラグインをインストールする** | プラグインが `.env` とデータベースを読める | GP247 のライブラリまたは信頼できる作者からだけインストールする — [詳細](./security-updates-and-incidents_ja.md#プラグインとテンプレート信頼できる提供元からのみインストール) |
@@ -125,4 +125,4 @@ flowchart LR
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-04 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>

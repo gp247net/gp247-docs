@@ -65,6 +65,7 @@ khi nào, với tham số gì**, và copy chạy được ngay.
 | `gp247:cache-rebuild` | core | Rebuild cache route/config |
 | `gp247:doctor` | core | Kiểm tra môi trường (PHP/extension/quyền ghi/DB) và cấu hình bảo mật |
 | `gp247:info` | core | Xem trạng thái: version, marker cài đặt, số lượng extension |
+| `gp247:admin-password` | core | Đặt lại mật khẩu một tài khoản quản trị khi mất mật khẩu (theo chính sách mật khẩu, thu hồi phiên API) |
 | `gp247:backup-run` | core | Tạo bản sao lưu đã mã hoá rồi tự kiểm (`--kind`, `--group`, `--exclude-logs`, `--scheduled`) |
 | `gp247:backup-list` | core | Liệt kê bản sao lưu |
 | `gp247:backup-verify` | core | Kiểm lại toàn vẹn một bản |
@@ -786,6 +787,45 @@ php artisan gp247:info --json
 
 ---
 
+## Tài khoản quản trị — `gp247:admin-password`
+
+**Chức năng:** đặt mật khẩu mới cho một tài khoản quản trị, khi bạn mất mật khẩu (ví dụ không kịp chép mật khẩu in một lần lúc
+cài) và **Quên mật khẩu** không dùng được — tài khoản còn email lúc cài `admin@gp247.local` hoặc site chưa gửi được mail. Chỉ người
+có quyền vào máy chủ mới chạy được lệnh này.
+
+> ℹ️ **Có từ:** gp247/core 3.11.0
+
+| Tham số | Giá trị | Ý nghĩa |
+| --- | --- | --- |
+| `username` | bắt buộc | Tên đăng nhập của tài khoản (thường là `admin`) |
+| `--password` | tuỳ chọn | Mật khẩu mới do bạn chọn — phải đạt **chính sách mật khẩu Quản trị viên đang đặt** trên màn **Chính sách mật khẩu**. Bỏ trống thì lệnh sinh mật khẩu ngẫu nhiên. Giá trị gõ ở đây nằm lại trong lịch sử Terminal |
+| `--force` | `0` (mặc định) hoặc `1` | `1`: không hỏi xác nhận — bắt buộc khi chạy trong script hoặc với `--json` |
+
+```bash
+php artisan gp247:admin-password admin
+```
+
+Lệnh hỏi xác nhận (mặc định **không**). Đồng ý thì khối cuối cùng in tên đăng nhập và **mật khẩu mới — chỉ hiện một lần**, chép lại
+ngay. Với `--json`, mật khẩu sinh ra chỉ nằm trong `data.password`; mật khẩu bạn tự chọn không bao giờ được in lại.
+
+Sau khi đặt lại:
+
+- Mọi ứng dụng dùng REST API và mọi token MCP của tài khoản bị **thu hồi**; trình duyệt đã "ghi nhớ đăng nhập" phải đăng nhập lại.
+  Phiên trình duyệt đang mở (không ghi nhớ) hết hiệu lực khi phiên hết hạn.
+- Tài khoản đang bị khoá vẫn được đặt mật khẩu, nhưng lệnh **không** tự mở khoá — mở ở màn **Người dùng**.
+- Lệnh ghi một dòng vào log của site (tên tài khoản, không có mật khẩu).
+
+| Mã lỗi (`--json`) | Khi nào |
+| --- | --- |
+| `user_not_found` | Không có tài khoản quản trị mang tên đó |
+| `invalid_password` | Mật khẩu `--password` không đạt chính sách (thông báo không lặp lại mật khẩu) |
+| `confirmation_required` | Chạy trong script hoặc `--json` mà không có `--force=1` |
+
+Hosting không có dòng lệnh không chạy được lệnh này — vì vậy ngay sau khi cài, hãy đổi email tài khoản sang email thật để dùng được
+**Quên mật khẩu**.
+
+---
+
 ## Sao lưu & phục hồi — `gp247:backup-*`
 
 Các lệnh `gp247:backup-*` làm được mọi việc của màn **Sao lưu & phục hồi** trên VPS hoặc trong script. Lệnh cần mật khẩu sao lưu thì hỏi khi chạy (hoặc đọc một dòng từ đầu vào chuẩn với `--secret-stdin`), không nhận qua tham số. Cách dùng đầy đủ: [Sao lưu & phục hồi](../backup/backup-and-restore_vi.md#dòng-lệnh-cho-người-có-quyền-cli), [Phục hồi theo tình huống](../backup/restore-guide_vi.md#phục-hồi-bằng-dòng-lệnh), [Đích ngoài](../backup/backup-offsite_vi.md).
@@ -915,6 +955,7 @@ phần cập nhật dữ liệu.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-08 | gp247/core 3.11.0 | Thêm `gp247:admin-password` (đặt lại mật khẩu tài khoản quản trị); `gp247:install` / `gp247:core-install` không còn tạo `admin` / `admin` — mật khẩu ngẫu nhiên in một lần ở khối cuối cùng của lệnh (hoặc `--admin-password`). |
 | 2026-11-07 | core (bản có sao lưu & phục hồi) | Thêm họ lệnh `gp247:backup-*` (tạo, liệt kê, kiểm, ghim, xoá, phục hồi, đưa vào, xuất `.sql`, đích ngoài) — xem mục Sao lưu & phục hồi. |
 | 2026-11-04 | gp247/core 3.10.0 | `gp247:doctor` thêm 7 mục cấu hình bảo mật (`app_debug`, `https`, `default_admin_password`, `password_policy`, `mfa_enabled`, `api_exposure`, `support_line`), dùng chung với block Cảnh báo hệ thống trên dashboard; các mục này chỉ PASS/WARN nên mã thoát không đổi. |
 | 2026-11-03 | gp247/core 3.9, gp247/mcp 2.0.0 | Thêm `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall` của MCP server có sẵn trong S-Cart (thay plugin McpServer); `gp247:install` và `gp247:update` tự gọi bước MCP; `gp247:info` hiện phiên bản `gp247/mcp`. |
@@ -927,4 +968,4 @@ phần cập nhật dữ liệu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

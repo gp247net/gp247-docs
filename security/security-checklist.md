@@ -27,7 +27,7 @@ flowchart LR
 
 ## Right after install
 
-- [ ] Replace the default admin account `admin`; signing in with `admin` / `admin` must be refused — [Accounts & permissions](./security-accounts-and-access.md#replace-the-default-admin-account)
+- [ ] Copy the admin password the install printed (it is shown only once) and change the account email to a real one; on a site installed from an older version, replace the `admin` account — signing in with `admin` / `admin` must be refused — [Accounts & permissions](./security-accounts-and-access.md#the-first-admin-account)
 - [ ] Open `/install` — it must redirect to the sign-in page — [Production config](./security-production-config.md#self-check-in-5-minutes)
 - [ ] Set a dedicated `GP247_ENCRYPTION_KEY` and then run `php artisan config:clear` — [Sensitive data encryption](../system/data-encryption.md)
 - [ ] Back up the `.env` file to a safe place off the server — [Encryption keys & backup](./security-keys-and-backup.md)
@@ -90,7 +90,7 @@ The ten mistakes below cause most incidents on live sites. Each one has its cons
 | 4 | **Using `.env.example` as-is** | `APP_ENV=local`, `LOG_LEVEL=debug`, sample database password | Edit it following the production variables table — [details](./security-production-config.md#environment-variables-for-production) |
 | 5 | **Editing `.env` and forgetting `php artisan config:clear`** | The site keeps running the old config, including the old debug setting | Run `php artisan config:clear` after every edit — [details](./security-production-config.md#installing-the-code-for-production) |
 | 6 | **Pushing `.env` to Git or a wrong document root** | Every secret leaks | `.gitignore` has `.env`; the document root is `public/` — [details](./security-production-config.md#web-root-and-folder-permissions) |
-| 7 | **Keeping the `admin` / `admin` account** | The admin is taken over within minutes | Replace it right after install — [details](./security-accounts-and-access.md#replace-the-default-admin-account) |
+| 7 | **Keeping the `admin` / `admin` account** (site installed from an older version) | The admin is taken over within minutes | Replace it now — [details](./security-accounts-and-access.md#site-installed-from-an-older-version-replace-the-admin--admin-account) |
 | 8 | **Having backups but never testing a restore** | You only find out the backup is incomplete or broken when you need it | Test a restore every quarter — [details](./security-keys-and-backup.md#test-a-restore--the-step-many-people-skip) |
 | 9 | **`docker compose down -v` on production** | Deletes the volume that holds the database | Only use `docker compose down` (without `-v`) — [details](./security-keys-and-backup.md) |
 | 10 | **Installing plugins of unknown origin** | The plugin can read `.env` and the database | Install only from the GP247 library or trusted authors — [details](./security-updates-and-incidents.md#plugins-and-templates-install-only-from-trusted-sources) |
@@ -125,4 +125,4 @@ The ten mistakes below cause most incidents on live sites. Each one has its cons
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

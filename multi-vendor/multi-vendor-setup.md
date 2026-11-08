@@ -46,7 +46,8 @@ Skip this step if your S-Cart 3.x site is already running.
    php artisan gp247:install
    ```
 
-   Answer the on-screen questions. If it succeeds, the command prints the admin URL and your login — save them.
+   Answer the on-screen questions. If it succeeds, the last block of the output prints the admin URL, the user name `admin` and
+   the password — **the password is shown only once**, so copy it before you close the Terminal.
 
 5. (Optional) Load sample store data so you have products to test with:
 
@@ -259,4 +260,4 @@ To change on-screen text, email content, shop page design or staff permissions, 
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
