@@ -4,23 +4,23 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.5.2** (2026-11-07).
+and how to update. Latest release: **S-Cart 3.6.0** (2026-11-09).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.10.3** | 3.10.3 |
-| gp247/front | **3.2.3** | 3.5.2 |
-| gp247/shop | **3.8.1** | 3.8.1 |
-| gp247/mcp | **2.0.1** | 2.0.1 |
+| gp247/core | **3.10.3** | 3.11.0 |
+| gp247/front | **3.2.3** | 3.7.0 |
+| gp247/shop | **3.8.1** | 3.9.0 |
+| gp247/mcp | **2.0.1** | 2.0.2 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
 - **At or above it** → your site has all the important improvements, even if you have not reinstalled S-Cart.
 - **Third-party libraries** → also run `composer audit`; see [Third-party libraries](#third-party-libraries).
 
-> ⚠️ **Note:** update **all the packages together**: `gp247/shop` 3.8.1 needs `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
+> ⚠️ **Note:** update **all the packages together**: `gp247/front` 3.7.0 and `gp247/shop` 3.9.0 need `gp247/core` ≥ 3.11, `gp247/shop` 3.8.1 needs `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
 
 ## Support lifecycle
@@ -36,10 +36,11 @@ Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each lin
   `composer require … -W` and `php artisan gp247:update` — see [Upgrading to the 3.x line](../install-upgrade/upgrade.md).
 
 ## Highlights
-- **System alerts** — the admin flags unsafe settings by itself *(S-Cart 3.5.1)*
-- **MCP server built into S-Cart** — ask and manage your shop with the AI agent you already use *(S-Cart 3.5)*
-- **The agent looks things up for you** — sales, low stock, orders, customers, with the right permissions *(S-Cart 3.5)*
-- **Write actions are always confirmed** — preview before changing an order status or stock *(S-Cart 3.5)*
+- **Encrypted backups built in** — back up part of the site or all of it, checked right after it is made *(S-Cart 3.6)*
+- **Restore just what you need** — a data group, deleted records, configuration or the whole database *(S-Cart 3.6)*
+- **Automatic backups without cron** — they run on shared hosting too *(S-Cart 3.6)*
+- **Copy backups off the server** — S3-compatible or SFTP, with write-only credentials *(S-Cart 3.6)*
+- **Password policy per account group** — set separately for admins and customers *(S-Cart 3.6)*
 
 ## How to update
 **Step 1 —** Back up the database and the site folder.
@@ -62,6 +63,40 @@ Step-by-step details: [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.6.0 — 2026-11-09
+**Backup and restore built into S-Cart, ready for shared hosting.**
+
+**✨ New**
+- **Encrypted backups built in** — back up one data group, several, or the whole site; each backup is checked right after it
+  is made and opens only with the backup password or recovery key ([docs](../backup/backup-and-restore.md))
+- **Restore just what you need** — one data group, deleted records, configuration or the whole database, with a preview and
+  undo ([docs](../backup/restore-guide.md))
+- **Automatic backups without cron** — run while an admin uses the admin area, or on cron when available; a quick snapshot
+  is taken before `gp247:update` and before an extension update
+- **Copy backups off the server** — S3-compatible or SFTP, with write-only credentials so an attacker cannot delete them
+  ([docs](../backup/backup-offsite.md))
+- **Password policy per account group** — set length and strength separately for admins and customers on one screen
+  ([docs](../security/security-accounts-and-access.md))
+- **Failed sign-ins screen** — see failed sign-in attempts and spot password guessing early
+  ([docs](../security/security-built-in.md))
+- **For developers:** `gp247:backup-*` commands (create, verify, restore, copy off-site); `gp247:admin-password` resets an
+  admin password from the command line; plugins declare their tables in backup data groups
+
+**🔧 Improvements:** list search boxes say which columns they search and ignore extra spaces; `gp247:install` shows the
+admin sign-in details last; the Docker scheduler runs with `schedule:work`, with no extra queue worker every minute
+*(running with Docker)*
+
+**📋 To do when updating**
+- Back up the database and the site folder, run `composer update`, then `php artisan gp247:update`
+- Backup is **off** by default: open **Backup & restore**, set a backup password, keep the recovery key away from the server
+- New installs use the command line only (`php artisan gp247:install`) — the web installer has been removed
+  ([install guide](../install-upgrade/install.md))
+- *(Sites installed before 3.6.0 that will copy backups to SFTP)* run `composer require league/flysystem-sftp-v3`
+- *(Running with Docker)* `composer update` does not change your site files: take the new `docker-compose*.yml`, then run
+  `docker compose up -d`
+
+<sub>Includes core 3.11.0 · front 3.7.0 · shop 3.9.0 · mcp 2.0.2 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.6.0)</sub>
 
 ### S-Cart 3.5.2 — 2026-11-07
 An improvement release worth installing now, especially for sites on Docker or behind a proxy / CDN.
@@ -154,33 +189,10 @@ API answered 500 without an `Accept` header
 
 <sub>Includes core 3.8.0 · front 3.5.0 · shop 3.7.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.4.0)</sub>
 
-### S-Cart 3.3.1 — 2026-10-29
-**A contact form with an inbox, and the REST API switched on and off from the admin.**
-
-**✨ New**
-- **Contact inbox in the admin** — read every message customers send, right in the admin
-- **Turn the REST API on or off**, and each API version, from the API management screen — no config file to edit
-  ([docs](../api/api-introduction.md))
-- **Failed login limit** — stops admin password guessing
-- **For developers:** REST API v2 for products, orders, banners and pages (with filters and final price); every API response
-  carries a request id for log lookups
-
-**🔧 Improvements:** the social sharing image (og:image) used the wrong picture for a page; the admin order API answered 500; the web
-server follows the stable nginx channel and unused PHP features are turned off *(running with Docker)*
-
-**📋 To do when updating**
-- Run `php artisan gp247:update` — it hashes API keys and gives old tokens an expiry
-- Rename `GP247_API_LOGIN_THROTTLE` → `GP247_LOGIN_THROTTLE` and `GP247_API_LOGIN_IP_THROTTLE` →
-  `GP247_LOGIN_IP_THROTTLE` (the old names are no longer read)
-- Apps calling the API: log out with POST (GET is being retired), and move to API v2 over time
-- *(Running with Docker)* pull the new images and rebuild, following "Security updates" in
-  [DOCKER.md](https://github.com/gp247net/s-cart/blob/master/DOCKER.md)
-
-<sub>Includes core 3.5.0 · front 3.3.0 · shop 3.3.1 · also covers 3.3.0 (2026-10-28) · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.3.1)</sub>
-
 ### Older releases
 | Release | Date | Summary |
 | --- | --- | --- |
+| [S-Cart 3.3.1](https://github.com/gp247net/s-cart/releases/tag/3.3.1) | 2026-10-29 | Contact form with an inbox; REST API switched on and off from the admin |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Japanese, standard shipping with shipments, storefront theme that updates with the package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Payment requests outside the cart; stored passwords and payment keys encrypted |
 | [S-Cart 3.0.1](https://github.com/gp247net/s-cart/releases/tag/3.0.1) | 2026-09-04 | Old `sc:*` commands removed, use the `gp247:*` commands — [command list](../cli/cli-introduction.md) |
@@ -231,4 +243,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-09 · ✍️ **Author:** GP247</sub>
