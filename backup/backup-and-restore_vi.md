@@ -61,6 +61,17 @@ file `.env` và `composer.lock`.
 Mọi bản sao lưu được mã hoá bằng khoá của chính site; mật khẩu sao lưu và recovery key là hai cách mở khoá đó. Chỉ
 **quản trị viên cấp cao (Administrator)** thiết lập được.
 
+Hai thứ này dễ bị đặt vội rồi quên. Hãy đọc bảng dưới trước khi đặt:
+
+| | Mật khẩu sao lưu | Recovery key |
+| --- | --- | --- |
+| **Ai tạo** | Bạn đặt | Hệ thống sinh, chỉ hiện **một lần** |
+| **Dùng khi** | Mỗi lần mở một bản: phục hồi, kiểm lại, đưa file sao lưu vào, đổi mật khẩu. Tạo bản (kể cả tự động) **không** cần | Khi quên mật khẩu sao lưu: mở bản ở mọi chỗ hỏi mật khẩu và đặt mật khẩu mới |
+| **Cất ở đâu** | Trình quản lý mật khẩu; **khác** mật khẩu đăng nhập admin | **Ngoài máy chủ này**: trình quản lý mật khẩu, giấy cất ở nơi an toàn |
+| **Mất thì sao** | Dùng recovery key để đặt mật khẩu mới | Đổi mật khẩu sao lưu sẽ cấp recovery key mới |
+
+Không ai lấy lại được hai thứ này cho bạn, kể cả nhà cung cấp hosting hay GP247. **Mất cả hai thì không mở được bản sao lưu nào.**
+
 1. Vào **Cấu hình hệ thống → Sao lưu & phục hồi**.
 2. Ở khung **Thiết lập sao lưu**, nhập **Mật khẩu sao lưu** (ít nhất 12 ký tự) hai lần, bấm **Thiết lập**.
 3. Màn hình hiện **recovery key** — chỉ hiện **một lần**. Bấm **Tải về dạng file văn bản** hoặc chép ra giấy.
@@ -161,7 +172,7 @@ Sao lưu có ba quyền riêng, gán ở **Vai trò** như các quyền khác:
 
 Ba lớp bảo vệ thêm cho các thao tác đưa dữ liệu ra ngoài hoặc ghi đè dữ liệu:
 
-- **Xác nhận lại danh tính** — trước khi tải về hay phục hồi, nhập lại mật khẩu đăng nhập (và mã xác thực hai bước nếu đã bật);
+- **Xác nhận lại danh tính** — trước khi tải về hay phục hồi, nhập lại mật khẩu đăng nhập trang quản trị — **không phải** mật khẩu sao lưu (và mã xác thực hai bước nếu đã bật);
   hiệu lực 5 phút trên trình duyệt đó.
 - **Nhật ký** — mọi lần tạo, tải, phục hồi, xoá (kể cả lần bị từ chối) được ghi lại với người làm và thời điểm.
 - **Email** — chủ site nhận email khi một bản thất bại, khi có người tải bản về và khi có người phục hồi. Email chỉ gửi được khi
@@ -254,4 +265,4 @@ ngay sau khi xử lý nguyên nhân (thường là đĩa đầy).
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

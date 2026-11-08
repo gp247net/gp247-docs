@@ -61,6 +61,17 @@ File groups are only in a **Full backup**: uploaded images and files, the extens
 Every backup is encrypted with the site's own key; the backup password and the recovery key are the two ways to unlock it. Only an
 **Administrator** can set this up.
 
+These two are easy to choose in a hurry and then forget. Read this table before you set them:
+
+| | Backup password | Recovery key |
+| --- | --- | --- |
+| **Who makes it** | You choose it | The system makes it and shows it **once** |
+| **Used when** | Each time a backup is opened: restoring, checking again, bringing in a backup file, changing the password. Making backups (scheduled ones too) does **not** need it | The backup password is forgotten: it opens backups wherever the password is asked for and lets you set a new password |
+| **Where to keep it** | A password manager; **different** from your admin password | **Away from this server**: a password manager, or on paper in a safe place |
+| **If you lose it** | Use the recovery key to set a new password | Changing the backup password issues a new recovery key |
+
+Nobody can get these back for you, not your hosting provider and not GP247. **Lose both and no backup can be opened.**
+
 1. Go to **System config → Backup & restore**.
 2. In **Set up backups**, type the **Backup password** (at least 12 characters) twice and click **Set up**.
 3. The screen shows the **recovery key** — shown **only once**. Click **Download as a text file** or write it down.
@@ -161,7 +172,7 @@ Backups have three separate permissions, assigned in **Roles** like any other pe
 
 Three more layers protect actions that take data out or overwrite data:
 
-- **Confirm it is you** — before a download or a restore, type your sign-in password again (and the two-factor code if enabled);
+- **Confirm it is you** — before a download or a restore, type your admin sign-in password again — **not** the backup password (and the two-factor code if enabled);
   valid for 5 minutes in that browser.
 - **Log** — every create, download, restore and delete (including refused ones) is recorded with who and when.
 - **E-mail** — the site owner is mailed when a backup fails, when someone downloads a backup and when someone restores. Mail goes out only
@@ -256,4 +267,4 @@ keys stay, and turning it back on picks up where it left off.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
