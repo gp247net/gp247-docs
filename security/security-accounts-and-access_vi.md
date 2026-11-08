@@ -33,10 +33,9 @@ Bản cài mới không còn mật khẩu mặc định ai cũng biết:
 
 | Cách cài | Tài khoản quản trị đầu tiên |
 | --- | --- |
-| Trình cài đặt trên web | Tên đăng nhập và mật khẩu bạn nhập ở bước 3 (mật khẩu 12–64 ký tự) |
 | `php artisan gp247:install` | Mật khẩu ngẫu nhiên **in ra một lần** cuối lệnh — chép lại ngay. Muốn tự đặt: thêm `--admin-password="..."` |
-> ℹ️ **Có từ:** gp247/core 3.11.0 — cài bằng bản cũ hơn thì tài khoản đầu tiên là `admin` / `admin` (xem mục dưới).
 
+> ℹ️ **Có từ:** gp247/core 3.11.0 — cài bằng bản cũ hơn thì tài khoản đầu tiên là `admin` / `admin` (xem mục dưới).
 
 Sau khi cài, đăng nhập bằng tài khoản đó, đổi email sang email thật (**Thiết lập tài khoản** ở góc trên) và cất mật khẩu vào trình quản
 lý mật khẩu.
@@ -53,9 +52,6 @@ thứ máy dò tự động thử đầu tiên; trang **Cảnh báo hệ thống
    (**Thiết lập tài khoản** ở góc trên) và đổi email sang email thật.
 
 Nếu thành công, đăng nhập bằng `admin` / `admin` bị từ chối.
-
-> ⚠️ **Lưu ý:** cài bằng trình cài đặt trên web xong, hãy thử đăng nhập bằng `admin` / `admin` một lần. Đăng nhập được thì làm ngay các bước trên,
-> dù bạn đã nhập mật khẩu khác trong trình cài đặt. Đồng thời mở `/install`: site đã cài xong thì trang này phải chuyển sang trang đăng nhập.
 
 ## Đặt chính sách mật khẩu
 
@@ -80,11 +76,11 @@ Chính sách áp cho **mọi chỗ** loại tài khoản đó đặt mật khẩ
 ## Giới hạn đăng nhập và quên mật khẩu
 
 GP247 tự chặn đoán mật khẩu bằng cách giới hạn số lần đăng nhập sai.
-- **Mất mật khẩu mà Quên mật khẩu không dùng được** (tài khoản còn email lúc cài, site chưa gửi được mail): người có quyền vào máy chủ chạy `php artisan gp247:admin-password <tên-đăng-nhập>` để đặt mật khẩu mới — lệnh theo chính sách mật khẩu và thu hồi mọi phiên API của tài khoản — có từ gp247/core 3.11.0 ([cách dùng](../cli/cli-maintenance_vi.md#đặt-lại-mật-khẩu-quản-trị)).
 
 - **Mặc định**: 5 lần mỗi phút cho mỗi tài khoản + IP (`GP247_LOGIN_THROTTLE=5,1`), 20 lần mỗi phút cho mỗi IP (`GP247_LOGIN_IP_THROTTLE=20,1`). Trang đăng nhập quản trị và đăng nhập qua API dùng chung bộ đếm.
 - **Muốn chặt hơn**: giảm số lần trong `.env`, rồi chạy `php artisan config:clear`.
 - **Quên mật khẩu quản trị** bật sẵn (`GP247_ADMIN_FORGOT_PASSWORD=1`), gửi link qua email của tài khoản. Nếu mọi quản trị viên đều tự khôi phục được qua người khác, đặt `GP247_ADMIN_FORGOT_PASSWORD=0` để bỏ hẳn trang này.
+- **Mất mật khẩu mà Quên mật khẩu không dùng được** (tài khoản còn email lúc cài, site chưa gửi được mail): người có quyền vào máy chủ chạy `php artisan gp247:admin-password <tên-đăng-nhập>` để đặt mật khẩu mới — lệnh theo chính sách mật khẩu và thu hồi mọi phiên API của tài khoản — có từ gp247/core 3.11.0 ([cách dùng](../cli/cli-maintenance_vi.md#đặt-lại-mật-khẩu-quản-trị)).
 - **Site chạy sau proxy / CDN**: khai `TRUSTED_PROXIES`, nếu không mọi khách bị coi là cùng một IP. Xem [Cấu hình production](./security-production-config_vi.md).
 
 ## Bật xác thực hai lớp (MFA)
@@ -147,9 +143,9 @@ Khách đăng ký trên cửa hàng cũng cần được bảo vệ:
 
 ## Hỏi & Đáp (Q&A)
 
-**Câu 1: Tôi đã nhập mật khẩu khác trong trình cài đặt, có cần đổi tài khoản `admin` không?**
+**Câu 1: Site của tôi cài từ bản cũ, làm sao biết còn tài khoản `admin` / `admin` không?**
 
-→ Có, hãy thử đăng nhập bằng `admin` / `admin`. Đăng nhập được thì thay tài khoản theo mục [Thay tài khoản quản trị mặc định](#thay-tài-khoản-quản-trị-mặc-định).
+→ Đăng nhập bằng tài khoản Administrator và xem trang **Cảnh báo hệ thống**, hoặc thử đăng nhập bằng `admin` / `admin`. Còn thì thay tài khoản theo mục [Site cài từ bản cũ: thay tài khoản `admin` / `admin`](#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin).
 
 **Câu 2: Đổi tên đăng nhập `admin` được không?**
 

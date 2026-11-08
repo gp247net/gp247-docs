@@ -28,7 +28,6 @@ flowchart LR
 ## インストール直後
 
 - [ ] インストール時に表示された管理者パスワード（一度だけ表示）を控え、アカウントのメールを実際のアドレスに変更する。旧バージョンでインストールしたサイトではアカウント `admin` を置き換え、`admin` / `admin` でのログインが拒否されることを確認する — [アカウントと権限](./security-accounts-and-access_ja.md#最初の管理者アカウント)
-- [ ] `/install` を開く — ログインページに切り替わることを確認する — [本番環境の設定](./security-production-config_ja.md#5-分でできるセルフチェック)
 - [ ] 専用の `GP247_ENCRYPTION_KEY` を設定し、`php artisan config:clear` を実行する — [GP247 の機密データの暗号化](../system/data-encryption_ja.md)
 - [ ] `.env` ファイルをサーバー外の安全な場所にバックアップする — [暗号化キーとバックアップ](./security-keys-and-backup_ja.md)
 - [ ] パスワードポリシーを引き上げる（最小 12 文字、最大 64 文字） — [アカウントと権限](./security-accounts-and-access_ja.md#パスワードポリシーを設定する)

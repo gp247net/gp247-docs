@@ -379,6 +379,7 @@ The freshly installed site already works, but go through this whole list **befor
 | `gp247:install` installs only core although front / shop were added | The front / shop providers are not declared | Add them to `bootstrap/providers.php` ([step 2](#add-front-or-shop-to-an-existing-site)) |
 | The admin returns 403 | `GP247_ADMIN_PREFIX` matches a folder name in `public/` (`vendor`, `GP247`) | Choose another name in `.env` |
 | Error 500 right after installing | Missing write permission, missing extension, wrong database details | Run `php artisan gp247:doctor`, read `storage/logs/laravel.log` |
+| The domain shows a "This site is not installed yet" page | `gp247:install` has not been run, or the marker file `storage/app/private/gp247-installed.txt` was left out when moving the site to the hosting | Run `php artisan gp247:install`; on hosting without a command line, upload the marker file too ([how](#hosting-without-a-command-line-any-set)) |
 | `gp247:install` refuses to run | Run from a script / CI, so it cannot ask for confirmation | Run it in a normal Terminal; for an unattended install add `--force=1` |
 | You did not copy the admin password after installing | The password is printed only once, at the end of `gp247:install`, and cannot be shown again | Freshly installed site with no data yet: run `php artisan gp247:install` again to get a new password (the command re-creates the tables). Account already moved to a real email and the site can send mail: use **Forgot password** on the sign-in page. Otherwise: `php artisan gp247:admin-password admin` ([how to](../cli/cli-maintenance.md#reset-an-administrator-password)) |
 | The **System alerts** block reports the default admin password | A site installed with an older version still has the `admin` / `admin` account | Replace it following [the guide](../security/security-accounts-and-access.md#site-installed-from-an-older-version-replace-the-admin--admin-account) |
@@ -437,7 +438,6 @@ only exists in the backup.
 
 → Follow [Updating GP247 and S-Cart](./update.md): `composer update`, then `php artisan gp247:update`. Never reinstall.
 
----
 ## Change history
 <!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
 
@@ -445,5 +445,6 @@ only exists in the backup.
 | --- | --- | --- |
 | 2026-11-08 | gp247/core 3.11.0 | The first admin account gets a random password, printed once in the last block of `gp247:install` (instead of `admin` / `admin`); if it is lost, use `gp247:admin-password`. |
 
+---
 
 <sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>

@@ -33,10 +33,9 @@ A new install no longer has a default password everyone knows:
 
 | How you install | First admin account |
 | --- | --- |
-| Web installer | The username and password you enter in step 3 (password 12–64 characters) |
 | `php artisan gp247:install` | A random password **printed once** at the end of the command — copy it right away. To choose it yourself: add `--admin-password="..."` |
-> ℹ️ **Available since:** gp247/core 3.11.0 — an install with an older version creates `admin` / `admin` (see below).
 
+> ℹ️ **Available since:** gp247/core 3.11.0 — an install with an older version creates `admin` / `admin` (see below).
 
 After installing, sign in with that account, change its email to a real one (**Setting account** at the top) and keep the password in a
 password manager.
@@ -53,9 +52,6 @@ first thing automated scanners try; the **System alerts** page warns while such 
    (**Setting account** at the top) and change the email to a real one.
 
 If it worked, signing in with `admin` / `admin` is refused.
-
-> ⚠️ **Note:** after installing with the web installer, try signing in once with `admin` / `admin`. If it works, do the steps above right away,
-> even if you entered a different password in the installer. Also open `/install`: on a finished install this page must redirect to the sign-in page.
 
 ## Set a password policy
 
@@ -82,11 +78,11 @@ forgotten password, apps through the API.
 ## Sign-in limits and forgotten passwords
 
 GP247 blocks password guessing by itself by limiting the number of failed sign-ins.
-- **Lost password and Forgot password cannot help** (the account still has the install email, the site cannot send mail yet): someone with access to the server runs `php artisan gp247:admin-password <user-name>` to set a new password — the command follows the password policy and revokes every API session of the account — available since gp247/core 3.11.0 ([how to](../cli/cli-maintenance.md#reset-an-administrator-password)).
 
 - **Default**: 5 attempts per minute per account + IP (`GP247_LOGIN_THROTTLE=5,1`), 20 attempts per minute per IP (`GP247_LOGIN_IP_THROTTLE=20,1`). The admin sign-in page and sign-in through the API share the same counter.
 - **Want it stricter**: lower the numbers in `.env`, then run `php artisan config:clear`.
 - **Admin forgotten password** is on by default (`GP247_ADMIN_FORGOT_PASSWORD=1`) and sends a link to the account's email. If every administrator can recover access through someone else, set `GP247_ADMIN_FORGOT_PASSWORD=0` to remove this page completely.
+- **Lost password and Forgot password cannot help** (the account still has the install email, the site cannot send mail yet): someone with access to the server runs `php artisan gp247:admin-password <user-name>` to set a new password — the command follows the password policy and revokes every API session of the account — available since gp247/core 3.11.0 ([how to](../cli/cli-maintenance.md#reset-an-administrator-password)).
 - **Site behind a proxy / CDN**: set `TRUSTED_PROXIES`, otherwise every visitor is treated as the same IP. See [Production config](./security-production-config.md).
 
 ## Turn on two-factor authentication (MFA)
@@ -149,9 +145,9 @@ Customers who register on the shop also need protection:
 
 ## Q&A
 
-**Q1: I entered a different password in the installer. Do I still need to replace the `admin` account?**
+**Q1: My site was installed from an older version. How do I know whether the `admin` / `admin` account is still there?**
 
-→ Yes, try signing in with `admin` / `admin`. If it works, replace the account following [Replace the default admin account](#replace-the-default-admin-account).
+→ Sign in with an Administrator account and open the **System alerts** page, or try signing in with `admin` / `admin`. If it is still there, replace it following [Site installed from an older version: replace the `admin` / `admin` account](#site-installed-from-an-older-version-replace-the-admin--admin-account).
 
 **Q2: Can I rename the `admin` username?**
 

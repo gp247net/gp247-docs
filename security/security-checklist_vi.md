@@ -28,7 +28,6 @@ flowchart LR
 ## Ngay sau khi cài
 
 - [ ] Chép mật khẩu quản trị mà lệnh cài in ra (chỉ hiện một lần) và đổi email tài khoản sang email thật; site cài từ bản cũ thì thay tài khoản `admin` — thử đăng nhập `admin` / `admin` phải bị từ chối — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#tài-khoản-quản-trị-đầu-tiên)
-- [ ] Mở `/install` — phải chuyển sang trang đăng nhập — [Cấu hình production](./security-production-config_vi.md#tự-kiểm-trong-5-phút)
 - [ ] Đặt `GP247_ENCRYPTION_KEY` riêng rồi chạy `php artisan config:clear` — [Mã hoá dữ liệu nhạy cảm](../system/data-encryption_vi.md)
 - [ ] Sao lưu file `.env` ra nơi an toàn ngoài máy chủ — [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md)
 - [ ] Nâng chính sách mật khẩu (tối thiểu 12, tối đa 64 ký tự) — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#đặt-chính-sách-mật-khẩu)

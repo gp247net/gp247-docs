@@ -28,7 +28,6 @@ flowchart LR
 ## Right after install
 
 - [ ] Copy the admin password the install printed (it is shown only once) and change the account email to a real one; on a site installed from an older version, replace the `admin` account — signing in with `admin` / `admin` must be refused — [Accounts & permissions](./security-accounts-and-access.md#the-first-admin-account)
-- [ ] Open `/install` — it must redirect to the sign-in page — [Production config](./security-production-config.md#self-check-in-5-minutes)
 - [ ] Set a dedicated `GP247_ENCRYPTION_KEY` and then run `php artisan config:clear` — [Sensitive data encryption](../system/data-encryption.md)
 - [ ] Back up the `.env` file to a safe place off the server — [Encryption keys & backup](./security-keys-and-backup.md)
 - [ ] Raise the password policy (minimum 12, maximum 64 characters) — [Accounts & permissions](./security-accounts-and-access.md#set-a-password-policy)

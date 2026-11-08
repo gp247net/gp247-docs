@@ -150,7 +150,7 @@ This layer stops reinstalls from wiping data and stops update packages from bein
 
 | Mechanism | What GP247 does | Limits — what you do |
 | --- | --- | --- |
-| **Install** | The `gp247:install` command asks for confirmation and warns about data loss; it refuses to install over an installed site without clear confirmation | After installing, check that `/install` now redirects to the sign-in page, and replace the default account right away |
+| **Install** | The `gp247:install` command asks for confirmation and warns about data loss; it refuses to install over an installed site without clear confirmation. Installing is command-line only — there is no install page on the web; a site not installed yet only shows a page telling you to run the install command | Copy the admin password printed at the end of the command; on a site installed from an older version, replace the default account right away |
 | **Platform update** | `php artisan gp247:update` only refreshes; it never reruns the data-destroying install step | Back up before updating |
 | **Plugin / template update** | Packages are downloaded over a certificate-verified connection (`GP247_UPDATE_VERIFY_SSL`), and the hash is checked when the library provides one; the old version is kept in `storage/backups/extensions/` before overwriting | Install only from trusted sources |
 

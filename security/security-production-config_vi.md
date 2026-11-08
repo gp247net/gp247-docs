@@ -149,8 +149,7 @@ Làm lần lượt; mỗi bước có kết quả đúng để đối chiếu.
 1. **Trang quản trị**: đăng nhập, nhìn header — phải thấy nhãn môi trường là production, **không** có nhãn đỏ "DEBUG ON". Với tài khoản Administrator, block **Cảnh báo hệ thống** ở đầu dashboard không được báo lỗi **nghiêm trọng** (chi tiết ở trang **Cảnh báo hệ thống**).
 2. **Trình duyệt**: mở `http://ten-mien-cua-ban` — phải tự chuyển sang `https://`.
 3. **Trình duyệt**: mở `https://ten-mien-cua-ban/.env` — phải là lỗi 404 hoặc 403.
-4. **Trình duyệt**: mở `https://ten-mien-cua-ban/install` — site đã cài thì phải chuyển sang trang đăng nhập.
-5. **Dòng lệnh** (nếu có): chạy lệnh dưới, mọi dòng phải là PASS hoặc WARN đã hiểu lý do:
+4. **Dòng lệnh** (nếu có): chạy lệnh dưới, mọi dòng phải là PASS hoặc WARN đã hiểu lý do:
 
    ```
    php artisan gp247:doctor

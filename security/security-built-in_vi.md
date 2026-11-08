@@ -150,7 +150,7 @@ Lớp này chống cài đè làm mất dữ liệu và chống gói cập nhậ
 
 | Cơ chế | GP247 làm gì | Giới hạn — bạn làm |
 | --- | --- | --- |
-| **Cài đặt** | Lệnh `gp247:install` hỏi xác nhận và cảnh báo mất dữ liệu; từ chối cài đè site đã cài nếu không có xác nhận rõ | Sau khi cài, kiểm trang `/install` đã chuyển sang trang đăng nhập và đổi ngay tài khoản mặc định |
+| **Cài đặt** | Lệnh `gp247:install` hỏi xác nhận và cảnh báo mất dữ liệu; từ chối cài đè site đã cài nếu không có xác nhận rõ. Chỉ cài được bằng lệnh — không có trang cài đặt nào trên web; site chưa cài chỉ hiện trang hướng dẫn chạy lệnh cài | Chép mật khẩu quản trị in ra cuối lệnh; site cài từ bản cũ thì thay ngay tài khoản mặc định |
 | **Cập nhật nền tảng** | `php artisan gp247:update` chỉ làm mới, không bao giờ chạy lại bước cài phá dữ liệu | Sao lưu trước khi cập nhật |
 | **Cập nhật plugin / template** | Gói tải về qua kết nối được kiểm chứng chỉ (`GP247_UPDATE_VERIFY_SSL`), kiểm mã băm khi thư viện cung cấp; giữ bản cũ ở `storage/backups/extensions/` trước khi ghi đè | Chỉ cài từ nguồn tin cậy |
 

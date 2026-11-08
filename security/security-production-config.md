@@ -149,8 +149,7 @@ Do these in order; each step has a correct result to compare against.
 1. **Admin**: sign in and look at the header — the environment label must be production, with **no** red "DEBUG ON" label. On an Administrator account, the **System alerts** block at the top of the dashboard must report no **critical** issue (details on the **System alerts** page).
 2. **Browser**: open `http://your-domain` — it must redirect to `https://`.
 3. **Browser**: open `https://your-domain/.env` — it must be a 404 or 403 error.
-4. **Browser**: open `https://your-domain/install` — on an installed site it must redirect to the sign-in page.
-5. **Command line** (if you have it): run the command below; every line must be PASS, or a WARN whose reason you understand:
+4. **Command line** (if you have it): run the command below; every line must be PASS, or a WARN whose reason you understand:
 
    ```
    php artisan gp247:doctor

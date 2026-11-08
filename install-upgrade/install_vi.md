@@ -374,6 +374,7 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 | `gp247:install` chỉ cài core dù đã thêm front / shop | Chưa khai báo provider của front / shop | Thêm vào `bootstrap/providers.php` ([bước 2](#thêm-front-hoặc-shop-vào-site-đang-có)) |
 | Trang quản trị báo 403 | `GP247_ADMIN_PREFIX` trùng tên thư mục trong `public/` (`vendor`, `GP247`) | Đặt tên khác trong `.env` |
 | Lỗi 500 ngay sau khi cài | Thiếu quyền ghi thư mục, thiếu extension, sai thông tin CSDL | Chạy `php artisan gp247:doctor`, xem `storage/logs/laravel.log` |
+| Mở tên miền thấy trang "This site is not installed yet" | Chưa chạy `gp247:install`, hoặc khi chuyển site lên hosting đã thiếu file đánh dấu `storage/app/private/gp247-installed.txt` | Chạy `php artisan gp247:install`; hosting không có dòng lệnh thì tải lên cả file đánh dấu ([cách làm](#hosting-không-có-dòng-lệnh-mọi-bộ-cài)) |
 | `gp247:install` từ chối chạy | Chạy trong script / CI nên không hỏi xác nhận được | Chạy trong Terminal thường; cài tự động thì thêm `--force=1` |
 | Không kịp chép mật khẩu quản trị sau khi cài | Mật khẩu chỉ in một lần ở cuối lệnh `gp247:install`, không xem lại được | Site vừa cài, chưa có dữ liệu: chạy lại `php artisan gp247:install` để nhận mật khẩu mới (lệnh tạo lại bảng). Tài khoản đã đổi sang email thật và site gửi được mail: dùng **Quên mật khẩu** ở trang đăng nhập. Còn lại: `php artisan gp247:admin-password admin` ([cách dùng](../cli/cli-maintenance_vi.md#đặt-lại-mật-khẩu-quản-trị)) |
 | Khối **Cảnh báo hệ thống** báo mật khẩu quản trị mặc định | Site cài bằng bản cũ hơn vẫn còn tài khoản `admin` / `admin` | Thay tài khoản theo [hướng dẫn](../security/security-accounts-and-access_vi.md#site-cài-từ-bản-cũ-thay-tài-khoản-admin--admin) |
@@ -429,7 +430,6 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 
 → Theo [Cập nhật GP247 và S-Cart](./update_vi.md): `composer update` rồi `php artisan gp247:update`. Không bao giờ cài lại.
 
----
 ## Lịch sử thay đổi
 <!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
 
@@ -437,5 +437,6 @@ Site vừa cài đã chạy được, nhưng làm hết danh sách này **trư�
 | --- | --- | --- |
 | 2026-11-08 | gp247/core 3.11.0 | Tài khoản quản trị đầu tiên nhận mật khẩu ngẫu nhiên, in một lần ở khối cuối cùng của `gp247:install` (thay cho `admin` / `admin`); mất mật khẩu thì dùng `gp247:admin-password`. |
 
+---
 
 <sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>

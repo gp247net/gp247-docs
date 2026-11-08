@@ -379,6 +379,7 @@ flowchart TB
 | front／shop を追加したのに `gp247:install` が core しかインストールしない | front／shop のプロバイダーを宣言していない | `bootstrap/providers.php` に追加（[手順 2](#既存サイトに-front-または-shop-を追加)） |
 | 管理画面が 403 になる | `GP247_ADMIN_PREFIX` が `public/` 内のフォルダ名（`vendor`、`GP247`）と同じ | `.env` で別の名前を設定 |
 | インストール直後に 500 エラー | フォルダの書き込み権限不足、拡張モジュール不足、DB 情報の誤り | `php artisan gp247:doctor` を実行し、`storage/logs/laravel.log` を確認 |
+| ドメインを開くと「This site is not installed yet」のページが表示される | `gp247:install` をまだ実行していない、またはホスティングへ移すときに目印のファイル `storage/app/private/gp247-installed.txt` が漏れた | `php artisan gp247:install` を実行。コマンドラインのないホスティングでは目印のファイルもアップロードする（[手順](#コマンドラインのないホスティングすべての構成)） |
 | `gp247:install` が実行を拒否する | スクリプト／CI で実行していて確認に答えられない | 通常のターミナルで実行。自動インストールなら `--force=1` を付ける |
 | インストール後に管理者パスワードを控え忘れた | パスワードは `gp247:install` の最後に一度だけ表示され、再表示できない | インストールしたばかりでデータがないサイト：`php artisan gp247:install` をもう一度実行して新しいパスワードを受け取る（テーブルは作り直されます）。アカウントのメールを実際のアドレスに変更済みで、サイトがメールを送信できる場合：ログインページの「**パスワードをお忘れの方**」を使う。それ以外：`php artisan gp247:admin-password admin`（[使い方](../cli/cli-maintenance_ja.md#管理者パスワードの再設定)） |
 | 「**システムアラート**」ブロックが既定の管理者パスワードを警告する | 旧バージョンでインストールしたサイトにアカウント `admin` / `admin` が残っている | [手順](../security/security-accounts-and-access_ja.md#旧バージョンからインストールしたサイトアカウント-admin--admin-を置き換える)に沿って置き換える |
@@ -440,7 +441,6 @@ flowchart TB
 → [GP247 と S-Cart の更新](./update_ja.md)のとおり、`composer update` の後に `php artisan gp247:update` を実行します。
 インストールし直すことは決してありません。
 
----
 ## 変更履歴
 <!-- ロジック/動作が変わった場合のみ記載。最新の行を一番上に。1 日 1 行：同じ日の変更は既存の行にまとめ、同じ日付の行を追加しない。 -->
 
@@ -448,5 +448,6 @@ flowchart TB
 | --- | --- | --- |
 | 2026-11-08 | gp247/core 3.11.0 | 最初の管理者アカウントにはランダムなパスワードが設定され、`gp247:install` の最後のブロックに一度だけ表示されます（`admin` / `admin` の代わり）。失った場合は `gp247:admin-password` を使います。 |
 
+---
 
 <sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>
