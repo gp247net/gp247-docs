@@ -37,22 +37,28 @@ flowchart LR
 - [Command line](#command-line-for-people-with-cli-access) — `gp247:backup-*` commands for a VPS
 
 ## What is backed up
-A backup holds **data groups** (database tables grouped by business meaning) and, for a full backup, **file groups**.
+A backup holds **data groups** (database tables grouped by business meaning) and **file groups**. The backup screen shows the
+same description under each group, so you can see what you are backing up — or, on the restore screen, what you are about to replace.
 
 | Group | Contains | Present when |
 | --- | --- | --- |
-| **Configuration** | Site, store, language, currency settings… | Always |
-| **Admin accounts & rights** | Admin accounts, roles, permissions | Always |
-| **Logs** | Operation log, failed sign-ins, API events | Always (can be left out of a full backup) |
-| **Content** | Pages, banners, layout blocks, links | The site has a storefront |
-| **Catalog** | Products, categories, attributes, brands | The site has a shop |
-| **Orders** | Orders, order lines, history, payments | The site has a shop |
-| **Customers** | Customers, addresses | The site has a storefront / shop |
-| **Plugin groups** | Tables a plugin declares as its own | The plugin declares its tables |
-| **Other tables** | Tables with the site prefix that belong to no group | When there are any |
+| **Configuration** | Store details and settings, admin dashboard layout, languages and translations, countries, custom fields, API connections and webhooks; with a shop also currencies, taxes, order, payment and shipping statuses | Always |
+| **Admin accounts & rights** | Admin accounts, roles, permissions and the admin menu | Always |
+| **Logs** | Admin activity log, system notices, API events and webhook deliveries, failed sign-ins | Always (can be left out of a full backup) |
+| **Content** | Pages, banners, layout blocks, links and link groups, URL redirects, the country list | The site has a storefront |
+| **Catalog** | Products (descriptions, images, attributes, promotions, downloads, tags, bundles and groups), categories, brands, suppliers | The site has a shop |
+| **Orders** | Orders with their lines, history and totals, payment transactions and requests, shipments | The site has a shop |
+| **Customers** | Contact messages and newsletter sign-ups; with a shop also customer accounts, addresses and saved carts | The site has a storefront / shop |
+| **Plugin groups** | What the plugin says it stores; otherwise "Data saved by the … extension" | The plugin declares its tables |
+| **Other tables** | Tables with the site prefix that belong to no group — **only a full backup has them** | When there are any |
+| **Uploaded files** | Images and files uploaded through the file manager (products, banners, pages…) | Always |
+| **Extensions** | Plugins and templates in `app/GP247`, including your own changes (without `.git` and `node_modules`) | Always |
+| **.env file** | Server settings, including the encryption keys and the database password — keep it apart | Always |
+| **composer.lock** | Exact versions of the installed packages, to reinstall the same ones | Always |
 
-File groups are only in a **Full backup**: uploaded images and files, the extensions folder (`app/GP247`, without `.git` and
-`node_modules`), the `.env` file and `composer.lock`.
+**Quick snapshot** takes one data group. **Selected groups** takes the data groups and file groups you tick. **Full backup** takes
+everything above, including **Other tables**. Never backed up: sign-in sessions, password reset links, API tokens and the backup
+feature's own records — restoring them could reopen access that was revoked after the backup.
 
 > ⚠️ **Note:** tables **without the site prefix** that no plugin declares are **not** backed up. `php artisan gp247:doctor` lists them
 > (row `backup_unassigned_tables`) — tell the developer of the plugin that owns them.

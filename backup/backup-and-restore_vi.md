@@ -37,22 +37,28 @@ flowchart LR
 - [Dòng lệnh](#dòng-lệnh-cho-người-có-quyền-cli) — lệnh `gp247:backup-*` cho VPS
 
 ## Sao lưu những gì
-Một bản sao lưu gồm các **nhóm dữ liệu** (bảng trong cơ sở dữ liệu, gom theo nghĩa nghiệp vụ) và, với bản toàn bộ, các **nhóm file**.
+Một bản sao lưu gồm các **nhóm dữ liệu** (bảng trong cơ sở dữ liệu, gom theo nghĩa nghiệp vụ) và các **nhóm file**. Màn sao lưu
+hiện đúng mô tả này dưới mỗi nhóm, để bạn biết mình đang sao lưu gì — hoặc, ở màn phục hồi, sắp thay những gì.
 
 | Nhóm | Gồm gì | Có khi |
 | --- | --- | --- |
-| **Cấu hình** | Cấu hình site, store, ngôn ngữ, tiền tệ… | Luôn có |
-| **Tài khoản & quyền quản trị** | Tài khoản admin, vai trò, quyền | Luôn có |
-| **Nhật ký** | Nhật ký thao tác, đăng nhập sai, sự kiện API | Luôn có (bỏ được khi sao lưu toàn bộ) |
-| **Nội dung** | Trang, banner, khối giao diện, liên kết | Site có storefront |
-| **Danh mục sản phẩm** | Sản phẩm, danh mục, thuộc tính, thương hiệu | Site có cửa hàng |
-| **Đơn hàng** | Đơn, dòng đơn, lịch sử, thanh toán | Site có cửa hàng |
-| **Khách hàng** | Khách hàng, địa chỉ | Site có storefront / cửa hàng |
-| **Nhóm của plugin** | Bảng do plugin tự khai | Plugin có khai bảng của mình |
-| **Bảng khác** | Bảng có tiền tố của site chưa thuộc nhóm nào | Khi có |
+| **Cấu hình** | Thông tin và cài đặt cửa hàng, bố cục trang tổng quan quản trị, ngôn ngữ và bản dịch, quốc gia, trường tuỳ chỉnh, kết nối API và webhook; có cửa hàng thì thêm tiền tệ, thuế, trạng thái đơn hàng, thanh toán và vận chuyển | Luôn có |
+| **Tài khoản & quyền quản trị** | Tài khoản quản trị, vai trò, quyền và menu quản trị | Luôn có |
+| **Nhật ký** | Nhật ký thao tác quản trị, thông báo hệ thống, sự kiện API và lượt gửi webhook, lần đăng nhập sai | Luôn có (bỏ được khi sao lưu toàn bộ) |
+| **Nội dung** | Trang, banner, khối giao diện, liên kết và nhóm liên kết, chuyển hướng URL, danh sách quốc gia | Site có storefront |
+| **Danh mục sản phẩm** | Sản phẩm (mô tả, ảnh, thuộc tính, khuyến mãi, file tải, tag, combo và nhóm), danh mục, thương hiệu, nhà cung cấp | Site có cửa hàng |
+| **Đơn hàng** | Đơn hàng kèm dòng đơn, lịch sử và tổng tiền; giao dịch và yêu cầu thanh toán; vận chuyển | Site có cửa hàng |
+| **Khách hàng** | Tin nhắn liên hệ và email đăng ký nhận tin; có cửa hàng thì thêm tài khoản khách hàng, địa chỉ và giỏ hàng đã lưu | Site có storefront / cửa hàng |
+| **Nhóm của plugin** | Những gì plugin tự mô tả; không có thì "Dữ liệu do extension … lưu" | Plugin có khai bảng của mình |
+| **Bảng khác** | Bảng có tiền tố của site chưa thuộc nhóm nào — **chỉ bản toàn bộ mới có** | Khi có |
+| **File tải lên** | Ảnh và file tải lên qua trình quản lý file (sản phẩm, banner, trang…) | Luôn có |
+| **Extension** | Plugin và template trong `app/GP247`, kể cả phần bạn đã sửa (bỏ `.git` và `node_modules`) | Luôn có |
+| **File .env** | Cấu hình máy chủ, gồm khoá mã hoá và mật khẩu cơ sở dữ liệu — hãy cất riêng | Luôn có |
+| **composer.lock** | Phiên bản chính xác của các package đã cài, để cài lại đúng như cũ | Luôn có |
 
-Nhóm file chỉ có trong bản **Toàn bộ**: ảnh và file tải lên, thư mục extension (`app/GP247`, bỏ `.git` và `node_modules`),
-file `.env` và `composer.lock`.
+**Chụp nhanh** lấy một nhóm dữ liệu. **Chọn nhóm** lấy các nhóm dữ liệu và nhóm file bạn tick. **Sao lưu toàn bộ** lấy mọi thứ ở
+bảng trên, kể cả **Bảng khác**. Không bao giờ sao lưu: phiên đăng nhập, link đặt lại mật khẩu, token API và sổ sách riêng của chức
+năng sao lưu — phục hồi chúng có thể mở lại quyền truy cập đã bị thu hồi sau thời điểm sao lưu.
 
 > ⚠️ **Lưu ý:** bảng **không có tiền tố** của site mà chưa plugin nào khai thì **không** được sao lưu. `php artisan gp247:doctor`
 > liệt kê các bảng này (dòng `backup_unassigned_tables`) — hãy báo nhà phát triển plugin sở hữu bảng đó.
