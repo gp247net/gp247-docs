@@ -74,7 +74,7 @@ Related helper functions:
 | `gp247_language_render($key, $replace, $locale)` | Get a string by key (most common) |
 | `gp247_language_quickly($key, $default)` | Same as above, but allows a default value |
 | `gp247_get_locale()` | Get the currently displayed locale |
-| `gp247_lang_switch($code)` | Switch the current language (validates + writes to session) |
+| `gp247_lang_switch($code)` | Switch the current language (validates + writes to session; a code that is not an enabled language → 404) |
 | `gp247_language_all()` | Get the list of enabled languages (from `admin_language`) |
 
 > ⚠️ **Technical note:** do not call the language functions inside `__construct` or an
@@ -89,20 +89,37 @@ There are **two layers of priority** to distinguish.
 
 ### 2.1. Display-locale priority (which language is active for this request)
 
-Decided by the `Localization` middleware
-(`vendor/gp247/core/src/Middleware/Localization.php`), in order **from highest to lowest**:
+In order **from highest to lowest**:
 
-1. **`session('locale')`** — if the user has already picked a language (still in session) → highest priority.
-2. **`gp247_store_info('language')`** — the store's configured default language.
-3. **`config('app.locale')`** — Laravel's default locale (in `.env` / `config/app.php`).
-4. The chosen value is **re-validated** against the list of enabled languages (`admin_language`,
-   `status = 1`). If invalid → the **first enabled language** by `sort` is used.
+1. **The language code in the URL** (e.g. `/en/...`) — **only when `GP247_SEO_LANG` is on**, see
+   [section 2.3](#23-language-code-in-the-url-gp247_seo_lang). When it is off (the default), URLs carry
+   no language code and this level is skipped.
+2. **`session('locale')`** — the language the user picked earlier (still in session).
+3. **`gp247_store_info('language')`** — the store's configured default language.
+4. **`config('app.locale')`** — Laravel's default locale (in `.env` / `config/app.php`).
 
-Once decided, the middleware calls `app()->setLocale(...)` and writes it back to the `session`.
+Levels 2–4 are decided by the `Localization` middleware
+(`vendor/gp247/core/src/Middleware/Localization.php`) at the start of every request: the chosen value
+is **re-validated** against the list of enabled languages (`admin_language`, `status = 1`); if invalid
+→ the **first enabled language** by `sort` is used. The middleware then calls `app()->setLocale(...)`
+and writes it back to the `session`.
 
-> There is **no URL-prefix language detection** (e.g. `/vi/...`). The locale is driven by **session +
-> the store's default language**. Users change the language through the language switcher in the UI
-> (which calls `gp247_lang_switch()`), and the new value is saved to the session for later requests.
+Level 1 runs **after** the middleware: the page's controller reads the `{lang}` code from the URL and
+calls `gp247_lang_switch()`, which overrides the locale just decided and saves it to the session for
+later requests.
+
+```mermaid
+flowchart TD
+    A["Request to a storefront page"] --> B["Localization middleware:<br/>session → store language → app.locale"]
+    B --> C{"GP247_SEO_LANG on and<br/>URL has a {lang} code?"}
+    C -- No --> E["Render with the locale<br/>the middleware decided"]
+    C -- Yes --> D{"Code is an<br/>enabled language?"}
+    D -- Yes --> F["gp247_lang_switch():<br/>switch locale + write session"]
+    D -- No --> G["Return 404"]
+```
+
+While `GP247_SEO_LANG` is off, users change the language through the language switcher in the UI
+(route `locale/{code}`), and the new value is saved to the session for later requests.
 
 ### 2.2. String-source priority (where the text comes from for a key)
 
@@ -114,6 +131,45 @@ For the **same key**:
 → Important consequence: **to change a string, edit it in the DB (via admin)**, because the DB
 version always wins over the file. Editing lang files under `vendor/` is usually ineffective when the
 DB already has the matching key.
+
+### 2.3. Language code in the URL (`GP247_SEO_LANG`)
+
+By default, storefront URLs carry **no** language code, and every language shares the same address.
+Turn on `GP247_SEO_LANG` to give each language its own URL, so search engines can index each language
+version:
+
+```dotenv
+GP247_SEO_LANG=1
+```
+
+| | `GP247_SEO_LANG=0` (default) | `GP247_SEO_LANG=1` |
+| --- | --- | --- |
+| URL shape | `domain.com/product.html` | `domain.com/en/product.html`, `domain.com/vi/product.html` |
+| Locale taken from | session → store language → `app.locale` | **the code in the URL** first, then the order above |
+| Wrong code in the URL (e.g. `/xx/...`) | — | Returns **404** (the code is not an enabled language) |
+| Sitemap | One shared version | Adds per-language versions (`/sitemap-{type}-{code}-{page}.xml`) when **2 or more languages are enabled** |
+
+What to know when it is on:
+
+- **Generated links carry the language code automatically.** Every link built with
+  `gp247_route_front()` gets the current locale's code. Custom plugins and templates must build links
+  through this function, not by concatenating URL strings by hand.
+- **Some routes carry no language code:** the home page `/` (`front.home`), the language-switch route
+  `locale/{code}` (`front.locale`) and `front.banner.click`. Add other routes to this list with the
+  `GP247_ROUTE_EXCLUDE_LANGUAGE` variable (route names, comma-separated), for example
+  `GP247_ROUTE_EXCLUDE_LANGUAGE=front.contact`.
+- **The language switcher** (`locale/{code}`) replaces the `/{old code}/` segment with `/{new code}/` in
+  the current URL and redirects, so the user stays on the same page.
+- **Plugins with storefront pages** (e.g. News, MultiVendor, ProductFlashSale) read this variable too:
+  their routes gain `{lang?}/` when it is on.
+
+> ⚠️ **Turning it on or off on a live site changes every storefront URL.** Old links already indexed by
+> search engines, shared on social media or printed on material will no longer match. Decide this when
+> you set the site up; if you must change it later, prepare 301 redirects from the old URLs and resubmit
+> the sitemap.
+
+> ℹ️ After editing `.env` on a site that ran `php artisan config:cache`, run `php artisan config:cache`
+> again (or `config:clear`) for the new value to take effect.
 
 ---
 
@@ -229,19 +285,23 @@ seeder.
 
 **Q5: Why can't I delete Vietnamese / English?**
 
-→ The two base languages (`vi`, `en`) are protected by the `GP247_GUARD_LANGUAGE` constant so the
-system always has a standard language to fall back to. You can hide them elsewhere, but not remove
-them from the list.
+→ The two base languages are protected by the `GP247_GUARD_LANGUAGE` constant so the system always has
+a standard language to fall back to. The constant locks **ids** `1` and `2` of the `admin_language`
+table — `vi` and `en` on a default install. You can hide them elsewhere, but not remove them from the
+list.
 
 **Q6: Where do I change the site's default language?**
 
-→ The display locale prioritizes `session('locale')` → the store's default language →
-`config('app.locale')`. To change the site-wide default, adjust the store's default language and/or
-`APP_LOCALE` in `.env`.
+→ Adjust the store's default language (store configuration) and/or `APP_LOCALE` in `.env`. This is the
+language used when the visitor has not picked one yet (empty session) and the URL carries no language
+code. When `GP247_SEO_LANG` is on, the code in the URL always wins — see
+[section 2.1](#21-display-locale-priority-which-language-is-active-for-this-request).
 
 **Q7: Does GP247 detect language from the URL like `/vi/...`?**
 
-→ No. The language is driven by **session + the store's default language**, not by a URL prefix.
+→ Yes, when `GP247_SEO_LANG=1` is set in `.env` (off by default). Storefront URLs then carry the language
+code, and that code has the highest priority; a code that is not an enabled language returns 404. Details
+in [section 2.3](#23-language-code-in-the-url-gp247_seo_lang).
 
 **Q8: What is `position` in the `languages` table for?**
 
@@ -260,4 +320,4 @@ time. That is why `shop` needs no on-disk lang files.
 
 ---
 
-<sub>📅 **Last updated:** 2026-10-22 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-10 · ✍️ **Author:** GP247</sub>

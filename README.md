@@ -65,7 +65,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 | Document | Summary | Last updated |
 | --- | --- | --- |
 | [GP247 v3.0 release notes — order money](./system/release-notes-3.0.md) | Upgrading from v2.1/v3.0: payment ledger per order, cash flow counted by receipt date, payment status off-by-one fixed, **discount taken before tax**; note for plugin developers | 2026-10-22 |
-| [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-10-22 |
+| [Multi-language system](./system/language-system.md) | Using languages / i18n in GP247 | 2026-11-10 |
 | [Mail system](./system/mail-system.md) | Mail sending flow (with diagrams), SMTP config, channel selection | 2026-10-22 |
 | [Sensitive data encryption](./system/data-encryption.md) | At-rest secret encryption (SMTP/OAuth/license); dedicated `GP247_ENCRYPTION_KEY`; **safe key-change steps** with `gp247:encryption-key-rotate`; encrypting custom columns | 2026-11-04 |
 | [Scheduler & Queue](./system/schedule-and-queue.md) | schedule:run vs queue:work; per-environment cron for mail | 2026-10-22 |
@@ -104,4 +104,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-10 · ✍️ **Author:** GP247</sub>

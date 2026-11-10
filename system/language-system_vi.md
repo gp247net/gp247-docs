@@ -72,7 +72,7 @@ Các hàm helper liên quan:
 | `gp247_language_render($key, $replace, $locale)` | Lấy câu chữ theo mã (dùng phổ biến nhất) |
 | `gp247_language_quickly($key, $default)` | Như trên nhưng cho phép đặt giá trị mặc định |
 | `gp247_get_locale()` | Lấy locale đang hiển thị |
-| `gp247_lang_switch($code)` | Đổi ngôn ngữ hiện tại (kiểm tra hợp lệ + ghi vào session) |
+| `gp247_lang_switch($code)` | Đổi ngôn ngữ hiện tại (kiểm tra hợp lệ + ghi vào session; mã không thuộc ngôn ngữ đang bật → 404) |
 | `gp247_language_all()` | Lấy danh sách ngôn ngữ đang bật (từ `admin_language`) |
 
 > ⚠️ **Lưu ý kỹ thuật:** không gọi các hàm ngôn ngữ trong `__construct` hoặc middleware chạy sớm —
@@ -86,20 +86,35 @@ Có **hai tầng ưu tiên** cần phân biệt.
 
 ### 2.1. Ưu tiên chọn locale hiển thị (ngôn ngữ nào đang bật cho request này)
 
-Do middleware `Localization` (`vendor/gp247/core/src/Middleware/Localization.php`) quyết định, theo
-thứ tự **từ cao xuống thấp**:
+Thứ tự **từ cao xuống thấp**:
 
-1. **`session('locale')`** — nếu người dùng đã chọn ngôn ngữ (session còn giữ) → ưu tiên cao nhất.
-2. **`gp247_store_info('language')`** — ngôn ngữ mặc định cấu hình cho store.
-3. **`config('app.locale')`** — locale mặc định của Laravel (trong `.env` / `config/app.php`).
-4. Giá trị chọn được sẽ **kiểm tra lại** với danh sách ngôn ngữ đang bật (`admin_language`, `status = 1`).
-   Nếu không hợp lệ → lấy **ngôn ngữ đang bật đầu tiên** theo thứ tự `sort`.
+1. **Mã ngôn ngữ trên URL** (ví dụ `/vi/...`) — **chỉ khi bật `GP247_SEO_LANG`**, xem
+   [mục 2.3](#23-mã-ngôn-ngữ-trên-url-gp247_seo_lang). Khi tắt (mặc định), URL không mang mã ngôn ngữ
+   và bậc này bị bỏ qua.
+2. **`session('locale')`** — ngôn ngữ người dùng đã chọn trước đó (session còn giữ).
+3. **`gp247_store_info('language')`** — ngôn ngữ mặc định cấu hình cho store.
+4. **`config('app.locale')`** — locale mặc định của Laravel (trong `.env` / `config/app.php`).
 
-Sau khi chốt, middleware gọi `app()->setLocale(...)` và ghi lại vào `session`.
+Bậc 2–4 do middleware `Localization` (`vendor/gp247/core/src/Middleware/Localization.php`) quyết định
+ở đầu mỗi request: giá trị chọn được sẽ **kiểm tra lại** với danh sách ngôn ngữ đang bật
+(`admin_language`, `status = 1`); không hợp lệ → lấy **ngôn ngữ đang bật đầu tiên** theo thứ tự `sort`.
+Sau đó middleware gọi `app()->setLocale(...)` và ghi lại vào `session`.
 
-> Không có cơ chế nhận diện ngôn ngữ theo tiền tố URL (ví dụ `/vi/...`). Locale được điều khiển bằng
-> **session + ngôn ngữ mặc định của store**. Người dùng đổi ngôn ngữ qua nút chuyển ngôn ngữ trên
-> giao diện (gọi `gp247_lang_switch()`), giá trị mới được lưu vào session cho các request sau.
+Bậc 1 chạy **sau** middleware: controller của trang đọc mã `{lang}` trên URL và gọi
+`gp247_lang_switch()`, ghi đè locale vừa chốt và lưu vào session cho các request sau.
+
+```mermaid
+flowchart TD
+    A["Request tới trang storefront"] --> B["Middleware Localization:<br/>session → ngôn ngữ store → app.locale"]
+    B --> C{"Bật GP247_SEO_LANG<br/>và URL có mã {lang}?"}
+    C -- Không --> E["Hiển thị theo locale<br/>middleware đã chốt"]
+    C -- Có --> D{"Mã thuộc ngôn ngữ<br/>đang bật?"}
+    D -- Có --> F["gp247_lang_switch():<br/>đổi locale + ghi session"]
+    D -- Không --> G["Trả lỗi 404"]
+```
+
+Khi chưa bật `GP247_SEO_LANG`, người dùng đổi ngôn ngữ qua nút chuyển ngôn ngữ trên giao diện
+(route `locale/{code}`), giá trị mới được lưu vào session cho các request sau.
 
 ### 2.2. Ưu tiên nguồn câu chữ (lấy text ở đâu cho một mã)
 
@@ -110,6 +125,42 @@ Với **cùng một mã** chuỗi dịch:
 
 → Hệ quả quan trọng: **muốn đổi một câu chữ, hãy sửa trong DB (qua admin)**, vì bản DB luôn thắng
 bản file. Sửa file lang trong `vendor/` thường vô tác dụng nếu DB đã có mã tương ứng.
+
+### 2.3. Mã ngôn ngữ trên URL (`GP247_SEO_LANG`)
+
+Mặc định URL storefront **không** mang mã ngôn ngữ, và mọi ngôn ngữ dùng chung một địa chỉ. Bật biến
+`GP247_SEO_LANG` để mỗi ngôn ngữ có URL riêng, giúp công cụ tìm kiếm lập chỉ mục từng bản ngôn ngữ:
+
+```dotenv
+GP247_SEO_LANG=1
+```
+
+| | `GP247_SEO_LANG=0` (mặc định) | `GP247_SEO_LANG=1` |
+| --- | --- | --- |
+| Dạng URL | `domain.com/san-pham.html` | `domain.com/vi/san-pham.html`, `domain.com/en/san-pham.html` |
+| Locale lấy từ | session → ngôn ngữ store → `app.locale` | **mã trên URL** trước, rồi mới tới thứ tự trên |
+| Mã sai trên URL (vd `/xx/...`) | — | Trả **404** (mã không thuộc ngôn ngữ đang bật) |
+| Sitemap | Một bản chung | Thêm bản theo từng ngôn ngữ (`/sitemap-{loại}-{mã}-{trang}.xml`) khi có **từ 2 ngôn ngữ đang bật** |
+
+Những điểm cần biết khi bật:
+
+- **Link được sinh tự động có mã ngôn ngữ.** Mọi link tạo bằng `gp247_route_front()` tự gắn mã của
+  locale hiện tại. Plugin và template tự viết phải sinh link qua hàm này, không ghép chuỗi URL bằng tay.
+- **Một số route không mang mã ngôn ngữ:** trang chủ `/` (`front.home`), route đổi ngôn ngữ
+  `locale/{code}` (`front.locale`) và `front.banner.click`. Thêm route khác vào danh sách này bằng biến
+  `GP247_ROUTE_EXCLUDE_LANGUAGE` (tên route, cách nhau bằng dấu phẩy), ví dụ
+  `GP247_ROUTE_EXCLUDE_LANGUAGE=front.contact`.
+- **Nút chuyển ngôn ngữ** (`locale/{code}`) đổi đoạn `/{mã cũ}/` thành `/{mã mới}/` trong URL đang
+  xem rồi chuyển hướng, nên người dùng ở lại đúng trang.
+- **Plugin có trang storefront** (ví dụ News, MultiVendor, ProductFlashSale) cũng đọc biến này: route
+  của chúng có thêm `{lang?}/` khi bật.
+
+> ⚠️ **Bật hoặc tắt trên site đang chạy làm đổi toàn bộ URL storefront.** Link cũ đã được công cụ tìm
+> kiếm lập chỉ mục, chia sẻ trên mạng xã hội hay in trên ấn phẩm sẽ không còn khớp. Nên quyết định từ
+> lúc dựng site; nếu phải đổi giữa chừng, chuẩn bị chuyển hướng 301 từ URL cũ và gửi lại sitemap.
+
+> ℹ️ Sau khi sửa `.env` trên site đã chạy `php artisan config:cache`, chạy lại `php artisan config:cache`
+> (hoặc `config:clear`) để giá trị mới có hiệu lực.
 
 ---
 
@@ -218,18 +269,21 @@ locale đó trong *Quản lý chuỗi ngôn ngữ* (mục 3.3), hoặc cung cấ
 
 **Câu 5: Vì sao không xóa được tiếng Việt / tiếng Anh?**
 
-→ Hai ngôn ngữ gốc (`vi`, `en`) được bảo vệ bởi hằng `GP247_GUARD_LANGUAGE` để hệ thống luôn có ngôn
-ngữ chuẩn để dự phòng. Bạn có thể tắt hiển thị chúng ở chỗ khác, nhưng không xóa khỏi danh sách.
+→ Hai ngôn ngữ gốc được bảo vệ bởi hằng `GP247_GUARD_LANGUAGE` để hệ thống luôn có ngôn ngữ chuẩn để
+dự phòng. Hằng này khoá theo **id** `1` và `2` của bảng `admin_language` — trên bản cài mặc định là
+`vi` và `en`. Bạn có thể tắt hiển thị chúng ở chỗ khác, nhưng không xóa khỏi danh sách.
 
 **Câu 6: Đổi ngôn ngữ mặc định của site ở đâu?**
 
-→ Locale hiển thị ưu tiên `session('locale')` → ngôn ngữ mặc định của store → `config('app.locale')`.
-Để đổi mặc định toàn site, chỉnh ngôn ngữ mặc định của store (cấu hình store) và/hoặc `APP_LOCALE`
-trong `.env`.
+→ Chỉnh ngôn ngữ mặc định của store (cấu hình store) và/hoặc `APP_LOCALE` trong `.env`. Đây là ngôn ngữ
+dùng khi khách chưa chọn ngôn ngữ nào (session trống) và URL không mang mã ngôn ngữ. Khi bật
+`GP247_SEO_LANG`, mã trên URL luôn thắng — xem [mục 2.1](#21-ưu-tiên-chọn-locale-hiển-thị-ngôn-ngữ-nào-đang-bật-cho-request-này).
 
 **Câu 7: GP247 có nhận ngôn ngữ theo URL kiểu `/vi/...` không?**
 
-→ Không. Ngôn ngữ được điều khiển qua **session + ngôn ngữ mặc định của store**, không qua tiền tố URL.
+→ Có, khi bật `GP247_SEO_LANG=1` trong `.env` (mặc định tắt). Lúc đó URL storefront mang mã ngôn ngữ và
+mã này được ưu tiên cao nhất; mã không thuộc ngôn ngữ đang bật trả 404. Chi tiết ở
+[mục 2.3](#23-mã-ngôn-ngữ-trên-url-gp247_seo_lang).
 
 **Câu 8: `position` trong bảng `languages` để làm gì?**
 
@@ -248,4 +302,4 @@ nhật. Đây là lý do `shop` không cần file lang trên ổ đĩa.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-10-22 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-10 · ✍️ **Tác giả (Author):** GP247</sub>

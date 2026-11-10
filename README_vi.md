@@ -65,7 +65,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
 | [Ghi chú phát hành v3.0 — tiền của đơn hàng](./system/release-notes-3.0_vi.md) | Nâng cấp từ v2.1/v3.0: sổ thanh toán từng đơn, dòng tiền tính theo ngày thu, sửa trạng thái thanh toán lệch một bậc, **giảm giá trừ trước thuế**; ghi chú cho lập trình viên plugin | 2026-10-22 |
-| [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-10-22 |
+| [Hệ thống đa ngôn ngữ](./system/language-system_vi.md) | Cách dùng ngôn ngữ / i18n trong GP247 | 2026-11-10 |
 | [Hệ thống gửi mail](./system/mail-system_vi.md) | Luồng gửi mail (kèm sơ đồ), cấu hình SMTP, chọn kênh gửi | 2026-10-22 |
 | [Mã hoá dữ liệu nhạy cảm](./system/data-encryption_vi.md) | Mã hoá at-rest bí mật (SMTP/OAuth/license); khoá riêng `GP247_ENCRYPTION_KEY`; **các bước đổi khoá an toàn** bằng `gp247:encryption-key-rotate`; mã hoá cột bảng khác | 2026-11-04 |
 | [Lịch chạy & Hàng đợi](./system/schedule-and-queue_vi.md) | schedule:run vs queue:work; cài cron gửi mail theo môi trường | 2026-10-22 |
@@ -104,4 +104,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-10 · ✍️ **Tác giả (Author):** GP247</sub>

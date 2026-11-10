@@ -72,7 +72,7 @@ gp247_language_render('welcome', ['name' => 'An']); // 文字列内の :name を
 | `gp247_language_render($key, $replace, $locale)` | コードから文言を取得します（最もよく使います） |
 | `gp247_language_quickly($key, $default)` | 上と同じですが、既定値を指定できます |
 | `gp247_get_locale()` | 表示中のロケールを取得します |
-| `gp247_lang_switch($code)` | 現在の言語を切り替えます（有効性を確認し、session に保存） |
+| `gp247_lang_switch($code)` | 現在の言語を切り替えます（有効性を確認し、session に保存。有効な言語でないコード → 404） |
 | `gp247_language_all()` | 有効な言語の一覧を取得します（`admin_language` から） |
 
 > ⚠️ **技術的な注意:** 言語関数を `__construct` や早い段階で動く middleware の中で呼ばないでください。
@@ -86,20 +86,34 @@ gp247_language_render('welcome', ['name' => 'An']); // 文字列内の :name を
 
 ### 2.1. 表示ロケールの選択の優先順位（このリクエストでどの言語が有効か）
 
-middleware `Localization`（`vendor/gp247/core/src/Middleware/Localization.php`）が、
-**高いものから低いものへ**次の順で決めます。
+**高いものから低いものへ**次の順です。
 
-1. **`session('locale')`** — ユーザーがすでに言語を選んでいる（session に残っている）場合 → 最優先です。
-2. **`gp247_store_info('language')`** — ストアに設定された既定の言語です。
-3. **`config('app.locale')`** — Laravel の既定ロケールです（`.env` / `config/app.php`）。
-4. 選ばれた値は、有効な言語の一覧（`admin_language`、`status = 1`）と**照合し直されます**。
-   有効でない場合は、`sort` の順で**最初の有効な言語**が使われます。
+1. **URL 上の言語コード**（例: `/ja/...`）— **`GP247_SEO_LANG` がオンのときだけ**です。
+   [2.3 章](#23-url-上の言語コードgp247_seo_lang) を参照してください。オフ（既定）のときは URL に言語コードが付かず、この段階は飛ばされます。
+2. **`session('locale')`** — ユーザーが以前に選んだ言語です（session に残っている場合）。
+3. **`gp247_store_info('language')`** — ストアに設定された既定の言語です。
+4. **`config('app.locale')`** — Laravel の既定ロケールです（`.env` / `config/app.php`）。
 
-確定すると、middleware は `app()->setLocale(...)` を呼び、値を `session` に保存し直します。
+2〜4 は、各リクエストの最初に middleware `Localization`（`vendor/gp247/core/src/Middleware/Localization.php`）が
+決めます。選ばれた値は、有効な言語の一覧（`admin_language`、`status = 1`）と**照合し直され**、有効でない場合は
+`sort` の順で**最初の有効な言語**が使われます。その後 middleware は `app()->setLocale(...)` を呼び、値を
+`session` に保存し直します。
 
-> URL の接頭辞（例: `/vi/...`）で言語を判定する仕組みはありません。ロケールは
-> **session ＋ ストアの既定言語**で制御されます。ユーザーは画面上の言語切り替えボタン
-> （`gp247_lang_switch()` を呼びます）で言語を変更し、新しい値は以降のリクエストのために session に保存されます。
+1 は middleware の**後**に動きます。ページの controller が URL の `{lang}` コードを読み取り、
+`gp247_lang_switch()` を呼んで、決まったばかりのロケールを上書きし、以降のリクエストのために session に保存します。
+
+```mermaid
+flowchart TD
+    A["ストアフロントの<br/>ページへのリクエスト"] --> B["middleware Localization:<br/>session → ストアの言語<br/>→ app.locale"]
+    B --> C{"GP247_SEO_LANG がオンで<br/>URL に {lang} がある？"}
+    C -- いいえ --> E["middleware が決めた<br/>ロケールで表示"]
+    C -- はい --> D{"有効な言語の<br/>コード？"}
+    D -- はい --> F["gp247_lang_switch():<br/>ロケール切り替え<br/>＋ session に保存"]
+    D -- いいえ --> G["404 を返す"]
+```
+
+`GP247_SEO_LANG` がオフの間は、ユーザーは画面上の言語切り替えボタン（ルート `locale/{code}`）で言語を変更し、
+新しい値は以降のリクエストのために session に保存されます。
 
 ### 2.2. 文言の取得元の優先順位（あるコードのテキストをどこから取るか）
 
@@ -110,6 +124,41 @@ middleware `Localization`（`vendor/gp247/core/src/Middleware/Localization.php`�
 
 → 重要な結論: **文言を変えたいときは、DB で（管理画面から）編集してください。** DB の内容は常に
 ファイルより優先されるためです。DB に対応するコードがすでにある場合、`vendor/` 内の言語ファイルを編集しても通常は効果がありません。
+
+### 2.3. URL 上の言語コード（`GP247_SEO_LANG`）
+
+既定では、ストアフロントの URL には言語コードが**付かず**、すべての言語が同じアドレスを共有します。
+`GP247_SEO_LANG` をオンにすると言語ごとに専用の URL ができ、検索エンジンが各言語版を個別にインデックスできるようになります。
+
+```dotenv
+GP247_SEO_LANG=1
+```
+
+| | `GP247_SEO_LANG=0`（既定） | `GP247_SEO_LANG=1` |
+| --- | --- | --- |
+| URL の形 | `domain.com/product.html` | `domain.com/ja/product.html`、`domain.com/en/product.html` |
+| ロケールの取得元 | session → ストアの言語 → `app.locale` | まず **URL 上のコード**、その後に左の順 |
+| URL のコードが誤り（例: `/xx/...`） | — | **404** を返します（有効な言語のコードではないため） |
+| サイトマップ | 共通の1つ | **有効な言語が2つ以上**あるとき、言語ごとの版（`/sitemap-{種類}-{コード}-{ページ}.xml`）が加わります |
+
+オンにするときに知っておくべき点:
+
+- **自動で作られるリンクには言語コードが付きます。** `gp247_route_front()` で作るリンクには、現在のロケールの
+  コードが自動で付きます。自作のプラグインやテンプレートも、URL の文字列を手で連結せず、この関数でリンクを作ってください。
+- **言語コードが付かないルートもあります:** トップページ `/`（`front.home`）、言語切り替えのルート
+  `locale/{code}`（`front.locale`）、`front.banner.click` です。ほかのルートをこの一覧に加えるには、変数
+  `GP247_ROUTE_EXCLUDE_LANGUAGE`（ルート名をカンマ区切り）を使います。例: `GP247_ROUTE_EXCLUDE_LANGUAGE=front.contact`。
+- **言語切り替えボタン**（`locale/{code}`）は、表示中の URL の `/{旧コード}/` を `/{新コード}/` に置き換えて
+  リダイレクトするため、ユーザーは同じページにとどまります。
+- **ストアフロントのページを持つプラグイン**（例: News、MultiVendor、ProductFlashSale）もこの変数を読みます。
+  オンのとき、それらのルートにも `{lang?}/` が付きます。
+
+> ⚠️ **稼働中のサイトでオン・オフを切り替えると、ストアフロントのすべての URL が変わります。** 検索エンジンに
+> インデックス済みのリンク、SNS で共有されたリンク、印刷物に載せたリンクは一致しなくなります。サイトを構築する
+> 時点で決めてください。途中で変える必要がある場合は、旧 URL からの 301 リダイレクトを用意し、サイトマップを再送信してください。
+
+> ℹ️ `php artisan config:cache` を実行済みのサイトで `.env` を編集した後は、新しい値を反映させるために
+> `php artisan config:cache`（または `config:clear`）をもう一度実行してください。
 
 ---
 
@@ -217,18 +266,20 @@ php artisan gp247:language-update
 
 **Q5: ベトナム語・英語を削除できないのはなぜですか？**
 
-→ 基本の2言語（`vi`、`en`）は、システムが常に予備として使える標準言語を持てるよう、定数
-`GP247_GUARD_LANGUAGE` で保護されています。他の方法で表示をオフにすることはできますが、一覧から削除することはできません。
+→ 基本の2言語は、システムが常に予備として使える標準言語を持てるよう、定数 `GP247_GUARD_LANGUAGE` で
+保護されています。この定数は `admin_language` テーブルの **id** `1` と `2` を固定します（既定のインストールでは
+`vi` と `en`）。他の方法で表示をオフにすることはできますが、一覧から削除することはできません。
 
 **Q6: サイトの既定言語はどこで変更しますか？**
 
-→ 表示ロケールは `session('locale')` → ストアの既定言語 → `config('app.locale')` の順で優先されます。
-サイト全体の既定を変えるには、ストアの既定言語（ストアの設定）と、必要に応じて `.env` の `APP_LOCALE`
-を変更してください。
+→ ストアの既定言語（ストアの設定）と、必要に応じて `.env` の `APP_LOCALE` を変更してください。これは、訪問者が
+まだ言語を選んでおらず（session が空）、URL に言語コードが付いていないときに使われる言語です。`GP247_SEO_LANG`
+がオンのときは、URL 上のコードが常に優先されます（[2.1 章](#21-表示ロケールの選択の優先順位このリクエストでどの言語が有効か) を参照）。
 
 **Q7: GP247 は `/vi/...` のような URL で言語を判定しますか？**
 
-→ いいえ。言語は URL の接頭辞ではなく、**session ＋ ストアの既定言語**で制御されます。
+→ はい。`.env` で `GP247_SEO_LANG=1` にした場合です（既定はオフ）。このときストアフロントの URL に言語コードが付き、
+そのコードが最優先になります。有効な言語でないコードは 404 を返します。詳しくは [2.3 章](#23-url-上の言語コードgp247_seo_lang) を参照してください。
 
 **Q8: `languages` テーブルの `position` は何のためにありますか？**
 
@@ -247,4 +298,4 @@ php artisan gp247:language-update
 
 ---
 
-<sub>📅 **最終更新:** 2026-10-22 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-10 · ✍️ **作成者 (Author):** GP247</sub>
