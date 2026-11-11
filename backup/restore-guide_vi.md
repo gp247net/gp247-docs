@@ -194,8 +194,8 @@ những bảng bị bỏ qua và lý do.
 - **Mỗi lúc chỉ một việc ghi** — đang sao lưu hay phục hồi khác thì phải chờ.
 - **Khoá mở bản chỉ dùng trong 1 giờ** kể từ khi bắt đầu — phục hồi bỏ dở quá lâu phải làm lại từ đầu.
 - **Chế độ bảo trì tự tắt** nếu một lần phục hồi toàn bộ không thể hoàn tất, để site không bị kẹt ở trang bảo trì.
-- **Lần phục hồi đã thay xong bảng mà bị bỏ dở khoảng 15 phút thì tự kết thúc** — site ra khỏi chế độ bảo trì, các bảng đã thay giữ nguyên
-  và vẫn hoàn tác được trong 24 giờ.
+- **Lần phục hồi đã thay xong bảng mà bị bỏ dở thì tự kết thúc** — sau khoảng 15 phút (khoảng 1 giờ nếu đang cập nhật dữ liệu), vào lần kế tiếp
+  có người mở site; site ra khỏi chế độ bảo trì, các bảng đã thay giữ nguyên và vẫn hoàn tác được trong 24 giờ.
 - **Nhật ký thao tác quản trị và lần đăng nhập sai không bao giờ bị thay** — phục hồi không được là cách xoá dấu vết ai đã làm gì.
 - **Số mã (ID) tự tăng không lùi lại** — bản ghi mới sau phục hồi không nhận lại mã mà site đã cấp trước đó.
 - **Mã và `.env` không phục hồi trong chế độ sau sự cố hoặc với bản chưa xác minh nguồn gốc** — mã trong bản có thể đã bị cài cửa hậu.
@@ -232,8 +232,8 @@ phiên bản GP247 bằng hoặc mới hơn site cũ.
 **Câu 7: Trình duyệt bị đóng giữa lúc phục hồi thì sao?**
 
 → Mở lại màn **Phục hồi**: lần phục hồi đang dở chạy tiếp từ chỗ dừng. Khi còn đang đọc dữ liệu từ bản, bỏ quá 1 giờ thì lần đó bị dừng và chế
-độ bảo trì tự tắt; hãy xem trước lại rồi phục hồi lại từ đầu. Khi các bảng đã được thay xong, bỏ khoảng 15 phút thì lần đó tự kết thúc: site ra
-khỏi chế độ bảo trì, dữ liệu đã phục hồi giữ nguyên và vẫn hoàn tác được. Nếu bản cũ hơn site, bước cập nhật dữ liệu sau phục hồi bị bỏ qua —
+độ bảo trì tự tắt; hãy xem trước lại rồi phục hồi lại từ đầu. Khi các bảng đã được thay xong, bỏ khoảng 15 phút (khoảng 1 giờ nếu đang cập nhật
+dữ liệu) thì lần đó tự kết thúc vào lần kế tiếp có người mở site: site ra khỏi chế độ bảo trì, dữ liệu đã phục hồi giữ nguyên và vẫn hoàn tác được. Nếu bản cũ hơn site, bước cập nhật dữ liệu sau phục hồi bị bỏ qua —
 hãy chạy `php artisan gp247:update`.
 
 **Câu 8: Không có quyền dòng lệnh, tôi phục hồi ảnh tải lên thế nào?**
@@ -245,7 +245,7 @@ hãy chạy `php artisan gp247:update`.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
-| 2026-11-11 | | Xem trước liệt kê những gì không được đưa lại; cột mà site không còn phải xác nhận riêng (`--accept-column-loss`); bản chưa xác minh nguồn gốc chỉ Administrator phục hồi trên màn; nhật ký thao tác không bị thay; phục hồi bỏ dở sau khi đã thay bảng tự kết thúc sau khoảng 15 phút; giới hạn nhập sai mật khẩu sao lưu |
+| 2026-11-11 | | Xem trước liệt kê những gì không được đưa lại; cột mà site không còn phải xác nhận riêng (`--accept-column-loss`); bản chưa xác minh nguồn gốc chỉ Administrator phục hồi trên màn; nhật ký thao tác không bị thay; phục hồi bỏ dở sau khi đã thay bảng tự kết thúc sau khoảng 15 phút (khoảng 1 giờ nếu đang cập nhật dữ liệu), vào lần kế tiếp có người mở site; giới hạn nhập sai mật khẩu sao lưu |
 
 ---
 

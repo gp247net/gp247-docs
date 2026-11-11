@@ -198,8 +198,8 @@ also prints the tables that are skipped and why.
 - **Only one writing task at a time** — wait if another backup or restore is running.
 - **The key that opens the backup is usable for 1 hour** from the start — a restore left too long must be started again.
 - **Maintenance mode turns itself off** if a whole-database restore cannot finish, so the site does not stay stuck on the maintenance page.
-- **A restore left about 15 minutes after its tables were replaced ends by itself** — the site leaves maintenance mode, the replaced tables
-  stay and can still be undone within 24 hours.
+- **A restore left unfinished after its tables were replaced ends by itself** — after about 15 minutes (about 1 hour while data is being
+  updated), the next time someone opens the site; the site leaves maintenance mode, the replaced tables stay and can still be undone within 24 hours.
 - **The admin activity log and failed sign-ins are never replaced** — a restore must not be a way to erase who did what.
 - **Auto-increment ids do not go back** — new records after a restore never get an id the site already handed out.
 - **Code and `.env` are not restored in incident mode or from a backup whose origin is not verified** — code in the backup may carry a backdoor.
@@ -237,8 +237,8 @@ new site must run the same or a newer GP247 version than the old one.
 
 → Open the **Restore** screen again: the unfinished restore carries on from where it stopped. While it is still reading data from the
 backup, if it is left for more than 1 hour it is stopped and maintenance mode turns itself off; preview again and restore from the start.
-Once the tables have been replaced, if it is left about 15 minutes it ends by itself: the site leaves maintenance mode, the restored data
-stays and can still be undone. If the backup is older than the site, the data update after the restore is skipped — run
+Once the tables have been replaced, if it is left about 15 minutes (about 1 hour while data is being updated) it ends by itself the next
+time someone opens the site: the site leaves maintenance mode, the restored data stays and can still be undone. If the backup is older than the site, the data update after the restore is skipped — run
 `php artisan gp247:update`.
 
 **Q8: I have no command line — how do I restore uploaded images?**
@@ -250,7 +250,7 @@ stays and can still be undone. If the backup is older than the site, the data up
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
-| 2026-11-11 | | The preview lists what is not brought back; columns the site no longer has need their own confirmation (`--accept-column-loss`); a backup of unverified origin restored on the screen only by an Administrator; the activity log is not replaced; a restore left unfinished after its tables were replaced ends by itself after about 15 minutes; wrong backup passwords limited |
+| 2026-11-11 | | The preview lists what is not brought back; columns the site no longer has need their own confirmation (`--accept-column-loss`); a backup of unverified origin restored on the screen only by an Administrator; the activity log is not replaced; a restore left unfinished after its tables were replaced ends by itself after about 15 minutes (about 1 hour while data is being updated), the next time someone opens the site; wrong backup passwords limited |
 
 ---
 
