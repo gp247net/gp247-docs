@@ -4,16 +4,16 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.6.0** (2026-11-09).
+and how to update. Latest release: **S-Cart 3.6.1** (2026-11-11).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.10.3** | 3.11.0 |
-| gp247/front | **3.2.3** | 3.7.0 |
-| gp247/shop | **3.8.1** | 3.9.0 |
+| gp247/core | **3.11.2** | 3.11.2 |
+| gp247/front | **3.2.3** | 3.7.1 |
+| gp247/shop | **3.8.1** | 3.9.1 |
 | gp247/mcp | **2.0.1** | 2.0.2 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
@@ -63,6 +63,29 @@ Step-by-step details: [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.6.1 — 2026-11-11
+Backup and restore hardened for real sites and shared hosts — recommended update.
+
+**✨ New**
+- **Each backup group says what it holds** — the backup and restore screens show which data a group contains before you
+  choose ([docs](../backup/backup-and-restore.md))
+- **The restore preview says what is not brought back** — columns the site no longer has need a separate confirmation; a
+  backup newer than the site names the missing updates ([docs](../backup/restore-guide.md))
+- **Warning when no full backup is available** — the backup screen warns when there is no verified full backup, or it is old
+
+**🔧 Improvements:** a restore left unfinished ends by itself and takes the site out of maintenance; backups handle large
+tables without a primary key and tables of wide rows within 128 MB, and retention always keeps the newest full backup; admin
+screens with file uploads no longer run out of memory
+
+**📋 To do when updating**
+- Run `composer update`, then `php artisan gp247:update`
+- Verifying, unpinning and deleting backups, and saving backup settings, now ask you to confirm your sign-in; repeated wrong
+  backup passwords are temporarily blocked
+- *(Restoring from the command line)* a backup with columns the site no longer has: preview it, then run again with
+  `--accept-column-loss`
+
+<sub>Includes core 3.11.2 · front 3.7.1 · shop 3.9.1 · mcp 2.0.2 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.6.1)</sub>
 
 ### S-Cart 3.6.0 — 2026-11-09
 **Backup and restore built into S-Cart, ready for shared hosting.**
@@ -163,35 +186,10 @@ folders; searchable selects stay closed while you edit another row
 
 <sub>Includes core 3.9.0 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.0)</sub>
 
-### S-Cart 3.4.0 — 2026-11-02
-**Sell through your own app and sync with your ERP over the REST API.**
-
-**✨ New**
-- **Sell through your own app** — the store's app keeps the cart, places orders and pays online through the API; the site
-  owner turns on "Orders via API" ([docs](../api/api-introduction.md))
-- **Customer accounts in the app** — sign up, password reset, profile, address book; long sign-ins with a refresh token
-- **Sync with ERP and warehouse software** — update order status, tracking numbers, prices and stock through the admin API,
-  with the same permissions as the admin screens
-- **Event log and webhooks** — the ERP knows at once when orders, stock, products or customers change; off by default
-- **Faster apps** — fetch only the fields you need; unchanged data is not downloaded again (`304`)
-- **For developers:** an extension point for two-factor authentication (MFA) on API sign-in; `Idempotency-Key` against
-  duplicate writes; an API deprecation policy; generate a TypeScript client from `openapi.json`
-
-**🔧 Improvements:** out-of-stock products still showed the buy button; sign-up and password change accepted an empty password; the
-API answered 500 without an `Accept` header
-
-**📋 To do when updating**
-- Run `php artisan gp247:update` — it creates the API session, event log and webhook tables and the sync indexes
-- *(Stock management on without stock entered)* turn off *Stock management* or turn on *Allow selling when out of stock*,
-  otherwise the buy button disappears on products with 0 stock
-- *(Several apps sharing one API account)* the 1000 requests/minute limit now counts per account — split the accounts or raise
-  `GP247_API_THROTTLE`
-
-<sub>Includes core 3.8.0 · front 3.5.0 · shop 3.7.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.4.0)</sub>
-
 ### Older releases
 | Release | Date | Summary |
 | --- | --- | --- |
+| [S-Cart 3.4.0](https://github.com/gp247net/s-cart/releases/tag/3.4.0) | 2026-11-02 | Sell through your own app and sync with your ERP over the REST API |
 | [S-Cart 3.3.1](https://github.com/gp247net/s-cart/releases/tag/3.3.1) | 2026-10-29 | Contact form with an inbox; REST API switched on and off from the admin |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Japanese, standard shipping with shipments, storefront theme that updates with the package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Payment requests outside the cart; stored passwords and payment keys encrypted |
@@ -243,4 +241,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-09 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>

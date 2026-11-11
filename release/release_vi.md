@@ -4,16 +4,16 @@
 
 ## Giới thiệu
 Trang này dành cho **chủ site và người vận hành** S-Cart (dòng 3.x): cho biết mỗi bản phát hành có gì mới, nên dùng phiên
-bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.6.0** (2026-11-09).
+bản nào và cách cập nhật. Bản mới nhất: **S-Cart 3.6.1** (2026-11-11).
 
 ## Phiên bản nên dùng
 Chạy `php artisan gp247:info` (hoặc `composer show "gp247/*"`) rồi so từng dòng với cột **Tối thiểu khuyến nghị**:
 
 | Package | Tối thiểu khuyến nghị | Mới nhất |
 | --- | --- | --- |
-| gp247/core | **3.10.3** | 3.11.0 |
-| gp247/front | **3.2.3** | 3.7.0 |
-| gp247/shop | **3.8.1** | 3.9.0 |
+| gp247/core | **3.11.2** | 3.11.2 |
+| gp247/front | **3.2.3** | 3.7.1 |
+| gp247/shop | **3.8.1** | 3.9.1 |
 | gp247/mcp | **2.0.1** | 2.0.2 |
 
 - **Thấp hơn** cột "Tối thiểu khuyến nghị" → nên [cập nhật](#cập-nhật-thế-nào).
@@ -63,6 +63,28 @@ Chi tiết từng bước: [Cập nhật GP247 và S-Cart](../install-upgrade/up
 
 ## Các bản phát hành
 Mới nhất ở trên. Bản *x.**Y*** có tính năng mới; bản *x.y.**Z*** chỉ sửa lỗi.
+
+### S-Cart 3.6.1 — 2026-11-11
+Bản cải tiến sao lưu và phục hồi cho site thật và shared host — nên cập nhật.
+
+**✨ Mới**
+- **Mỗi nhóm sao lưu ghi rõ chứa gì** — màn sao lưu và phục hồi nói nhóm gồm những dữ liệu nào trước khi chọn
+  ([tài liệu](../backup/backup-and-restore_vi.md))
+- **Xem trước phục hồi nói rõ phần không mang về** — cột site không còn phải xác nhận riêng; bản mới hơn site nêu bản cập
+  nhật còn thiếu ([tài liệu](../backup/restore-guide_vi.md))
+- **Cảnh báo khi thiếu bản sao lưu toàn bộ** — màn sao lưu báo khi chưa có bản toàn bộ đã kiểm hoặc bản đó đã cũ
+
+**🔧 Cải thiện:** phục hồi bị bỏ dở tự kết thúc và đưa site ra khỏi bảo trì; sao lưu chạy được với bảng lớn không có khoá
+chính và bảng dòng rộng trong 128 MB, giữ bản luôn giữ bản toàn bộ mới nhất; màn tải file lên trong quản trị không còn lỗi
+hết bộ nhớ
+
+**📋 Cần làm khi cập nhật**
+- Chạy `composer update` rồi `php artisan gp247:update`
+- Kiểm lại, bỏ ghim, xoá bản sao lưu và lưu cài đặt sao lưu nay hỏi xác nhận đăng nhập; nhập sai mật khẩu sao lưu nhiều lần
+  bị tạm chặn
+- *(Phục hồi bằng dòng lệnh)* bản có cột mà site không còn: xem trước rồi chạy lại với `--accept-column-loss`
+
+<sub>Gồm core 3.11.2 · front 3.7.1 · shop 3.9.1 · mcp 2.0.2 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.6.1)</sub>
 
 ### S-Cart 3.6.0 — 2026-11-09
 **Sao lưu và phục hồi có sẵn trong S-Cart, chạy được cả trên shared host.**
@@ -161,35 +183,10 @@ lấy từ proxy đã khai báo; bộ Docker mặc định không tin proxy nào
 
 <sub>Gồm core 3.9.0 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.0)</sub>
 
-### S-Cart 3.4.0 — 2026-11-02
-**Bán hàng qua ứng dụng riêng và đồng bộ với ERP qua REST API.**
-
-**✨ Mới**
-- **Bán hàng qua ứng dụng riêng** — app của cửa hàng giữ giỏ, đặt đơn, thanh toán online qua API; chủ site bật "Đặt đơn
-  qua API" ([tài liệu](../api/api-introduction_vi.md))
-- **Tài khoản khách trong ứng dụng** — đăng ký, quên mật khẩu, hồ sơ, sổ địa chỉ; giữ đăng nhập lâu bằng refresh token
-- **Đồng bộ với ERP, phần mềm kho** — cập nhật trạng thái đơn, mã vận đơn, giá, tồn kho qua API quản trị, đúng phân quyền
-  màn hình
-- **Nhật ký sự kiện và webhook** — ERP biết ngay khi đơn, tồn, sản phẩm, khách thay đổi; mặc định tắt
-- **Ứng dụng tải nhanh hơn** — chỉ lấy trường cần dùng; dữ liệu không đổi thì không tải lại (`304`)
-- **Cho lập trình viên:** điểm cắm xác thực hai lớp (MFA) cho đăng nhập API; `Idempotency-Key` chống ghi trùng; chính sách
-  ngừng hỗ trợ API; sinh client TypeScript từ `openapi.json`
-
-**🔧 Cải thiện:** sản phẩm hết hàng vẫn hiện nút mua; đăng ký và đổi mật khẩu chấp nhận mật khẩu rỗng; API lỗi 500 khi thiếu
-header `Accept`
-
-**📋 Cần làm khi cập nhật**
-- Chạy `php artisan gp247:update` — tạo bảng phiên API, nhật ký sự kiện, webhook và chỉ mục đồng bộ
-- *(Bật Quản lý tồn kho nhưng không nhập tồn)* tắt *Quản lý tồn kho* hoặc bật *Cho bán khi hết hàng*, nếu không nút mua sẽ
-  biến mất ở sản phẩm tồn 0
-- *(Nhiều ứng dụng dùng chung một tài khoản API)* giới hạn 1000 lần/phút nay đếm theo tài khoản — tách tài khoản hoặc tăng
-  `GP247_API_THROTTLE`
-
-<sub>Gồm core 3.8.0 · front 3.5.0 · shop 3.7.0 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.4.0)</sub>
-
 ### Các bản cũ hơn
 | Bản | Ngày | Tóm tắt |
 | --- | --- | --- |
+| [S-Cart 3.4.0](https://github.com/gp247net/s-cart/releases/tag/3.4.0) | 2026-11-02 | Bán hàng qua ứng dụng riêng và đồng bộ ERP qua REST API |
 | [S-Cart 3.3.1](https://github.com/gp247net/s-cart/releases/tag/3.3.1) | 2026-10-29 | Form liên hệ có hộp thư; bật/tắt REST API trong trang quản trị |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Thêm tiếng Nhật, vận chuyển chuẩn có vận đơn, giao diện tự cập nhật theo package |
 | [S-Cart 3.1](https://github.com/gp247net/s-cart/releases/tag/3.1) | 2026-10-03 | Yêu cầu thanh toán ngoài giỏ hàng; mã hoá mật khẩu, khoá thanh toán đã lưu |
@@ -241,4 +238,4 @@ trước khi có bản vá.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-09 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-11 · ✍️ **Tác giả (Author):** GP247</sub>
