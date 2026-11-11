@@ -20,7 +20,7 @@ flowchart LR
 ```
 
 - **Chọn mức nhỏ nhất giải quyết được sự cố** — phần còn lại của site giữ nguyên dữ liệu mới.
-- **Luôn xem trước**: màn liệt kê bảng nào bị thay, bao nhiêu dữ liệu mới hơn bản sẽ mất.
+- **Luôn xem trước**: màn liệt kê bảng nào bị thay, bao nhiêu dữ liệu mới hơn bản sẽ mất, và những gì lần này **không** đưa lại.
 - **Hoàn tác được trong 24 giờ** với các mức thay dữ liệu — làm nhầm vẫn quay lại được.
 - **Nghi bị xâm nhập** thì dùng chế độ **Phục hồi sau sự cố bảo mật**, không phục hồi thường.
 
@@ -68,6 +68,14 @@ Cần quyền **Backup - restore**. Mọi lần phục hồi đều được ghi
 3. Nhập **mật khẩu sao lưu** hoặc **recovery key**, rồi xác nhận lại danh tính bằng mật khẩu đăng nhập.
 4. Bấm **Xem trước**. Đọc kỹ khung **Phục hồi này sẽ làm gì**: bảng nào bị thay, số bản ghi hiện có và trong bản, dữ liệu mới hơn bản sẽ
    mất, bảng có mật khẩu / khoá API (tài khoản đã xoá hay đổi sau thời điểm của bản sẽ quay lại).
+   Khung **Lần phục hồi này KHÔNG đưa lại** liệt kê phần sẽ không về:
+   - **Bảng có trong bản nhưng site không có (extension chưa cài)** — cài lại extension trước nếu cần dữ liệu đó.
+   - **Bảng không bao giờ bị thay khi phục hồi (token đăng nhập, nhật ký thao tác, sổ của khu sao lưu…)**.
+   - **Bảng thuộc nhóm đã chọn nhưng bản không có**.
+   - **File có trong bản** (ảnh, file tải lên, mã, `.env`) — chỉ ghi lại được bằng lệnh, xem [Phục hồi file](#phục-hồi-file-ảnh-extension-env).
+
+   Nếu bản có **cột mà site không còn** (một bản cập nhật đã xoá hay đổi tên cột), màn liệt kê từng cột: dữ liệu của chúng sẽ **không** về.
+   Tick **Tôi hiểu dữ liệu của các cột này sẽ mất** rồi bấm **Xem trước** lại; chưa tick thì không phục hồi được.
 5. Gõ đúng mã hiện trên màn vào ô **Xác nhận** để bắt đầu.
 6. Giữ tab mở tới khi màn báo kết quả. Với **Toàn bộ dữ liệu**, site chuyển sang chế độ bảo trì trong lúc chạy; riêng bạn vẫn dùng được trang quản trị.
 
@@ -153,7 +161,8 @@ Bạn có thể phục hồi từ một file `.gp247bak` đã tải về trướ
 
 Bản tạo ở site khác được ghi là **chưa xác minh nguồn gốc** (không ký bằng khoá của site này): dữ liệu nguyên vẹn nhưng GP247 không chứng
 minh được ai tạo ra nó. Khi phục hồi, bạn phải tick **Tôi biết rõ nguồn gốc bản này — vẫn phục hồi**; mã và `.env` trong bản như vậy
-không được phục hồi. Bản chỉ còn ở đích ngoài thì kéo về theo [Đích ngoài](./backup-offsite_vi.md#kéo-một-bản-từ-đích-ngoài-về).
+không được phục hồi. Trên màn, **chỉ Administrator** phục hồi được bản chưa xác minh nguồn gốc — người chỉ có quyền **Backup - restore** thì
+không, vì một bản tạo bằng mật khẩu của chính họ có thể thay cả tài khoản quản trị. Bản chỉ còn ở đích ngoài thì kéo về theo [Đích ngoài](./backup-offsite_vi.md#kéo-một-bản-từ-đích-ngoài-về).
 
 ## Phục hồi bằng dòng lệnh
 Trên VPS, hoặc khi site quá lớn cho một trình duyệt, dùng `gp247:backup-restore`. Lệnh hỏi mật khẩu sao lưu và mã xác nhận khi chạy.
@@ -169,7 +178,9 @@ Trên VPS, hoặc khi site quá lớn cho một trình duyệt, dùng `gp247:bac
 | Từ file `.gp247bak` | `php artisan gp247:backup-restore --file=<đường-dẫn> --level=full` |
 | Hoàn tác | `php artisan gp247:backup-restore --undo` |
 
-Thêm `--recovery-key` khi nhập recovery key thay cho mật khẩu; `--accept-unverified` cho bản chưa xác minh nguồn gốc.
+Thêm `--recovery-key` khi nhập recovery key thay cho mật khẩu; `--accept-unverified` cho bản chưa xác minh nguồn gốc;
+`--accept-column-loss` khi bản xem trước báo có cột mà site không còn (dữ liệu của các cột đó sẽ mất). Bản xem trước của lệnh cũng in
+những bảng bị bỏ qua và lý do.
 
 ## Điều kiện & ràng buộc (hiểu trước khi thao tác)
 **Chọn bản và mức**
@@ -183,7 +194,13 @@ Thêm `--recovery-key` khi nhập recovery key thay cho mật khẩu; `--accept-
 - **Mỗi lúc chỉ một việc ghi** — đang sao lưu hay phục hồi khác thì phải chờ.
 - **Khoá mở bản chỉ dùng trong 1 giờ** kể từ khi bắt đầu — phục hồi bỏ dở quá lâu phải làm lại từ đầu.
 - **Chế độ bảo trì tự tắt** nếu một lần phục hồi toàn bộ không thể hoàn tất, để site không bị kẹt ở trang bảo trì.
+- **Lần phục hồi đã thay xong bảng mà bị bỏ dở khoảng 15 phút thì tự kết thúc** — site ra khỏi chế độ bảo trì, các bảng đã thay giữ nguyên
+  và vẫn hoàn tác được trong 24 giờ.
+- **Nhật ký thao tác quản trị và lần đăng nhập sai không bao giờ bị thay** — phục hồi không được là cách xoá dấu vết ai đã làm gì.
+- **Số mã (ID) tự tăng không lùi lại** — bản ghi mới sau phục hồi không nhận lại mã mà site đã cấp trước đó.
 - **Mã và `.env` không phục hồi trong chế độ sau sự cố hoặc với bản chưa xác minh nguồn gốc** — mã trong bản có thể đã bị cài cửa hậu.
+- **Bản chưa xác minh nguồn gốc chỉ Administrator phục hồi được trên màn** — bản tạo bằng mật khẩu của người khác có thể thay cả tài khoản quản trị.
+- **Nhập sai mật khẩu sao lưu bị giới hạn** (5 lần trong 15 phút mỗi quản trị viên, 20 lần sai mỗi giờ cả site) — không ai dò được mật khẩu mãi.
 
 ## Hỏi & Đáp (Q&A)
 **Câu 1: Phục hồi có làm mất đơn hàng mới không?**
@@ -214,13 +231,22 @@ phiên bản GP247 bằng hoặc mới hơn site cũ.
 
 **Câu 7: Trình duyệt bị đóng giữa lúc phục hồi thì sao?**
 
-→ Mở lại màn **Phục hồi**: lần phục hồi đang dở chạy tiếp từ chỗ dừng. Bỏ quá 1 giờ thì lần đó bị dừng và chế độ bảo trì tự tắt; hãy xem trước
-lại rồi phục hồi lại từ đầu.
+→ Mở lại màn **Phục hồi**: lần phục hồi đang dở chạy tiếp từ chỗ dừng. Khi còn đang đọc dữ liệu từ bản, bỏ quá 1 giờ thì lần đó bị dừng và chế
+độ bảo trì tự tắt; hãy xem trước lại rồi phục hồi lại từ đầu. Khi các bảng đã được thay xong, bỏ khoảng 15 phút thì lần đó tự kết thúc: site ra
+khỏi chế độ bảo trì, dữ liệu đã phục hồi giữ nguyên và vẫn hoàn tác được. Nếu bản cũ hơn site, bước cập nhật dữ liệu sau phục hồi bị bỏ qua —
+hãy chạy `php artisan gp247:update`.
 
 **Câu 8: Không có quyền dòng lệnh, tôi phục hồi ảnh tải lên thế nào?**
 
 → Phục hồi file chỉ làm bằng dòng lệnh. Nhờ nhà cung cấp hosting hoặc lập trình viên chạy lệnh ở [Phục hồi file](#phục-hồi-file-ảnh-extension-env).
 
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-11-11 | | Xem trước liệt kê những gì không được đưa lại; cột mà site không còn phải xác nhận riêng (`--accept-column-loss`); bản chưa xác minh nguồn gốc chỉ Administrator phục hồi trên màn; nhật ký thao tác không bị thay; phục hồi bỏ dở sau khi đã thay bảng tự kết thúc sau khoảng 15 phút; giới hạn nhập sai mật khẩu sao lưu |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-11 · ✍️ **Tác giả (Author):** GP247</sub>

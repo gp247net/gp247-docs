@@ -40,9 +40,9 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Backup & restore
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [Backup & restore](./backup/backup-and-restore.md) | Backup password and recovery key, three ways to make a backup, automatic schedule for any hosting (no cron needed), snapshot before a change, rights and command line | 2026-11-07 |
+| [Backup & restore](./backup/backup-and-restore.md) | Backup password and recovery key, three ways to make a backup, automatic schedule for any hosting (no cron needed), snapshot before a change, rights and command line | 2026-11-11 |
 | [External destination](./backup/backup-offsite.md) | Copy backups to S3-compatible storage or SFTP / NAS, write-only credentials + Object Lock, bring a backup back | 2026-11-07 |
-| [Restore by situation](./backup/restore-guide.md) | Choose the restore level, steps on the screen, 24-hour undo, file restore, after a security incident, backups from another site | 2026-11-07 |
+| [Restore by situation](./backup/restore-guide.md) | Choose the restore level, steps on the screen, 24-hour undo, file restore, after a security incident, backups from another site | 2026-11-11 |
 
 ### Extensions (Plugins)
 | Document | Summary | Last updated |
@@ -104,4 +104,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-10 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>

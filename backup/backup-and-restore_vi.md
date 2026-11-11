@@ -58,7 +58,8 @@ hiện đúng mô tả này dưới mỗi nhóm, để bạn biết mình đang 
 
 **Chụp nhanh** lấy một nhóm dữ liệu. **Chọn nhóm** lấy các nhóm dữ liệu và nhóm file bạn tick. **Sao lưu toàn bộ** lấy mọi thứ ở
 bảng trên, kể cả **Bảng khác**. Không bao giờ sao lưu: phiên đăng nhập, link đặt lại mật khẩu, token API và sổ sách riêng của chức
-năng sao lưu — phục hồi chúng có thể mở lại quyền truy cập đã bị thu hồi sau thời điểm sao lưu.
+năng sao lưu — phục hồi chúng có thể mở lại quyền truy cập đã bị thu hồi sau thời điểm sao lưu. **Nhật ký thao tác quản trị** và
+**lần đăng nhập sai** có trong bản nhưng **không bao giờ bị thay** khi phục hồi: phục hồi không được là cách xoá dấu vết ai đã làm gì.
 
 > ⚠️ **Lưu ý:** bảng **không có tiền tố** của site mà chưa plugin nào khai thì **không** được sao lưu. `php artisan gp247:doctor`
 > liệt kê các bảng này (dòng `backup_unassigned_tables`) — hãy báo nhà phát triển plugin sở hữu bảng đó.
@@ -110,14 +111,19 @@ Màn **Sao lưu & phục hồi** có ba cách tạo bản, khác nhau ở phạm
 ## Danh sách bản sao lưu: kiểm, ghim, tải về, xoá
 Mỗi dòng trong **Các bản sao lưu** cho biết thời điểm, loại, nhóm, cỡ, nơi lưu và kết quả kiểm. Các thao tác:
 
-- **Kiểm lại** — đọc lại toàn bộ bản để chắc nó còn nguyên vẹn (cần mật khẩu sao lưu hoặc recovery key).
-- **Ghim** — bản đã ghim **không bao giờ** bị tự xoá khi dọn bản cũ.
+- **Kiểm lại** — đọc lại toàn bộ bản để chắc nó còn nguyên vẹn (cần mật khẩu sao lưu hoặc recovery key, và xác nhận lại danh tính).
+- **Ghim** — bản đã ghim **không bao giờ** bị tự xoá khi dọn bản cũ. Bỏ ghim cần xác nhận lại danh tính, vì sau đó bản có thể bị dọn.
 - **Tải về** — tải file `.gp247bak` (vẫn mã hoá) qua một link dùng **một lần**, hết hạn sau 5 phút.
 - **Phục hồi** — mở màn phục hồi với bản này ([Phục hồi theo tình huống](./restore-guide_vi.md)).
-- **Xoá** — gõ lại mã bản để xác nhận; không xoá được bản đang được dùng.
+- **Xoá** — gõ lại mã bản và xác nhận lại danh tính; không xoá được bản đang được dùng.
 
 **Giữ bao nhiêu bản** (đổi ở **Cài đặt sao lưu**): mặc định giữ **7** bản thường và **3** bản "trước thay đổi". Bản cũ hơn chỉ bị
-xoá **sau khi** bản mới đã kiểm đạt; bản tốt mới nhất và bản đã ghim luôn được giữ.
+xoá **sau khi** bản mới đã kiểm đạt. Luôn được giữ: bản tốt mới nhất, bản đã ghim và **bản toàn bộ đã kiểm mới nhất** — nhiều bản chụp
+nhanh liên tiếp không đẩy được bản toàn bộ cuối cùng ra khỏi danh sách.
+
+> ⚠️ **Lưu ý:** phục hồi **Toàn bộ dữ liệu** chỉ dùng được bản **Toàn bộ**. Màn sao lưu cảnh báo khi chưa có bản toàn bộ nào đã kiểm,
+> hoặc bản toàn bộ gần nhất đã cũ hơn 48 giờ — kể cả khi vẫn có bản chụp nhanh mới hơn. Gặp cảnh báo này, hãy tạo một bản
+> **Sao lưu toàn bộ**.
 
 Bản sao lưu nằm ở `storage/app/private/gp247-backup/` (ngoài thư mục web công khai). Muốn đổi chỗ: **Cài đặt sao lưu → Thư mục lưu**,
 nhập đường dẫn tuyệt đối ngoài thư mục web.
@@ -158,7 +164,7 @@ Trước ba thao tác dễ làm hỏng dữ liệu, GP247 tự chụp một bả
 | Thao tác | GP247 tự chụp |
 | --- | --- |
 | **Cập nhật hệ thống** (`php artisan gp247:update`) | Mọi nhóm dữ liệu trừ nhật ký |
-| **Cập nhật plugin / template** | Cấu hình + dữ liệu của chính extension đó |
+| **Cập nhật plugin / template** | Cấu hình + dữ liệu của chính extension đó; extension chưa khai bảng của mình thì mọi nhóm dữ liệu trừ nhật ký, kèm **Bảng khác** |
 | **Đổi template** | Cấu hình + nội dung |
 
 - **Chạy từ dòng lệnh**: bản được chụp xong rồi thao tác mới chạy.
@@ -174,12 +180,15 @@ Sao lưu có ba quyền riêng, gán ở **Vai trò** như các quyền khác:
 | --- | --- | --- |
 | **Backup - create** | Tạo, kiểm lại, ghim, xoá bản; chạy lịch | Không tải về, không phục hồi |
 | **Backup - download** | Xem danh sách, tải file `.gp247bak` | File tải về vẫn mã hoá |
-| **Backup - restore** | Xem danh sách, phục hồi, đưa bản vào | Quyền mạnh nhất — chỉ cấp cho người thật sự cần |
+| **Backup - restore** | Xem danh sách, phục hồi, đưa bản vào | Quyền mạnh nhất — chỉ cấp cho người thật sự cần. Bản **chưa xác minh nguồn gốc** (không do site này tạo) chỉ **Administrator** phục hồi được trên màn |
 
-Ba lớp bảo vệ thêm cho các thao tác đưa dữ liệu ra ngoài hoặc ghi đè dữ liệu:
+Bốn lớp bảo vệ thêm cho các thao tác đưa dữ liệu ra ngoài, ghi đè hay làm mất bản sao lưu:
 
-- **Xác nhận lại danh tính** — trước khi tải về hay phục hồi, nhập lại mật khẩu đăng nhập trang quản trị — **không phải** mật khẩu sao lưu (và mã xác thực hai bước nếu đã bật);
+- **Xác nhận lại danh tính** — trước khi tải về, phục hồi, kiểm lại, bỏ ghim, xoá một bản hay lưu cài đặt chung (số bản giữ, thư mục lưu,
+  bật / tắt chức năng), nhập lại mật khẩu đăng nhập trang quản trị — **không phải** mật khẩu sao lưu (và mã xác thực hai bước nếu đã bật);
   hiệu lực 5 phút trên trình duyệt đó.
+- **Giới hạn nhập sai mật khẩu sao lưu** — trên trang quản trị, mỗi quản trị viên được thử **5 lần trong 15 phút**, cả site tối đa
+  **20 lần sai mỗi giờ**; quá giới hạn thì phải chờ. Dòng lệnh không bị giới hạn này vì đã cần quyền vào máy chủ.
 - **Nhật ký** — mọi lần tạo, tải, phục hồi, xoá (kể cả lần bị từ chối) được ghi lại với người làm và thời điểm.
 - **Email** — chủ site nhận email khi một bản thất bại, khi có người tải bản về và khi có người phục hồi. Email chỉ gửi được khi
   site đã bật gửi mail (**Cấu hình → Email**).
@@ -195,6 +204,10 @@ Các dòng bắt đầu bằng `backup_` cho biết: đã thiết lập chưa, b
 dùng được không, bảng nào chưa được sao lưu, email có bật không. Dòng `backup_vault_exposed` báo **lỗi** khi tải được file sao lưu
 qua địa chỉ web của site — nghĩa là web server đang phục vụ cả thư mục dự án thay vì chỉ `public/`; sửa ngay theo
 [Cấu hình production](../security/security-production-config_vi.md). Lỗi này cũng hiện ở khối **System alerts** trên dashboard.
+
+Dòng `backup_key_ring` báo **lỗi** khi khoá ký sao lưu đang lưu **không mã hoá** trong cơ sở dữ liệu — dấu hiệu có người vào được cơ sở
+dữ liệu đã thay khoá sao lưu. Khi đó **không bản nào được tạo** cho tới khi lập trình viên đặt lại khoá sao lưu; các bản cũ vẫn phục hồi được
+bằng mật khẩu sao lưu (với nhãn chưa xác minh nguồn gốc). Màn sao lưu cũng hiện cảnh báo này.
 
 ## Dòng lệnh (cho người có quyền CLI)
 Mọi việc trên màn đều làm được bằng lệnh; thêm `--json` để lấy kết quả máy đọc được.
@@ -224,9 +237,11 @@ trong script thì truyền qua một dòng của đầu vào chuẩn với `--se
 **Khi tạo bản**
 - **Mỗi lúc chỉ một việc ghi** (sao lưu, phục hồi, đưa bản vào) — hai việc cùng ghi dễ làm bản sao lưu lệch nhau.
 - **Thư mục lưu phải ngoài thư mục web công khai** — nếu không, ai biết đường dẫn có thể tải bản về.
+- **Bản toàn bộ đã kiểm mới nhất không bị tự dọn** — chỉ bản toàn bộ phục hồi được cả cơ sở dữ liệu.
 
-**Khi tải về / phục hồi**
-- **Phải xác nhận lại danh tính trong 5 phút gần nhất** — người mượn máy đang đăng nhập không lấy được dữ liệu.
+**Khi tải về / phục hồi / xoá**
+- **Phải xác nhận lại danh tính trong 5 phút gần nhất** — người mượn máy đang đăng nhập không lấy được dữ liệu, cũng không xoá được bản sao lưu.
+- **Nhập sai mật khẩu sao lưu bị giới hạn số lần** — mỗi lần thử tốn nhiều tài nguyên máy chủ, và không ai được dò mật khẩu mãi.
 - **Link tải dùng một lần, hết hạn sau 5 phút** — link lọt ra ngoài cũng không dùng lại được.
 - **File `.sql` dạng rõ chỉ xuất bằng dòng lệnh** — file này không mã hoá, không nên đi qua trình duyệt.
 
@@ -269,6 +284,18 @@ ngay sau khi xử lý nguyên nhân (thường là đĩa đầy).
 
 → Không. Tắt ở **Cài đặt sao lưu** chỉ dừng lịch, ẩn menu và bỏ bản chụp trước thay đổi; các bản và khoá vẫn giữ nguyên, bật lại là dùng tiếp.
 
+**Câu 9: Phục hồi một bản cũ có xoá nhật ký thao tác quản trị không?**
+
+→ Không. Nhật ký thao tác và lần đăng nhập sai được sao lưu nhưng không bao giờ bị thay khi phục hồi, nên vẫn còn dấu vết của mọi việc đã làm
+— kể cả chính lần phục hồi.
+
+## Lịch sử thay đổi
+<!-- Chỉ ghi khi có thay đổi về logic/hành vi. Dòng mới nhất ở trên cùng. Mỗi ngày một dòng: cùng ngày thì gộp vào dòng có sẵn, không tách dòng mới. -->
+
+| Ngày | Phiên bản GP247 | Thay đổi |
+| --- | --- | --- |
+| 2026-11-11 | | Luôn giữ bản toàn bộ đã kiểm mới nhất, cảnh báo khi thiếu bản toàn bộ; xác nhận lại danh tính khi kiểm lại, bỏ ghim, xoá bản, lưu cài đặt chung; giới hạn nhập sai mật khẩu sao lưu; bản chưa xác minh nguồn gốc chỉ Administrator phục hồi trên màn; nhật ký thao tác không bị thay khi phục hồi; dòng `backup_key_ring` của `gp247:doctor` |
+
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-11 · ✍️ **Tác giả (Author):** GP247</sub>

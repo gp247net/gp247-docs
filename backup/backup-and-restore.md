@@ -58,7 +58,8 @@ same description under each group, so you can see what you are backing up — or
 
 **Quick snapshot** takes one data group. **Selected groups** takes the data groups and file groups you tick. **Full backup** takes
 everything above, including **Other tables**. Never backed up: sign-in sessions, password reset links, API tokens and the backup
-feature's own records — restoring them could reopen access that was revoked after the backup.
+feature's own records — restoring them could reopen access that was revoked after the backup. The **admin activity log** and
+**failed sign-ins** are in the backup but are **never replaced** by a restore: a restore must not be a way to erase who did what.
 
 > ⚠️ **Note:** tables **without the site prefix** that no plugin declares are **not** backed up. `php artisan gp247:doctor` lists them
 > (row `backup_unassigned_tables`) — tell the developer of the plugin that owns them.
@@ -110,14 +111,19 @@ The **Backup & restore** screen offers three ways to make a backup, differing in
 ## The backup list: check, pin, download, delete
 Each row of **Backups** shows the time, kind, groups, size, where it is stored and the check result. Actions:
 
-- **Check again** — read the whole backup again to be sure it is intact (needs the backup password or recovery key).
-- **Pin** — a pinned backup is **never** removed automatically when old backups are cleaned up.
+- **Check again** — read the whole backup again to be sure it is intact (needs the backup password or recovery key, and confirming it is you).
+- **Pin** — a pinned backup is **never** removed automatically when old backups are cleaned up. Unpinning asks you to confirm it is you, since the backup may then be cleaned up.
 - **Download** — download the `.gp247bak` file (still encrypted) through a **single-use** link that expires after 5 minutes.
 - **Restore** — open the restore screen with this backup ([Restore by situation](./restore-guide.md)).
-- **Delete** — type the backup id again to confirm; a backup in use cannot be deleted.
+- **Delete** — type the backup id again and confirm it is you; a backup in use cannot be deleted.
 
 **How many are kept** (change it in **Backup settings**): by default **7** regular backups and **3** "before a change" backups. Older
-ones are removed only **after** the new one passed its check; the newest good backup and pinned backups are always kept.
+ones are removed only **after** the new one passed its check. Always kept: the newest good backup, pinned backups and **the newest
+verified full backup** — a run of quick snapshots cannot push the last full backup out of the list.
+
+> ⚠️ **Note:** a **Whole database** restore can only use a **Full** backup. The backup screen warns when there is no verified full backup
+> yet, or when the newest one is older than 48 hours — even if there are newer quick snapshots. When you see this warning, make a
+> **Full backup**.
 
 Backups are stored in `storage/app/private/gp247-backup/` (outside the public web folder). To move them: **Backup settings →
 Storage folder**, give an absolute path outside the web folder.
@@ -158,7 +164,7 @@ Before three operations that can easily break data, GP247 takes a backup of **th
 | Operation | GP247 backs up |
 | --- | --- |
 | **System update** (`php artisan gp247:update`) | Every data group except logs |
-| **Plugin / template update** | Configuration + that extension's own data |
+| **Plugin / template update** | Configuration + that extension's own data; for an extension that does not declare its tables, every data group except logs, plus **Other tables** |
 | **Template switch** | Configuration + content |
 
 - **From the command line**: the backup finishes first, then the operation runs.
@@ -174,12 +180,15 @@ Backups have three separate permissions, assigned in **Roles** like any other pe
 | --- | --- | --- |
 | **Backup - create** | Make, check, pin, delete backups; run the schedule | No download, no restore |
 | **Backup - download** | See the list, download `.gp247bak` files | Downloaded files are still encrypted |
-| **Backup - restore** | See the list, restore, bring a backup in | The strongest right — give it only to people who really need it |
+| **Backup - restore** | See the list, restore, bring a backup in | The strongest right — give it only to people who really need it. A backup of **unverified origin** (not made by this site) can be restored on the screen only by an **Administrator** |
 
-Three more layers protect actions that take data out or overwrite data:
+Four more layers protect actions that take data out, overwrite it or make backups disappear:
 
-- **Confirm it is you** — before a download or a restore, type your admin sign-in password again — **not** the backup password (and the two-factor code if enabled);
-  valid for 5 minutes in that browser.
+- **Confirm it is you** — before a download, a restore, checking a backup again, unpinning, deleting a backup or saving the general settings
+  (backups kept, storage folder, feature on / off), type your admin sign-in password again — **not** the backup password (and the two-factor
+  code if enabled); valid for 5 minutes in that browser.
+- **Limited wrong backup passwords** — in the admin, each administrator gets **5 tries in 15 minutes**, and the whole site at most
+  **20 wrong tries an hour**; past that, you have to wait. The command line has no such limit because it already needs access to the server.
 - **Log** — every create, download, restore and delete (including refused ones) is recorded with who and when.
 - **E-mail** — the site owner is mailed when a backup fails, when someone downloads a backup and when someone restores. Mail goes out only
   when the site has mail sending turned on (**Configuration → Email**).
@@ -196,6 +205,10 @@ schedule runs, whether the external destination works, which tables are not back
 `backup_vault_exposed` **fails** when a backup file can be downloaded through the site's web address — the web server serves the whole
 project folder instead of `public/` only; fix it now following [Production configuration](../security/security-production-config.md).
 This failure also shows in the **System alerts** block of the dashboard.
+
+The row `backup_key_ring` **fails** when the backup signing key is stored **unencrypted** in the database — a sign that someone with
+access to the database replaced the backup keys. **No backup is made** until your developer resets the backup keys; older backups can
+still be restored with the backup password (labelled as unverified origin). The backup screen shows this warning too.
 
 ## Command line (for people with CLI access)
 Everything on the screen can be done with a command; add `--json` for machine-readable output.
@@ -225,9 +238,11 @@ In a script, pass it on one line of standard input with `--secret-stdin`.
 **When making a backup**
 - **Only one writing task at a time** (backup, restore, bringing a backup in) — two at once could make backups inconsistent.
 - **The storage folder must be outside the public web folder** — otherwise anyone who knows the path could download backups.
+- **The newest verified full backup is never cleaned up automatically** — only a full backup can restore the whole database.
 
-**When downloading / restoring**
-- **You must have confirmed it is you in the last 5 minutes** — someone borrowing a signed-in computer cannot take the data.
+**When downloading / restoring / deleting**
+- **You must have confirmed it is you in the last 5 minutes** — someone borrowing a signed-in computer cannot take the data, nor delete the backups.
+- **Wrong backup passwords are limited** — each try costs the server a lot of work, and nobody may keep guessing the password.
 - **Download links are single-use and expire after 5 minutes** — a leaked link cannot be reused.
 - **A plain `.sql` file is exported from the command line only** — it is not encrypted and should not go through a browser.
 
@@ -271,6 +286,18 @@ can make a backup by hand as soon as the cause is fixed (often a full disk).
 → No. Turning it off in **Backup settings** only stops the schedule, hides the menu and skips the snapshot before a change; backups and
 keys stay, and turning it back on picks up where it left off.
 
+**Q9: Does restoring an old backup erase the admin activity log?**
+
+→ No. The activity log and failed sign-ins are backed up but never replaced by a restore, so a trace of everything done remains —
+including the restore itself.
+
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-11-11 | | The newest verified full backup is always kept, with a warning when no full backup is available; confirming it is you to check again, unpin, delete a backup and save the general settings; wrong backup passwords limited; a backup of unverified origin restored on the screen only by an Administrator; the activity log is not replaced by a restore; `gp247:doctor` row `backup_key_ring` |
+
 ---
 
-<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>

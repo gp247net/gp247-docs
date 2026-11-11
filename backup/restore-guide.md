@@ -20,7 +20,7 @@ flowchart LR
 ```
 
 - **Pick the smallest level that fixes the problem** — the rest of the site keeps its newer data.
-- **Always preview**: the screen lists which tables are replaced and how much newer data will be lost.
+- **Always preview**: the screen lists which tables are replaced, how much newer data will be lost, and what this restore does **not** bring back.
 - **Undo is possible for 24 hours** for the levels that replace data — a mistake can be taken back.
 - **Suspect a break-in?** Use **Restore after a security incident**, not an ordinary restore.
 
@@ -68,6 +68,14 @@ You need the **Backup - restore** permission. Every restore is logged and e-mail
 3. Type the **backup password** or **recovery key**, then confirm it is you with your sign-in password.
 4. Click **Preview**. Read **What this restore will do** carefully: tables to replace, record counts now and in the backup, newer data
    that will be lost, tables with passwords / API keys (accounts deleted or changed after the backup's time will come back).
+   The block **Not brought back by this restore** lists what will not come back:
+   - **Tables in the backup that this site does not have (extension not installed)** — reinstall the extension first if you need that data.
+   - **Tables never replaced by a restore (sign-in tokens, activity logs, backup bookkeeping…)**.
+   - **Tables of the chosen groups that the backup does not hold**.
+   - **Files in the backup** (images, uploads, code, `.env`) — written back only with the command, see [Restore files](#restore-files-images-extensions-env).
+
+   If the backup has **columns the site no longer has** (an update removed or renamed them), the screen lists each one: their data will
+   **not** come back. Tick **I understand that the data of these columns is lost** and click **Preview** again; without it the restore cannot start.
 5. Type the code shown on the screen into **Confirmation** to start.
 6. Keep the tab open until the screen shows the result. For **Whole database**, the site goes into maintenance mode while it runs; you
    alone keep using the admin.
@@ -155,7 +163,8 @@ You can restore from a `.gp247bak` file downloaded earlier, or made on another s
 
 A backup made on another site is marked **origin not verified** (it is not signed with this site's key): the data is intact, but GP247
 cannot prove who made it. When restoring, you must tick **I know where this backup comes from — restore it anyway**; code and `.env` from
-such a backup are not restored. A backup that only exists at the external destination is brought back as described in
+such a backup are not restored. On the screen, **only an Administrator** can restore a backup of unverified origin — someone with just
+the **Backup - restore** right cannot, since a backup made with their own password could replace the admin accounts. A backup that only exists at the external destination is brought back as described in
 [External destination](./backup-offsite.md#bring-a-backup-back-from-the-external-destination).
 
 ## Restore from the command line
@@ -173,7 +182,9 @@ confirmation code while it runs.
 | From a `.gp247bak` file | `php artisan gp247:backup-restore --file=<path> --level=full` |
 | Undo | `php artisan gp247:backup-restore --undo` |
 
-Add `--recovery-key` when you type the recovery key instead of the password; `--accept-unverified` for a backup whose origin is not verified.
+Add `--recovery-key` when you type the recovery key instead of the password; `--accept-unverified` for a backup whose origin is not verified;
+`--accept-column-loss` when the preview reports columns the site no longer has (the data of those columns is lost). The command's preview
+also prints the tables that are skipped and why.
 
 ## Conditions & Rules (know before you act)
 **Choosing the backup and level**
@@ -187,7 +198,13 @@ Add `--recovery-key` when you type the recovery key instead of the password; `--
 - **Only one writing task at a time** — wait if another backup or restore is running.
 - **The key that opens the backup is usable for 1 hour** from the start — a restore left too long must be started again.
 - **Maintenance mode turns itself off** if a whole-database restore cannot finish, so the site does not stay stuck on the maintenance page.
+- **A restore left about 15 minutes after its tables were replaced ends by itself** — the site leaves maintenance mode, the replaced tables
+  stay and can still be undone within 24 hours.
+- **The admin activity log and failed sign-ins are never replaced** — a restore must not be a way to erase who did what.
+- **Auto-increment ids do not go back** — new records after a restore never get an id the site already handed out.
 - **Code and `.env` are not restored in incident mode or from a backup whose origin is not verified** — code in the backup may carry a backdoor.
+- **Only an Administrator restores a backup of unverified origin on the screen** — a backup made with someone else's password could replace the admin accounts.
+- **Wrong backup passwords are limited** (5 tries in 15 minutes per administrator, 20 wrong tries an hour for the whole site) — nobody can keep guessing the password.
 
 ## Q&A
 **Q1: Will restoring lose new orders?**
@@ -218,13 +235,23 @@ new site must run the same or a newer GP247 version than the old one.
 
 **Q7: What if the browser closes during a restore?**
 
-→ Open the **Restore** screen again: the unfinished restore carries on from where it stopped. Left for more than 1 hour, it is stopped and
-maintenance mode turns itself off; preview again and restore from the start.
+→ Open the **Restore** screen again: the unfinished restore carries on from where it stopped. While it is still reading data from the
+backup, if it is left for more than 1 hour it is stopped and maintenance mode turns itself off; preview again and restore from the start.
+Once the tables have been replaced, if it is left about 15 minutes it ends by itself: the site leaves maintenance mode, the restored data
+stays and can still be undone. If the backup is older than the site, the data update after the restore is skipped — run
+`php artisan gp247:update`.
 
 **Q8: I have no command line — how do I restore uploaded images?**
 
 → Restoring files is command-line only. Ask your hosting provider or developer to run the commands in [Restore files](#restore-files-images-extensions-env).
 
+## Change history
+<!-- Only when logic/behavior changed. Newest row on top. One row per day: merge same-day changes into the existing row, never add a new row for the same date. -->
+
+| Date | GP247 version | Change |
+| --- | --- | --- |
+| 2026-11-11 | | The preview lists what is not brought back; columns the site no longer has need their own confirmation (`--accept-column-loss`); a backup of unverified origin restored on the screen only by an Administrator; the activity log is not replaced; a restore left unfinished after its tables were replaced ends by itself after about 15 minutes; wrong backup passwords limited |
+
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>
