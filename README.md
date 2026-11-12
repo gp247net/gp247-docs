@@ -35,7 +35,7 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 ### Security
 | Document | Summary | Last updated |
 | --- | --- | --- |
-| [GP247 system security](./security/security-introduction.md) | Entry page of the Security documentation: what GP247 handles and what you must do — production configuration, encryption keys & backups, accounts & permissions, updates & incident response, checklist and common mistakes | 2026-11-08 |
+| [GP247 system security](./security/security-introduction.md) | Entry page of the Security documentation: what GP247 handles and what you must do — production configuration, encryption keys & backups, accounts & permissions, updates & incident response, checklist and common mistakes | 2026-11-12 |
 
 ### Backup & restore
 | Document | Summary | Last updated |
@@ -104,4 +104,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-12 · ✍️ **Author:** GP247</sub>

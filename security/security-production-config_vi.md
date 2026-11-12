@@ -53,7 +53,7 @@ Bảng này liệt kê các biến liên quan bảo mật, giá trị nên đặ
 | `SESSION_SECURE_COOKIE` | `true` (khi đã có HTTPS) | (không đặt) | Cookie đăng nhập có thể bị gửi qua kết nối không mã hoá |
 | `GP247_ADMIN_PREFIX` | Một đường dẫn riêng, vd `quan-tri-7k2` | `gp247_admin` | Đường dẫn mặc định bị máy quét tự động tìm ra trước |
 | `GP247_FINGERPRINT` | `false` nếu không muốn quảng bá nền tảng | `true` | Site trả header và thẻ meta cho biết dùng GP247 |
-| `TRUSTED_PROXIES` | Trống, hoặc dải IP của proxy phía trước | (trống) | `REMOTE_ADDR` hay `*` thì ai cũng giả được IP; thiếu khi có proxy thì mọi khách cùng một IP — xem [Site chạy sau proxy hoặc CDN](#site-chạy-sau-proxy-hoặc-cdn) |
+| `TRUSTED_PROXIES` | Trống, hoặc dải IP của **mọi** proxy phía trước, gộp trong một dòng | (trống) | `REMOTE_ADDR` hay `*` thì ai cũng giả được IP; thiếu khi có proxy thì mọi khách cùng một IP — xem [Site chạy sau proxy hoặc CDN](#site-chạy-sau-proxy-hoặc-cdn) |
 | `DB_PASSWORD` | Mật khẩu mạnh, riêng cho site này | `password` | Mật khẩu mẫu ai cũng biết |
 | `GP247_API_MODE` | `0` nếu không dùng REST API lẫn MCP | `1` | Không phải lỗi — nhưng tắt hẳn phần không dùng là bớt một cửa |
 
@@ -104,12 +104,28 @@ Tên miền trong link luôn lấy từ header `Host` thật — GP247 không ba
 | Sau Cloudflare / load balancer | Dải IP của Cloudflare / load balancer (mẫu sẵn trong `.env.example`) |
 | Docker, không có gì phía trước | Để trống |
 | Docker sau nginx / Caddy / Traefik trên cùng máy chủ | `172.16.0.0/12`, kèm `SC_DOCKER_APP_PORT=127.0.0.1:8000` |
+| Docker sau nginx / Caddy / Traefik trên cùng máy chủ, và máy chủ đó lại sau Cloudflare / load balancer | **Cả hai** trong một dòng: `172.16.0.0/12,<dải Cloudflare / LB>`, kèm `SC_DOCKER_APP_PORT=127.0.0.1:8000` (dòng đầy đủ có sẵn trong `.env.example`) |
+
+**Khai mọi lớp, trong một dòng.** GP247 chỉ đọc header chuyển tiếp khi proxy nối thẳng vào site có trong danh sách, rồi bỏ qua
+lần lượt từng lớp đã khai để tìm IP thật của khách. Thiếu một lớp thì giống như chưa khai gì.
 
 - **Không bao giờ** dùng `REMOTE_ADDR` hay `*`: khi web server nói chuyện với PHP qua FastCGI (gồm nginx trong bộ Docker), `REMOTE_ADDR`
   chính là địa chỉ của khách, nên ai cũng giả được IP. Trang **Cảnh báo hệ thống** và `php artisan gp247:doctor` báo mục `trusted_proxies`
   khi gặp các giá trị này.
 - Proxy phía trước phải **giữ header `Host`** (nginx: `proxy_set_header Host $host;`).
 - Khai thiếu khi có proxy: mọi khách hiện cùng một IP (giới hạn đăng nhập dùng chung một bộ đếm) và link sinh ra là `http://`.
+  Trên site HTTPS, trình duyệt còn chặn các thao tác trong trang quản trị và báo lỗi "Mixed Content" trong Console.
+  Trang **Cảnh báo hệ thống** và `php artisan gp247:doctor` (mục `trusted_proxies`) nhắc khi trang quản trị được mở qua một proxy
+  chưa khai, kèm địa chỉ của proxy đó.
+
+  > ℹ️ **Có từ:** gp247/core 3.11.3
+
+- **Cổng container chỉ mở cho máy chủ**: khai `172.16.0.0/12` mà cổng container mở ra ngoài thì ai gọi thẳng cổng đó cũng được
+  coi là proxy và giả được IP — tường lửa máy chủ không chặn cổng Docker. Kiểm bằng `ss -ltnp | grep 8000`: kết quả đúng chỉ có
+  `127.0.0.1:8000`, không có `0.0.0.0` hay `[::]`.
+- **Mạng Docker khác dải**: `172.16.0.0/12` bao các mạng Docker thường gặp, nhưng máy chủ chạy nhiều stack có thể được cấp
+  `192.168.x.x`. Xem subnet thật (thay `scart` bằng `SC_DOCKER_INSTANCE` của bạn) rồi khai subnet đó:
+  `docker network inspect scart-prod_scart -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}'`.
 
 ## Thư mục gốc của web và quyền thư mục
 
@@ -208,4 +224,4 @@ Làm lần lượt; mỗi bước có kết quả đúng để đối chiếu.
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-12 · ✍️ **Tác giả (Author):** GP247</sub>

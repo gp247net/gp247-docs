@@ -53,7 +53,7 @@ This table lists the security-related variables, the value to set for a live sit
 | `SESSION_SECURE_COOKIE` | `true` (once HTTPS is on) | (not set) | The sign-in cookie may be sent over an unencrypted connection |
 | `GP247_ADMIN_PREFIX` | Your own path, e.g. `admin-7k2` | `gp247_admin` | Automated scanners find the default path first |
 | `GP247_FINGERPRINT` | `false` if you do not want to advertise the platform | `true` | The site returns a header and a meta tag saying it uses GP247 |
-| `TRUSTED_PROXIES` | Empty, or the IP ranges of the proxy in front | (empty) | `REMOTE_ADDR` or `*` lets anyone fake their IP; missing while a proxy is in front makes every visitor the same IP — see [Site behind a proxy or CDN](#site-behind-a-proxy-or-cdn) |
+| `TRUSTED_PROXIES` | Empty, or the IP ranges of **every** proxy in front, in one value | (empty) | `REMOTE_ADDR` or `*` lets anyone fake their IP; missing while a proxy is in front makes every visitor the same IP — see [Site behind a proxy or CDN](#site-behind-a-proxy-or-cdn) |
 | `DB_PASSWORD` | A strong password, unique to this site | `password` | A sample password everyone knows |
 | `GP247_API_MODE` | `0` if you use neither the REST API nor MCP | `1` | Not an error — but turning off unused parts closes one more door |
 
@@ -104,12 +104,28 @@ The domain in links always comes from the real `Host` header — GP247 never use
 | Behind Cloudflare / a load balancer | Its IP ranges (presets in `.env.example`) |
 | Docker, nothing in front | Leave empty |
 | Docker behind nginx / Caddy / Traefik on the same server | `172.16.0.0/12`, plus `SC_DOCKER_APP_PORT=127.0.0.1:8000` |
+| Docker behind nginx / Caddy / Traefik on the same server, and that server behind Cloudflare / a load balancer | **Both** in one value: `172.16.0.0/12,<Cloudflare / LB ranges>`, plus `SC_DOCKER_APP_PORT=127.0.0.1:8000` (the full line is ready in `.env.example`) |
+
+**List every hop, in one value.** GP247 reads forwarded headers only when the proxy connected straight to the site is listed, then
+skips each listed hop in turn to find the visitor's real IP. Leaving one hop out is the same as listing nothing.
 
 - **Never** use `REMOTE_ADDR` or `*`: when the web server talks to PHP over FastCGI (including the nginx of the Docker stack),
   `REMOTE_ADDR` is the visitor's own address, so anyone can fake their IP. The **System alerts** page and `php artisan gp247:doctor`
   report the `trusted_proxies` item for these values.
 - The proxy in front must **keep the `Host` header** (nginx: `proxy_set_header Host $host;`).
 - Missing while a proxy is in front: every visitor shows the same IP (the sign-in limit shares one counter) and links are generated as `http://`.
+  On an HTTPS site the browser also blocks actions in the admin pages and reports "Mixed Content" in the Console.
+  The **System alerts** page and `php artisan gp247:doctor` (item `trusted_proxies`) remind you when the admin pages are opened through a
+  proxy you have not listed, with that proxy's address.
+
+  > ℹ️ **Available since:** gp247/core 3.11.3
+
+- **Container port open to the server only**: with `172.16.0.0/12` listed and the container port open to the outside, anyone who calls that
+  port directly counts as a proxy and can fake their IP — the server firewall does not cover Docker ports. Check with `ss -ltnp | grep 8000`:
+  the right result shows only `127.0.0.1:8000`, no `0.0.0.0` or `[::]`.
+- **Docker network in another range**: `172.16.0.0/12` covers the usual Docker networks, but a server running many stacks may get
+  `192.168.x.x`. Read the real subnet (replace `scart` with your `SC_DOCKER_INSTANCE`) and list that one:
+  `docker network inspect scart-prod_scart -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}'`.
 
 ## Web root and folder permissions
 
@@ -208,4 +224,4 @@ Do these in order; each step has a correct result to compare against.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-07 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-12 · ✍️ **Author:** GP247</sub>

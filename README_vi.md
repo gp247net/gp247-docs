@@ -35,7 +35,7 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 ### Bảo mật
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
 | --- | --- | --- |
-| [Bảo mật hệ thống GP247](./security/security-introduction_vi.md) | Trang chính của bộ tài liệu Bảo mật: GP247 tự lo gì, bạn phải làm gì — cấu hình production, khoá mã hoá & sao lưu, tài khoản & phân quyền, cập nhật & xử lý sự cố, checklist và những lỗi hay gặp | 2026-11-08 |
+| [Bảo mật hệ thống GP247](./security/security-introduction_vi.md) | Trang chính của bộ tài liệu Bảo mật: GP247 tự lo gì, bạn phải làm gì — cấu hình production, khoá mã hoá & sao lưu, tài khoản & phân quyền, cập nhật & xử lý sự cố, checklist và những lỗi hay gặp | 2026-11-12 |
 
 ### Sao lưu & phục hồi
 | Tài liệu | Mô tả ngắn | Cập nhật lần cuối |
@@ -104,4 +104,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-11 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-12 · ✍️ **Tác giả (Author):** GP247</sub>
