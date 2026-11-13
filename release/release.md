@@ -4,23 +4,23 @@
 
 ## Introduction
 This page is for S-Cart (3.x line) **site owners and operators**: it tells you what each release brings, which version to run
-and how to update. Latest release: **S-Cart 3.6.1** (2026-11-11).
+and how to update. Latest release: **S-Cart 3.7.0** (2026-11-13).
 
 ## Recommended versions
 Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each line with the **Recommended minimum** column:
 
 | Package | Recommended minimum | Latest |
 | --- | --- | --- |
-| gp247/core | **3.11.2** | 3.11.2 |
-| gp247/front | **3.2.3** | 3.7.1 |
-| gp247/shop | **3.8.1** | 3.9.1 |
+| gp247/core | **3.12.1** | 3.12.1 |
+| gp247/front | **3.8.1** | 3.8.1 |
+| gp247/shop | **3.10.1** | 3.10.1 |
 | gp247/mcp | **2.0.1** | 2.0.2 |
 
 - **Below** the "Recommended minimum" column → [update](#how-to-update) when you can.
 - **At or above it** → your site has all the important improvements, even if you have not reinstalled S-Cart.
 - **Third-party libraries** → also run `composer audit`; see [Third-party libraries](#third-party-libraries).
 
-> ⚠️ **Note:** update **all the packages together**: `gp247/front` 3.7.0 and `gp247/shop` 3.9.0 need `gp247/core` ≥ 3.11, `gp247/shop` 3.8.1 needs `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
+> ⚠️ **Note:** update **all the packages together**: `gp247/front` 3.8.1 and `gp247/shop` 3.10.1 need `gp247/core` ≥ 3.12.1, `gp247/front` 3.7.0 and `gp247/shop` 3.9.0 need `gp247/core` ≥ 3.11, `gp247/shop` 3.8.1 needs `gp247/core` ≥ 3.10.3, `gp247/mcp` 2.0.1 needs `gp247/core` ≥ 3.9, `gp247/shop` 3.6.0 needs `gp247/core` ≥ 3.7,
 > `gp247/front` 3.2.3 needs `gp247/core` ≥ 3.2.3. Which lines are still supported: see [Support lifecycle](#support-lifecycle).
 
 ## Support lifecycle
@@ -36,11 +36,10 @@ Run `php artisan gp247:info` (or `composer show "gp247/*"`) and compare each lin
   `composer require … -W` and `php artisan gp247:update` — see [Upgrading to the 3.x line](../install-upgrade/upgrade.md).
 
 ## Highlights
-- **Encrypted backups built in** — back up part of the site or all of it, checked right after it is made *(S-Cart 3.6)*
-- **Restore just what you need** — a data group, deleted records, configuration or the whole database *(S-Cart 3.6)*
-- **Automatic backups without cron** — they run on shared hosting too *(S-Cart 3.6)*
-- **Copy backups off the server** — S3-compatible or SFTP, with write-only credentials *(S-Cart 3.6)*
-- **Password policy per account group** — set separately for admins and customers *(S-Cart 3.6)*
+- **Text stored as typed** — names with `&`, `<`, `"` show correctly in the admin, the storefront and the API *(S-Cart 3.7)*
+- **Passwords and secrets keep every character** — passwords with `& < > "` sign in *(S-Cart 3.7)*
+- **Raw HTML output warning** — points to templates and plugins that print a variable with `{!! !!}` *(S-Cart 3.7)*
+- **Untrusted proxy warning** — with the value to add to `TRUSTED_PROXIES` *(S-Cart 3.7)*
 
 ## How to update
 **Step 1 —** Back up the database and the site folder.
@@ -63,6 +62,35 @@ Step-by-step details: [Updating GP247 and S-Cart](../install-upgrade/update.md).
 
 ## Releases
 Newest first. An *x.**Y*** release brings new features; an *x.y.**Z*** release only fixes bugs.
+
+### S-Cart 3.7.0 — 2026-11-13
+**Names and content show exactly as you type them — no more `&amp;`.**
+
+**✨ New**
+- **Text stored as typed** — product, category and page names with `&`, `<`, `"` show correctly in the admin, the storefront
+  and the API; existing data is converted during the update
+- **Passwords and secrets keep every character** — passwords with `& < > "` sign in; SMTP passwords and payment keys reach the
+  server unchanged
+- **Raw HTML output warning** — System alerts and `gp247:doctor` point to the site's own templates and plugins that print a
+  variable with `{!! !!}` ([docs](../security/security-built-in.md))
+- **Untrusted proxy warning** — alerts when admin pages come through a proxy missing from `TRUSTED_PROXIES`, with the value to
+  add ([docs](../security/security-production-config.md))
+- **Server info shows GP247 versions first** — compare with the "Recommended versions" table without the command line
+- **For developers:** `gp247_text_plain()` replaces `gp247_clean()` (deprecated, removed in 4.0), escape on output with `{{ }}`;
+  the REST API returns text as typed; shared write services for products, categories, brands, suppliers and customers
+
+**🔧 Improvements:** text entered by customers and admins always shows as text on the storefront and order screens; list
+sorting accepts only valid columns; `gp247:info` prints versions as tagged (3.12.1, no longer 3.12.1.0)
+
+**📋 To do when updating**
+- **Back up the database first** — `gp247:update` converts text stored HTML-encoded (`&amp;` → `&`) once; this cannot be undone
+- Run `composer update`, then `php artisan gp247:update`
+- Open **System alerts** (or `php artisan gp247:doctor`): change `{!! !!}` prints of variables in your own templates and plugins
+  to `{{ }}`, except HTML written in the rich-text editor
+- SMTP passwords or secret keys containing `& < > "` saved before this release: enter them again once
+- *(Apps using the REST API)* strings now come back as typed (`&`, not `&amp;`) — the app must escape them when displaying
+
+<sub>Includes core 3.12.1 · front 3.8.1 · shop 3.10.1 · mcp 2.0.2 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.7.0)</sub>
 
 ### S-Cart 3.6.1 — 2026-11-11
 Backup and restore hardened for real sites and shared hosts — recommended update.
@@ -167,28 +195,10 @@ folders; searchable selects stay closed while you edit another row
 
 <sub>Includes core 3.10.2 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.1)</sub>
 
-### S-Cart 3.5.0 — 2026-11-03
-**Built-in MCP server: ask and manage your shop with the AI agent you already use.**
-
-**✨ New**
-- **MCP server built into S-Cart** — connect Claude, Cursor or VS Code to your shop and ask in plain language; off by default
-  ([docs](../mcp/mcp-introduction.md))
-- **The agent looks things up for you** — sales, low stock, orders, customers, recent changes; with the account's own permissions
-- **Write actions are always confirmed** — order status, shipping status, stock in/out: preview first, then confirm; off by default
-- **The extension library shows "Core X.Y+"** — see at once which core an extension needs
-- **For developers:** `gp247:mcp-install` / `gp247:mcp-update` / `gp247:mcp-uninstall`; `gp247:info` lists `gp247/mcp`;
-  the `minUpdateFrom` manifest key replaces `requireUpdateFrom` (the old key is still read)
-
-**📋 To do when updating**
-- *(Site installed before S-Cart 3.5.0)* run `composer require gp247/mcp -W` once, then `php artisan gp247:update`
-- *(Using the McpServer plugin)* `gp247:update` moves tokens, settings and permissions; then remove the plugin folder with
-  `php artisan gp247:ext-uninstall --type=plugin --key=McpServer --purge`; the MCP screens are now under **System config → MCP Server**
-
-<sub>Includes core 3.9.0 · front 3.5.2 · shop 3.7.0 · mcp 2.0.1 · [GitHub Release](https://github.com/gp247net/s-cart/releases/tag/3.5.0)</sub>
-
 ### Older releases
 | Release | Date | Summary |
 | --- | --- | --- |
+| [S-Cart 3.5.0](https://github.com/gp247net/s-cart/releases/tag/3.5.0) | 2026-11-03 | Built-in MCP server: ask and manage your shop with an AI agent |
 | [S-Cart 3.4.0](https://github.com/gp247net/s-cart/releases/tag/3.4.0) | 2026-11-02 | Sell through your own app and sync with your ERP over the REST API |
 | [S-Cart 3.3.1](https://github.com/gp247net/s-cart/releases/tag/3.3.1) | 2026-10-29 | Contact form with an inbox; REST API switched on and off from the admin |
 | [S-Cart 3.2](https://github.com/gp247net/s-cart/releases/tag/3.2) | 2026-10-23 | Japanese, standard shipping with shipments, storefront theme that updates with the package |
@@ -241,4 +251,4 @@ exposed before a fix is released.
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-11 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>
