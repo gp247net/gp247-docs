@@ -25,6 +25,9 @@ Mục này giúp ứng dụng đọc đúng kết quả, lọc/sắp xếp danh 
 | Danh sách | `{"data": [...], "meta": {...}, "links": {...}}` — `meta` có `current_page`, `per_page`, `total`, `last_page`; `links` có `first`, `last`, `prev`, `next` |
 | Tên, mô tả sản phẩm/danh mục/trang | `name`, `description`… theo ngôn ngữ chọn bằng `lang` |
 | Giá | `price` và `price_final` (giá khách trả trên cửa hàng, đã tính khuyến mãi) |
+| Chuỗi chữ (tên, địa chỉ, ghi chú…) | Đúng như người dùng đã nhập — `&`, `<`, `"` giữ nguyên, **không** mã hoá HTML. Ứng dụng tự escape khi đưa chữ vào HTML; trường HTML soạn bằng trình soạn thảo (`description`, `content`) là HTML, hiển thị theo đúng cách bạn tin nội dung đó |
+
+> ℹ️ **Có từ:** gp247/core 3.12.0, gp247/front 3.8.0, gp247/shop 3.10.0 — trước các bản này, chữ có `&`, `<`, `>`, `"` được trả dạng đã mã hoá (`Free &amp; Pro`). `gp247:update` chuyển dữ liệu cũ một lần.
 
 ### Tham số cho mọi endpoint danh sách
 
@@ -206,4 +209,4 @@ gp247/core, gp247/shop, gp247/front, hãy tải lại `openapi.json` và sinh l�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>

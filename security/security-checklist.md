@@ -43,6 +43,7 @@ flowchart LR
 - [ ] Turn on two-factor authentication (the **MFA** plugin) for every administrator — [Accounts & permissions](./security-accounts-and-access.md#turn-on-two-factor-authentication-mfa)
 - [ ] One account per staff member, with just enough permission — [Accounts & permissions](./security-accounts-and-access.md#grant-just-enough-permission)
 - [ ] Turn off the REST API / MCP if you do not use them — [What the system protects](./security-built-in.md#rest-api--mcp)
+- [ ] The **System alerts** page has nothing left to fix — including the raw `{!! !!}` print item (`raw_output_scan`) when the site has its own templates or plugins — [Updates & incidents](./security-updates-and-incidents.md#plugins-and-templates-install-only-from-trusted-sources)
 - [ ] Have an automatic backup schedule for the database + `storage/app/` + `app/GP247/`, with one copy off the server — [Encryption keys & backup](./security-keys-and-backup.md#what-you-must-back-up)
 
 ## Regular tasks
@@ -124,4 +125,4 @@ The ten mistakes below cause most incidents on live sites. Each one has its cons
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-08 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

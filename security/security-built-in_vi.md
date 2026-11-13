@@ -92,7 +92,7 @@ Lớp này chống việc trang khác giả mạo thao tác của bạn và ch�
 | Cơ chế | GP247 làm gì | Giới hạn — bạn làm |
 | --- | --- | --- |
 | **Chống giả mạo form (CSRF)** | Mọi form trên web có mã chống giả mạo; trang khác không gửi thay bạn được | — |
-| **Mã hoá đầu ra** | Nội dung hiển thị được mã hoá HTML theo mặc định; chuỗi ngôn ngữ do quản trị viên sửa được làm sạch khi lưu | Plugin/giao diện tự viết phải giữ quy tắc này |
+| **Mã hoá đầu ra** | Chữ được lưu đúng như người dùng gõ (bỏ ký tự điều khiển; trường chữ thuần bỏ thẻ HTML) và được mã hoá HTML khi hiển thị; chuỗi ngôn ngữ do quản trị viên sửa vẫn được mã hoá khi lưu | Nội dung soạn bằng trình soạn thảo HTML (mô tả, trang, banner) được in nguyên — chỉ cấp quyền sửa cho người tin cậy. Plugin/giao diện tự viết phải in chữ bằng `{{ }}`; mục `raw_output_scan` của `gp247:doctor` chỉ ra chỗ in thô `{!! !!}` |
 | **File tải lên** | Trình quản lý file kiểm kiểu file và dung lượng, chặn file `php` và `html`; thao tác xoá, đổi tên, di chuyển chỉ nhận yêu cầu từ chính trang quản trị | File tải lên được phục vụ công khai trên cùng tên miền — chỉ cấp quyền quản lý file cho người tin cậy |
 | **Dữ liệu nhập ở cửa hàng** | Giá, giá thuộc tính, số lượng giỏ hàng do máy chủ tính lại, không tin số trình duyệt gửi lên | — |
 
@@ -138,11 +138,11 @@ Lớp này giảm thiệt hại khi cấu hình lỡ sai.
 | **Tự tắt debug** | Khi `APP_ENV=production`, GP247 ép tắt debug dù `APP_DEBUG` đặt gì | Chỉ áp khi `APP_ENV` đúng là `production` |
 | **Nhãn môi trường** | Header trang quản trị hiện môi trường đang chạy và nhãn đỏ "DEBUG ON" (`GP247_ENV_BADGE`) | Nhìn thấy thì phải xử lý |
 | **Docker production** | `docker-compose.prod.yml` ghim `APP_ENV=production`, `APP_DEBUG=false` cho mọi dịch vụ; từ chối khởi động khi còn mật khẩu mẫu của `.env.example`; tắt các tính năng PHP không dùng; nginx chặn file ẩn và thư mục nội bộ | Bật HTTPS ở proxy phía trước; cập nhật image định kỳ |
-| **Cảnh báo hệ thống** | Block **Cảnh báo hệ thống** ở đầu dashboard quản trị tóm tắt trong một dòng mức nặng nhất và số mục cần xử lý; biểu tượng khiên trên header đếm số mục nghiêm trọng. Trang **Cảnh báo hệ thống** (menu **Cấu hình hệ thống** → **Bảo mật**, hoặc bấm khiên / nút ở block) liệt kê từng mục: debug đang bật, site chưa chạy HTTPS hoặc cookie đăng nhập chưa bật `Secure`, tài khoản `admin` còn mật khẩu mặc định, mật khẩu tối thiểu dưới 12 ký tự, chưa đặt khoá mã hoá riêng, có bí mật không giải mã được, chưa bật MFA, API đang bật, dòng phiên bản sắp hết hoặc đã hết hỗ trợ, extension chưa cập nhật dữ liệu hoặc thiếu file tĩnh. Mỗi mục có chi tiết kỹ thuật và link hướng dẫn; sửa xong thì cảnh báo tự hết (hoặc bấm **Kiểm tra lại** trên trang). `gp247:doctor` báo cùng các mục này | Chỉ vai trò **Administrator** thấy block, trang và mục menu. Chỉ kiểm khi có người mở trang quản trị, không gửi email. Không kiểm thay bạn từ trình duyệt (file `.env` có tải được không, `http://` có tự chuyển sang `https://` không) |
+| **Cảnh báo hệ thống** | Block **Cảnh báo hệ thống** ở đầu dashboard quản trị tóm tắt trong một dòng mức nặng nhất và số mục cần xử lý; biểu tượng khiên trên header đếm số mục nghiêm trọng. Trang **Cảnh báo hệ thống** (menu **Cấu hình hệ thống** → **Bảo mật**, hoặc bấm khiên / nút ở block) liệt kê từng mục: debug đang bật, site chưa chạy HTTPS hoặc cookie đăng nhập chưa bật `Secure`, tài khoản `admin` còn mật khẩu mặc định, mật khẩu tối thiểu dưới 12 ký tự, chưa đặt khoá mã hoá riêng, có bí mật không giải mã được, chưa bật MFA, API đang bật, dòng phiên bản sắp hết hoặc đã hết hỗ trợ, extension chưa cập nhật dữ liệu hoặc thiếu file tĩnh, template/plugin của site in biến bằng `{!! !!}`, trang quản trị đi qua proxy chưa khai báo trong `TRUSTED_PROXIES`. Mỗi mục có chi tiết kỹ thuật và link hướng dẫn; sửa xong thì cảnh báo tự hết (hoặc bấm **Kiểm tra lại** trên trang). `gp247:doctor` báo cùng các mục này | Chỉ vai trò **Administrator** thấy block, trang và mục menu. Chỉ kiểm khi có người mở trang quản trị, không gửi email. Không kiểm thay bạn từ trình duyệt (file `.env` có tải được không, `http://` có tự chuyển sang `https://` không) |
 | **IP và giao thức sau proxy** | Chỉ nhận IP / `https` từ header chuyển tiếp khi request đến từ proxy trong `TRUSTED_PROXIES`; không bao giờ lấy tên miền từ `X-Forwarded-Host`; bộ Docker mặc định không tin proxy nào và nginx của bộ không chuyển `X-Forwarded-Host` của khách; mục `trusted_proxies` của Cảnh báo hệ thống nhắc khi cấu hình tin mọi khách | Khai đúng dải IP của proxy phía trước; proxy phải giữ header `Host` — xem [Cấu hình chạy thật](./security-production-config_vi.md) |
 | **Link trong email** | Link đặt lại mật khẩu (quản trị viên, khách) và link xác minh email luôn trỏ về tên miền đã cấu hình (`APP_URL`, hoặc tên miền riêng của cửa hàng), không theo tên miền của request | `APP_URL` và tên miền cửa hàng phải đúng |
 
-> ℹ️ **Có từ:** gp247/core 3.10.0 (block và trang Cảnh báo hệ thống, các mục bảo mật của `gp247:doctor`); gp247/core 3.10.3 + gp247/shop 3.8.1 (IP và giao thức sau proxy, link trong email, mục `trusted_proxies`)
+> ℹ️ **Có từ:** gp247/core 3.10.0 (block và trang Cảnh báo hệ thống, các mục bảo mật của `gp247:doctor`); gp247/core 3.10.3 + gp247/shop 3.8.1 (IP và giao thức sau proxy, link trong email, mục `trusted_proxies`); gp247/core 3.11.3 (cảnh báo proxy chưa khai báo); gp247/core 3.12.0 + gp247/front 3.8.0 + gp247/shop 3.10.0 (lưu chữ đúng như gõ, mục `raw_output_scan`)
 
 ## Cài đặt & cập nhật
 
@@ -208,4 +208,4 @@ Các việc dưới đây **không có** trong GP247 — nếu bạn không làm
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-07 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>

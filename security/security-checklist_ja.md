@@ -43,6 +43,7 @@ flowchart LR
 - [ ] すべての管理者で二要素認証（プラグイン **MFA**）を有効にした — [アカウントと権限](./security-accounts-and-access_ja.md#二要素認証mfaを有効にする)
 - [ ] スタッフ 1 人に 1 つのアカウント、必要最小限の権限 — [アカウントと権限](./security-accounts-and-access_ja.md#必要最小限の権限を付与する)
 - [ ] 使わない場合は REST API／MCP を無効にした — [システムが守るもの](./security-built-in_ja.md#rest-api-と-mcp)
+- [ ] **システムアラート** ページに対応の必要な項目が残っていない — 独自のテンプレートやプラグインがある場合は `{!! !!}` の項目（`raw_output_scan`）も含む — [更新とインシデント対応](./security-updates-and-incidents_ja.md#プラグインとテンプレート信頼できる提供元からのみインストール)
 - [ ] データベース + `storage/app/` + `app/GP247/` の自動バックアップのスケジュールがあり、1 つはサーバーの外にある — [暗号化キーとバックアップ](./security-keys-and-backup_ja.md#バックアップが必要なもの)
 
 ## 定期作業
@@ -124,4 +125,4 @@ flowchart LR
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-08 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-13 · ✍️ **作成者 (Author):** GP247</sub>

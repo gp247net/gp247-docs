@@ -76,6 +76,7 @@ Plugins and templates **run code on your server with the full rights of the site
 - **Update plugins** on the **Extension** screen. Before overwriting, GP247 keeps the old version in `storage/backups/extensions/`, verifies the certificate of the download connection, and checks the package hash when the library provides one.
 - **Remove plugins you do not use** — less code running means fewer places for bugs.
 - **Plugins you write yourself**: keep the rules in [What the system protects](./security-built-in.md) and [Creating a plugin](../extension/create-plugin.md).
+- **"Raw `{!! !!}` print" alert** (the `raw_output_scan` item of System alerts and `gp247:doctor`): a template or plugin in `app/GP247/` prints a variable with `{!! !!}`. Since gp247/core 3.12 text is stored exactly as typed, so a raw print can show HTML tags someone entered. Open each `file:line` listed in the alert detail and switch it to `{{ }}`; keep `{!! !!}` only for HTML you trust (content written in the editor, GP247's own render helpers). Someone else's plugin or template: tell its author and install the updated release.
 
 ## If you suspect a breach — steps in order
 
@@ -159,4 +160,4 @@ how to reproduce it. **Do not** open a public issue on GitHub, so the bug cannot
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-04 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

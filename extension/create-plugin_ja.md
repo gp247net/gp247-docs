@@ -426,6 +426,21 @@ return [
 
 UI のルール：`<x-gp247::*>` コンポーネント、Livewire、Alpine だけを使います。jQuery、AdminLTE、select2 は**使いません**。
 
+**文字の保存と表示**（gp247/core 3.12 以降）：
+
+- **入力されたとおりに保存** — 入力値は `gp247_text_plain($data, $exclude, stripTags: true)` で整えます。制御文字と HTML タグを
+  取り除き、前後の空白を削りますが、HTML エスケープは**しません**。`$exclude` にはそのまま残す項目（HTML エディターで作成した
+  内容、パスワード、秘密キー）を指定します。
+- **出力時にエスケープ** — 文字は `{{ }}` で出力します。`{!! !!}` は信頼できる HTML（エディターで作成した項目、GP247 の表示用
+  関数）にだけ使います。システムアラートの `raw_output_scan` 項目が、プラグインが変数をそのまま出力している箇所を一覧します。
+- **新しいコードで `gp247_clean()` を呼ばない** — 保存時に HTML エスケープする関数で、非推奨となり core 4.0 で削除されます。
+  パスワード、API キー、秘密情報は整形せずにそのまま（ハッシュまたは暗号化して）保存します。
+- **`gp247_clean()` で保存してきた独自テーブル** — `update()` で
+  `\GP247\Core\Support\StoredTextDecoder::run('MyPlugin_text_decoded', ['my_plugin_item' => ['title', 'note']])` を呼び、
+  指定した列を 1 回だけ元に戻します（テーブル名はプレフィックスなし）。`install()` では
+  `\GP247\Core\Support\StoredTextDecoder::markStoredAsTyped('MyPlugin_text_decoded')` を呼び、新規インストールが誤って
+  変換されないようにします。古い core でも動かすプラグインは、先に `function_exists('gp247_text_plain')` を確認します。
+
 ---
 
 ## ステップ 5 — インストールと確認
@@ -479,6 +494,7 @@ UI のルール：`<x-gp247::*>` コンポーネント、Livewire、Alpine だ�
 - [ ] `install()`／`uninstall()` が対になっている。`update()` は再実行しても安全で、`null` でも動作する。
 - [ ] `clickApp()` が設定画面を開く。`keys()` がすべてのフィールドを列挙している。秘密鍵は `password` フィールドになっている。
 - [ ] 管理画面は Livewire ＋ `<x-gp247::*>` を使い、jQuery を使っていない。テキストは `trans()` を通し、`vi` と `en` の両方がある。
+- [ ] 入力された文字は `gp247_text_plain()`（`gp247_clean()` ではない）で保存し、`{{ }}` で出力している。`{!! !!}` は信頼できる HTML だけ。
 - [ ] `optimize:clear` を実行し、インストール／有効化／無効化／`--only-data` でのアンインストール／再インストールに成功した。
 - [ ] 決済／配送プラグイン：その種類専用のガイドに従った。
 
@@ -547,10 +563,11 @@ AI エージェントと作業する場合は、スキル `gp247-plugin-create` 
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | 文字の保存と表示のルールを追加（手順 4）：`gp247_text_plain()` が `gp247_clean()`（非推奨、core 4.0 で削除）に代わる、`{{ }}` で出力、プラグインの古いデータは `StoredTextDecoder` で元に戻す |
 | 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/core 3.1 | 6 ステップのメインページに再構成。[更新に安全なプラグイン](./create-plugin-update-safety_ja.md) と [高度なプラグイン](./create-plugin-advanced_ja.md) を分離。決済プラグインと配送プラグインのガイドを追加。**修正：** `requireCore` を `gp247:info` に従って書く（古い値 `"2.1"` は 3.x のコアに拒否される）。既定の設定はキーごとに 1 行で保存し、`ConfigForm` 画面を使う（秘密鍵を保持できる）。「設定」ボタンのために `clickApp()` を追加 |
 | 2026-09-29 |  | フック `AppConfig::update($fromVersion)` が、サイトオーナーが `git pull`／Composer／手動コピーでファイルを置き換えたときにも呼ばれるようになりました（`gp247:update`、`gp247:ext-update --local`、「データ更新を適用」(Apply data update) ボタン経由）。初回は `null` を受け取ることがあります。 |
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-13 · ✍️ **作成者 (Author):** GP247</sub>

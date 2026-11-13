@@ -156,6 +156,9 @@ app/GP247/Templates/MyShopSkin/
 - `screen/`：個々のページです。例：`home.blade.php`（トップページ）、`page_detail.blade.php`、
   `404.blade.php`、`front_search.blade.php`。
 - `partials/`、`components/`：再利用できる画面の部品です。
+- **文字は `{{ }}` で出力**：gp247/core 3.12 から文字は入力したとおりに保存され、出力時にだけエスケープされます。`{!! !!}` は
+  信頼できる HTML（エディターで作成した内容、`{!! gp247_render_block(...) !!}` などの GP247 の表示用関数）専用です。それ以外の
+  変数をそのまま出力すると、システムアラートの `raw_output_scan` 項目が知らせます。
 
 ### 5.3. 動的な画面 — Livewire/Alpine を使い、jQuery は使わない
 
@@ -322,6 +325,7 @@ Livewire コンポーネントで作り、そのビューは `livewire/` に置�
 - [ ] `gp247.json`：`configGroup` = `"Templates"`、`configKey` がフォルダー名と一致、`requireComposerPackages` に `"gp247/front"` がある。
 - [ ] `version` を前のリリースから**上げた**（アップデート版の場合）。
 - [ ] デザインに Tailwind + Livewire/Alpine を使っている。古い jQuery/Bootstrap のウィジェットは**残っていない**。
+- [ ] 文字を `{{ }}` で出力している。`{!! !!}` は信頼できる HTML（エディターの内容、GP247 の表示用関数）だけ。
 - [ ] すべての文字を `gp247_language_render(...)` / `trans(...)` で出力し、ハードコードしていない。`vi` と `en` の両方がある。
 - [ ] 新しい Tailwind のクラスを追加した場合：CSS を再コンパイルし、出力を `public/` に含めた。
 - [ ] どのショップのページを上書きするか（テンプレートの `screen/` にコピー）、どのページをデフォルトのフォールバックのままにするかを明確に決めた。
@@ -390,9 +394,10 @@ CSS ファイルを再コンパイル（`npx tailwindcss ...`）すると反映�
 
 | 日付 | GP247 バージョン | 変更内容 |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | 文字の出力ルールを追加（5.2）：文字は入力どおりに保存され、`{{ }}` で出力。`{!! !!}` は信頼できる HTML だけで、それ以外は `raw_output_scan` 項目が知らせる |
 | 2026-11-03 | gp247/core 3.9 | キー `requireUpdateFrom` を `minUpdateFrom` に名称変更（直接更新できるインストール済みの最低バージョン、以上）。旧名称は非推奨の警告付きで引き続き動作し、core 4.0 で削除されます |
 | 2026-10-18 | gp247/core 3.1 | **修正：** `requireCore` を稼働中のコア（`php artisan gp247:info`）に合わせて記載 — 旧値 `"2.1"` は 3.x のコアで拒否されます。章のタイトルから、章番号と食い違っていた「ステップ」番号を削除 |
 
 ---
 
-<sub>📅 **最終更新:** 2026-11-03 · ✍️ **作成者 (Author):** GP247</sub>
+<sub>📅 **最終更新:** 2026-11-13 · ✍️ **作成者 (Author):** GP247</sub>

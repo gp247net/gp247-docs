@@ -426,6 +426,21 @@ return [
 
 Quy tắc giao diện: chỉ dùng component `<x-gp247::*>`, Livewire và Alpine; **không** jQuery, AdminLTE, select2.
 
+**Lưu và hiển thị chữ** (gp247/core 3.12 trở lên):
+
+- **Lưu đúng như người dùng gõ** — làm sạch dữ liệu nhập bằng `gp247_text_plain($data, $exclude, stripTags: true)`: bỏ ký tự
+  điều khiển và thẻ HTML, cắt khoảng trắng hai đầu, **không** mã hoá HTML. `$exclude` là các trường giữ nguyên: nội dung soạn
+  bằng trình soạn thảo HTML, mật khẩu, khoá bí mật.
+- **Mã hoá khi in** — in chữ bằng `{{ }}`. Chỉ dùng `{!! !!}` cho HTML bạn tin (trường soạn bằng trình soạn thảo, hàm hiển thị
+  của GP247); mục `raw_output_scan` của Cảnh báo hệ thống liệt kê mọi chỗ plugin in thô một biến.
+- **Không gọi `gp247_clean()` trong code mới** — hàm này mã hoá HTML lúc lưu, đã deprecated và bị gỡ ở core 4.0. Mật khẩu, khoá
+  API, secret lưu nguyên (băm hoặc mã hoá), không qua hàm làm sạch nào.
+- **Bảng riêng từng lưu bằng `gp247_clean()`** — trong `update()` gọi
+  `\GP247\Core\Support\StoredTextDecoder::run('MyPlugin_text_decoded', ['my_plugin_item' => ['title', 'note']])` để giải mã
+  một lần các cột liệt kê (tên bảng không kèm tiền tố); trong `install()` gọi
+  `\GP247\Core\Support\StoredTextDecoder::markStoredAsTyped('MyPlugin_text_decoded')` để bản cài mới không bị giải mã nhầm.
+  Plugin còn chạy trên core cũ hơn thì kiểm `function_exists('gp247_text_plain')` trước.
+
 ---
 
 ## Bước 5 — Cài và kiểm tra
@@ -479,6 +494,7 @@ Quy tắc giao diện: chỉ dùng component `<x-gp247::*>`, Livewire và Alpine
 - [ ] `install()` / `uninstall()` cân xứng; `update()` chạy lại an toàn và chạy được với `null`.
 - [ ] `clickApp()` mở màn cấu hình; `keys()` liệt kê đủ ô; khoá bí mật là ô `password`.
 - [ ] Màn quản trị dùng Livewire + `<x-gp247::*>`, không jQuery; chữ qua `trans()` có cả `vi` và `en`.
+- [ ] Chữ nhập lưu bằng `gp247_text_plain()` (không `gp247_clean()`), in bằng `{{ }}`; `{!! !!}` chỉ cho HTML tin cậy.
 - [ ] Đã `optimize:clear`, cài / bật / tắt / gỡ `--only-data` / cài lại thành công.
 - [ ] Plugin thanh toán / vận chuyển: đã theo hướng dẫn riêng của loại đó.
 
@@ -547,10 +563,11 @@ Làm cùng AI agent thì dùng skill `gp247-plugin-create`.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | Thêm quy tắc lưu và hiển thị chữ (Bước 4): `gp247_text_plain()` thay `gp247_clean()` (deprecated, gỡ ở core 4.0), in bằng `{{ }}`, giải mã dữ liệu cũ của plugin bằng `StoredTextDecoder` |
 | 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | Sắp xếp lại thành trang chính 6 bước; tách [Plugin an toàn khi cập nhật](./create-plugin-update-safety_vi.md) và [Plugin nâng cao](./create-plugin-advanced_vi.md); thêm hướng dẫn plugin thanh toán và vận chuyển. **Sửa:** `requireCore` ghi theo `gp247:info` (giá trị `"2.1"` cũ bị lõi 3.x từ chối); thiết lập mặc định lưu mỗi khoá một dòng với màn `ConfigForm` (giữ được khoá bí mật); thêm `clickApp()` cho nút Cấu hình |
 | 2026-09-29 |  | Hook `AppConfig::update($fromVersion)` nay cũng được gọi khi chủ site thay file bằng `git pull`/Composer/chép tay (qua `gp247:update`, `gp247:ext-update --local`, nút **Áp dụng cập nhật dữ liệu**); lần đầu có thể nhận `null`. |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>

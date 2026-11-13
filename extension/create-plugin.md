@@ -427,6 +427,21 @@ return [
 
 UI rules: only `<x-gp247::*>` components, Livewire and Alpine; **no** jQuery, AdminLTE or select2.
 
+**Storing and showing text** (gp247/core 3.12 and later):
+
+- **Store what the person typed** — clean input with `gp247_text_plain($data, $exclude, stripTags: true)`: it removes control
+  characters and HTML tags and trims both ends, and does **not** HTML-encode. `$exclude` lists the fields kept as they are:
+  content written in the HTML editor, passwords, secret keys.
+- **Encode on output** — print text with `{{ }}`. Use `{!! !!}` only for HTML you trust (fields written in the editor, GP247's
+  own render helpers); the `raw_output_scan` item of System alerts lists every place a plugin prints a variable raw.
+- **Do not call `gp247_clean()` in new code** — it HTML-encodes on save, is deprecated and is removed in core 4.0. Passwords,
+  API keys and secrets are stored as they are (hashed or encrypted), never through a cleaning function.
+- **Own tables that were saved with `gp247_clean()`** — in `update()` call
+  `\GP247\Core\Support\StoredTextDecoder::run('MyPlugin_text_decoded', ['my_plugin_item' => ['title', 'note']])` to decode
+  the listed columns once (table name without the prefix); in `install()` call
+  `\GP247\Core\Support\StoredTextDecoder::markStoredAsTyped('MyPlugin_text_decoded')` so a fresh install is not decoded by
+  mistake. A plugin that still runs on an older core checks `function_exists('gp247_text_plain')` first.
+
 ---
 
 ## Step 5 — Install and test
@@ -480,6 +495,7 @@ UI rules: only `<x-gp247::*>` components, Livewire and Alpine; **no** jQuery, Ad
 - [ ] `install()` / `uninstall()` are symmetric; `update()` is safe to re-run and works with `null`.
 - [ ] `clickApp()` opens the settings screen; `keys()` lists every field; secrets are `password` fields.
 - [ ] The admin screen uses Livewire + `<x-gp247::*>`, no jQuery; text goes through `trans()` in both `vi` and `en`.
+- [ ] Input text is stored with `gp247_text_plain()` (not `gp247_clean()`) and printed with `{{ }}`; `{!! !!}` only for trusted HTML.
 - [ ] Ran `optimize:clear`, then install / enable / disable / uninstall `--only-data` / reinstall successfully.
 - [ ] Payment / shipping plugins: followed the dedicated guide for that kind.
 
@@ -548,10 +564,11 @@ With an AI agent, use the `gp247-plugin-create` skill.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | Added the rules for storing and showing text (Step 4): `gp247_text_plain()` replaces `gp247_clean()` (deprecated, removed in core 4.0), print with `{{ }}`, decode a plugin's old data with `StoredTextDecoder` |
 | 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | Restructured into a 6-step main page; split out [Update-safe plugins](./create-plugin-update-safety.md) and [Advanced plugins](./create-plugin-advanced.md); added payment and shipping plugin guides. **Fixed:** `requireCore` follows `gp247:info` (the old `"2.1"` is refused by a 3.x core); settings default to one row per key with a `ConfigForm` screen (holds secrets); added `clickApp()` for the Config button |
 | 2026-09-29 |  | The `AppConfig::update($fromVersion)` hook now also runs when the site owner replaces files via `git pull`/Composer/manual copy (through `gp247:update`, `gp247:ext-update --local`, the **Apply data update** button); the first time it may receive `null`. |
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

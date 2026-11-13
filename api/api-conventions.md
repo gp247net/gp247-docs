@@ -25,6 +25,9 @@ This section helps your app read results correctly, filter/sort lists and handle
 | A list | `{"data": [...], "meta": {...}, "links": {...}}` — `meta` has `current_page`, `per_page`, `total`, `last_page`; `links` has `first`, `last`, `prev`, `next` |
 | Product/category/page name and description | `name`, `description`… in the language chosen with `lang` |
 | Price | `price` and `price_final` (the price the customer pays on the store, promotions applied) |
+| Text (names, addresses, notes…) | Exactly as the person entered it — `&`, `<`, `"` come back unchanged, **not** HTML-encoded. Escape text yourself when you put it into HTML; HTML fields written in the editor (`description`, `content`) are HTML — display them as far as you trust that content |
+
+> ℹ️ **Available since:** gp247/core 3.12.0, gp247/front 3.8.0, gp247/shop 3.10.0 — before these releases, text with `&`, `<`, `>`, `"` came back encoded (`Free &amp; Pro`). `gp247:update` converts existing data once.
 
 ### Parameters for every list endpoint
 
@@ -208,4 +211,4 @@ is in [Troubleshooting](./api-troubleshooting.md).
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

@@ -163,6 +163,9 @@ The scaffolded stub already works; you usually only add your own logic.
 - `screen/`: individual pages — e.g. `home.blade.php` (home), `page_detail.blade.php`,
   `404.blade.php`, `front_search.blade.php`.
 - `partials/`, `components/`: reusable interface fragments.
+- **Print text with `{{ }}`**: since gp247/core 3.12 text is stored exactly as typed and encoded only on output. `{!! !!}` is
+  for trusted HTML only — content written in the editor, GP247's render helpers such as `{!! gp247_render_block(...) !!}`. Any
+  other raw print of a variable is reported by the `raw_output_scan` item of System alerts.
 
 ### 5.3. Dynamic interface — use Livewire/Alpine, no jQuery
 
@@ -335,6 +338,7 @@ For full details on the safe-update mechanism, see the
 - [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` matches the folder name, `requireComposerPackages` includes `"gp247/front"`.
 - [ ] `version` has **increased** from the previous release (if this is an update).
 - [ ] The interface uses Tailwind + Livewire/Alpine; **no** more old jQuery/Bootstrap widgets.
+- [ ] Text is printed with `{{ }}`; `{!! !!}` only for trusted HTML (editor content, GP247's render helpers).
 - [ ] Every string is rendered through `gp247_language_render(...)` / `trans(...)`, not hardcoded; both `vi` and `en` present.
 - [ ] If you added new Tailwind classes: you recompiled the CSS and included the output in `public/`.
 - [ ] You have clearly decided which shop pages to override (copied into the template's `screen/`) and which to leave on the default fallback.
@@ -403,9 +407,10 @@ most common issue, caused by Laravel still holding the old cache.
 
 | Date | GP247 version | Change |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | Added the rule for printing text (section 5.2): text is stored as typed, print it with `{{ }}`; `{!! !!}` only for trusted HTML, other raw prints are reported by the `raw_output_scan` item |
 | 2026-11-03 | gp247/core 3.9 | Key `requireUpdateFrom` renamed to `minUpdateFrom` (lowest installed version, ≥, allowed to update straight); the old name still works with a deprecation warning and is removed in core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Fixed:** `requireCore` follows the running core (`php artisan gp247:info`) — the old `"2.1"` is refused by a 3.x core; section titles no longer carry a "Step" number that disagreed with the section number |
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-03 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

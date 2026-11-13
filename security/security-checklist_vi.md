@@ -43,6 +43,7 @@ flowchart LR
 - [ ] Bật xác thực hai lớp (plugin **MFA**) cho mọi quản trị viên — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#bật-xác-thực-hai-lớp-mfa)
 - [ ] Mỗi nhân viên một tài khoản, quyền vừa đủ — [Tài khoản & phân quyền](./security-accounts-and-access_vi.md#cấp-quyền-vừa-đủ)
 - [ ] Tắt REST API / MCP nếu không dùng — [Hệ thống bảo vệ những gì](./security-built-in_vi.md#rest-api--mcp)
+- [ ] Trang **Cảnh báo hệ thống** không còn mục cần xử lý — kể cả mục in thô `{!! !!}` (`raw_output_scan`) khi site có template hoặc plugin tự viết — [Cập nhật & xử lý sự cố](./security-updates-and-incidents_vi.md#plugin-và-giao-diện-chỉ-cài-từ-nguồn-tin-cậy)
 - [ ] Có lịch sao lưu tự động cơ sở dữ liệu + `storage/app/` + `app/GP247/`, có một bản ngoài máy chủ — [Khoá mã hoá & sao lưu](./security-keys-and-backup_vi.md#những-gì-phải-sao-lưu)
 
 ## Định kỳ
@@ -124,4 +125,4 @@ Mười lỗi dưới đây gây phần lớn sự cố trên site thật. Mỗi
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-08 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>

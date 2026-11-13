@@ -160,6 +160,9 @@ sung logic riêng.
 - `screen/`: từng trang cụ thể — ví dụ `home.blade.php` (trang chủ), `page_detail.blade.php`,
   `404.blade.php`, `front_search.blade.php`.
 - `partials/`, `components/`: các mảnh giao diện dùng lại.
+- **In chữ bằng `{{ }}`**: từ gp247/core 3.12 chữ được lưu đúng như người dùng gõ và chỉ được mã hoá khi in. `{!! !!}` chỉ
+  dành cho HTML tin cậy — nội dung soạn bằng trình soạn thảo, các hàm hiển thị của GP247 như `{!! gp247_render_block(...) !!}`.
+  In thô một biến khác sẽ bị mục `raw_output_scan` của Cảnh báo hệ thống báo.
 
 ### 5.3. Giao diện động — dùng Livewire/Alpine, không jQuery
 
@@ -330,6 +333,7 @@ Chi tiết đầy đủ về cơ chế update-an-toàn xem tài liệu
 - [ ] `gp247.json`: `configGroup` = `"Templates"`, `configKey` trùng tên thư mục, `requireComposerPackages` có `"gp247/front"`.
 - [ ] `version` đã **tăng** so với bản trước (nếu là bản cập nhật).
 - [ ] Giao diện dùng Tailwind + Livewire/Alpine; **không** còn jQuery/Bootstrap widget cũ.
+- [ ] Chữ in bằng `{{ }}`; `{!! !!}` chỉ cho HTML tin cậy (nội dung trình soạn thảo, hàm hiển thị của GP247).
 - [ ] Mọi chữ render qua `gp247_language_render(...)` / `trans(...)`, không hardcode; có cả `vi` và `en`.
 - [ ] Nếu thêm class Tailwind mới: đã biên dịch lại CSS và kèm bản output trong `public/`.
 - [ ] Đã quyết định rõ trang shop nào override (chép vào `screen/` template), trang nào để fallback mặc định.
@@ -398,9 +402,10 @@ nhất do Laravel còn giữ cache cũ.
 
 | Ngày | Phiên bản GP247 | Thay đổi |
 | --- | --- | --- |
+| 2026-11-13 | gp247/core 3.12 | Thêm quy tắc in chữ (mục 5.2): chữ lưu đúng như gõ, in bằng `{{ }}`; `{!! !!}` chỉ cho HTML tin cậy, chỗ in thô khác bị mục `raw_output_scan` báo |
 | 2026-11-03 | gp247/core 3.9 | Khoá `requireUpdateFrom` đổi tên thành `minUpdateFrom` (bản đang cài thấp nhất, ≥, được cập nhật thẳng); tên cũ vẫn chạy kèm cảnh báo deprecated và bị gỡ ở core 4.0 |
 | 2026-10-18 | gp247/core 3.1 | **Sửa:** `requireCore` ghi theo lõi đang chạy (`php artisan gp247:info`) — giá trị `"2.1"` cũ bị lõi 3.x từ chối; tiêu đề mục bỏ số "Bước" lệch với số mục |
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-03 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>

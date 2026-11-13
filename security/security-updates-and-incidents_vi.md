@@ -76,6 +76,7 @@ Plugin và giao diện **chạy mã trên máy chủ của bạn với toàn quy
 - **Cập nhật plugin** ở màn **Phần mở rộng**. Trước khi ghi đè, GP247 giữ bản cũ ở `storage/backups/extensions/`, kiểm chứng chỉ kết nối tải về và mã băm của gói khi thư viện cung cấp.
 - **Gỡ plugin không dùng** — ít mã chạy thì ít chỗ lỗi.
 - **Plugin tự viết**: giữ các quy tắc ở [Hệ thống bảo vệ những gì](./security-built-in_vi.md) và [Hướng dẫn tạo Plugin](../extension/create-plugin_vi.md).
+- **Cảnh báo "in thô `{!! !!}`"** (mục `raw_output_scan` của Cảnh báo hệ thống và `gp247:doctor`): template hoặc plugin trong `app/GP247/` in một biến bằng `{!! !!}`. Từ gp247/core 3.12 chữ được lưu đúng như người dùng gõ, nên chỗ in thô có thể hiện ra thẻ HTML ai đó đã nhập. Mở từng `file:dòng` trong chi tiết cảnh báo, đổi sang `{{ }}`; chỉ giữ `{!! !!}` cho HTML bạn tin (nội dung soạn bằng trình soạn thảo, hàm hiển thị của GP247). Plugin hay template của người khác: báo tác giả và cập nhật bản mới.
 
 ## Khi nghi bị lộ — các bước theo thứ tự
 
@@ -159,4 +160,4 @@ cách tái hiện. **Không** mở issue công khai trên GitHub để lỗi kh�
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-04 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>
