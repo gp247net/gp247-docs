@@ -6,6 +6,8 @@
 This is the shared GP247 documentation repo. This page is the **index** listing all documents in the
 repo with links to each one. Documents are grouped by topic (API, extensions/plugins, releases, system, S-Cart).
 
+New to GP247? Read [About GP247](./about/gp247.md).
+
 ## Document list
 
 ### Installing & updating
@@ -104,4 +106,4 @@ repo with links to each one. Documents are grouped by topic (API, extensions/plu
 
 ---
 
-<sub>📅 **Last updated:** 2026-11-12 · ✍️ **Author:** GP247</sub>
+<sub>📅 **Last updated:** 2026-11-13 · ✍️ **Author:** GP247</sub>

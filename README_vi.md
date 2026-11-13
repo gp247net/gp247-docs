@@ -6,6 +6,8 @@
 Đây là repo tài liệu chung của GP247. Trang này là **mục lục** liệt kê toàn bộ tài liệu trong repo và
 link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API, mở rộng/plugin, phát hành, hệ thống, S-Cart).
 
+Mới biết GP247? Đọc [Giới thiệu về GP247](./about/gp247_vi.md).
+
 ## Danh sách tài liệu
 
 ### Cài đặt & cập nhật
@@ -104,4 +106,4 @@ link tới từng tài liệu. Tài liệu được nhóm theo chủ đề (API,
 
 ---
 
-<sub>📅 **Cập nhật lần cuối:** 2026-11-12 · ✍️ **Tác giả (Author):** GP247</sub>
+<sub>📅 **Cập nhật lần cuối:** 2026-11-13 · ✍️ **Tác giả (Author):** GP247</sub>
