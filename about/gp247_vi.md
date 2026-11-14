@@ -105,7 +105,7 @@ Hệ sinh thái GP247 gồm các thành phần chính sau:
 Tất cả thành phần đều **miễn phí và mã nguồn mở**. Bạn có thể tùy chỉnh và tích hợp chúng vào hệ thống Laravel
 của riêng mình.
 
-![Tổng quan hệ thống GP247](https://static.gp247.net/page/gp247-system.png)
+![Tổng quan hệ thống GP247](https://static.gp247.net/page/247-system.jpg)
 
 ## Mã nguồn
 
